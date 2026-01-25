@@ -117,3 +117,15 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# --- 줍다행 프로젝트 보안 설정 ---
+# API Keys (Gemini, Google Vision 등)
+.env
+*.env
+
+# Firebase 설정 파일 (보안을 위해 깃허브 제외 권장)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# 개발 툴 설정 파일
+.vscode/
