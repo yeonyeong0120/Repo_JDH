@@ -1,3 +1,5 @@
+apply from: project(':flutter_config').projectDir.getPath() + "/dotenv.gradle"
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
