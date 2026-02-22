@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '줍다행',
       theme: ThemeData(useMaterial3: true),
-      home: const Scaffold(body: Center(child: Text('줍다행 화면,,,'))),
+      home: const Scaffold(body: Center(child: Text('ddd'))),
     );
   }
 }
