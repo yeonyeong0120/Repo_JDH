@@ -14,7 +14,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '줍다행',
       theme: ThemeData(useMaterial3: true),
-      home: const Scaffold(body: Center(child: Text('ddd'))),
+      home: const Scaffold(
+        body: Center(
+          child: Text('ddd'), // Text 괄호 안의 쉼표
+        ), // Center 괄호 안의 쉼표
+      ),
     );
   }
 }
