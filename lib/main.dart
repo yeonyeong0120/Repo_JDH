@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// 나중에 여기다 화면들 추가
+// 나중에 여기다 화면들 추가 할듯
 
 void main() {
   runApp(const MyApp());
@@ -14,7 +14,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '줍다행',
       theme: ThemeData(useMaterial3: true),
-      home: const Scaffold(body: Center(child: Text('줍다행 화면,,,'))),
+      home: const Scaffold(
+        body: Center(
+          child: Text('ddd'), // Text 괄호 안의 쉼표
+        ), // Center 괄호 안의 쉼표
+      ),
     );
   }
 }
