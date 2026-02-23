@@ -16,8 +16,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(useMaterial3: true),
       home: const Scaffold(
         body: Center(
-          child: Text('ddd'), // Text 괄호 안의 쉼표
-        ), // Center 괄호 안의 쉼표
+          child: Text('ddd'),
+        ),
       ),
     );
   }
