@@ -69,9 +69,9 @@ flutter:
     - assets/images/
   
   fonts:
-    - family: Pretendard
+    - family: NotoSansKR
       fonts:
-        - asset: assets/fonts/PretendardVariable.ttf
+        - asset: assets/fonts/NotoSansKR-VariableFont_wght.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// 나중에 여기다 화면들 추가 할듯
+// 나중에 여기다 화면들 추가
 
 void main() {
   runApp(const MyApp());
