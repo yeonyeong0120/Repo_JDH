@@ -1,4 +1,35 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ===== 위치 권한 ===== -->
+    <!-- 실시간 GPS 위치 추적 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- 네트워크 기반 위치 보조 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- 화면 Off 상태 백그라운드 GPS 유지 -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- ===== Foreground Service 권한 ===== -->
+    <!-- 백그라운드 GPS 서비스 실행 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Android 14 이상 위치 유형 명시 필수 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- ===== 카메라 권한 ===== -->
+    <!-- 쓰레기 봉투 촬영 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- ===== Health Connect 권한 ===== -->
+    <!-- 걸음수 인식 -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <!-- Health Connect 걸음수 읽기 -->
+    <uses-permission android:name="android.health.connect.permission.READ_STEPS" />
+    <!-- Health Connect 칼로리 읽기 -->
+    <uses-permission android:name="android.health.connect.permission.READ_TOTAL_CALORIES_BURNED" />
+
+    <!-- ===== 인터넷 권한 ===== -->
+    <!-- Firebase, FastAPI 서버 통신 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="repo_jdh"
         android:name="${applicationName}"
@@ -33,6 +64,13 @@
             <meta-data
                 android:name="com.google.android.geo.API_KEY"
                 android:value="" />
+        
+        <!-- Foreground Service 컴포넌트 등록 -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

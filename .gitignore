@@ -123,6 +123,9 @@ app.*.symbols
 .env
 *.env
 
+# .env.example은 팀 공유용 양식 파일로 추적 대상에 포함
+!.env.example
+
 # Firebase 설정 파일 (보안을 위해 깃허브 제외 권장)
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
