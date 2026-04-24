@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.repo_jdh"
+    namespace = "com.ploggo.app"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -17,7 +17,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.repo_jdh"
+        applicationId = "com.ploggo.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26

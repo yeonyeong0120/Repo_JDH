@@ -70,7 +70,7 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.login,
         builder: (context, state) =>
             const PlaceholderScreen(screenName: '로그인'),
-        // TODO: 실제 화면으로 교체
+        // TODO// 실제 화면으로 교체
         // builder: (context, state) => const LoginScreen(),
       ),
 
