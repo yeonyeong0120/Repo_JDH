@@ -1,4 +1,4 @@
-package com.example.repo_jdh
+package com.ploggo.app
 
 import io.flutter.embedding.android.FlutterActivity
 
