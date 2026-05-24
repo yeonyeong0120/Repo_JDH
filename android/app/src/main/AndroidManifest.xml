@@ -61,10 +61,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-            <meta-data
-                android:name="com.google.android.geo.API_KEY"
-                android:value="" />
-        
+
         <!-- Foreground Service 컴포넌트 등록 -->
         <service
             android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
