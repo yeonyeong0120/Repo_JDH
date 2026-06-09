@@ -2,13 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
-// ============================================================
-// 데이터 모델
-// ============================================================
 class DetectionResult {
   final String className;
   final double confidence;
-  final double x1, y1, x2, y2; // 정규화 좌표 (0.0~1.0)
+  final double x1, y1, x2, y2;
 
   DetectionResult({
     required this.className,
@@ -60,39 +57,29 @@ class DetectionResponse {
   }
 }
 
-// ============================================================
-// FastAPI 서버 통신
-// ============================================================
 class GarbageDetector {
-  // ⚠️ PC IP 주소 (변경 시 여기만 수정!)
   static const String SERVER_URL = 'http://16.146.251.126:8000';
 
-  /// 서버에 이미지 전송 → 탐지 결과 반환
   Future<DetectionResponse> detect(Uint8List imageBytes) async {
     final uri = Uri.parse('$SERVER_URL/detect');
     final request = http.MultipartRequest('POST', uri);
-
     request.files.add(http.MultipartFile.fromBytes(
       'file',
       imageBytes,
       filename: 'image.jpg',
     ));
-
     final streamed = await request.send().timeout(
       const Duration(seconds: 10),
     );
     final response = await http.Response.fromStream(streamed);
-
     if (response.statusCode != 200) {
       throw Exception('서버 오류: ${response.statusCode}');
     }
-
     final json =
-    jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
     return DetectionResponse.fromJson(json);
   }
 
-  /// 서버 헬스체크 (앱 시작 시 1번 호출)
   Future<bool> healthCheck() async {
     try {
       final response = await http
