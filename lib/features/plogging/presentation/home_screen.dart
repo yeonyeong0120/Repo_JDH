@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
 import 'package:repo_jdh/features/auth/data/auth_repository.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -14,10 +16,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  String _duration = '06:12';
-  String _distance = '0.12';
-  String _totalDistance = '0.9';
-  int _steps = 125;
+  final String _duration = '06:12';
+  final String _distance = '0.12';
+  final String _totalDistance = '0.9';
+  final int _steps = 125;
 
   String? _selectedButton;
   bool _isExpanded = false;
@@ -34,7 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _handleEndTap() {
     if (_selectedButton == 'end') {
       setState(() => _selectedButton = null);
-      _endPlogging();
+      context.push('/plogging/settlement');
     } else {
       setState(() => _selectedButton = 'end');
     }
@@ -59,8 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('로그아웃',
-                style: TextStyle(color: Colors.red)),
+            child: const Text('로그아웃', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -74,15 +75,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _openCamera() async {
     final result = await Navigator.push<Map<String, dynamic>?>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CameraDetectionScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const CameraDetectionScreen()),
     );
 
     if (result == null) return;
 
-    final Map<String, int> counts =
-        Map<String, int>.from(result['counts'] ?? {});
+    final Map<String, int> counts = Map<String, int>.from(
+      result['counts'] ?? {},
+    );
     final String? imagePath = result['imagePath'];
     final Map<String, dynamic>? locationData =
         result['location'] as Map<String, dynamic>?;
@@ -101,8 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
                 SizedBox(width: 16),
@@ -118,13 +117,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     try {
-      await ref.read(firestoreRepositoryProvider).saveDetection(
-            counts,
-            imageUrl: imageUrl,
-            location: locationData,
-          );
+      await ref
+          .read(firestoreRepositoryProvider)
+          .saveDetection(counts, imageUrl: imageUrl, location: locationData);
     } catch (e) {
-      print('Firestore 저장 실패: $e');
+      debugPrint('Firestore 저장 실패: $e');
     }
 
     await ref.read(ploggingProvider.notifier).addCounts(counts);
@@ -167,8 +164,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text('📏 거리: $_distance / $_totalDistance km'),
             Text('🚶 걸음: $_steps 보'),
             const Divider(),
-            const Text('수거한 쓰레기:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              '수거한 쓰레기:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             Text('🧴 플라스틱: ${totalCounts['plastic']}개'),
             Text('🥫 캔: ${totalCounts['can']}개'),
@@ -177,9 +176,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text('🗑️ 일반: ${totalCounts['trash']}개'),
             const SizedBox(height: 8),
             Text(
-              '총 ${registerCount}회 등록',
+              '총 $registerCount회 등록',
               style: const TextStyle(
-                  color: Colors.green, fontWeight: FontWeight.bold),
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -201,8 +202,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 );
               }
             },
-            child: const Text('초기화',
-                style: TextStyle(color: Colors.red)),
+            child: const Text('초기화', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -219,7 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -236,14 +236,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildStatBox(String value, String label) {
     return Column(
       children: [
-        Text(value,
-            style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label,
-            style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
       ],
     );
   }
@@ -256,17 +258,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Text(emoji, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 2),
-            Text('$count',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: count > 0
-                        ? Colors.green[700]
-                        : Colors.grey[600])),
+            Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: count > 0 ? Colors.green[700] : Colors.grey[600],
+              ),
+            ),
           ],
         ),
-        Text(label,
-            style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
       ],
     );
   }
@@ -276,9 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final ploggingState = ref.watch(ploggingProvider);
 
     if (ploggingState.isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final totalCounts = ploggingState.totalCounts;
@@ -328,7 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -337,31 +337,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Column(
                         children: [
                           Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                            padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
                             child: Row(
                               children: [
-                                Expanded(
-                                    child:
-                                        _buildStatBox(_duration, '시간')),
+                                Expanded(child: _buildStatBox(_duration, '시간')),
                                 Expanded(
                                   child: _buildStatBox(
-                                      '$_distance/$_totalDistance',
-                                      '거리(km)'),
+                                    '$_distance/$_totalDistance',
+                                    '거리(km)',
+                                  ),
                                 ),
-                                Expanded(
-                                    child: _buildStatBox(
-                                        '$_steps', '걸음')),
+                                Expanded(child: _buildStatBox('$_steps', '걸음')),
                                 InkWell(
                                   onTap: () => setState(
-                                      () => _isExpanded = !_isExpanded),
+                                    () => _isExpanded = !_isExpanded,
+                                  ),
                                   borderRadius: BorderRadius.circular(20),
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: AnimatedRotation(
                                       turns: _isExpanded ? 0.5 : 0,
                                       duration: const Duration(
-                                          milliseconds: 200),
+                                        milliseconds: 200,
+                                      ),
                                       child: Icon(
                                         Icons.keyboard_arrow_down,
                                         color: Colors.grey[700],
@@ -380,26 +378,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ? Column(
                                     children: [
                                       const Divider(
-                                          height: 1,
-                                          indent: 16,
-                                          endIndent: 16),
+                                        height: 1,
+                                        indent: 16,
+                                        endIndent: 16,
+                                      ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 12),
+                                          horizontal: 8,
+                                          vertical: 12,
+                                        ),
                                         child: Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceAround,
                                           children: [
-                                            _buildTrashCount('🧴',
-                                                '플라스틱', totalCounts['plastic'] ?? 0),
-                                            _buildTrashCount('🥫', '캔',
-                                                totalCounts['can'] ?? 0),
-                                            _buildTrashCount('📄', '종이',
-                                                totalCounts['paper'] ?? 0),
-                                            _buildTrashCount('🪟', '유리',
-                                                totalCounts['glass'] ?? 0),
-                                            _buildTrashCount('🗑️', '일반',
-                                                totalCounts['trash'] ?? 0),
+                                            _buildTrashCount(
+                                              '🧴',
+                                              '플라스틱',
+                                              totalCounts['plastic'] ?? 0,
+                                            ),
+                                            _buildTrashCount(
+                                              '🥫',
+                                              '캔',
+                                              totalCounts['can'] ?? 0,
+                                            ),
+                                            _buildTrashCount(
+                                              '📄',
+                                              '종이',
+                                              totalCounts['paper'] ?? 0,
+                                            ),
+                                            _buildTrashCount(
+                                              '🪟',
+                                              '유리',
+                                              totalCounts['glass'] ?? 0,
+                                            ),
+                                            _buildTrashCount(
+                                              '🗑️',
+                                              '일반',
+                                              totalCounts['trash'] ?? 0,
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -428,7 +444,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -444,35 +460,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut,
                               color: isCameraSelected
-                                  ? Colors.black87
+                                  ? AppColors.primary
                                   : Colors.white,
                               child: InkWell(
                                 onTap: _handleCameraTap,
                                 child: Center(
                                   child: _buildCameraButtonContent(
-                                      isCameraSelected, isEndSelected),
+                                    isCameraSelected,
+                                    isEndSelected,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                           if (_selectedButton == null)
                             Container(
-                                width: 1,
-                                height: 40,
-                                color: Colors.grey[300]),
+                              width: 1,
+                              height: 40,
+                              color: Colors.grey[300],
+                            ),
                           Expanded(
                             flex: endFlex,
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut,
                               color: isEndSelected
-                                  ? Colors.black87
+                                  ? AppColors.error
                                   : Colors.white,
                               child: InkWell(
                                 onTap: _handleEndTap,
                                 child: Center(
                                   child: _buildEndButtonContent(
-                                      isEndSelected, isCameraSelected),
+                                    isEndSelected,
+                                    isCameraSelected,
+                                  ),
                                 ),
                               ),
                             ),
@@ -491,7 +512,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildCameraButtonContent(bool isSelected, bool otherSelected) {
-    final Color textColor = isSelected ? Colors.white : Colors.black87;
+    // 선택됨 = 파랑 배경 위 흰색 / 미선택 = 흰 배경 위 파랑
+    final Color contentColor = isSelected ? Colors.white : AppColors.primary;
 
     if (isSelected) {
       return Padding(
@@ -499,23 +521,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.camera_alt, size: 20, color: textColor),
+            Icon(Icons.camera_alt, size: 20, color: contentColor),
             const SizedBox(width: 8),
             Flexible(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('카메라 촬영',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: textColor),
-                      overflow: TextOverflow.ellipsis),
-                  Text('한 번 더 누르세요',
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: textColor.withOpacity(0.7)),
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    '카메라 촬영',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: contentColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '한 번 더 누르세요',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: contentColor.withValues(alpha: 0.7),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
@@ -523,20 +551,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
     } else if (otherSelected) {
-      return Icon(Icons.camera_alt, size: 24, color: textColor);
+      return Icon(Icons.camera_alt, size: 24, color: contentColor);
     } else {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.camera_alt, size: 22, color: textColor),
+            Icon(Icons.camera_alt, size: 22, color: contentColor),
             const SizedBox(width: 8),
-            Text('카메라',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: textColor)),
+            Text(
+              '카메라',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: contentColor,
+              ),
+            ),
           ],
         ),
       );
@@ -544,38 +575,66 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildEndButtonContent(bool isSelected, bool otherSelected) {
+    // 선택됨 = 빨강 배경 위 흰색 / 미선택 = 흰 배경 위 빨강
     if (isSelected) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.power_settings_new,
-                size: 20, color: Colors.white),
-            const SizedBox(width: 8),
+            Icon(Icons.power_settings_new, size: 20, color: Colors.white),
+            SizedBox(width: 8),
             Flexible(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text('플로깅 종료',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
-                      overflow: TextOverflow.ellipsis),
-                  Text('한 번 더 누르세요',
-                      style: TextStyle(
-                          fontSize: 11, color: Colors.white70),
-                      overflow: TextOverflow.ellipsis),
+                children: [
+                  Text(
+                    '플로깅 종료',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '한 번 더 누르세요',
+                    style: TextStyle(fontSize: 11, color: Colors.white70),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
           ],
         ),
       );
+    } else if (otherSelected) {
+      // 카메라가 선택돼 종료가 좁아진 상태 → 아이콘만
+      return const Icon(
+        Icons.power_settings_new,
+        size: 24,
+        color: AppColors.error,
+      );
     } else {
-      return const Icon(Icons.power_settings_new,
-          size: 24, color: Colors.red);
+      // 아무것도 선택 안 됨 → 아이콘 + '종료' 글자
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.power_settings_new, size: 22, color: AppColors.error),
+            SizedBox(width: 8),
+            Text(
+              '종료',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.error,
+              ),
+            ),
+          ],
+        ),
+      );
     }
   }
 }

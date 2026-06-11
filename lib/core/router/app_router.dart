@@ -10,6 +10,13 @@ import 'package:repo_jdh/features/auth/presentation/nickname_setup_screen.dart';
 import 'package:repo_jdh/features/auth/data/user_profile_provider.dart';
 import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
 import 'package:repo_jdh/features/plogging/presentation/home_screen.dart';
+import 'package:repo_jdh/features/home/presentation/home_screen.dart'
+    as home_feature;
+import 'package:repo_jdh/features/community/presentation/group_screen.dart';
+import 'package:repo_jdh/features/mypage/presentation/activity_screen.dart';
+import 'package:repo_jdh/features/settings/presentation/menu_screen.dart';
+import 'package:repo_jdh/features/plogging/presentation/settlement_screen.dart';
+import 'package:repo_jdh/features/community/presentation/group_feed_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -27,14 +34,13 @@ class AppRoutes {
   static const visionResult = '/vision/result';
   static const reward = '/reward';
   static const news = '/news';
+  static const ploggingSettlement = '/plogging/settlement';
+  static const groupFeed = '/group/feed';
 }
 
 final isLoggedInProvider = Provider<bool>((ref) {
   final authState = ref.watch(authStateProvider);
-  return authState.maybeWhen(
-    data: (user) => user != null,
-    orElse: () => false,
-  );
+  return authState.maybeWhen(data: (user) => user != null, orElse: () => false);
 });
 
 @riverpod
@@ -50,8 +56,7 @@ GoRouter appRouter(Ref ref) {
     redirect: (context, state) {
       final loggingIn = state.matchedLocation == AppRoutes.login;
       // ✚ 추가
-      final settingNickname =
-          state.matchedLocation == AppRoutes.nicknameSetup;
+      final settingNickname = state.matchedLocation == AppRoutes.nicknameSetup;
 
       // 1) 로그인 체크
       if (!isLoggedIn) {
@@ -98,23 +103,19 @@ GoRouter appRouter(Ref ref) {
         routes: [
           GoRoute(
             path: AppRoutes.home,
-            builder: (context, state) =>
-                const PlaceholderScreen(screenName: '홈'),
+            builder: (context, state) => const home_feature.HomeScreen(),
           ),
           GoRoute(
             path: AppRoutes.group,
-            builder: (context, state) =>
-                const PlaceholderScreen(screenName: '그룹'),
+            builder: (context, state) => const GroupScreen(),
           ),
           GoRoute(
             path: AppRoutes.mypage,
-            builder: (context, state) =>
-                const PlaceholderScreen(screenName: '마이페이지'),
+            builder: (context, state) => const ActivityScreen(),
           ),
           GoRoute(
             path: AppRoutes.settings,
-            builder: (context, state) =>
-                const PlaceholderScreen(screenName: '설정'),
+            builder: (context, state) => const MenuScreen(),
           ),
         ],
       ),
@@ -132,6 +133,17 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.visionCamera,
         builder: (context, state) => const CameraDetectionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.ploggingSettlement,
+        builder: (context, state) => const SettlementScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.groupFeed,
+        builder: (context, state) {
+          final name = state.extra as String?; // 그룹 목록에서 그룹명 전달
+          return GroupFeedScreen(groupName: name ?? '그룹');
+        },
       ),
       GoRoute(
         path: AppRoutes.visionResult,
@@ -169,10 +181,11 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
           BottomNavigationBarItem(icon: Icon(Icons.group), label: '그룹'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle, size: 40), label: '플로깅'),
+            icon: Icon(Icons.add_circle, size: 40),
+            label: '플로깅',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: '내정보'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.settings), label: '설정'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
         ],
       ),
     );

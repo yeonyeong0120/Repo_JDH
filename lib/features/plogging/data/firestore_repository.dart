@@ -62,7 +62,9 @@ class FirestoreRepository {
 
   /// 2. 누적 카운트 업데이트
   Future<void> updateTotalCounts(
-      Map<String, int> totalCounts, int registerCount) async {
+    Map<String, int> totalCounts,
+    int registerCount,
+  ) async {
     final totalsDoc = _totalsDocRef;
     if (totalsDoc == null) {
       print('❌ 로그인 안 됨 — 누적 카운트 업데이트 스킵');
