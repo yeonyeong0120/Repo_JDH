@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 
 /// 줍다행 - 홈 탭 화면 (본문만)
 /// 하단 네비 / '시작' 버튼은 app_router.dart 의 ShellRoute(_ScaffoldWithBottomNav)가
 /// 공통으로 담당하므로 여기엔 넣지 않습니다.
 /// 위치: lib/features/home/presentation/home_screen.dart
+///
+/// ※ 아이콘 패키지 필요: flutter pub add material_symbols_icons
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -24,61 +27,74 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.appBG,
       // bottomNavigationBar 없음 — ShellRoute 가 처리
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTopArea(),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _buildActivityCard(),
-                    const SizedBox(height: 16),
-                    _buildTwoCards(),
-                    const SizedBox(height: 26),
-                  ],
-                ),
-              ),
-              _buildNeighborhood(),
-            ],
-          ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeaderWithCard(),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildTwoCards(),
+            ),
+            const SizedBox(height: 26),
+            _buildNeighborhood(),
+          ],
         ),
       ),
     );
   }
 
-  // ───────────────────────── 상단: 타이틀 + 주간 스트립 ─────────────────────────
-  Widget _buildTopArea() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primaryPale,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '줍다행',
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+  // ───────── 곡선 파란 헤더 + 현재활동 카드 (헤더가 카드 중간까지 내려옴) ─────────
+  Widget _buildHeaderWithCard() {
+    return Stack(
+      children: [
+        // 배경: 아래가 곡선인 파란 헤더 (현재활동 카드 중간까지)
+        ClipPath(
+          clipper: _BottomCurveClipper(),
+          child: Container(
+            height: 330,
+            width: double.infinity,
+            color: AppColors.primaryPale,
           ),
-          const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _days.map(_dayCell).toList(),
+        ),
+        // 앞쪽: 제목 + 주간 스트립 + 현재활동 카드
+        SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '줍다행',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: _days.map(_dayCell).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _buildActivityCard(),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -107,8 +123,8 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          // TODO: 실제 '새싹 화분' 아이콘(커스텀 PNG/SVG)으로 교체
-          Icon(Icons.local_florist, size: 26, color: sproutColor),
+          // 새싹 화분 (potted_plant: 이것만 weight 400)
+          Icon(Symbols.potted_plant, size: 26, weight: 400, color: sproutColor),
         ],
       ),
     );
@@ -121,7 +137,7 @@ class HomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardBG,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.cardShadowStrong,
+        boxShadow: AppColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,29 +168,33 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              // 프로필 아이콘 (크게)
               // TODO: 실제 사용자 프로필 이미지로 교체
               Container(
-                width: 64,
-                height: 64,
+                width: 74,
+                height: 74,
                 clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.primaryPale,
                 ),
                 child: const Icon(
-                  Icons.person,
+                  Symbols.person,
                   color: AppColors.textTertiary,
-                  size: 36,
+                  size: 46,
+                  weight: 300,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 18),
+          // 현재 레벨 박스 (회색 + 그림자)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primaryPale,
+              color: const Color(0xFFF1F2F4),
               borderRadius: BorderRadius.circular(16),
+              boxShadow: AppColors.cardShadow,
             ),
             child: Column(
               children: [
@@ -248,11 +268,11 @@ class HomeScreen extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         child: Row(
                           children: [
-                            _stat(Icons.directions_walk, '2000 보'),
+                            _stat(Symbols.directions_walk, '2000 보'),
                             const SizedBox(width: 14),
-                            _stat(Icons.delete_outline, '1.3 kg'),
+                            _stat(Symbols.delete, '1.3 kg'),
                             const SizedBox(width: 14),
-                            _stat(Icons.local_fire_department, '3012 kcal'),
+                            _stat(Symbols.local_fire_department, '3012 kcal'),
                           ],
                         ),
                       ),
@@ -271,7 +291,7 @@ class HomeScreen extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: AppColors.textTertiary),
+        Icon(icon, size: 16, weight: 300, color: AppColors.textTertiary),
         const SizedBox(width: 4),
         Text(
           text,
@@ -355,6 +375,7 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 뉴스 썸네일 (종이 뉴스 아이콘)
           // TODO: 실제 기사 썸네일 이미지로 교체
           Align(
             alignment: Alignment.centerRight,
@@ -366,8 +387,9 @@ class HomeScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
-                Icons.article_outlined,
-                size: 20,
+                Symbols.newspaper,
+                size: 22,
+                weight: 300,
                 color: AppColors.textTertiary,
               ),
             ),
@@ -394,7 +416,7 @@ class HomeScreen extends StatelessWidget {
                 radius: 10,
                 backgroundColor: AppColors.primaryPale,
                 child: Icon(
-                  Icons.person,
+                  Symbols.person,
                   size: 12,
                   color: AppColors.textTertiary,
                 ),
@@ -406,7 +428,7 @@ class HomeScreen extends StatelessWidget {
               ),
               Spacer(),
               Icon(
-                Icons.chevron_right,
+                Symbols.chevron_right,
                 color: AppColors.textTertiary,
                 size: 20,
               ),
@@ -424,19 +446,13 @@ class HomeScreen extends StatelessWidget {
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              Icon(Icons.location_on, color: AppColors.textPrimary, size: 22),
-              SizedBox(width: 6),
-              Text(
-                '우리동네는 지금',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+          child: Text(
+            '우리동네는 지금',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
         const SizedBox(height: 14),
@@ -447,17 +463,19 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: 4,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (_, i) => ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              // TODO: 실제 동네 활동 사진으로 교체 (Image.network 등)
-              child: Container(
-                width: 130,
+            // TODO: 실제 동네 활동 사진으로 교체 (Image.network 등)
+            itemBuilder: (_, i) => Container(
+              width: 130,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
                 color: AppColors.primaryPale,
-                child: const Icon(
-                  Icons.image,
-                  color: AppColors.textTertiary,
-                  size: 32,
-                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: AppColors.cardShadow,
+              ),
+              child: const Icon(
+                Symbols.image,
+                color: AppColors.textTertiary,
+                size: 32,
               ),
             ),
           ),
@@ -471,6 +489,27 @@ class HomeScreen extends StatelessWidget {
     borderRadius: BorderRadius.circular(20),
     boxShadow: AppColors.cardShadow,
   );
+}
+
+/// 헤더 아래쪽 곡선 클리퍼 (가운데가 살짝 더 내려오는 둥근 곡선)
+class _BottomCurveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final p = Path();
+    p.lineTo(0, size.height - 36);
+    p.quadraticBezierTo(
+      size.width / 2,
+      size.height,
+      size.width,
+      size.height - 36,
+    );
+    p.lineTo(size.width, 0);
+    p.close();
+    return p;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
 /// 주간 스트립 1칸 데이터

@@ -154,9 +154,9 @@ class AppColors {
   /// 카드 기본 그림자. 일반 카드에 사용.
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: const Color(0xFF000000).withValues(alpha: 0.04),
-      blurRadius: 16,
-      offset: const Offset(0, 4),
+      color: primaryDeep.withValues(alpha: 0.08), // #4A7FC8 8%
+      offset: const Offset(0, 6),
+      blurRadius: 18,
     ),
   ];
 

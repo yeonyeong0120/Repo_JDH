@@ -250,7 +250,7 @@ class _MenuScreenState extends State<MenuScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: AppColors.primary,
           ),
         ],

@@ -8,14 +8,14 @@ import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
 import 'package:repo_jdh/features/auth/data/auth_repository.dart';
 import 'package:go_router/go_router.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+class PloggingHomeScreen extends ConsumerStatefulWidget {
+  const PloggingHomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<PloggingHomeScreen> createState() => _PloggingHomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   final String _duration = '06:12';
   final String _distance = '0.12';
   final String _totalDistance = '0.9';
