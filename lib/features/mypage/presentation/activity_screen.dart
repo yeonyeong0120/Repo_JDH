@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 
 /// 줍다행 - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
@@ -513,19 +514,14 @@ class _GraphTabState extends State<_GraphTab> {
         const SizedBox(height: 18),
         Row(
           children: [
+            _summaryStat('걸음수', '8,240', AppColors.primary, 'track_thick.svg'),
+            _summaryStat('칼로리', '1,089', AppColors.error, 'fire_thick.svg'),
             _summaryStat(
-              '걸음수',
-              '8,240',
-              AppColors.primary,
-              Icons.directions_walk,
+              '수거량',
+              '1.3kg',
+              AppColors.mintDeep,
+              'garbage_thick.svg',
             ),
-            _summaryStat(
-              '칼로리',
-              '1,089',
-              AppColors.error,
-              Icons.local_fire_department,
-            ),
-            _summaryStat('수거량', '1.3kg', AppColors.mintDeep, Icons.recycling),
           ],
         ),
         const SizedBox(height: 22),
@@ -574,38 +570,53 @@ class _GraphTabState extends State<_GraphTab> {
     );
   }
 
-  Widget _summaryStat(String label, String value, Color color, IconData icon) {
+  Widget _summaryStat(String label, String value, Color color, String asset) {
     return Expanded(
-      child: Stack(
-        children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Icon(icon, size: 34, color: color.withValues(alpha: 0.12)),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: color,
+      child: SizedBox(
+        height: 48,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // 배경 아이콘: 회색 · 크게 · 글자 바로 옆(뒤)에 겹쳐 살짝 가려지게
+            Positioned(
+              left: 42,
+              top: 1,
+              child: SvgPicture.asset(
+                'assets/icons/$asset',
+                width: 46,
+                height: 46,
+                colorFilter: ColorFilter.mode(
+                  AppColors.textTertiary.withValues(alpha: 0.25),
+                  BlendMode.srcIn,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: color,
+            ),
+            // 글자(앞) : label-value 사이 바짝 붙임
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(height: 1),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
