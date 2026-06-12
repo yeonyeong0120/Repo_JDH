@@ -82,7 +82,7 @@ class GroupScreen extends StatelessWidget {
                 child: Text(
                   '같이 쓰레기 줍고 포인트 받아가자!',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     color: AppColors.textSecondary,
                   ),
                 ),
