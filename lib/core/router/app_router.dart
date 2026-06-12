@@ -20,7 +20,7 @@ import 'package:repo_jdh/features/mypage/presentation/activity_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/menu_screen.dart';
 import 'package:repo_jdh/features/plogging/presentation/settlement_screen.dart';
 import 'package:repo_jdh/features/community/presentation/group_feed_screen.dart';
-import 'package:repo_jdh/features/plogging/presentation/route_test_screen.dart';
+import 'package:repo_jdh/features/plogging/presentation/plogging_session_screen.dart';
 
 
 part 'app_router.g.dart';
@@ -117,8 +117,7 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: AppRoutes.ploggingRoute,
-        builder: (context, state) =>
-            const RouteTestScreen(),
+        builder: (context, state) => const PloggingSessionScreen(),
       ),
       GoRoute(
         path: AppRoutes.ploggingTracking,
@@ -377,7 +376,7 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
       case 1:
         context.go(AppRoutes.group);
       case 2:
-        context.push(AppRoutes.ploggingRoute); // 임시: 원래는 ploggingTracking
+        context.push(AppRoutes.ploggingRoute); // 플로깅 세션 화면(지도+경로+카메라)
       case 3:
         context.go(AppRoutes.mypage);
       case 4:
