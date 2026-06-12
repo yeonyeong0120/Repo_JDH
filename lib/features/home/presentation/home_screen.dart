@@ -267,7 +267,7 @@ class HomeScreen extends StatelessWidget {
                     const Text(
                       '이번주 플로깅 활동',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         color: AppColors.textSecondary,
                       ),
                     ),
@@ -301,12 +301,12 @@ class HomeScreen extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, weight: 300, color: AppColors.textTertiary),
+        Icon(icon, size: 20, weight: 300, color: const Color(0xFF777777)),
         const SizedBox(width: 4),
         Text(
           text,
           style: const TextStyle(
-            fontSize: 13,
+            fontSize: 17,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),

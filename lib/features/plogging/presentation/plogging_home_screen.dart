@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
 import 'package:repo_jdh/features/auth/data/auth_repository.dart';
-import 'package:go_router/go_router.dart';
 
 class PloggingHomeScreen extends ConsumerStatefulWidget {
   const PloggingHomeScreen({super.key});
@@ -21,12 +22,12 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   final String _totalDistance = '0.9';
   final int _steps = 125;
 
-  String? _selectedButton;
+  String? _selectedButton = 'camera';
   bool _isExpanded = false;
 
   void _handleCameraTap() {
     if (_selectedButton == 'camera') {
-      setState(() => _selectedButton = null);
+      // 이미 카메라가 선택(armed)된 상태면 탭 한 번으로 바로 촬영 (선택 유지)
       _openCamera();
     } else {
       setState(() => _selectedButton = 'camera');
@@ -36,7 +37,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   void _handleEndTap() {
     if (_selectedButton == 'end') {
       setState(() => _selectedButton = null);
-      context.push('/plogging/settlement');
+      _endPlogging();
     } else {
       setState(() => _selectedButton = 'end');
     }
@@ -213,20 +214,19 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     required IconData icon,
     required VoidCallback onPressed,
   }) {
+    const double buttonSize = 40; // ◀ 흰 동그라미 크기 (작게: 36 / 크게: 44)
+    const double iconSize = 20; // ◀ 아이콘 크기
     return Container(
-      decoration: BoxDecoration(
+      width: buttonSize,
+      height: buttonSize,
+      decoration: const BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: IconButton(
-        icon: Icon(icon, size: 22),
+        padding: EdgeInsets.zero,
+        iconSize: iconSize,
+        icon: Icon(icon),
         color: Colors.black87,
         onPressed: onPressed,
       ),
@@ -250,25 +250,35 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     );
   }
 
-  Widget _buildTrashCount(String emoji, String label, int count) {
+  Widget _buildTrashCount(String asset, String label, int count) {
+    final Color c = count > 0 ? AppColors.mintDeep : AppColors.textTertiary;
     return Column(
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 16)),
-            const SizedBox(width: 2),
+            SvgPicture.asset(
+              'assets/icons/$asset',
+              width: 18,
+              height: 18,
+              colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+            ),
+            const SizedBox(width: 4),
             Text(
               '$count',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: count > 0 ? Colors.green[700] : Colors.grey[600],
+                color: c,
               ),
             ),
           ],
         ),
-        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+        ),
       ],
     );
   }
@@ -284,8 +294,8 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     final totalCounts = ploggingState.totalCounts;
     final bool isCameraSelected = _selectedButton == 'camera';
     final bool isEndSelected = _selectedButton == 'end';
-    final int cameraFlex = isCameraSelected ? 7 : (isEndSelected ? 3 : 5);
-    final int endFlex = isEndSelected ? 7 : (isCameraSelected ? 3 : 5);
+    const Color cameraColor = Color(0xFF3468CE); // ◀ 카메라 색
+    const Color endColor = Color(0xFFE83737); // ◀ 종료 색
 
     return Scaffold(
       body: GestureDetector(
@@ -311,7 +321,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                       children: [
                         _buildCircleButton(
                           icon: Icons.arrow_back_ios_new,
-                          onPressed: _confirmLogout,
+                          onPressed: () => context.go('/home'),
                         ),
                         _buildCircleButton(
                           icon: Icons.help_outline,
@@ -342,10 +352,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                               children: [
                                 Expanded(child: _buildStatBox(_duration, '시간')),
                                 Expanded(
-                                  child: _buildStatBox(
-                                    '$_distance/$_totalDistance',
-                                    '거리(km)',
-                                  ),
+                                  child: _buildStatBox(_distance, '거리(km)'),
                                 ),
                                 Expanded(child: _buildStatBox('$_steps', '걸음')),
                                 InkWell(
@@ -377,10 +384,12 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                             child: _isExpanded
                                 ? Column(
                                     children: [
-                                      const Divider(
+                                      Divider(
                                         height: 1,
+                                        thickness: 1,
                                         indent: 16,
                                         endIndent: 16,
+                                        color: AppColors.divider,
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -392,27 +401,27 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                                               MainAxisAlignment.spaceAround,
                                           children: [
                                             _buildTrashCount(
-                                              '🧴',
+                                              'plastic_cup.svg',
                                               '플라스틱',
                                               totalCounts['plastic'] ?? 0,
                                             ),
                                             _buildTrashCount(
-                                              '🥫',
+                                              'beer_can_thin.svg',
                                               '캔',
                                               totalCounts['can'] ?? 0,
                                             ),
                                             _buildTrashCount(
-                                              '📄',
+                                              'boxes.svg',
                                               '종이',
                                               totalCounts['paper'] ?? 0,
                                             ),
                                             _buildTrashCount(
-                                              '🪟',
+                                              'broken_glass_thin.svg',
                                               '유리',
                                               totalCounts['glass'] ?? 0,
                                             ),
                                             _buildTrashCount(
-                                              '🗑️',
+                                              'garbage_thin.svg',
                                               '일반',
                                               totalCounts['trash'] ?? 0,
                                             ),
@@ -438,69 +447,100 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(40, 0, 40, 16),
-                  child: Container(
-                    height: 64,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 토글 알약: 바깥은 하나, 선택된 쪽이 둥근 컬러 알약으로 채워짐
+                      SizedBox(
+                        height: 54,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final double totalW = constraints.maxWidth;
+                            // 선택된 쪽이 넓어짐 (카메라 0.66 / 종료 0.34 / 둘 다 X 0.5)
+                            final double cameraRatio = isCameraSelected
+                                ? 0.66
+                                : (isEndSelected ? 0.34 : 0.5);
+                            return TweenAnimationBuilder<double>(
+                              tween: Tween<double>(end: cameraRatio),
+                              duration: const Duration(milliseconds: 380),
+                              curve: Curves.easeOutCubic,
+                              builder: (context, ratio, _) {
+                                final double cameraW = totalW * ratio;
+                                final double endW = totalW - cameraW;
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(27),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(27),
+                                    child: Stack(
+                                      children: [
+                                        // 선택된 쪽 컬러 알약 (안쪽 경계가 둥글게)
+                                        if (_selectedButton != null)
+                                          Positioned(
+                                            top: 0,
+                                            bottom: 0,
+                                            left: isCameraSelected
+                                                ? 0
+                                                : cameraW,
+                                            width: isCameraSelected
+                                                ? cameraW
+                                                : endW,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: isCameraSelected
+                                                    ? cameraColor
+                                                    : endColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(27),
+                                              ),
+                                            ),
+                                          ),
+                                        // 라벨 + 탭 영역
+                                        Row(
+                                          children: [
+                                            SizedBox(
+                                              width: cameraW,
+                                              child: _buildSegmentLabel(
+                                                label: '카메라',
+                                                subtitle: '한 번 더 누르면 촬영됩니다',
+                                                selected: isCameraSelected,
+                                                baseColor: cameraColor,
+                                                onTap: _handleCameraTap,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: endW,
+                                              child: _buildSegmentLabel(
+                                                label: '종료',
+                                                subtitle: '한 번 더 누르면 종료됩니다',
+                                                selected: isEndSelected,
+                                                baseColor: endColor,
+                                                onTap: _handleEndTap,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: cameraFlex,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                              color: isCameraSelected
-                                  ? AppColors.primary
-                                  : Colors.white,
-                              child: InkWell(
-                                onTap: _handleCameraTap,
-                                child: Center(
-                                  child: _buildCameraButtonContent(
-                                    isCameraSelected,
-                                    isEndSelected,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (_selectedButton == null)
-                            Container(
-                              width: 1,
-                              height: 40,
-                              color: Colors.grey[300],
-                            ),
-                          Expanded(
-                            flex: endFlex,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                              color: isEndSelected
-                                  ? AppColors.error
-                                  : Colors.white,
-                              child: InkWell(
-                                onTap: _handleEndTap,
-                                child: Center(
-                                  child: _buildEndButtonContent(
-                                    isEndSelected,
-                                    isCameraSelected,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -511,130 +551,44 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     );
   }
 
-  Widget _buildCameraButtonContent(bool isSelected, bool otherSelected) {
-    // 선택됨 = 파랑 배경 위 흰색 / 미선택 = 흰 배경 위 파랑
-    final Color contentColor = isSelected ? Colors.white : AppColors.primary;
-
-    if (isSelected) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildSegmentLabel({
+    required String label,
+    required String subtitle,
+    required bool selected,
+    required Color baseColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.camera_alt, size: 20, color: contentColor),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '카메라 촬영',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: contentColor,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    '한 번 더 누르세요',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: contentColor.withValues(alpha: 0.7),
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (otherSelected) {
-      return Icon(Icons.camera_alt, size: 24, color: contentColor);
-    } else {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.camera_alt, size: 22, color: contentColor),
-            const SizedBox(width: 8),
             Text(
-              '카메라',
+              label,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: contentColor,
+                color: selected ? Colors.white : baseColor,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
-      );
-    }
-  }
-
-  Widget _buildEndButtonContent(bool isSelected, bool otherSelected) {
-    // 선택됨 = 빨강 배경 위 흰색 / 미선택 = 흰 배경 위 빨강
-    if (isSelected) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.power_settings_new, size: 20, color: Colors.white),
-            SizedBox(width: 8),
-            Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '플로깅 종료',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+            if (selected)
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.85),
                   ),
-                  Text(
-                    '한 번 더 누르세요',
-                    style: TextStyle(fontSize: 11, color: Colors.white70),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
           ],
         ),
-      );
-    } else if (otherSelected) {
-      // 카메라가 선택돼 종료가 좁아진 상태 → 아이콘만
-      return const Icon(
-        Icons.power_settings_new,
-        size: 24,
-        color: AppColors.error,
-      );
-    } else {
-      // 아무것도 선택 안 됨 → 아이콘 + '종료' 글자
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.power_settings_new, size: 22, color: AppColors.error),
-            SizedBox(width: 8),
-            Text(
-              '종료',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.error,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+      ),
+    );
   }
 }
