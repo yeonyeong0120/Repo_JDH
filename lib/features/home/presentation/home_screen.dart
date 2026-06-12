@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 
@@ -100,9 +101,11 @@ class HomeScreen extends StatelessWidget {
 
   Widget _dayCell(_Day d) {
     final numberColor = d.danger
-        ? AppColors.error
-        : (d.today ? AppColors.textPrimary : AppColors.textTertiary);
-    final sproutColor = d.active ? AppColors.primary : AppColors.primaryLight;
+        ? const Color.fromARGB(255, 243, 111, 102)
+        : const Color.fromARGB(255, 49, 49, 49);
+    final sproutColor = d.active
+        ? AppColors.primary
+        : const Color.fromARGB(255, 151, 151, 151);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       decoration: d.today
@@ -124,7 +127,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           // 새싹 화분 (potted_plant: 이것만 weight 400)
-          Icon(Symbols.potted_plant, size: 26, weight: 400, color: sproutColor),
+          Icon(Symbols.potted_plant, size: 26, weight: 500, color: sproutColor),
         ],
       ),
     );
@@ -163,7 +166,14 @@ class HomeScreen extends StatelessWidget {
                           color: AppColors.textTertiary,
                         ),
                       ),
-                      TextSpan(text: '\n현재 활동'),
+
+                      TextSpan(
+                        text: '\n현재 활동',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -192,7 +202,7 @@ class HomeScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F2F4),
+              color: const Color.fromARGB(255, 243, 243, 243),
               borderRadius: BorderRadius.circular(16),
               boxShadow: AppColors.cardShadow,
             ),
@@ -268,7 +278,7 @@ class HomeScreen extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         child: Row(
                           children: [
-                            _stat(Symbols.directions_walk, '2000 보'),
+                            _stat(Symbols.steps, '2000 보'),
                             const SizedBox(width: 14),
                             _stat(Symbols.delete, '1.3 kg'),
                             const SizedBox(width: 14),
@@ -379,20 +389,7 @@ class HomeScreen extends StatelessWidget {
           // TODO: 실제 기사 썸네일 이미지로 교체
           Align(
             alignment: Alignment.centerRight,
-            child: Container(
-              width: 54,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primaryPale,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Symbols.newspaper,
-                size: 22,
-                weight: 300,
-                color: AppColors.textTertiary,
-              ),
-            ),
+            child: SvgPicture.asset('assets/icons/news.svg', height: 40),
           ),
           const SizedBox(height: 10),
           const Text(

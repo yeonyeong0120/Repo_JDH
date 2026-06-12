@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
@@ -155,6 +156,35 @@ GoRouter appRouter(Ref ref) {
   );
 }
 
+class _BumpTopArcPainter extends CustomPainter {
+  final double bumpRise;
+  final Color color;
+  const _BumpTopArcPainter({required this.bumpRise, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = size.width / 2; // 혹 반지름
+    final dy = bumpRise - r; // 원 중심 기준 바 윗선 위치
+    final half = math.sqrt(r * r - dy * dy);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.round;
+    final path = Path()
+      ..moveTo(r - half, bumpRise)
+      ..arcToPoint(
+        Offset(r + half, bumpRise),
+        radius: Radius.circular(r),
+        clockwise: true, // ← 만약 곡선이 아래로 패이면 false로 바꾸세요
+      );
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _ScaffoldWithBottomNav extends StatelessWidget {
   final Widget child;
   const _ScaffoldWithBottomNav({required this.child});
@@ -189,70 +219,69 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // 흰색 바 (모서리20 + 회색 구분선, 그림자 없음)
+          // 흰 바 + 회색 테두리 (둥근 모서리까지 그대로 따라감)
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              child: Container(
-                height: _barHeight + bottomInset,
+            child: Container(
+              height: _barHeight + bottomInset,
+              padding: EdgeInsets.only(bottom: bottomInset),
+              decoration: BoxDecoration(
                 color: Colors.white,
-                padding: EdgeInsets.only(bottom: bottomInset),
-                child: Column(
-                  children: [
-                    Container(height: 1, color: AppColors.divider), // 회색 구분선
-                    Expanded(
-                      // ▼ 간격: _centerGap(가운데) / _itemGap(좌우) 로 조절
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _navItem(context, 0, Symbols.home, '홈', current),
-                          const SizedBox(width: _itemGap),
-                          _navItem(
-                            context,
-                            1,
-                            Symbols.diversity_1,
-                            '그룹',
-                            current,
-                          ),
-                          const SizedBox(width: _centerGap), // 가운데 시작버튼 자리
-                          _navItem(context, 3, Symbols.person, '내 활동', current),
-                          const SizedBox(width: _itemGap),
-                          _navItem(
-                            context,
-                            4,
-                            Symbols.more_horiz,
-                            '메뉴',
-                            current,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
                 ),
+                border: Border.all(color: AppColors.divider, width: 1),
+              ),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _navItem(context, 0, Symbols.home, '홈', current),
+                        const SizedBox(width: _itemGap),
+                        _navItem(
+                          context,
+                          1,
+                          Symbols.diversity_1,
+                          '그룹',
+                          current,
+                        ),
+                        const SizedBox(width: _centerGap),
+                        _navItem(context, 3, Symbols.person, '내 활동', current),
+                        const SizedBox(width: _itemGap),
+                        _navItem(context, 4, Symbols.more_horiz, '메뉴', current),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          // 흰 혹 + 파란 시작 버튼 (바 위로 _bumpRise 만큼만 올라옴, 그림자 없음)
+          // 둥근 흰 혹 + 파란 시작 버튼 (테두리 없음 → 네모 선 안 생김)
           Positioned(
             top: -_bumpRise,
             left: 0,
             right: 0,
             child: Center(
-              child: Container(
-                width: _startBumpSize,
-                height: _startBumpSize,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
+              child: CustomPaint(
+                foregroundPainter: _BumpTopArcPainter(
+                  bumpRise: _bumpRise,
+                  color: AppColors.divider,
                 ),
-                child: _startButton(context),
+                child: Container(
+                  width: _startBumpSize,
+                  height: _startBumpSize,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: _startButton(context),
+                ),
               ),
             ),
           ),
