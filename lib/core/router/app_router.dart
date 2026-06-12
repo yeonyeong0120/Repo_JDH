@@ -20,6 +20,8 @@ import 'package:repo_jdh/features/mypage/presentation/activity_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/menu_screen.dart';
 import 'package:repo_jdh/features/plogging/presentation/settlement_screen.dart';
 import 'package:repo_jdh/features/community/presentation/group_feed_screen.dart';
+import 'package:repo_jdh/features/plogging/presentation/route_test_screen.dart';
+
 
 part 'app_router.g.dart';
 
@@ -116,7 +118,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.ploggingRoute,
         builder: (context, state) =>
-            const PlaceholderScreen(screenName: '경로 추천'),
+            const RouteTestScreen(),
       ),
       GoRoute(
         path: AppRoutes.ploggingTracking,
@@ -375,7 +377,7 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
       case 1:
         context.go(AppRoutes.group);
       case 2:
-        context.push(AppRoutes.ploggingTracking);
+        context.push(AppRoutes.ploggingRoute); // 임시: 원래는 ploggingTracking
       case 3:
         context.go(AppRoutes.mypage);
       case 4:
