@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:repo_jdh/core/theme/app_theme.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';          // 추가
+import 'package:flutter_naver_map/flutter_naver_map.dart';    // 추가
+
+
 // 나중에 여기다 추가
 
 // main 함수는 async로 변경한다
@@ -16,8 +20,14 @@ Future<void> main() async {
   // android/app/google-services.json 파일을 자동으로 읽어 연결한다
   await Firebase.initializeApp();
 
-  // TODO: STEP 6 완료 후 dotenv 로드 코드를 이곳에 추가한다
-  // await dotenv.load(fileName: ".env");
+  // .env 로드 (아래 네이버 init이 .env 값을 쓰므로 먼저 호출)
+  await dotenv.load(fileName: ".env");
+
+  // 네이버 지도 초기화
+  await FlutterNaverMap().init(
+    clientId: dotenv.env['NAVER_MAP_CLIENT_ID']!,
+    onAuthFailed: (ex) => debugPrint('네이버 지도 인증 실패: $ex'),
+  );
 
   runApp(const ProviderScope(child: MyApp()));
 }
