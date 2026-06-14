@@ -376,7 +376,7 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
       case 1:
         context.go(AppRoutes.group);
       case 2:
-        context.push(AppRoutes.ploggingRoute); // 플로깅 세션 화면(지도+경로+카메라)
+        context.push(AppRoutes.ploggingRoute); // 시작 → 플로깅 준비 화면(지도+현재위치+도착지+경로)
       case 3:
         context.go(AppRoutes.mypage);
       case 4:
