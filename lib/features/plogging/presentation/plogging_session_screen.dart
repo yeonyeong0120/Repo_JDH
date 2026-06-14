@@ -126,11 +126,16 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
     _render();
   }
 
-  // 지도 탭 → 도착지 설정/갱신.
+  // 지도 탭 → 도착지 설정/갱신 → 경로 자동 추천.
   void _onMapTapped(NPoint point, NLatLng latLng) {
     ref.read(destinationProvider.notifier).state =
         (latLng.latitude, latLng.longitude);
-    _render();
+    // 새 요청 시작 전에 이전 추천 경로를 비워 stale 폴리라인이 남지 않게 한다.
+    ref.read(routeNotifierProvider.notifier).reset();
+    _render(); // 이 시점엔 출발·도착 마커만 그려진다(경로 없음).
+    // 도착지를 설정/이동하면 경로를 자동으로 다시 추천한다.
+    // TODO(추후 디바운스 검토): 짧은 시간 연속 탭 시 요청이 몰리므로 디바운스 적용 검토.
+    _requestRoute();
   }
 
   // 현재 상태(출발지·도착지·추천 결과)를 지도에 통째로 다시 그린다.
@@ -184,15 +189,7 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
           ),
         );
       }
-      for (final h in result.k3Hotspots) {
-        overlays.add(
-          NMarker(
-            id: 'hotspot_${h.hotspotId}',
-            position: NLatLng(h.latitude, h.longitude),
-            caption: NOverlayCaption(text: 'S_i ${h.sI.toStringAsFixed(1)}'),
-          ),
-        );
-      }
+      // k3 핫스팟은 지도에 마커로 표시하지 않는다(경로 폴리라인만 노출).
     }
 
     if (overlays.isNotEmpty) controller.addOverlayAll(overlays);
@@ -262,26 +259,15 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
               data: (result) => _buildStatusText(originAsync, destination, result),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: routeState.isLoading ? null : _requestRoute,
-                    icon: const Icon(Icons.directions),
-                    label: Text(
-                      routeState.valueOrNull == null ? '경로 받기' : '다시 받기',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // 카메라 버튼: 기존 YOLO 카메라 화면으로 이동.
-                IconButton.filledTonal(
-                  onPressed: () => context.push(AppRoutes.visionCamera),
-                  icon: const Icon(Icons.camera_alt),
-                  tooltip: '쓰레기 인증 카메라',
-                  iconSize: 26,
-                ),
-              ],
+            // 플로깅 시작: 도착지가 설정돼야 활성화한다(준비 → 시작 흐름).
+            // 도착지·경로는 Riverpod provider로 공유되므로 추적 화면이 동일 상태를 watch한다.
+            // TODO(정식 출시): '경로 추천 성공 시에만 시작 가능'으로 조이기 검토.
+            FilledButton.icon(
+              onPressed: destination == null
+                  ? null
+                  : () => context.push(AppRoutes.ploggingTracking),
+              icon: const Icon(Icons.directions_run),
+              label: const Text('플로깅 시작'),
             ),
           ],
         ),
@@ -323,7 +309,7 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
       loading: () => const Text('현재 위치를 확인하는 중...'),
       error: (_, __) => const Text('현재 위치를 가져오지 못했습니다. 위치 권한을 확인해 주세요.'),
       data: (_) => Text(
-        destination == null ? '지도를 탭해 도착지를 선택하세요.' : '도착지가 설정되었습니다. 경로를 받아보세요.',
+        destination == null ? '지도를 탭해 도착지를 선택하세요.' : '도착지가 설정되었습니다.',
       ),
     );
   }
