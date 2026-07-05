@@ -8,12 +8,37 @@ import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
 import 'package:repo_jdh/features/auth/data/auth_repository.dart';
+import 'package:repo_jdh/features/plogging/presentation/settlement_screen.dart';
+import 'package:repo_jdh/core/router/app_router.dart';
 
 class PloggingHomeScreen extends ConsumerStatefulWidget {
   const PloggingHomeScreen({super.key});
 
   @override
   ConsumerState<PloggingHomeScreen> createState() => _PloggingHomeScreenState();
+}
+
+Widget _buildCircleButton({
+  required IconData icon,
+  required VoidCallback onPressed,
+}) {
+  const double buttonSize = 40; // 흰 동그라미 크기
+  const double iconSize = 20;
+  return Container(
+    width: buttonSize,
+    height: buttonSize,
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+    ),
+    child: IconButton(
+      padding: EdgeInsets.zero,
+      iconSize: iconSize,
+      icon: Icon(icon),
+      color: Colors.black87,
+      onPressed: onPressed,
+    ),
+  );
 }
 
 class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
@@ -36,17 +61,31 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
 
   void _handleEndTap() {
     if (_selectedButton == 'end') {
-      setState(() => _selectedButton = null);
-      _endPlogging();
+      _endPlogging(); // null로 안 만듦 → '아무것도 선택 안 함' 상태 없음
     } else {
       setState(() => _selectedButton = 'end');
     }
   }
 
-  void _clearSelection() {
-    if (_selectedButton != null) {
-      setState(() => _selectedButton = null);
-    }
+  void _showGuide() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('플로깅 안내'),
+        content: const Text(
+          '• 카메라를 눌러 쓰레기를 촬영하면 자동으로 종류가 인식돼요.\n'
+          '• 한 번 더 누르면 촬영, 종료도 한 번 더 누르면 끝나요.\n'
+          '• 상단 카드를 누르면 수거 상세를 볼 수 있어요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _confirmLogout() async {
@@ -149,88 +188,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   }
 
   void _endPlogging() {
-    final ploggingState = ref.read(ploggingProvider);
-    final totalCounts = ploggingState.totalCounts;
-    final registerCount = ploggingState.registerCount;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('🎉 플로깅 종료'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('⏱️ 시간: $_duration'),
-            Text('📏 거리: $_distance / $_totalDistance km'),
-            Text('🚶 걸음: $_steps 보'),
-            const Divider(),
-            const Text(
-              '수거한 쓰레기:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text('🧴 플라스틱: ${totalCounts['plastic']}개'),
-            Text('🥫 캔: ${totalCounts['can']}개'),
-            Text('📄 종이: ${totalCounts['paper']}개'),
-            Text('🪟 유리: ${totalCounts['glass']}개'),
-            Text('🗑️ 일반: ${totalCounts['trash']}개'),
-            const SizedBox(height: 8),
-            Text(
-              '총 $registerCount회 등록',
-              style: const TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('계속하기'),
-          ),
-          TextButton(
-            onPressed: () async {
-              await ref.read(ploggingProvider.notifier).reset();
-              if (mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('🔄 초기화 완료!'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            },
-            child: const Text('초기화', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCircleButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    const double buttonSize = 40; // ◀ 흰 동그라미 크기 (작게: 36 / 크게: 44)
-    const double iconSize = 20; // ◀ 아이콘 크기
-    return Container(
-      width: buttonSize,
-      height: buttonSize,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        padding: EdgeInsets.zero,
-        iconSize: iconSize,
-        icon: Icon(icon),
-        color: Colors.black87,
-        onPressed: onPressed,
-      ),
-    );
+    context.push(AppRoutes.ploggingSettlement); // 정산 화면으로 이동
   }
 
   Widget _buildStatBox(String value, String label) {
@@ -250,18 +208,25 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     );
   }
 
-  Widget _buildTrashCount(String asset, String label, int count) {
-    final Color c = count > 0 ? AppColors.mintDeep : AppColors.textTertiary;
+  Widget _buildTrashCount(
+    String asset,
+    String label,
+    int count, {
+    double size = 22,
+  }) {
+    final Color textColor = count > 0
+        ? AppColors.mintDeep
+        : AppColors.textTertiary;
     return Column(
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SvgPicture.asset(
-              'assets/icons/$asset',
-              width: 18,
-              height: 18,
-              colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+            SizedBox(
+              height: 26,
+              child: Center(
+                child: Image.asset('assets/icons/$asset', height: 22),
+              ),
             ),
             const SizedBox(width: 4),
             Text(
@@ -269,7 +234,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: c,
+                color: textColor,
               ),
             ),
           ],
@@ -294,12 +259,11 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     final totalCounts = ploggingState.totalCounts;
     final bool isCameraSelected = _selectedButton == 'camera';
     final bool isEndSelected = _selectedButton == 'end';
-    const Color cameraColor = Color(0xFF3468CE); // ◀ 카메라 색
+    const Color cameraColor = Color(0xFF0C7D5E); // ◀ 카메라 색
     const Color endColor = Color(0xFFE83737); // ◀ 종료 색
 
     return Scaffold(
       body: GestureDetector(
-        onTap: _clearSelection,
         child: Stack(
           children: [
             Positioned.fill(
@@ -317,6 +281,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildCircleButton(
@@ -325,7 +290,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                         ),
                         _buildCircleButton(
                           icon: Icons.help_outline,
-                          onPressed: () {},
+                          onPressed: () => _showGuide(),
                         ),
                       ],
                     ),
@@ -401,27 +366,29 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                                               MainAxisAlignment.spaceAround,
                                           children: [
                                             _buildTrashCount(
-                                              'plastic_cup.svg',
+                                              'plastic.png',
                                               '플라스틱',
                                               totalCounts['plastic'] ?? 0,
+                                              size: 28,
                                             ),
                                             _buildTrashCount(
-                                              'beer_can_thin.svg',
+                                              'can.png',
                                               '캔',
                                               totalCounts['can'] ?? 0,
-                                            ),
+                                            ), // 22 기본
                                             _buildTrashCount(
-                                              'boxes.svg',
+                                              'paper.png',
                                               '종이',
                                               totalCounts['paper'] ?? 0,
                                             ),
                                             _buildTrashCount(
-                                              'broken_glass_thin.svg',
+                                              'bottle.png',
                                               '유리',
                                               totalCounts['glass'] ?? 0,
+                                              size: 28,
                                             ),
                                             _buildTrashCount(
-                                              'garbage_thin.svg',
+                                              'trash.png',
                                               '일반',
                                               totalCounts['trash'] ?? 0,
                                             ),
@@ -449,6 +416,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                   padding: const EdgeInsets.fromLTRB(40, 0, 40, 16),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 토글 알약: 바깥은 하나, 선택된 쪽이 둥근 컬러 알약으로 채워짐
                       SizedBox(

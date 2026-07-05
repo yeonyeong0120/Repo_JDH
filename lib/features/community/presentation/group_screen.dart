@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'group_detail_screen.dart';
+import 'group_search_screen.dart';
+import 'group_create_screen.dart';
 
 /// 줍다행 - 그룹 화면 (그룹 목록 / 메인 홈)
 /// 카드 탭 → 그룹 세부 피드(/group/feed)로 이동.
@@ -25,7 +28,7 @@ class GroupScreen extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
@@ -35,7 +38,7 @@ class GroupScreen extends StatelessWidget {
                   ..._myGroups.map(
                     (g) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _groupCard(context, g),
+                      child: _groupCard(context, g, isMine: true),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -44,7 +47,7 @@ class GroupScreen extends StatelessWidget {
                   ..._otherGroups.map(
                     (g) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _groupCard(context, g),
+                      child: _groupCard(context, g, isMine: false),
                     ),
                   ),
                 ],
@@ -56,7 +59,7 @@ class GroupScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -80,16 +83,34 @@ class GroupScreen extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  '같이 쓰레기 줍고 포인트 받아가자!',
+                  '같이 쓰레기 줍고 포인트도 받아가자!',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
                   ),
                 ),
               ),
-              _iconButton(Icons.search),
+              _iconButton(
+                Icons.search,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        GroupSearchScreen(alreadyInGroup: _myGroups.isNotEmpty),
+                  ),
+                ),
+              ),
               const SizedBox(width: 8),
-              _iconButton(Icons.add),
+              _iconButton(
+                Icons.add,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        GroupCreateScreen(alreadyInGroup: _myGroups.isNotEmpty),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -97,17 +118,19 @@ class GroupScreen extends StatelessWidget {
     );
   }
 
-  Widget _iconButton(IconData icon) {
-    // TODO: onTap 연결 (검색 / 그룹 만들기)
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: AppColors.cardBG,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: AppColors.cardShadow,
+  Widget _iconButton(IconData icon, {required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppColors.cardBG,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: AppColors.cardShadow,
+        ),
+        child: Icon(icon, color: AppColors.textSecondary, size: 22),
       ),
-      child: Icon(icon, color: AppColors.textSecondary, size: 22),
     );
   }
 
@@ -122,9 +145,28 @@ class GroupScreen extends StatelessWidget {
     );
   }
 
-  Widget _groupCard(BuildContext context, _Group g) {
+  Widget _groupCard(BuildContext context, _Group g, {bool isMine = false}) {
     return GestureDetector(
-      onTap: () => context.push('/group/feed', extra: g.name),
+      onTap: () {
+        if (isMine) {
+          // 내 그룹 → 채팅방(그룹 피드)
+          context.push('/group/feed', extra: g.name);
+        } else {
+          // 다른 동네 그룹 → 소개/가입 화면
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => GroupDetailScreen(
+                name: g.name,
+                region: g.region,
+                meta: g.meta,
+                // TODO: 실제 "내 그룹 소속 여부" 데이터로 교체
+                alreadyInGroup: _myGroups.isNotEmpty,
+              ),
+            ),
+          );
+        }
+      },
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -187,9 +229,5 @@ class _Group {
   final String name;
   final String region;
   final String meta;
-  const _Group(
-    this.name, {
-    this.region = '00구 00동',
-    this.meta = '00명 · 오늘 활동 인원 0명',
-  });
+  const _Group(this.name) : meta = '00명 · 오늘 활동 인원 0명', region = '00구 00동';
 }

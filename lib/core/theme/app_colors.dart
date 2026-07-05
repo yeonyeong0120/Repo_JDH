@@ -9,17 +9,10 @@ class AppColors {
   // PRIMARY - 파스텔 블루 (메인 컬러)
   // ========================================================
 
-  /// 메인 컬러. 버튼·강조·활성 탭에 사용.
-  static const Color primary = Color(0xFF6BA3E8);
-
-  /// 진한 메인. 텍스트 강조, 헤더 타이틀에 사용.
-  static const Color primaryDeep = Color(0xFF4A7FC8);
-
-  /// 연한 메인. 비활성 상태, 보조 강조에 사용.
-  static const Color primaryLight = Color(0xFFA8C9F0);
-
-  /// 매우 연한 메인. 배경 틴트, 카드 배경 일부에 사용.
-  static const Color primaryPale = Color(0xFFE3EFFB);
+  static const Color primary = Color(0xFF27AC88); // 14A57D↔3AB295 중간
+  static const Color primaryDeep = Color(0xFF12805F); // 살짝만 연하게
+  static const Color primaryLight = Color(0xFF95E4CD);
+  static const Color primaryPale = Color(0xFFEAF8F2);
 
   // ========================================================
   // SECONDARY - 코랄 (액센트 컬러)
@@ -154,9 +147,9 @@ class AppColors {
   /// 카드 기본 그림자. 일반 카드에 사용.
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: primaryDeep.withValues(alpha: 0.12), // 8% → 18% (더 진하게)
-      offset: const Offset(0, 6),
-      blurRadius: 14,
+      color: primaryDeep.withValues(alpha: 0.10), // 0.18 → 0.10
+      blurRadius: 10, // 14 → 10
+      offset: const Offset(0, 4), // (0,6) → (0,4)
     ),
   ];
 

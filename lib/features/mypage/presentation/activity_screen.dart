@@ -763,7 +763,7 @@ class _GraphTabState extends State<_GraphTab> {
 class _DonutPainter extends CustomPainter {
   final List<_Segment> segments;
   final double strokeWidth;
-  const _DonutPainter(this.segments, {this.strokeWidth = 22});
+  const _DonutPainter(this.segments) : strokeWidth = 22;
 
   @override
   void paint(Canvas canvas, Size size) {

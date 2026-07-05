@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
+import 'package:repo_jdh/features/mypage/presentation/my_impact_screen.dart';
 
 /// 줍다행 - 홈 탭 화면 (본문만)
 /// 하단 네비 / '시작' 버튼은 app_router.dart 의 ShellRoute(_ScaffoldWithBottomNav)가
@@ -47,11 +49,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ───────── 곡선 파란 헤더 + 현재활동 카드 (헤더가 카드 중간까지 내려옴) ─────────
+  // ───────── 곡선 헤더 + 현재활동 카드 (헤더가 카드 중간까지 내려옴) ─────────
   Widget _buildHeaderWithCard() {
     return Stack(
       children: [
-        // 배경: 아래가 곡선인 파란 헤더 (현재활동 카드 중간까지)
+        // 배경: 아래가 곡선인 헤더 (현재활동 카드 중간까지)
         ClipPath(
           clipper: _BottomCurveClipper(),
           child: Container(
@@ -60,7 +62,7 @@ class HomeScreen extends StatelessWidget {
             color: AppColors.primaryPale,
           ),
         ),
-        // 앞쪽: 제목 + 주간 스트립 + 현재활동 카드
+        // 앞쪽: 인사 + 주간 스트립 + 현재활동 카드
         SafeArea(
           bottom: false,
           child: Column(
@@ -79,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: _days.map(_dayCell).toList(),
@@ -87,7 +89,7 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _buildActivityCard(),
@@ -166,7 +168,6 @@ class HomeScreen extends StatelessWidget {
                           color: AppColors.textTertiary,
                         ),
                       ),
-
                       TextSpan(
                         text: '\n현재 활동',
                         style: TextStyle(
@@ -198,11 +199,11 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          // 현재 레벨 박스 (회색 + 그림자)
+          // 현재 레벨 박스 (소프트 그린 + 그림자)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 243, 243, 243),
+              color: AppColors.primaryPale,
               borderRadius: BorderRadius.circular(16),
               boxShadow: AppColors.cardShadow,
             ),
@@ -321,9 +322,31 @@ class HomeScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: _streakCard()),
+          Expanded(
+            child: Builder(
+              builder: (context) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MyImpactScreen()),
+                ),
+                child: _streakCard(),
+              ),
+            ),
+          ),
           const SizedBox(width: 14),
-          Expanded(child: _tipCard()),
+          Expanded(
+            child: Builder(
+              builder: (context) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NewsFeedScreen()),
+                ),
+                child: _tipCard(),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -343,7 +366,7 @@ class HomeScreen extends StatelessWidget {
                   text: '5일 연속\n',
                   style: TextStyle(
                     fontSize: 24,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -367,11 +390,11 @@ class HomeScreen extends StatelessWidget {
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           // TODO: 줍댕이(물개) 캐릭터 이미지로 교체 (assets/images/jupdaengi.png)
           const Align(
             alignment: Alignment.centerRight,
-            child: Text('🦭', style: TextStyle(fontSize: 44)),
+            child: Text('🦭', style: TextStyle(fontSize: 52)),
           ),
         ],
       ),
@@ -386,10 +409,9 @@ class HomeScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 뉴스 썸네일 (종이 뉴스 아이콘)
-          // TODO: 실제 기사 썸네일 이미지로 교체
           Align(
             alignment: Alignment.centerRight,
-            child: SvgPicture.asset('assets/icons/news.svg', height: 40),
+            child: const Text('📰', style: TextStyle(fontSize: 44)),
           ),
           const SizedBox(height: 10),
           const Text(
