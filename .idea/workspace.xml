@@ -8,12 +8,10 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/router/app_router.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/router/app_router.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/theme/app_colors.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/theme/app_colors.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/community/data/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/presentation/login_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/presentation/login_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/community/presentation/group_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/community/presentation/group_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/features/home/presentation/home_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/home/presentation/home_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/plogging/presentation/home_screen.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/settings/presentation/menu_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/settings/presentation/menu_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,6 +56,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
@@ -65,9 +64,10 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;origin/f/uxui&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;io.flutter.project.isFirstOpen&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/flutter_project/Repo_JDH&quot;,
     &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
 }</component>

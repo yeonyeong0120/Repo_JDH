@@ -20,6 +20,7 @@ import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/features/plogging/domain/plogging_session_providers.dart';
 import 'package:repo_jdh/features/plogging/domain/route_models.dart';
 import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
+import 'package:repo_jdh/core/theme/app_colors.dart';
 
 class PloggingSessionScreen extends ConsumerStatefulWidget {
   const PloggingSessionScreen({super.key});
@@ -73,7 +74,10 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
         children: [
           NaverMap(
             options: const NaverMapViewOptions(
-              initialCameraPosition: NCameraPosition(target: _fallback, zoom: 14),
+              initialCameraPosition: NCameraPosition(
+                target: _fallback,
+                zoom: 14,
+              ),
               locationButtonEnable: true,
             ),
             onMapReady: (controller) {
@@ -128,8 +132,10 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
 
   // 지도 탭 → 도착지 설정/갱신 → 경로 자동 추천.
   void _onMapTapped(NPoint point, NLatLng latLng) {
-    ref.read(destinationProvider.notifier).state =
-        (latLng.latitude, latLng.longitude);
+    ref.read(destinationProvider.notifier).state = (
+      latLng.latitude,
+      latLng.longitude,
+    );
     // 새 요청 시작 전에 이전 추천 경로를 비워 stale 폴리라인이 남지 않게 한다.
     ref.read(routeNotifierProvider.notifier).reset();
     _render(); // 이 시점엔 출발·도착 마커만 그려진다(경로 없음).
@@ -209,7 +215,9 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
       return;
     }
 
-    ref.read(routeNotifierProvider.notifier).recommend(
+    ref
+        .read(routeNotifierProvider.notifier)
+        .recommend(
           originLat: (origin['latitude'] as num).toDouble(),
           originLon: (origin['longitude'] as num).toDouble(),
           destLat: dest.$1,
@@ -231,6 +239,7 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
   ) {
     return Card(
       elevation: 4,
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -246,7 +255,10 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
                   SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
                   ),
                   SizedBox(width: 12),
                   Text('경로를 받는 중...'),
@@ -256,7 +268,8 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
                 e.toString(),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
-              data: (result) => _buildStatusText(originAsync, destination, result),
+              data: (result) =>
+                  _buildStatusText(originAsync, destination, result),
             ),
             const SizedBox(height: 12),
             // 플로깅 시작: 도착지가 설정돼야 활성화한다(준비 → 시작 흐름).
@@ -308,9 +321,8 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
     return originAsync.when(
       loading: () => const Text('현재 위치를 확인하는 중...'),
       error: (_, __) => const Text('현재 위치를 가져오지 못했습니다. 위치 권한을 확인해 주세요.'),
-      data: (_) => Text(
-        destination == null ? '지도를 탭해 도착지를 선택하세요.' : '도착지가 설정되었습니다.',
-      ),
+      data: (_) =>
+          Text(destination == null ? '지도를 탭해 도착지를 선택하세요.' : '도착지가 설정되었습니다.'),
     );
   }
 

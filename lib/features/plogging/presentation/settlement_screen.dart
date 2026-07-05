@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
+import 'package:repo_jdh/core/router/app_router.dart';
 
 /// 줍다행 - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
 /// 위치 권장: lib/features/plogging/presentation/settlement_screen.dart
@@ -14,16 +15,14 @@ class SettlementScreen extends ConsumerStatefulWidget {
 }
 
 class _SettlementScreenState extends ConsumerState<SettlementScreen> {
-  // 수거 내역 (placeholder — 실제 정산 데이터로 교체)
-  static const List<_Trash> _trash = [
-    _Trash('플라스틱', 11, AppColors.primary),
-    _Trash('캔', 3, AppColors.warning),
-    _Trash('종이', 9, AppColors.mintDeep),
-    _Trash('유리', 0, AppColors.trashGeneral),
-    _Trash('일반', 10, AppColors.error),
+  // 쓰레기 종류 정의 (라벨, 컬러 PNG 아이콘, ploggingProvider의 키)
+  static const List<_TrashDef> _trashDefs = [
+    _TrashDef('플라스틱', 'plastic.png', 'plastic'),
+    _TrashDef('캔', 'can.png', 'can'),
+    _TrashDef('종이', 'paper.png', 'paper'),
+    _TrashDef('유리', 'bottle.png', 'glass'),
+    _TrashDef('일반', 'trash.png', 'trash'),
   ];
-
-  int get _totalTrash => _trash.fold(0, (s, t) => s + t.count);
 
   /// 마무리 동작. share=false 면 기록만, true 면 그룹 공유까지.
   Future<void> _finish({required bool share}) async {
@@ -38,11 +37,21 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
-    context.go('/home'); // 홈으로 이동
+    // 공유하면 그룹 채팅창으로, 기록만 하면 홈으로
+    if (share) {
+      context.go('/group/feed'); // 그룹 채팅창(그룹 피드)
+    } else {
+      context.go('/home');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // 실제 수거 데이터 읽기
+    final state = ref.watch(ploggingProvider);
+    final counts = state.totalCounts;
+    final totalTrash = counts.values.fold<int>(0, (s, v) => s + v);
+
     return Scaffold(
       backgroundColor: AppColors.appBG,
       body: SafeArea(
@@ -57,7 +66,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
                   children: [
                     _recordCard(),
                     const SizedBox(height: 14),
-                    _trashCard(),
+                    _trashCard(counts, totalTrash),
                     const SizedBox(height: 14),
                     _rewardCard(),
                   ],
@@ -76,7 +85,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        color: AppColors.primary,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
@@ -108,6 +117,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
   }
 
   // ───────────────────────── 오늘의 기록 ─────────────────────────
+  // TODO: 거리/시간/걸음/칼로리는 아직 ploggingProvider에 없음(추적값 미저장).
+  //       GPS·걸음 추적을 provider/state에 담으면 여기서 실제 값으로 교체.
   Widget _recordCard() {
     return _card(
       title: '오늘의 기록',
@@ -166,8 +177,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     );
   }
 
-  // ───────────────────────── 수거한 쓰레기 ─────────────────────────
-  Widget _trashCard() {
+  // ───────────────────────── 수거한 쓰레기 (실제 데이터 + 컬러 아이콘) ─────────────────────────
+  Widget _trashCard(Map<String, int> counts, int total) {
     return _card(
       title: '수거한 쓰레기',
       trailing: Container(
@@ -177,7 +188,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
-          '총 $_totalTrash개',
+          '총 $total개',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
@@ -185,40 +196,42 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           ),
         ),
       ),
-      child: Column(
-        children: _trash.map((t) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: t.color,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _trashDefs.map((d) {
+          final int c = counts[d.key] ?? 0;
+          final bool active = c > 0;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 아이콘 여백 차이 흡수용 고정 높이 + 중앙정렬
+              SizedBox(
+                height: 34,
+                child: Center(
+                  child: Image.asset('assets/icons/${d.asset}', height: 28),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    t.label,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$c',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: active
+                      ? AppColors.textPrimary
+                      : AppColors.textTertiary,
                 ),
-                Text(
-                  '${t.count}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                d.label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         }).toList(),
       ),
@@ -226,6 +239,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
   }
 
   // ───────────────────────── 획득 보상 ─────────────────────────
+  // TODO: 포인트/경험치도 아직 provider에 없음. 보상 로직 생기면 실제 값으로 교체.
   Widget _rewardCard() {
     return _card(
       title: '획득 보상',
@@ -369,9 +383,9 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
   }
 }
 
-class _Trash {
+class _TrashDef {
   final String label;
-  final int count;
-  final Color color;
-  const _Trash(this.label, this.count, this.color);
+  final String asset; // assets/icons/ 안 PNG 파일명
+  final String key; // ploggingProvider totalCounts 키
+  const _TrashDef(this.label, this.asset, this.key);
 }

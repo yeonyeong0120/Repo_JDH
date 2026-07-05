@@ -22,7 +22,6 @@ import 'package:repo_jdh/features/plogging/presentation/settlement_screen.dart';
 import 'package:repo_jdh/features/community/presentation/group_feed_screen.dart';
 import 'package:repo_jdh/features/plogging/presentation/plogging_session_screen.dart';
 
-
 part 'app_router.g.dart';
 
 class AppRoutes {
@@ -57,6 +56,7 @@ GoRouter appRouter(Ref ref) {
     debugLogDiagnostics: true,
 
     redirect: (context, state) {
+      return null;
       final loggingIn = state.matchedLocation == AppRoutes.login;
       final settingNickname = state.matchedLocation == AppRoutes.nicknameSetup;
 
@@ -203,7 +203,7 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
   static const double _startLabelSize = 14; // 버튼 안 '시작' 글씨 크기
   static const double _navBottomPad = 0; // ★ 아이콘 아래 여백 (작을수록 아이콘이 더 아래로)
   static const double _startBumpSize = 88; // 흰 혹(원) 지름 = 버튼 둘레 흰 여백 (높이 아님!)
-  static const Color _startBtnColor = Color(0xFF244EA2); // 시작 버튼 색
+  static const Color _startBtnColor = Color(0xFF0C7D5E); // 시작 버튼 색
   // ▲▲▲ 직접 조절하는 값 ▲▲▲
 
   @override
