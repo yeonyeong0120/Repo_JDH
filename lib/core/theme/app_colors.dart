@@ -82,11 +82,16 @@ class AppColors {
   // ========================================================
 
   // 카테고리 5색 (퀘스트·수거 종류 공용)
-  static const Color categoryBlue = Color(0xFF3B82F6); // 플라스틱 · 걸음수
-  static const Color categoryRed = error; // 일반 · 칼로리
-  static const Color categoryGreen = primary; // 종이 · 수거량
-  static const Color categoryOrange = warning; // 캔 · 그룹참여
-  static const Color categoryPurple = Color(0xFF8B5CF6); // 유리 · 시간
+  // 도넛 차트·퀘스트용 파스텔 5색 (UI 상태색과 별개)
+  static const Color categoryBlue = Color(0xFF7FB3F0); // 플라스틱 · 걸음수
+  static const Color categoryRed = Color(0xFFF5928A); // 일반 · 칼로리
+  static const Color categoryGreen = Color(0xFF6FCFB0); // 종이 · 수거량
+  static const Color categoryOrange = Color(0xFFFFC773); // 캔 · 그룹참여
+  static const Color categoryPurple = Color(0xFFA99BD4); // 유리 · 시간
+
+  // 요일별 활동 그래프
+  static const Color chartActivity = Color(0xFF8E9BE0); // 요일별 막대 (종합 활동량)
+  static const Color chartActivityPeak = Color(0xFF6B78C9); // 오늘/피크 강조
 
   // ========================================================
   // GRADIENTS - Reflectly 스타일 그라데이션

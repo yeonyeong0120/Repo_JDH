@@ -1,14 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
+import 'package:repo_jdh/features/plogging/domain/plogging_session_providers.dart';
+import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
 import 'package:repo_jdh/features/auth/data/auth_repository.dart';
-import 'package:repo_jdh/features/plogging/presentation/settlement_screen.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
@@ -51,6 +52,46 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
 
   String? _selectedButton = 'camera';
   bool _isExpanded = false;
+
+  // 네이버 지도
+  NaverMapController? _mapController;
+  bool _mapCentered = false;
+  static const _fallback = NLatLng(37.5074, 126.7218); // GPS 전 기본 위치
+  static const _routeColor = Color(0xFF1D9E75);
+
+  // 지도를 현재 GPS로 최초 1회 이동
+  void _centerOnGps(Map<String, dynamic>? loc) {
+    if (_mapCentered) return;
+    final c = _mapController;
+    if (c == null || loc == null) return;
+    final lat = (loc['latitude'] as num?)?.toDouble();
+    final lon = (loc['longitude'] as num?)?.toDouble();
+    if (lat == null || lon == null) return;
+    _mapCentered = true;
+    c.updateCamera(
+      NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
+    );
+  }
+
+  // 추천 경로가 있으면 polyline으로 그린다.
+  // TODO: 트래킹 중 "지나온 자취(GPS 경로)"는 세션 경로 데이터가 붙으면 추가로 그리기
+  void _renderRoute() {
+    final c = _mapController;
+    if (c == null) return;
+    final result = ref.read(routeNotifierProvider).valueOrNull;
+    if (result == null || result.polyline.length < 2) return;
+    c.clearOverlays();
+    c.addOverlayAll({
+      NPathOverlay(
+        id: 'route',
+        coords: result.polyline.map((p) => NLatLng(p[0], p[1])).toList(),
+        width: 6,
+        color: _routeColor,
+        outlineWidth: 2,
+        outlineColor: Colors.white,
+      ),
+    });
+  }
 
   void _handleCameraTap() {
     if (_selectedButton == 'camera') {
@@ -239,6 +280,16 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   Widget build(BuildContext context) {
     final ploggingState = ref.watch(ploggingProvider);
 
+    // GPS 도착 시 지도 중심 이동, 추천 경로 갱신 시 다시 그림
+    ref.listen(currentLocationProvider, (prev, next) {
+      next.whenData(_centerOnGps);
+    });
+    ref.listen(routeNotifierProvider, (prev, next) {
+      next.whenData((r) {
+        if (r != null) _renderRoute();
+      });
+    });
+
     if (ploggingState.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -254,11 +305,18 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.asset(
-                'assets/images/map_sample.jpg',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(color: Colors.green[100]);
+              child: NaverMap(
+                options: const NaverMapViewOptions(
+                  initialCameraPosition: NCameraPosition(
+                    target: _fallback,
+                    zoom: 15,
+                  ),
+                  locationButtonEnable: true,
+                ),
+                onMapReady: (controller) {
+                  _mapController = controller;
+                  _centerOnGps(ref.read(currentLocationProvider).valueOrNull);
+                  _renderRoute();
                 },
               ),
             ),

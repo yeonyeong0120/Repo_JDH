@@ -4,7 +4,18 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ed0c1b8e-7d21-468f-a97c-10fa9b1f0709" name="Changes" comment="" />
+    <list default="true" id="ed0c1b8e-7d21-468f-a97c-10fa9b1f0709" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/router/app_router.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/router/app_router.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/theme/app_colors.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/theme/app_colors.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/presentation/signup_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/presentation/signup_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_detail_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_detail_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_list_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/my_impact_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/my_impact_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/quest_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/quest_list_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/plogging/presentation/plogging_home_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/plogging/presentation/plogging_home_screen.dart" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -56,7 +67,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;uxui&quot;,
     &quot;io.flutter.project.isFirstOpen&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/flutter_project/Repo_JDH&quot;,

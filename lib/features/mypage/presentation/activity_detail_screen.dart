@@ -165,15 +165,14 @@ class ActivityDetailScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(
-                Icons.ios_share,
-                color: AppColors.textPrimary,
-              ),
-              title: const Text('공유'),
+              leading: const Icon(Icons.groups, color: AppColors.textPrimary),
+              title: const Text('그룹에 공유'),
               onTap: () {
                 Navigator.pop(ctx);
-                // TODO: 실제 공유 기능 연결
-                AppSnackBar.show(context, '공유 기능은 준비 중이에요', neutral: true);
+                // TODO: 실제 그룹 공유 로직 (그룹 피드에 활동 카드 push)
+                //   주의: 정산에서 찍기/갤러리로 이미 공유된 활동은
+                //         중복 공유되지 않도록 처리 필요
+                AppSnackBar.show(context, '그룹에 공유했어요');
               },
             ),
             ListTile(

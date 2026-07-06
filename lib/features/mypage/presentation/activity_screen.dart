@@ -18,6 +18,7 @@ class ActivityScreen extends StatefulWidget {
 
 class _ActivityScreenState extends State<ActivityScreen> {
   int _tab = 0; // 0:기록 1:뱃지 2:그래프
+  int _graphPlay = 0; // 그래프 탭 진입 때마다 +1 → 애니메이션 재생 트리거
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +32,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
             Expanded(
               child: IndexedStack(
                 index: _tab,
-                children: const [_RecordsTab(), _BadgesTab(), _GraphTab()],
+                children: [
+                  const _RecordsTab(),
+                  const _BadgesTab(),
+                  _GraphTab(playToken: _graphPlay),
+                ],
               ),
             ),
           ],
@@ -77,7 +82,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
   Widget _tabItem(String label, int index) {
     final selected = _tab == index;
     return GestureDetector(
-      onTap: () => setState(() => _tab = index),
+      onTap: () => setState(() {
+        _tab = index;
+        if (index == 2) _graphPlay++; // 그래프 탭 진입 → 애니메이션 재생
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -108,10 +116,17 @@ class _RecordsTab extends StatelessWidget {
     _Activity('26.02.01 17:15', '로데오거리', 3000, '40 g', 125, '0:40'),
   ];
 
+  // 퀘스트 색: 걸음수 파랑 / 칼로리 빨강 / 수거량 초록 / 그룹참여 주황 / 시간 보라
   static const List<_Quest> _quests = [
-    _Quest('10일 연속 출석', 5, 10, Icons.verified, AppColors.primary),
-    _Quest('플라스틱 50개 수거', 32, 50, Icons.recycling, AppColors.coralDeep),
-    _Quest('그룹 활동 5회 참여', 3, 5, Icons.groups, AppColors.mintDeep),
+    _Quest(
+      '누적 10,000보 걷기',
+      6200,
+      10000,
+      Icons.directions_walk,
+      AppColors.categoryBlue,
+    ),
+    _Quest('수거량 5kg 달성', 3200, 5000, Icons.recycling, AppColors.categoryGreen),
+    _Quest('그룹 활동 5회 참여', 3, 5, Icons.groups, AppColors.categoryOrange),
   ];
 
   @override
@@ -427,7 +442,8 @@ class _BadgesTab extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 18,
           crossAxisSpacing: 12,
-          childAspectRatio: 0.78,
+          // 오버플로우 방지를 위해 0.78 에서 0.70 으로 비율을 수정하여 세로 공간 확보
+          childAspectRatio: 0.70,
           children: [
             ..._earned.map(_earnedBadge),
             ...List.generate(lockedCount, (_) => _lockedBadge()),
@@ -488,29 +504,169 @@ class _BadgesTab extends StatelessWidget {
 
 // ════════════════════════════ 그래프 탭 ════════════════════════════
 class _GraphTab extends StatefulWidget {
-  const _GraphTab();
+  final int playToken; // 값이 바뀌면 애니메이션 재생 (탭 재진입마다)
+  const _GraphTab({required this.playToken});
 
   @override
   State<_GraphTab> createState() => _GraphTabState();
 }
 
-class _GraphTabState extends State<_GraphTab> {
+class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
+  late final AnimationController _ac; // 꺾은선(월간)용 900ms
+  late final AnimationController _acFast; // 막대·도넛용 800ms
+
   int _period = 0; // 0:주간 1:월간 2:누적
+  int _offset = 0; // 현재 보고 있는 주/월 인덱스 (0=가장 최근)
 
-  // 요일별 막대 (0~1 비율, 토요일 강조)
-  final List<double> _bars = const [0.5, 0.72, 0.4, 0.66, 0.46, 1.0, 0.6];
-  final List<String> _dayLabels = const ['월', '화', '수', '목', '금', '토', '일'];
-  final int _peakIndex = 5;
-
-  final List<_Segment> _segments = const [
-    _Segment('플라스틱', 11, AppColors.primary),
-    _Segment('일반', 10, AppColors.error),
-    _Segment('종이', 9, AppColors.mint),
-    _Segment('유리', 0, AppColors.trashGeneral),
+  // TODO: 실제 기간별 데이터로 교체 (지금은 더미)
+  // 주간: 요일별(월~일) 막대
+  static const List<_GData> _weekly = [
+    _GData(
+      '이번주',
+      '5.24 ~ 5.31',
+      '8,240',
+      '1,089',
+      '1.3kg',
+      [0.5, 0.72, 0.4, 0.66, 0.46, 1.0, 0.6],
+      _dayLabels,
+      5,
+    ),
+    _GData(
+      '지난주',
+      '5.17 ~ 5.23',
+      '6,110',
+      '842',
+      '0.9kg',
+      [0.3, 0.55, 0.7, 0.4, 0.85, 0.5, 0.35],
+      _dayLabels,
+      4,
+    ),
+    _GData(
+      '2주 전',
+      '5.10 ~ 5.16',
+      '9,530',
+      '1,240',
+      '1.6kg',
+      [0.8, 0.6, 0.5, 0.9, 0.7, 0.65, 1.0],
+      _dayLabels,
+      6,
+    ),
   ];
+
+  // 월간: 1~5주 단위 막대
+  static const List<String> _weekLabels = ['1주', '2주', '3주', '4주', '5주'];
+  static const List<_GData> _monthly = [
+    _GData(
+      '이번달',
+      '2026.05',
+      '32,600',
+      '4,210',
+      '5.2kg',
+      [0.6, 0.8, 0.5, 1.0, 0.4],
+      _weekLabels,
+      3,
+    ),
+    _GData(
+      '지난달',
+      '2026.04',
+      '28,140',
+      '3,690',
+      '4.4kg',
+      [0.5, 0.7, 0.9, 0.6, 0.3],
+      _weekLabels,
+      2,
+    ),
+  ];
+
+  // 누적: 가입일부터 현재까지 (막대 없음, 큰 숫자)
+  // TODO: 가입일은 실제 프로필 가입일로 교체
+  static const _GData _cumulative = _GData(
+    '전체',
+    '가입일(2024.03.15~)부터',
+    '184,320',
+    '24,860',
+    '31.5kg',
+    [],
+    [],
+    0,
+  );
+
+  static const List<String> _dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+
+  // 수거 종류 색: 플라스틱 파랑 / 일반 빨강 / 종이 초록 / 캔 주황 / 유리 보라
+  final List<_Segment> _segments = const [
+    _Segment('플라스틱', 11, AppColors.categoryBlue),
+    _Segment('일반', 10, AppColors.categoryRed),
+    _Segment('종이', 9, AppColors.categoryGreen),
+    _Segment('캔', 5, AppColors.categoryOrange),
+    _Segment('유리', 3, AppColors.categoryPurple),
+  ];
+
+  // 현재 기간의 데이터셋 목록 (누적은 단일)
+  List<_GData> get _currentList => _period == 0 ? _weekly : _monthly;
+
+  // 현재 보여줄 데이터
+  _GData get _data {
+    if (_period == 2) return _cumulative;
+    final list = _currentList;
+    final i = _offset.clamp(0, list.length - 1);
+    return list[i];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _ac = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+    _acFast = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 850),
+    )..forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant _GraphTab old) {
+    super.didUpdateWidget(old);
+    // 그래프 탭 재진입 → 처음부터 다시 재생
+    if (old.playToken != widget.playToken) {
+      _replay();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ac.dispose();
+    _acFast.dispose();
+    super.dispose();
+  }
+
+  void _replay() {
+    _ac.forward(from: 0);
+    _acFast.forward(from: 0);
+  }
+
+  void _changePeriod(int p) {
+    setState(() {
+      _period = p;
+      _offset = 0; // 기간 바꾸면 최근으로 리셋
+    });
+    _replay(); // 데이터 바뀌면 다시 차오름
+  }
+
+  // 화살표: older = 과거로(오프셋+1), newer = 최근으로(오프셋-1)
+  void _shift(int delta) {
+    if (_period == 2) return; // 누적은 이동 없음
+    final max = _currentList.length - 1;
+    setState(() => _offset = (_offset + delta).clamp(0, max));
+    _replay();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final d = _data;
+    final isCumulative = _period == 2;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
       children: [
@@ -520,50 +676,115 @@ class _GraphTabState extends State<_GraphTab> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '이번주',
-                  style: TextStyle(
+                  d.title,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 Text(
-                  '5.24 ~ 5.31',
-                  style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+                  d.range,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               ],
             ),
-            Row(
-              children: const [
-                Icon(Icons.chevron_left, color: AppColors.textTertiary),
-                SizedBox(width: 16),
-                Icon(Icons.chevron_right, color: AppColors.textTertiary),
-              ],
-            ),
+            // 누적은 기간 이동 없음
+            if (!isCumulative)
+              Row(
+                children: [
+                  _arrow(
+                    Icons.chevron_left,
+                    _offset < _currentList.length - 1,
+                    () => _shift(1),
+                  ),
+                  const SizedBox(width: 16),
+                  _arrow(Icons.chevron_right, _offset > 0, () => _shift(-1)),
+                ],
+              ),
           ],
         ),
         const SizedBox(height: 18),
         Row(
           children: [
-            _summaryStat('걸음수', '8,240', AppColors.primary, 'track_thick.svg'),
-            _summaryStat('칼로리', '1,089', AppColors.error, 'fire_thick.svg'),
+            _summaryStat(
+              '걸음수',
+              d.steps,
+              AppColors.categoryBlue,
+              'track_thick.svg',
+              iconSize: 58,
+              iconBottom: 2,
+            ),
+            _summaryStat(
+              '칼로리',
+              d.kcal,
+              AppColors.categoryRed,
+              'fire_thick.svg',
+              iconBottom: 8,
+            ),
             _summaryStat(
               '수거량',
-              '1.3kg',
-              AppColors.mintDeep,
+              d.weight,
+              AppColors.categoryGreen,
               'garbage_thick.svg',
+              iconBottom: 2,
             ),
           ],
         ),
         const SizedBox(height: 22),
-        _chartCard('요일별 활동', SizedBox(height: 130, child: _barChart())),
-        const SizedBox(height: 16),
-        _chartCard('수거 종류', _trashDonut()),
+        // 주간: 요일별 막대 / 월간: 주별 꺾은선 / 누적: 그래프 없음
+        if (_period == 0) ...[
+          _chartCard(
+            '요일별 활동',
+            SizedBox(
+              height: 130,
+              child: AnimatedBuilder(
+                animation: _acFast,
+                builder: (_, __) =>
+                    _barChart(d.bars, d.barLabels, d.peakIndex, _acFast.value),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (_period == 1) ...[
+          _chartCard(
+            '주별 활동',
+            AnimatedBuilder(
+              animation: _ac,
+              builder: (_, __) =>
+                  _lineChart(d.bars, d.barLabels, d.peakIndex, _ac.value),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        // 누적은 그래프가 없어 요약과 도넛이 붙으니 공백 추가
+        if (isCumulative) const SizedBox(height: 12),
+        _chartCard(
+          '수거 종류',
+          AnimatedBuilder(
+            animation: _acFast,
+            builder: (_, __) => _trashDonut(_acFast.value),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _arrow(IconData icon, bool enabled, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Icon(
+        icon,
+        color: enabled ? AppColors.textSecondary : AppColors.divider,
+      ),
     );
   }
 
@@ -580,7 +801,7 @@ class _GraphTabState extends State<_GraphTab> {
           final selected = _period == i;
           return Expanded(
             child: GestureDetector(
-              onTap: () => setState(() => _period = i),
+              onTap: () => _changePeriod(i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -605,22 +826,29 @@ class _GraphTabState extends State<_GraphTab> {
     );
   }
 
-  Widget _summaryStat(String label, String value, Color color, String asset) {
+  Widget _summaryStat(
+    String label,
+    String value,
+    Color color,
+    String asset, {
+    double iconSize = 46,
+    double iconBottom = 6,
+  }) {
     return Expanded(
       child: SizedBox(
-        height: 56,
+        height: 64,
         child: Stack(
           alignment: Alignment.center,
           clipBehavior: Clip.hardEdge, // 아이콘이 칸 밖으로 안 나가게
           children: [
-            // 배경 아이콘 (은은하게 칸 안에)
+            // 배경 아이콘 (아이콘마다 밑변 위치 보정)
             Positioned(
-              right: 4,
-              top: 2,
+              right: 0,
+              bottom: iconBottom,
               child: SvgPicture.asset(
                 'assets/icons/$asset',
-                width: 34,
-                height: 34,
+                width: iconSize,
+                height: iconSize,
                 colorFilter: ColorFilter.mode(
                   AppColors.textTertiary.withValues(alpha: 0.18),
                   BlendMode.srcIn,
@@ -635,18 +863,18 @@ class _GraphTabState extends State<_GraphTab> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                     color: color,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     value,
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: color,
                     ),
@@ -686,30 +914,39 @@ class _GraphTabState extends State<_GraphTab> {
     );
   }
 
-  Widget _barChart() {
+  Widget _barChart(
+    List<double> bars,
+    List<String> labels,
+    int peakIndex,
+    double t,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
-      children: List.generate(_bars.length, (i) {
-        final peak = i == _peakIndex;
+      children: List.generate(bars.length, (i) {
+        final peak = i == peakIndex;
         return Expanded(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Container(
                 width: 16,
-                height: 90 * _bars[i],
+                height: 90 * bars[i] * t,
                 decoration: BoxDecoration(
-                  color: peak ? AppColors.primary : AppColors.primaryLight,
+                  color: peak
+                      ? AppColors.chartActivityPeak
+                      : AppColors.chartActivity,
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                _dayLabels[i],
+                labels[i],
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: peak ? FontWeight.w700 : FontWeight.w500,
-                  color: peak ? AppColors.primary : AppColors.textTertiary,
+                  color: peak
+                      ? AppColors.chartActivityPeak
+                      : AppColors.textTertiary,
                 ),
               ),
             ],
@@ -719,7 +956,43 @@ class _GraphTabState extends State<_GraphTab> {
     );
   }
 
-  Widget _trashDonut() {
+  Widget _lineChart(
+    List<double> values,
+    List<String> labels,
+    int peakIndex,
+    double t,
+  ) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 110,
+          width: double.infinity,
+          child: CustomPaint(painter: _LinePainter(values, peakIndex, t)),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: List.generate(labels.length, (i) {
+            final peak = i == peakIndex;
+            return Expanded(
+              child: Text(
+                labels[i],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: peak ? FontWeight.w700 : FontWeight.w500,
+                  color: peak
+                      ? AppColors.chartActivityPeak
+                      : AppColors.textTertiary,
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _trashDonut(double t) {
     return Row(
       children: [
         SizedBox(
@@ -730,7 +1003,7 @@ class _GraphTabState extends State<_GraphTab> {
             children: [
               CustomPaint(
                 size: const Size(120, 120),
-                painter: _DonutPainter(_segments),
+                painter: _DonutPainter(_segments, t),
               ),
               const Column(
                 mainAxisSize: MainAxisSize.min,
@@ -801,8 +1074,9 @@ class _GraphTabState extends State<_GraphTab> {
 // 도넛 차트 페인터
 class _DonutPainter extends CustomPainter {
   final List<_Segment> segments;
+  final double progress; // 0~1, 시계방향 채움 진행도
   final double strokeWidth;
-  const _DonutPainter(this.segments) : strokeWidth = 22;
+  const _DonutPainter(this.segments, this.progress) : strokeWidth = 22;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -816,26 +1090,31 @@ class _DonutPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..color = AppColors.divider;
 
-    if (total <= 0) {
-      canvas.drawArc(rect, 0, 2 * pi, false, track);
-      return;
-    }
+    // 배경 트랙 (항상)
+    canvas.drawArc(rect, 0, 2 * pi, false, track);
+    if (total <= 0) return;
 
-    double start = -pi / 2;
+    final drawn = 2 * pi * progress.clamp(0.0, 1.0); // 그릴 총 각도
+    double acc = 0; // 12시부터 누적된 각도
     for (final seg in segments) {
       if (seg.value <= 0) continue;
       final sweep = (seg.value / total) * 2 * pi;
-      final p = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..color = seg.color;
-      canvas.drawArc(rect, start, sweep, false, p);
-      start += sweep;
+      if (acc < drawn) {
+        final drawEnd = (acc + sweep) < drawn ? (acc + sweep) : drawn;
+        final p = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.butt
+          ..color = seg.color;
+        canvas.drawArc(rect, -pi / 2 + acc, drawEnd - acc, false, p);
+      }
+      acc += sweep;
     }
   }
 
   @override
-  bool shouldRepaint(covariant _DonutPainter old) => old.segments != segments;
+  bool shouldRepaint(covariant _DonutPainter old) =>
+      old.segments != segments || old.progress != progress;
 }
 
 // ──────────────── 데이터 모델 ────────────────
@@ -871,9 +1150,114 @@ class _Badge {
   const _Badge(this.label, this.icon);
 }
 
+// 월간 주별 활동 꺾은선 차트
+class _LinePainter extends CustomPainter {
+  final List<double> values; // 0~1 비율
+  final int peakIndex;
+  final double progress; // 0~1, 선 그려짐 진행도
+  _LinePainter(this.values, this.peakIndex, this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.isEmpty) return;
+    final n = values.length;
+    const padTop = 12.0;
+    const padBottom = 6.0;
+    final chartH = size.height - padTop - padBottom;
+    double xOf(int i) => ((i + 0.5) / n) * size.width;
+    double yOf(double v) => padTop + (1 - v) * chartH;
+
+    final line = Path();
+    for (int i = 0; i < n; i++) {
+      final x = xOf(i);
+      final y = yOf(values[i]);
+      if (i == 0) {
+        line.moveTo(x, y);
+      } else {
+        line.lineTo(x, y);
+      }
+    }
+
+    // 선 아래 영역 (진행도에 따라 서서히 진하게)
+    final area = Path.from(line)
+      ..lineTo(xOf(n - 1), size.height)
+      ..lineTo(xOf(0), size.height)
+      ..close();
+    canvas.drawPath(
+      area,
+      Paint()
+        ..color = AppColors.chartActivity.withValues(alpha: 0.12 * progress)
+        ..style = PaintingStyle.fill,
+    );
+
+    // 선 (progress 만큼만 그림 = 왼→오로 그려짐)
+    final linePaint = Paint()
+      ..color = AppColors.chartActivity
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+    for (final m in line.computeMetrics()) {
+      canvas.drawPath(m.extractPath(0, m.length * progress), linePaint);
+    }
+
+    // 점 (선이 도달한 지점까지 순차 등장)
+    for (int i = 0; i < n; i++) {
+      final frac = n == 1 ? 0.0 : i / (n - 1);
+      if (frac > progress) break;
+      final c = Offset(xOf(i), yOf(values[i]));
+      final peak = i == peakIndex;
+      canvas.drawCircle(
+        c,
+        peak ? 5.5 : 4,
+        Paint()
+          ..color = peak
+              ? AppColors.chartActivityPeak
+              : AppColors.chartActivity,
+      );
+      canvas.drawCircle(
+        c,
+        peak ? 5.5 : 4,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LinePainter old) =>
+      old.values != values ||
+      old.peakIndex != peakIndex ||
+      old.progress != progress;
+}
+
 class _Segment {
   final String label;
   final int value;
   final Color color;
   const _Segment(this.label, this.value, this.color);
+}
+
+// 그래프 기간별 데이터셋 (주간/월간/누적)
+class _GData {
+  final String title; // 이번주 / 이번달 / 전체
+  final String range; // 5.24 ~ 5.31 / 2026.05 / 가입일부터
+  final String steps;
+  final String kcal;
+  final String weight;
+  final List<double> bars; // 0~1 비율 (누적은 빈 리스트)
+  final List<String> barLabels;
+  final int peakIndex;
+  const _GData(
+    this.title,
+    this.range,
+    this.steps,
+    this.kcal,
+    this.weight,
+    this.bars,
+    this.barLabels,
+    this.peakIndex,
+  );
 }
