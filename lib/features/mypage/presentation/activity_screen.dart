@@ -2,6 +2,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
+import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
+import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
 
 /// 줍다행 - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
@@ -116,16 +119,28 @@ class _RecordsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
       children: [
-        _sectionHeader('최근 활동'),
+        _sectionHeader(
+          '최근 활동',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ActivityListScreen()),
+          ),
+        ),
         const SizedBox(height: 12),
         ..._activities.map(
           (a) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _activityCard(a),
+            child: _activityCard(context, a),
           ),
         ),
         const SizedBox(height: 22),
-        _sectionHeader('진행 중인 퀘스트'),
+        _sectionHeader(
+          '진행 중인 퀘스트',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const QuestListScreen()),
+          ),
+        ),
         const SizedBox(height: 12),
         ..._quests.map(
           (q) => Padding(
@@ -137,85 +152,105 @@ class _RecordsTab extends StatelessWidget {
     );
   }
 
-  Widget _sectionHeader(String text) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+  Widget _sectionHeader(String text, {required VoidCallback onTap}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-        const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-      ],
+          const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+        ],
+      ),
     );
   }
 
-  Widget _activityCard(_Activity a) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBG,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
+  Widget _activityCard(BuildContext context, _Activity a) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ActivityDetailScreen(
+            dateTime: a.dateTime,
+            title: a.title,
+            steps: a.steps,
+            weight: a.weight,
+            kcal: a.kcal,
+            time: a.time,
+          ),
+        ),
       ),
-      child: Row(
-        children: [
-          // TODO: 실제 경로 지도 썸네일로 교체
-          Container(
-            width: 84,
-            height: 84,
-            decoration: BoxDecoration(
-              color: AppColors.primaryPale,
-              borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.cardBG,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppColors.cardShadow,
+        ),
+        child: Row(
+          children: [
+            // TODO: 실제 경로 지도 썸네일로 교체
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: AppColors.primaryPale,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.map, color: AppColors.primaryLight),
             ),
-            child: const Icon(Icons.map, color: AppColors.primaryLight),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  a.dateTime,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    a.dateTime,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  a.title,
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                  const SizedBox(height: 2),
+                  Text(
+                    a.title,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    children: [
-                      _miniStat(Icons.directions_walk, '${a.steps}'),
-                      const SizedBox(width: 10),
-                      _miniStat(Icons.delete_outline, a.weight),
-                      const SizedBox(width: 10),
-                      _miniStat(Icons.local_fire_department, '${a.kcal}'),
-                      const SizedBox(width: 10),
-                      _miniStat(Icons.alarm, a.time),
-                    ],
+                  const SizedBox(height: 8),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        _miniStat(Icons.directions_walk, '${a.steps}'),
+                        const SizedBox(width: 10),
+                        _miniStat(Icons.delete_outline, a.weight),
+                        const SizedBox(width: 10),
+                        _miniStat(Icons.local_fire_department, '${a.kcal}'),
+                        const SizedBox(width: 10),
+                        _miniStat(Icons.alarm, a.time),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -573,44 +608,48 @@ class _GraphTabState extends State<_GraphTab> {
   Widget _summaryStat(String label, String value, Color color, String asset) {
     return Expanded(
       child: SizedBox(
-        height: 48,
+        height: 56,
         child: Stack(
-          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          clipBehavior: Clip.hardEdge, // 아이콘이 칸 밖으로 안 나가게
           children: [
-            // 배경 아이콘: 회색 · 크게 · 글자 바로 옆(뒤)에 겹쳐 살짝 가려지게
+            // 배경 아이콘 (은은하게 칸 안에)
             Positioned(
-              left: 42,
-              top: 1,
+              right: 4,
+              top: 2,
               child: SvgPicture.asset(
                 'assets/icons/$asset',
-                width: 46,
-                height: 46,
+                width: 34,
+                height: 34,
                 colorFilter: ColorFilter.mode(
-                  AppColors.textTertiary.withValues(alpha: 0.25),
+                  AppColors.textTertiary.withValues(alpha: 0.18),
                   BlendMode.srcIn,
                 ),
               ),
             ),
-            // 글자(앞) : label-value 사이 바짝 붙임
+            // 글자 (가운데 정렬 + 폭에 맞춰 축소)
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: color,
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: color,
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
                   ),
                 ),
               ],

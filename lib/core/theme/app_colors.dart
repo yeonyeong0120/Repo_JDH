@@ -70,7 +70,7 @@ class AppColors {
   static const Color warning = Color(0xFFFFB547);
 
   /// 오류, 위험 (활동 취소 등).
-  static const Color error = Color(0xFFFF6B6B);
+  static const Color error = Color(0xFFE83737);
 
   /// 정보 안내 (primary와 동일하지만 의미 구분용).
   static const Color info = primary;
@@ -81,20 +81,12 @@ class AppColors {
   // PLOG-05 트래킹, PLOG-10 AI 분석, PLOG-11 정산에 사용
   // ========================================================
 
-  /// 페트병·플라스틱 (블루)
-  static const Color trashPlastic = primary;
-
-  /// 일반 쓰레기 (퍼플그레이) - 유일한 신규 색
-  static const Color trashGeneral = Color(0xFF9A8FB8);
-
-  /// 유리병 (민트)
-  static const Color trashGlass = mint;
-
-  /// 종이류 (코랄)
-  static const Color trashPaper = coral;
-
-  /// 캔·금속 (앰버)
-  static const Color trashCan = warning;
+  // 카테고리 5색 (퀘스트·수거 종류 공용)
+  static const Color categoryBlue = Color(0xFF3B82F6); // 플라스틱 · 걸음수
+  static const Color categoryRed = error; // 일반 · 칼로리
+  static const Color categoryGreen = primary; // 종이 · 수거량
+  static const Color categoryOrange = warning; // 캔 · 그룹참여
+  static const Color categoryPurple = Color(0xFF8B5CF6); // 유리 · 시간
 
   // ========================================================
   // GRADIENTS - Reflectly 스타일 그라데이션

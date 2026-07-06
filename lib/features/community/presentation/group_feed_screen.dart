@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
+import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/core/widgets/app_button.dart';
 
 /// 줍다행 - 그룹 세부 화면 (활동 공유 피드)
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
@@ -38,6 +41,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       '1.4 km',
       18,
       '00:31',
+      hasPhoto: false, // 스킵으로 마친 활동 (사진 없음)
       likes: 3,
     ),
     _FeedItem(
@@ -70,7 +74,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     });
   }
 
-  // 날짜 헤더 라벨 (오늘 / 어제 / N월 N일)
+  // 날짜 헤더 라벨 (오늘 / 어제 / N월 N일 / 작년 이전이면 연도까지)
   String _dateHeader(DateTime d) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -78,7 +82,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     final diff = today.difference(that).inDays;
     if (diff == 0) return '오늘';
     if (diff == 1) return '어제';
-    return '${d.month}월 ${d.day}일';
+    if (d.year == now.year) return '${d.month}월 ${d.day}일';
+    return '${d.year}년 ${d.month}월 ${d.day}일';
   }
 
   // 시각 라벨 (오전/오후 h:mm)
@@ -249,8 +254,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   void _showReport(_FeedItem item) {
     // [사유, 설명]
     const reasons = [
-      ['부정 활동', '이동수단 이용, 비정상 수치 등 고의적 조작 의심'],
-      ['기록 오류', 'GPS 튐, 앱 오작동 등으로 기록이 잘못 찍힘'],
+      ['부정 활동', '고의적 조작 의심 (이동수단 이용, 비정상 수치 등)'],
+      ['기록 오류', '기록이 잘못 찍힘 (GPS 튐, 앱 오작동 등)'],
       ['기타', '직접 작성해 주세요'],
     ];
     String? selected;
@@ -265,104 +270,173 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
           final canSubmit =
               selected != null &&
               (!isEtc || etcController.text.trim().isNotEmpty);
-          return AlertDialog(
+          return Dialog(
+            backgroundColor: Colors.white,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 40),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
             ),
-            title: Text('${item.name}님의 활동 신고'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ...reasons.map(
-                  (r) => RadioListTile<String>(
-                    value: r[0],
-                    groupValue: selected,
-                    onChanged: (v) => setSt(() => selected = v),
-                    title: Text(
-                      r[0],
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${item.name}님의 활동 신고',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
-                    subtitle: Text(
-                      r[1],
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                    activeColor: AppColors.primary,
                   ),
-                ),
-                // 기타 선택 시 입력창
-                if (isEtc)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: TextField(
-                      controller: etcController,
-                      autofocus: true,
-                      maxLength: 100,
-                      maxLines: 2,
-                      onChanged: (_) => setSt(() {}),
-                      decoration: InputDecoration(
-                        hintText: '신고 사유를 입력해 주세요',
-                        hintStyle: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textTertiary,
-                        ),
-                        border: OutlineInputBorder(
+                  const SizedBox(height: 16),
+                  // 사유 선택 (커스텀 옵션 행)
+                  ...reasons.map((r) {
+                    final on = selected == r[0];
+                    return GestureDetector(
+                      onTap: () => setSt(() => selected = r[0]),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: on ? AppColors.primaryPale : AppColors.appBG,
                           borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
+                          border: Border.all(
+                            color: on ? AppColors.primary : AppColors.divider,
                           ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
+                        child: Row(
+                          children: [
+                            // 라디오 표시
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: on
+                                      ? AppColors.primary
+                                      : AppColors.textTertiary,
+                                  width: 2,
+                                ),
+                              ),
+                              child: on
+                                  ? Center(
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    r[0],
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    r[1],
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textTertiary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                  // 기타 선택 시 입력창
+                  if (isEtc)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2, bottom: 4),
+                      child: TextField(
+                        controller: etcController,
+                        autofocus: true,
+                        maxLength: 100,
+                        maxLines: 2,
+                        onChanged: (_) => setSt(() {}),
+                        decoration: InputDecoration(
+                          hintText: '신고 사유를 입력해 주세요',
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textTertiary,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.appBG,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.divider,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.divider,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.divider,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                         ),
                       ),
                     ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppButton(
+                          label: '취소',
+                          onTap: () => Navigator.pop(ctx),
+                          type: AppButtonType.secondary,
+                          expand: false,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: AppButton(
+                          label: '신고',
+                          enabled: canSubmit,
+                          type: AppButtonType.danger,
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            // TODO: 실제 신고 접수 처리
+                            //   대상: item(활동) / 사유: selected
+                            //   기타면 상세 사유: etcController.text
+                            AppSnackBar.show(context, '신고가 접수됐어요');
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-              ],
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text(
-                  '취소',
-                  style: TextStyle(color: AppColors.textTertiary),
-                ),
-              ),
-              TextButton(
-                onPressed: canSubmit
-                    ? () {
-                        Navigator.pop(ctx);
-                        // TODO: 실제 신고 접수 처리
-                        //   대상: item(활동) / 사유: selected
-                        //   기타면 상세 사유: etcController.text
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('신고가 접수됐어요'),
-                            backgroundColor: AppColors.mintDeep,
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    : null,
-                child: const Text(
-                  '신고',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
           );
         },
       ),
@@ -370,45 +444,20 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   }
 
   // ───────── 그룹 탈퇴 (탈퇴는 여기서만 가능 — 기획서 GRP-05) ─────────
-  void _confirmLeave() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('그룹 탈퇴'),
-        content: Text('${widget.groupName}에서 탈퇴하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              '아니오',
-              style: TextStyle(color: AppColors.textTertiary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              // TODO: 실제 그룹 탈퇴 로직 (소속 해제 Firestore)
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('그룹에서 탈퇴했어요'),
-                  backgroundColor: AppColors.mintDeep,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-              context.go('/group');
-            },
-            child: const Text(
-              '탈퇴',
-              style: TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _confirmLeave() async {
+    final ok = await AppDialog.show(
+      context,
+      title: '그룹 탈퇴',
+      message: '${widget.groupName}에서 탈퇴하시겠습니까?',
+      cancelText: '아니오',
+      confirmText: '탈퇴',
+      danger: true,
     );
+    if (ok == true && mounted) {
+      // TODO: 실제 그룹 탈퇴 로직 (소속 해제 Firestore)
+      AppSnackBar.show(context, '그룹에서 탈퇴했어요');
+      context.go('/group');
+    }
   }
 
   @override
@@ -481,68 +530,96 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   // ───────────────────────── 활동 공유 카드 (A안) ─────────────────────────
   Widget _feedCard(_FeedItem item) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardBG,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
+      clipBehavior: Clip.antiAlias, // 사진 모서리 둥글게
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 작성자 + 시간 + (오른쪽) 좋아요
-          Row(
-            children: [
-              // TODO: 실제 프로필 이미지로 교체
-              const CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.primaryPale,
-                child: Icon(
-                  Icons.person,
-                  size: 20,
-                  color: AppColors.textTertiary,
-                ),
+          // 봉투 인증샷 (스킵으로 마친 활동은 사진 없음)
+          // TODO: 실제 사진(Image.network(item.photoUrl))으로 교체
+          if (item.hasPhoto)
+            Container(
+              height: 160,
+              width: double.infinity,
+              color: AppColors.primaryPale,
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.photo_camera_outlined,
+                size: 32,
+                color: AppColors.textTertiary,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 작성자 + 시간 + (오른쪽) 좋아요
+                Row(
                   children: [
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      _timeLabel(item.date),
-                      style: const TextStyle(
-                        fontSize: 12,
+                    // TODO: 실제 프로필 이미지로 교체
+                    const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppColors.primaryPale,
+                      child: Icon(
+                        Icons.person,
+                        size: 20,
                         color: AppColors.textTertiary,
                       ),
                     ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            _timeLabel(item.date),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _reportButton(item),
                   ],
                 ),
-              ),
-              _likeButton(item),
-              const SizedBox(width: 2),
-              _reportButton(item),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 결과 요약 — 안쪽 박스 없이 한 줄로
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              children: [
-                _statInline('거리', item.distance),
-                _dot(),
-                _statInline('수거', '${item.trash}개'),
-                _dot(),
-                _statInline('시간', item.duration),
+                const SizedBox(height: 12),
+                // 결과 요약 (왼쪽) + 좋아요 (오른쪽 끝)
+                Row(
+                  children: [
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          children: [
+                            _statInline('거리', item.distance),
+                            _dot(),
+                            _statInline('수거', '${item.trash}개'),
+                            _dot(),
+                            _statInline('시간', item.duration),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _likeButton(item),
+                  ],
+                ),
               ],
             ),
           ),
@@ -638,6 +715,9 @@ class _FeedItem {
   final String distance;
   final int trash;
   final String duration;
+  // 봉투 인증샷 유무 (스킵으로 마친 활동은 false → 사진 영역 생략)
+  // TODO: 실제 사진 URL(String? photoUrl)로 교체
+  final bool hasPhoto;
   int likes;
   bool liked;
   _FeedItem(
@@ -646,6 +726,7 @@ class _FeedItem {
     this.distance,
     this.trash,
     this.duration, {
+    this.hasPhoto = true,
     this.likes = 0,
     this.liked = false,
   });

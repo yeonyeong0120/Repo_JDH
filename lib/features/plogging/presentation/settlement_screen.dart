@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
-import 'package:repo_jdh/core/router/app_router.dart';
+import 'package:repo_jdh/core/providers/shared_group_provider.dart';
+import 'package:repo_jdh/core/widgets/app_button.dart';
 
 /// 줍다행 - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
-/// 위치 권장: lib/features/plogging/presentation/settlement_screen.dart
 class SettlementScreen extends ConsumerStatefulWidget {
   const SettlementScreen({super.key});
 
@@ -24,25 +24,35 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     _TrashDef('일반', 'trash.png', 'trash'),
   ];
 
-  /// 마무리 동작. share=false 면 기록만, true 면 그룹 공유까지.
-  Future<void> _finish({required bool share}) async {
-    // TODO: 활동 기록을 Firestore에 저장
-    //       share == true 이면 그룹 피드에도 결과 게시
-    await ref.read(ploggingProvider.notifier).reset(); // 다음 활동 위해 초기화
+  // 찍기 → 봉투 인증샷 촬영 → 자동 그룹 공유 → 홈 + AUTO-02 팝업
+  Future<void> _takePhoto() async {
+    // TODO: PLOG-08 카메라(봉투 모드) → PLOG-09 미리보기 → 사진 DB 저장
+    await _shareAndHome();
+  }
+
+  // 갤러리 → 사진 선택 → 자동 그룹 공유 → 홈 + AUTO-02 팝업
+  Future<void> _pickGallery() async {
+    // TODO: 시스템 갤러리 호출 → 사진 선택 → 사진 DB 저장
+    await _shareAndHome();
+  }
+
+  // 스킵 → 그룹 미공유, 곧장 홈
+  Future<void> _skip() async {
+    await ref.read(ploggingProvider.notifier).reset();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(share ? '그룹에 공유했어요' : '활동을 기록했어요'),
-        backgroundColor: AppColors.mintDeep,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-    // 공유하면 그룹 채팅창으로, 기록만 하면 홈으로
-    if (share) {
-      context.go('/group/feed'); // 그룹 채팅창(그룹 피드)
-    } else {
-      context.go('/home');
-    }
+    context.go('/home');
+  }
+
+  // 사진 결정(찍기/갤러리) 공통: 자동 그룹 공유 후 홈 이동
+  Future<void> _shareAndHome() async {
+    // TODO: 활동 기록 + 봉투 인증샷 Firestore 저장, 그룹 피드에 활동 카드 게시
+    // TODO: 실제 "내 그룹명"으로 교체 (지금은 placeholder)
+    const myGroupName = '우리 동네 그룹';
+    await ref.read(ploggingProvider.notifier).reset();
+    // AUTO-02 신호: 홈이 이 값을 읽어 공유 완료 팝업을 띄움
+    ref.read(sharedGroupProvider.notifier).set(myGroupName);
+    if (!mounted) return;
+    context.go('/home');
   }
 
   @override
@@ -64,6 +74,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
                 child: Column(
                   children: [
+                    _mapCard(),
+                    const SizedBox(height: 14),
                     _recordCard(),
                     const SizedBox(height: 14),
                     _trashCard(counts, totalTrash),
@@ -116,9 +128,37 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     );
   }
 
+  // ───────────────────────── 활동 경로 지도 ─────────────────────────
+  Widget _mapCard() {
+    return _card(
+      title: '활동 경로',
+      child: Container(
+        height: 140,
+        width: double.infinity,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.primaryPale,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        // TODO: 실제 활동 경로 지도(Polyline + 거점 마커)로 교체
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.map_outlined, size: 32, color: AppColors.textTertiary),
+            SizedBox(height: 6),
+            Text(
+              '경로 지도',
+              style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ───────────────────────── 오늘의 기록 ─────────────────────────
-  // TODO: 거리/시간/걸음/칼로리는 아직 ploggingProvider에 없음(추적값 미저장).
-  //       GPS·걸음 추적을 provider/state에 담으면 여기서 실제 값으로 교체.
+  // TODO: 시간/거리/걸음/칼로리/무게는 아직 provider에 없음(추적값 미저장).
+  //       GPS·걸음·무게추정을 provider/state에 담으면 실제 값으로 교체.
   Widget _recordCard() {
     return _card(
       title: '오늘의 기록',
@@ -139,6 +179,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
               _metric('칼로리', '245'),
             ],
           ),
+          const SizedBox(height: 10),
+          Row(children: [_metric('무게(추정)', '1.2 kg')]),
         ],
       ),
     );
@@ -249,15 +291,10 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
             Icons.savings_outlined,
             '포인트',
             '+330 P',
-            AppColors.mintDeep,
+            AppColors.primary,
           ),
           const SizedBox(height: 4),
-          _rewardRow(
-            Icons.star_outline,
-            '경험치',
-            '+20 XP',
-            AppColors.primaryDeep,
-          ),
+          _rewardRow(Icons.star_outline, '경험치', '+20 XP', AppColors.primary),
         ],
       ),
     );
@@ -289,56 +326,39 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     );
   }
 
-  // ───────────────────────── 하단 버튼 ─────────────────────────
+  // ───────────────────────── 하단 버튼 (찍기 / 갤러리 / 스킵) ─────────────────────────
   Widget _bottomButtons() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 18),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _finish(share: false),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.cardBG,
-                  border: Border.all(color: AppColors.primaryLight),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  '기록만 할게요',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryDeep,
-                  ),
-                ),
-              ),
-            ),
+          AppButton(
+            label: '찍기',
+            onTap: _takePhoto,
+            type: AppButtonType.primary,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _finish(share: true),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: AppColors.buttonShadow,
-                ),
-                child: const Text(
-                  '그룹에 공유하기',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: '갤러리',
+                  onTap: _pickGallery,
+                  type: AppButtonType.secondary,
+                  expand: false,
                 ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: AppButton(
+                  label: '스킵',
+                  onTap: _skip,
+                  type: AppButtonType.secondary,
+                  expand: false,
+                ),
+              ),
+            ],
           ),
         ],
       ),
