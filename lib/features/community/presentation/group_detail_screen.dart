@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
+import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/core/widgets/app_button.dart';
 
 /// 줍다행 - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
 /// 채팅방(멤버 인증샷)은 가입 전엔 보여주지 않고, 소개 + 가입만.
@@ -21,80 +24,35 @@ class GroupDetailScreen extends StatelessWidget {
   });
 
   // 가입하기 → 확인 팝업 → 예 → (이미 그룹 있으면) 차단 / (없으면) 가입 성공
-  void _join(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('그룹 가입'),
-        content: Text('$name 그룹에 가입하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              '아니오',
-              style: TextStyle(color: AppColors.textTertiary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx); // 확인 팝업 닫기
-              if (alreadyInGroup) {
-                _showAlreadyJoined(context); // GRP-04 차단 모달
-              } else {
-                _doJoin(context); // 실제 가입 처리
-              }
-            },
-            child: const Text(
-              '예',
-              style: TextStyle(
-                color: AppColors.primaryDeep,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _join(BuildContext context) async {
+    final ok = await AppDialog.show(
+      context,
+      title: '그룹 가입',
+      message: '$name 그룹에 가입하시겠습니까?',
+      cancelText: '아니오',
+      confirmText: '예',
     );
+    if (ok != true) return;
+    if (alreadyInGroup) {
+      if (context.mounted) _showAlreadyJoined(context); // GRP-04 차단
+    } else {
+      if (context.mounted) _doJoin(context); // 실제 가입 처리
+    }
   }
 
   // GRP-04: 이미 그룹 가입된 상태 → 차단 모달 (자동 탈퇴 없음, 안내만)
   void _showAlreadyJoined(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('가입 불가'),
-        content: const Text(
-          '이미 그룹에 가입되어 있습니다.\n'
-          '기존 그룹에서 탈퇴한 뒤 다시 가입해 주세요.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              '확인',
-              style: TextStyle(
-                color: AppColors.primaryDeep,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
+    AppDialog.showInfo(
+      context,
+      title: '가입 불가',
+      message: '이미 그룹에 가입되어 있습니다.\n\n기존 그룹에서 탈퇴한 뒤 다시 가입해 주세요.',
     );
   }
 
   void _doJoin(BuildContext context) {
     // TODO: 실제 가입 로직 연결 (그룹 소속 Firestore 저장)
     //       지금은 임시로 가입 성공 처리 → 그 그룹 채팅방으로 이동.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$name 그룹에 가입했어요'),
-        backgroundColor: AppColors.mintDeep,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppSnackBar.show(context, '$name 그룹에 가입했어요');
     context.push('/group/feed', extra: name);
   }
 
@@ -227,26 +185,10 @@ class GroupDetailScreen extends StatelessWidget {
             // 하단 가입 버튼
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 6, 20, 18),
-              child: GestureDetector(
+              child: AppButton(
+                label: '가입하기',
                 onTap: () => _join(context),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: AppColors.buttonShadow,
-                  ),
-                  child: const Text(
-                    '가입하기',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                type: AppButtonType.primary,
               ),
             ),
           ],

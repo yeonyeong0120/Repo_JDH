@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
+import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/core/widgets/app_button.dart';
 
 /// 줍다행 - 그룹 만들기 화면 (GRP-03)
 /// 이름·사진·동네(자동)·소개·공개설정 입력. 이미 그룹 소속이면 GRP-04 차단.
@@ -35,45 +38,19 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   }
 
   // GRP-04: 이미 그룹 가입 상태 → 차단 (만들기 불가), 확인 시 뒤로
-  void _showBlocked() {
-    showDialog(
-      context: context,
+  Future<void> _showBlocked() async {
+    await AppDialog.showInfo(
+      context,
+      title: '그룹 생성 불가',
+      message: '이미 그룹에 가입되어 있습니다.\n\n기존 그룹에서 탈퇴한 뒤 새 그룹을 만들 수 있어요.',
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('그룹 생성 불가'),
-        content: const Text(
-          '이미 그룹에 가입되어 있습니다.\n'
-          '기존 그룹에서 탈퇴한 뒤 새 그룹을 만들 수 있어요.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx); // 모달 닫기
-              Navigator.pop(context); // 만들기 화면 닫기
-            },
-            child: const Text(
-              '확인',
-              style: TextStyle(
-                color: AppColors.primaryDeep,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
+    if (mounted) Navigator.pop(context); // 만들기 화면 닫기
   }
 
   void _create() {
     // TODO: 실제 그룹 생성 로직 (Firestore 저장 + 자동 가입)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('\'${_nameController.text.trim()}\' 그룹을 만들었어요'),
-        backgroundColor: AppColors.mintDeep,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppSnackBar.show(context, '\'${_nameController.text.trim()}\' 그룹을 만들었어요');
     Navigator.pop(context);
   }
 
@@ -206,26 +183,11 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
             // 하단 만들기 버튼
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 6, 20, 18),
-              child: GestureDetector(
-                onTap: canCreate ? _create : null,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: canCreate ? AppColors.primary : AppColors.divider,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: canCreate ? AppColors.buttonShadow : null,
-                  ),
-                  child: Text(
-                    '그룹 만들기',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: canCreate ? Colors.white : AppColors.textTertiary,
-                    ),
-                  ),
-                ),
+              child: AppButton(
+                label: '그룹 만들기',
+                onTap: _create,
+                enabled: canCreate,
+                type: AppButtonType.primary,
               ),
             ),
           ],

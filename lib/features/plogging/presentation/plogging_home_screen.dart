@@ -10,6 +10,8 @@ import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
 import 'package:repo_jdh/features/auth/data/auth_repository.dart';
 import 'package:repo_jdh/features/plogging/presentation/settlement_screen.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
+import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 
 class PloggingHomeScreen extends ConsumerStatefulWidget {
   const PloggingHomeScreen({super.key});
@@ -68,46 +70,26 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   }
 
   void _showGuide() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('플로깅 안내'),
-        content: const Text(
+    AppDialog.showInfo(
+      context,
+      title: '플로깅 안내',
+      message:
           '• 카메라를 눌러 쓰레기를 촬영하면 자동으로 종류가 인식돼요.\n'
           '• 한 번 더 누르면 촬영, 종료도 한 번 더 누르면 끝나요.\n'
           '• 상단 카드를 누르면 수거 상세를 볼 수 있어요.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
     );
   }
 
   Future<void> _confirmLogout() async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('로그아웃'),
-        content: const Text('정말 로그아웃 하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('로그아웃', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+    final ok = await AppDialog.show(
+      context,
+      title: '로그아웃',
+      message: '정말 로그아웃 하시겠습니까?',
+      cancelText: '취소',
+      confirmText: '로그아웃',
+      danger: true,
     );
-
-    if (shouldLogout == true) {
+    if (ok == true) {
       await AuthRepository.signOut();
     }
   }
@@ -132,26 +114,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     String? imageUrl;
     if (imagePath != null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Text('이미지 업로드 중...'),
-              ],
-            ),
-            duration: Duration(seconds: 5),
-            backgroundColor: Colors.blue,
-          ),
-        );
+        AppSnackBar.showLoading(context, '이미지 업로드 중...');
       }
       imageUrl = await StorageRepository.uploadImage(File(imagePath));
     }
@@ -173,22 +136,46 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
         .join(', ');
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            imageUrl != null
-                ? '✅ 등록 완료 (사진 저장됨): $summary'
-                : '✅ 등록 완료: $summary',
-          ),
-          duration: const Duration(seconds: 2),
-          backgroundColor: Colors.green,
-        ),
+      AppSnackBar.show(
+        context,
+        imageUrl != null ? '등록 완료 (사진 저장됨): $summary' : '등록 완료: $summary',
       );
     }
   }
 
-  void _endPlogging() {
-    context.push(AppRoutes.ploggingSettlement); // 정산 화면으로 이동
+  // PLOG-06 활동 취소 컨펌 (뒤로가기 시): 진행 기록 폐기 후 홈
+  Future<void> _confirmCancel() async {
+    final ok = await AppDialog.show(
+      context,
+      title: '활동 취소',
+      message:
+          '활동을 취소하시겠어요?\n지금까지 수거한 쓰레기는 포인트로 적립되지 않아요. '
+          '도착지를 다시 정하려면 활동을 취소하고 처음부터 시작해주세요.',
+      cancelText: '계속하기',
+      confirmText: '활동 취소',
+      primaryIsCancel: true, // 계속하기를 강조(주 버튼), 활동 취소는 보조로
+    );
+    if (ok == true) {
+      await ref.read(ploggingProvider.notifier).reset();
+      if (mounted) context.go('/home');
+    }
+  }
+
+  // PLOG-07 종료 컨펌 → 정산 화면으로
+  Future<void> _endPlogging() async {
+    final counts = ref.read(ploggingProvider).totalCounts;
+    final total = counts.values.fold<int>(0, (s, v) => s + v);
+    final ok = await AppDialog.show(
+      context,
+      title: '오늘의 줍다행을 마칠까요?',
+      message: '지금까지 총 $total개를 주웠어요.',
+      cancelText: '계속하기',
+      confirmText: '종료',
+      danger: true, // 종료는 빨강으로 통일
+    );
+    if (ok == true && mounted) {
+      context.push(AppRoutes.ploggingSettlement); // 정산 화면으로
+    }
   }
 
   Widget _buildStatBox(String value, String label) {
@@ -286,7 +273,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                       children: [
                         _buildCircleButton(
                           icon: Icons.arrow_back_ios_new,
-                          onPressed: () => context.go('/home'),
+                          onPressed: _confirmCancel,
                         ),
                         _buildCircleButton(
                           icon: Icons.help_outline,

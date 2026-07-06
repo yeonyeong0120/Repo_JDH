@@ -1,9 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/providers/shared_group_provider.dart';
+import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/my_impact_screen.dart';
+import 'package:repo_jdh/features/community/presentation/group_detail_screen.dart';
 
 /// 줍다행 - 홈 탭 화면 (본문만)
 /// 하단 네비 / '시작' 버튼은 app_router.dart 의 ShellRoute(_ScaffoldWithBottomNav)가
@@ -11,8 +16,122 @@ import 'package:repo_jdh/features/mypage/presentation/my_impact_screen.dart';
 /// 위치: lib/features/home/presentation/home_screen.dart
 ///
 /// ※ 아이콘 패키지 필요: flutter pub add material_symbols_icons
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  OverlayEntry? _popupEntry;
+  Timer? _popupTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // 홈 진입 시점에 이미 공유 신호가 있으면 (정산 → 홈 이동 케이스)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final g = ref.read(sharedGroupProvider.notifier).consume();
+      if (g != null) _showAutoShare(g);
+    });
+  }
+
+  @override
+  void dispose() {
+    _popupTimer?.cancel();
+    _popupEntry?.remove();
+    super.dispose();
+  }
+
+  // AUTO-02 공유 완료 팝업 (하단 카드, 4초 후 자동 사라짐)
+  void _showAutoShare(String groupName) {
+    _dismissPopup(); // 기존 팝업 있으면 정리
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        left: 16,
+        right: 16,
+        bottom: 20 + MediaQuery.of(ctx).padding.bottom,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            decoration: BoxDecoration(
+              color: AppColors.cardBG,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.divider),
+              boxShadow: AppColors.cardShadow,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: groupName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryDeep,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: '에 공유되었어요',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: '닫기',
+                        onTap: _dismissPopup,
+                        type: AppButtonType.secondary,
+                        expand: false,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: AppButton(
+                        label: '그룹으로 보러가기',
+                        type: AppButtonType.primary,
+                        expand: false,
+                        onTap: () {
+                          _dismissPopup();
+                          // TODO: 방금 올린 내 활동 카드로 자동 스크롤
+                          context.push('/group/feed', extra: groupName);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(entry);
+    _popupEntry = entry;
+    _popupTimer = Timer(const Duration(seconds: 4), _dismissPopup);
+  }
+
+  void _dismissPopup() {
+    _popupTimer?.cancel();
+    _popupTimer = null;
+    _popupEntry?.remove();
+    _popupEntry = null;
+  }
 
   // 주간 활동 스트립 (날짜 / 활동함 / 오늘 / 빨강표시)
   static const List<_Day> _days = [
@@ -27,6 +146,13 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 홈이 이미 떠 있는 상태에서 공유가 발생한 경우
+    ref.listen<String?>(sharedGroupProvider, (prev, next) {
+      if (next != null) {
+        final g = ref.read(sharedGroupProvider.notifier).consume();
+        if (g != null) _showAutoShare(g);
+      }
+    });
     return Scaffold(
       backgroundColor: AppColors.appBG,
       // bottomNavigationBar 없음 — ShellRoute 가 처리
@@ -42,7 +168,7 @@ class HomeScreen extends StatelessWidget {
               child: _buildTwoCards(),
             ),
             const SizedBox(height: 26),
-            _buildNeighborhood(),
+            _buildNeighborhood(context),
           ],
         ),
       ),
@@ -458,15 +584,18 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ───────────────────────── 우리동네는 지금 ─────────────────────────
-  Widget _buildNeighborhood() {
+  // ───────────────────────── 지금 우리 동네는 (HOME-03) ─────────────────────────
+  Widget _buildNeighborhood(BuildContext context) {
+    // 우리 지역 · 최근 7일 활동 · 내 그룹 제외 · 최신순
+    // TODO: 실제 동네 그룹 데이터로 교체 (placeholder)
+    const groups = ['00동 모여랏', '한강 같이 걸어요', '주말 플로깅 크루', '활동 가치해윱'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            '우리동네는 지금',
+            '지금 우리 동네는',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -476,30 +605,98 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         SizedBox(
-          height: 150,
+          height: 174,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: 4,
+            itemCount: groups.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
-            // TODO: 실제 동네 활동 사진으로 교체 (Image.network 등)
-            itemBuilder: (_, i) => Container(
-              width: 130,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: AppColors.primaryPale,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: AppColors.cardShadow,
-              ),
-              child: const Icon(
-                Symbols.image,
-                color: AppColors.textTertiary,
-                size: 32,
-              ),
-            ),
+            itemBuilder: (context, i) => _neighborCard(context, groups[i]),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _neighborCard(BuildContext context, String name) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      // 내가 안 속한 동네 그룹 → 소개/가입 화면 (검색 결과와 동일)
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => GroupDetailScreen(
+            name: name,
+            region: '00구 00동', // TODO: 실제 그룹 지역
+            meta: '00명 · 오늘 활동 인원 0명', // TODO: 실제 인원 데이터
+            // TODO: 실제 "내 그룹 소속 여부"로 교체
+            alreadyInGroup: false,
+          ),
+        ),
+      ),
+      child: Container(
+        width: 150,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: AppColors.cardBG,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: AppColors.cardShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 봉투 인증샷 (그 그룹의 가장 최근 사진)
+            // TODO: 실제 사진(Image.network)으로 교체
+            Container(
+              height: 110,
+              width: double.infinity,
+              color: AppColors.primaryPale,
+              alignment: Alignment.center,
+              child: const Icon(
+                Symbols.image,
+                color: AppColors.textTertiary,
+                size: 30,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+              child: Row(
+                children: [
+                  // 그룹 대표 이미지 (작은 아이콘)
+                  // TODO: 실제 그룹 대표 이미지로 교체
+                  Container(
+                    width: 22,
+                    height: 22,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primaryPale,
+                    ),
+                    child: const Icon(
+                      Symbols.groups,
+                      size: 14,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
