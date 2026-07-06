@@ -46,8 +46,9 @@ class DetectionResponse {
     final detList = (json['detections'] as List)
         .map((e) => DetectionResult.fromJson(e as Map<String, dynamic>))
         .toList();
-    final countsMap = (json['counts'] as Map<String, dynamic>)
-        .map((k, v) => MapEntry(k, (v as num).toInt()));
+    final countsMap = (json['counts'] as Map<String, dynamic>).map(
+      (k, v) => MapEntry(k, (v as num).toInt()),
+    );
     return DetectionResponse(
       success: json['success'] as bool,
       detections: detList,
@@ -58,19 +59,15 @@ class DetectionResponse {
 }
 
 class GarbageDetector {
-  static const String SERVER_URL = 'http://35.161.165.53:8000';
+  static const String SERVER_URL = 'http://35.91.57.72:8000';
 
   Future<DetectionResponse> detect(Uint8List imageBytes) async {
     final uri = Uri.parse('$SERVER_URL/detect');
     final request = http.MultipartRequest('POST', uri);
-    request.files.add(http.MultipartFile.fromBytes(
-      'file',
-      imageBytes,
-      filename: 'image.jpg',
-    ));
-    final streamed = await request.send().timeout(
-      const Duration(seconds: 10),
+    request.files.add(
+      http.MultipartFile.fromBytes('file', imageBytes, filename: 'image.jpg'),
     );
+    final streamed = await request.send().timeout(const Duration(seconds: 10));
     final response = await http.Response.fromStream(streamed);
     if (response.statusCode != 200) {
       throw Exception('서버 오류: ${response.statusCode}');
