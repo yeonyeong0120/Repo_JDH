@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 추가: SystemChrome
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:repo_jdh/core/theme/app_theme.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';          // 추가
-import 'package:flutter_naver_map/flutter_naver_map.dart';    // 추가
-
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // 추가
+import 'package:flutter_naver_map/flutter_naver_map.dart'; // 추가
 
 // 나중에 여기다 추가
 
@@ -27,6 +27,19 @@ Future<void> main() async {
   await FlutterNaverMap().init(
     clientId: dotenv.env['NAVER_MAP_CLIENT_ID']!,
     onAuthFailed: (ex) => debugPrint('네이버 지도 인증 실패: $ex'),
+  );
+
+  // 시스템 상태바/하단 네비게이션바 색 지정.
+  // 하단 시스템 바는 흰색으로 맞춰 흰 네비 바와 톤을 통일한다(칙칙함 방지).
+  // 아이콘 밝기는 dark(밝은 배경 위 어두운 아이콘)로 둬서 3버튼 내비도 보이게 한다.
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarDividerColor: Colors.white,
+    ),
   );
 
   runApp(const ProviderScope(child: MyApp()));

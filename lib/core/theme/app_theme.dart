@@ -15,6 +15,27 @@ class AppTheme {
         // ← 추가: 모든 팝업 흰 배경
         backgroundColor: Colors.white,
       ),
+
+      // ── 버튼 톤다운 ──
+      // 브랜드 primary는 그대로 두고, 버튼/팝업 액션만 채도 낮춘 primaryMuted 사용.
+      // 주의: 화면에서 color/backgroundColor를 직접 지정한 버튼엔 적용되지 않음
+      //       (그런 버튼은 해당 화면 파일에서 AppColors.primaryMuted로 바꿔야 함).
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primaryMuted,
+          foregroundColor: Colors.white,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryMuted,
+          foregroundColor: Colors.white,
+        ),
+      ),
+      // 팝업의 "확인/취소" 같은 텍스트 버튼 색도 함께 톤다운.
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: AppColors.primaryMuted),
+      ),
     );
   }
 }

@@ -19,6 +19,13 @@ class ActivityScreen extends StatefulWidget {
 class _ActivityScreenState extends State<ActivityScreen> {
   int _tab = 0; // 0:기록 1:뱃지 2:그래프
   int _graphPlay = 0; // 그래프 탭 진입 때마다 +1 → 애니메이션 재생 트리거
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +37,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
           children: [
             _buildHeader(),
             Expanded(
-              child: IndexedStack(
-                index: _tab,
+              child: PageView(
+                controller: _pageController,
+                // 좌우 스와이프로 탭 이동 → 토글 pill·그래프 애니메이션도 따라오게
+                onPageChanged: (i) => setState(() {
+                  _tab = i;
+                  if (i == 2) _graphPlay++;
+                }),
                 children: [
                   const _RecordsTab(),
                   const _BadgesTab(),
@@ -52,19 +64,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
         color: AppColors.primaryPale,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      // 상단바 넉넉하게 + 토글을 헤더 하단에 앉힘(위 여백 크게, 아래 작게).
+      padding: const EdgeInsets.fromLTRB(20, 44, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '내 활동',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 16),
+          // 큰 제목 '내 활동' 제거(요청).
           Row(
             children: [
               _tabItem('기록', 0),
@@ -82,12 +87,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
   Widget _tabItem(String label, int index) {
     final selected = _tab == index;
     return GestureDetector(
-      onTap: () => setState(() {
-        _tab = index;
-        if (index == 2) _graphPlay++; // 그래프 탭 진입 → 애니메이션 재생
-      }),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+      onTap: () => _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      ),
+      child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? AppColors.cardBG : Colors.transparent,
@@ -132,7 +137,12 @@ class _RecordsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        22,
+        20,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+      ),
       children: [
         _sectionHeader(
           '최근 활동',
@@ -371,7 +381,12 @@ class _BadgesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final lockedCount = 8; // 잠긴 뱃지 표시 개수 (?? 로 표시)
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        22,
+        20,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+      ),
       children: [
         // 줍댕이 꾸미기 배너
         Container(
@@ -605,12 +620,12 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
   // 현재 기간의 데이터셋 목록 (누적은 단일)
   List<_GData> get _currentList => _period == 0 ? _weekly : _monthly;
 
-  // 현재 보여줄 데이터
-  _GData get _data {
-    if (_period == 2) return _cumulative;
-    final list = _currentList;
-    final i = _offset.clamp(0, list.length - 1);
-    return list[i];
+  // 특정 기간 페이지용 데이터 (스와이프 대상 페이지가 자기 기간으로 그리게)
+  _GData _dataFor(int period) {
+    if (period == 2) return _cumulative;
+    final list = period == 0 ? _weekly : _monthly;
+    final off = (period == _period) ? _offset : 0; // 현재 페이지만 오프셋 적용
+    return list[off.clamp(0, list.length - 1)];
   }
 
   @override
@@ -665,13 +680,37 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final d = _data;
-    final isCumulative = _period == 2;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+    return Column(
       children: [
-        _periodToggle(),
+        // 고정: 기간 토글 (스와이프해도 위에 그대로)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+          child: _periodToggle(),
+        ),
         const SizedBox(height: 22),
+        // 현재 기간 내용만 표시 (기간 전환은 위 토글 탭).
+        // 여기에 PageView를 두면 메인 탭 스와이프가 막혀서 안 씀.
+        Expanded(child: _periodBody(_period)),
+      ],
+    );
+  }
+
+  // 기간 페이지 1개 (주간/월간/누적) — 자기 기간으로 그린다
+  Widget _periodBody(int period) {
+    final d = _dataFor(period);
+    final isCumulative = period == 2;
+    final off = (period == _period) ? _offset : 0;
+    final listLen = period == 0
+        ? _weekly.length
+        : (period == 1 ? _monthly.length : 1);
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+      ),
+      children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -702,11 +741,11 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 children: [
                   _arrow(
                     Icons.chevron_left,
-                    _offset < _currentList.length - 1,
+                    off < listLen - 1,
                     () => _shift(1),
                   ),
                   const SizedBox(width: 16),
-                  _arrow(Icons.chevron_right, _offset > 0, () => _shift(-1)),
+                  _arrow(Icons.chevron_right, off > 0, () => _shift(-1)),
                 ],
               ),
           ],
@@ -740,7 +779,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
         ),
         const SizedBox(height: 22),
         // 주간: 요일별 막대 / 월간: 주별 꺾은선 / 누적: 그래프 없음
-        if (_period == 0) ...[
+        if (period == 0) ...[
           _chartCard(
             '요일별 활동',
             SizedBox(
@@ -754,7 +793,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
         ],
-        if (_period == 1) ...[
+        if (period == 1) ...[
           _chartCard(
             '주별 활동',
             AnimatedBuilder(
@@ -802,8 +841,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           return Expanded(
             child: GestureDetector(
               onTap: () => _changePeriod(i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
+              child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: selected ? AppColors.primary : Colors.transparent,
@@ -838,7 +876,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
       child: SizedBox(
         height: 64,
         child: Stack(
-          alignment: Alignment.center,
+          // 살짝 왼쪽으로 치우치되 오른쪽 배경 아이콘과 겹치게 (-1=완전왼쪽, 0=가운데)
+          alignment: const Alignment(-0.3, 0),
           clipBehavior: Clip.hardEdge, // 아이콘이 칸 밖으로 안 나가게
           children: [
             // 배경 아이콘 (아이콘마다 밑변 위치 보정)
@@ -855,10 +894,11 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            // 글자 (가운데 정렬 + 폭에 맞춰 축소)
+            // 글자 (왼쪽 정렬 + 폭에 맞춰 축소)
             Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
@@ -933,7 +973,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 height: 90 * bars[i] * t,
                 decoration: BoxDecoration(
                   color: peak
-                      ? AppColors.chartActivityPeak
+                      ? const Color(0xFF4C58AE) // 최다 활동 막대: 더 진한 인디고로 강조
                       : AppColors.chartActivity,
                   borderRadius: BorderRadius.circular(8),
                 ),

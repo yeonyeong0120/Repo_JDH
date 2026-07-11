@@ -14,6 +14,7 @@ class QuestListScreen extends StatefulWidget {
 
 class _QuestListScreenState extends State<QuestListScreen> {
   int _tab = 0; // 0 전체 / 1 진행중 / 2 완료됨
+  final PageController _pageController = PageController();
 
   // 퀘스트 색: 걸음수 파랑 / 칼로리 빨강 / 수거량 초록 / 그룹참여 주황 / 시간 보라
   // TODO: 실제 퀘스트 데이터로 교체
@@ -48,16 +49,55 @@ class _QuestListScreenState extends State<QuestListScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    // 탭 필터: 진행중 = 0<현재<목표 / 완료됨 = 현재>=목표 / 전체 = 모두(미착수 포함)
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  // 탭별 퀘스트 목록 (필터 + 진행률 오름차순 정렬)
+  // 진행중 = 0<현재<목표 / 완료됨 = 현재>=목표 / 전체 = 모두(미착수 포함)
+  List<_Q> _listFor(int tab) {
     final list = _quests.where((q) {
-      if (_tab == 1) return q.current > 0 && q.current < q.total;
-      if (_tab == 2) return q.current >= q.total;
+      if (tab == 1) return q.current > 0 && q.current < q.total;
+      if (tab == 2) return q.current >= q.total;
       return true;
     }).toList();
-    // 진행률 오름차순 정렬 (미착수 → 덜 진행 → 더 진행 → 완료)
     list.sort((a, b) => (a.current / a.total).compareTo(b.current / b.total));
+    return list;
+  }
 
+  // 탭별 페이지 (리스트 or 빈 상태) — PageView 의 한 페이지
+  Widget _questPage(int tab) {
+    final list = _listFor(tab);
+    if (list.isEmpty) {
+      return const Center(
+        child: Text(
+          '해당하는 퀘스트가 없어요',
+          style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
+        ),
+      );
+    }
+    return ListView(
+      // 하단 네비바가 뜬 채로 열리는 화면 → 바 높이(63+12+혹13+여유)만큼 여백.
+      padding: EdgeInsets.fromLTRB(
+        20,
+        4,
+        20,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+      ),
+      children: list
+          .map(
+            (q) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _questCard(q),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.appBG,
       body: SafeArea(
@@ -91,27 +131,12 @@ class _QuestListScreenState extends State<QuestListScreen> {
               child: _tabBar(),
             ),
             Expanded(
-              child: list.isEmpty
-                  ? const Center(
-                      child: Text(
-                        '해당하는 퀘스트가 없어요',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-                      children: list
-                          .map(
-                            (q) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _questCard(q),
-                            ),
-                          )
-                          .toList(),
-                    ),
+              child: PageView(
+                controller: _pageController,
+                // 스와이프로도 탭 전환 → 토글 pill 이 따라오도록 _tab 갱신
+                onPageChanged: (i) => setState(() => _tab = i),
+                children: [_questPage(0), _questPage(1), _questPage(2)],
+              ),
             ),
           ],
         ),
@@ -121,40 +146,69 @@ class _QuestListScreenState extends State<QuestListScreen> {
 
   Widget _tabBar() {
     const labels = ['전체', '진행중', '완료됨'];
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.appBG,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        children: List.generate(labels.length, (i) {
-          final selected = _tab == i;
-          return Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => _tab = i),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 9),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  labels[i],
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : AppColors.textSecondary,
+    final n = labels.length; // List.length는 const 평가 불가 → final
+    return LayoutBuilder(
+      builder: (context, c) {
+        final innerW = c.maxWidth - 8; // 좌우 padding 4씩 제외
+        final segW = innerW / n;
+        return Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.primaryPale, // 연한 트랙 (테두리 없이 부드럽게)
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: SizedBox(
+            height: 36,
+            child: Stack(
+              children: [
+                // 슬라이딩 선택 pill — 탭 바뀌면 부드럽게 이동
+                AnimatedAlign(
+                  alignment: Alignment(-1 + _tab * (2 / (n - 1)), 0),
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  child: Container(
+                    width: segW,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: AppColors.buttonShadow,
+                    ),
                   ),
                 ),
-              ),
+                Row(
+                  children: List.generate(n, (i) {
+                    final selected = _tab == i;
+                    return Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _pageController.animateToPage(
+                          i,
+                          duration: const Duration(milliseconds: 280),
+                          curve: Curves.easeOutCubic,
+                        ),
+                        child: Center(
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 240),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: selected
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                            ),
+                            child: Text(labels[i]),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
             ),
-          );
-        }),
-      ),
+          ),
+        );
+      },
     );
   }
 

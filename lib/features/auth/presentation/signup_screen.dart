@@ -104,16 +104,21 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 뒤로가기 (AppBar 대신 로그인과 동일한 톤의 아이콘 버튼)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 20,
+                          // 뒤로가기 — 폼의 좌우 24 패딩을 상쇄해 화면 왼쪽 끝에 붙임.
+                          Transform.translate(
+                            offset: const Offset(-12, 0),
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                alignment: Alignment.centerLeft,
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new,
+                                  size: 20,
+                                ),
+                                color: AppColors.textPrimary,
+                                onPressed: () => Navigator.pop(context),
                               ),
-                              color: AppColors.textPrimary,
-                              onPressed: () => Navigator.pop(context),
                             ),
                           ),
                           Expanded(

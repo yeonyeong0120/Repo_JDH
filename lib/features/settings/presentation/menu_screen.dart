@@ -19,17 +19,20 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.appBG,
-      body: SafeArea(
-        bottom: false,
+      body: SingleChildScrollView(
+        // 하단 네비바 클리어런스(바 높이 63+12+혹13+여유)
+        padding: EdgeInsets.only(
+          bottom: MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+        ),
         child: Column(
           children: [
-            _buildHeader(),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+            // 홈처럼 곡선 파스텔 헤더 + 프로필 카드가 곡선 중간까지 걸침
+            _buildHeaderWithProfile(),
+            const SizedBox(height: 22),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
                 children: [
-                  _profileCard(),
-                  const SizedBox(height: 22),
                   _toggleCard(
                     icon: Icons.lightbulb_outline,
                     title: '다크모드',
@@ -68,23 +71,29 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  // ───────────────────────── 헤더 ─────────────────────────
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primaryPale,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      child: const Text(
-        '메뉴',
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+  // ─────────────────── 곡선 헤더 + 프로필 카드 (홈 스타일) ───────────────────
+  Widget _buildHeaderWithProfile() {
+    return Stack(
+      children: [
+        // 아래가 곡선인 파스텔 헤더 — 프로필 카드 중간쯤까지 내려옴
+        ClipPath(
+          clipper: _MenuCurveClipper(),
+          child: Container(
+            // height ↑ = 곡선이 더 아래로(카드 더 많이 덮음) / ↓ = 위로
+            height: 168,
+            width: double.infinity,
+            color: AppColors.primaryPale,
+          ),
         ),
-      ),
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            // 위 여백 키워서 카드/컨텐츠 전체를 아래로 (숫자 ↑ = 더 내려감)
+            padding: const EdgeInsets.fromLTRB(20, 44, 20, 0),
+            child: _profileCard(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -322,4 +331,25 @@ class _MenuScreenState extends State<MenuScreen> {
       ),
     );
   }
+}
+
+// 헤더 아래쪽 곡선 클리퍼 (가운데가 살짝 더 내려오는 둥근 곡선 — 홈과 동일)
+class _MenuCurveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final p = Path();
+    p.lineTo(0, size.height - 36);
+    p.quadraticBezierTo(
+      size.width / 2,
+      size.height,
+      size.width,
+      size.height - 36,
+    );
+    p.lineTo(size.width, 0);
+    p.close();
+    return p;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
