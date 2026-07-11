@@ -37,6 +37,16 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
   // 경로 색상.
   static const _routeColor = Color(0xFF1D9E75);
 
+  // 핀 마커 크기(출발: 핀만 / 도착: 핀 + 라벨). 아래는 이미지를 굽는 원본 해상도.
+  static const double _pinW = 46;
+  static const double _pinH = 58;
+  static const double _markerW = 180;
+  static const double _markerH = 58;
+
+  // 지도에 실제로 표시되는 마커 배율. 원본 해상도는 그대로 두고 표시 크기만 줄여
+  // 핀·아이콘·라벨이 통째로 균일하게 축소된다(잘림 없음). 1.0 = 원본, 작을수록 작아짐.
+  static const double _markerScale = 0.8;
+
   NaverMapController? _controller;
   // GPS 위치를 받아 지도를 처음 한 번만 출발지로 이동시키기 위한 플래그.
   bool _centeredOnOrigin = false;
@@ -146,36 +156,45 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
 
   // 현재 상태(출발지·도착지·추천 결과)를 지도에 통째로 다시 그린다.
   // clearOverlays로 비운 뒤 필요한 오버레이만 재구성해 stale 오버레이를 방지한다.
-  void _render() {
+  // 도착 마커는 깃발+예상시간 라벨을 위젯 이미지로 그려 붙인다(비동기).
+  Future<void> _render() async {
     final controller = _controller;
     if (controller == null) return;
 
-    controller.clearOverlays();
-
     final overlays = <NAddableOverlay>{};
 
-    // 출발지 마커
+    // 출발지 마커 (원 안 사람 핀)
     final origin = ref.read(currentLocationProvider).valueOrNull;
     final originLat = (origin?['latitude'] as num?)?.toDouble();
     final originLon = (origin?['longitude'] as num?)?.toDouble();
     if (originLat != null && originLon != null) {
+      final originIcon = await _buildOriginMarkerIcon();
+      if (!mounted) return;
       overlays.add(
         NMarker(
           id: 'origin',
           position: NLatLng(originLat, originLon),
-          caption: const NOverlayCaption(text: '출발'),
+          icon: originIcon,
+          size: const NSize(_pinW * _markerScale, _pinH * _markerScale),
+          anchor: const NPoint(0.5, 1.0),
         ),
       );
     }
 
-    // 도착지 마커
+    // 도착지 마커 (깃발 핀 + "약 N분" 라벨, 결과 없으면 라벨 없음)
     final dest = ref.read(destinationProvider);
     if (dest != null) {
+      final label = _destLabel(ref.read(routeNotifierProvider));
+      final icon = await _buildDestMarkerIcon(label);
+      if (!mounted) return;
       overlays.add(
         NMarker(
           id: 'dest',
           position: NLatLng(dest.$1, dest.$2),
-          caption: const NOverlayCaption(text: '도착'),
+          icon: icon,
+          size: const NSize(_markerW * _markerScale, _markerH * _markerScale),
+          // 핀 끝(좌측 핀 하단 중앙)이 좌표를 가리키도록 앵커 지정(비율이라 배율과 무관)
+          anchor: const NPoint(_pinW / 2 / _markerW, 1.0),
         ),
       );
     }
@@ -198,7 +217,50 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
       // k3 핫스팟은 지도에 마커로 표시하지 않는다(경로 폴리라인만 노출).
     }
 
+    controller.clearOverlays();
     if (overlays.isNotEmpty) controller.addOverlayAll(overlays);
+  }
+
+  // 도착 마커 라벨: 경로 결과가 있으면 "약 N분", 아직 없으면(로딩/실패) 라벨 없음.
+  String? _destLabel(AsyncValue<RouteResult?> routeState) {
+    final result = routeState.valueOrNull;
+    if (result != null && result.durationMs > 0) {
+      final min = (result.durationMs / 60000).round();
+      return '약 ${min < 1 ? 1 : min}분';
+    }
+    return null;
+  }
+
+  // 깃발+라벨 위젯을 도착 마커용 이미지로 변환한다.
+  Future<NOverlayImage> _buildDestMarkerIcon(String? label) {
+    return NOverlayImage.fromWidget(
+      context: context,
+      size: const Size(_markerW, _markerH),
+      widget: _PinMarker(
+        head: const Icon(Icons.flag, color: Colors.white, size: 28),
+        label: label,
+      ),
+    );
+  }
+
+  // 출발 마커용 이미지(원 안 사람 핀).
+  Future<NOverlayImage> _buildOriginMarkerIcon() {
+    return NOverlayImage.fromWidget(
+      context: context,
+      size: const Size(_pinW, _pinH),
+      widget: _PinMarker(
+        head: Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.person, color: AppColors.primary, size: 16),
+        ),
+      ),
+    );
   }
 
   // 경로 추천 요청. 출발=현재 GPS, 도착=탭 지점. district는 서버 전체 처리에 위임(생략).
@@ -353,4 +415,90 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
       ),
     );
   }
+}
+
+// 지도 마커 공통 핀: 부드러운 물방울 형태 + 가운데 아이콘(+오른쪽 라벨).
+// NOverlayImage.fromWidget 으로 이미지 변환되어 마커 아이콘이 된다.
+class _PinMarker extends StatelessWidget {
+  final Widget head; // 핀 머리 안에 들어갈 위젯(깃발/사람 등)
+  final String? label; // null이면 핀만
+  const _PinMarker({required this.head, this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 물방울 핀 + 머리 아이콘
+          SizedBox(
+            width: 46,
+            height: 58,
+            child: Stack(
+              children: [
+                const Positioned.fill(
+                  child: CustomPaint(painter: _PinPainter(AppColors.primary)),
+                ),
+                // 머리 중심(대략 y=22)에 아이콘 배치
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 10,
+                  child: Center(child: head),
+                ),
+              ],
+            ),
+          ),
+          if (label != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 6, top: 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                ),
+                child: Text(
+                  label!,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// 부드러운 물방울(핀) 모양을 그린다. 하단 끝점이 좌표를 가리킨다.
+class _PinPainter extends CustomPainter {
+  final Color color;
+  const _PinPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sx = size.width / 50;
+    final sy = size.height / 60;
+    final path = Path()
+      ..moveTo(25 * sx, 0)
+      ..cubicTo(11 * sx, 0, 0, 11 * sy, 0, 24 * sy)
+      ..cubicTo(0, 40 * sy, 25 * sx, 60 * sy, 25 * sx, 60 * sy)
+      ..cubicTo(25 * sx, 60 * sy, 50 * sx, 40 * sy, 50 * sx, 24 * sy)
+      ..cubicTo(50 * sx, 11 * sy, 39 * sx, 0, 25 * sx, 0)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PinPainter old) => old.color != color;
 }

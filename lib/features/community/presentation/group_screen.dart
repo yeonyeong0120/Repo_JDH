@@ -31,7 +31,13 @@ class GroupScreen extends StatelessWidget {
             _buildHeader(context),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+                // 하단 네비바 클리어런스(바 높이 63+12+혹13+여유)
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  22,
+                  20,
+                  MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+                ),
                 children: [
                   _sectionLabel('내 그룹'),
                   const SizedBox(height: 12),
@@ -66,19 +72,12 @@ class GroupScreen extends StatelessWidget {
         color: AppColors.primaryPale,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      // 상단바 넉넉하게 + 부제/버튼을 헤더 하단에 앉힘(위 여백 크게, 아래 작게).
+      padding: const EdgeInsets.fromLTRB(20, 44, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '그룹',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 10),
+          // 큰 제목 '그룹' 제거(요청). 부제 + 검색/추가 버튼만 유지.
           Row(
             children: [
               const Expanded(

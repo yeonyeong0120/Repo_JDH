@@ -14,6 +14,11 @@ class AppColors {
   static const Color primaryLight = Color(0xFF95E4CD);
   static const Color primaryPale = Color(0xFFEAF8F2);
 
+  /// 버튼·팝업 액션 전용 톤다운 primary. 브랜드 primary보다 채도를 낮춰
+  /// 실기기에서 색이 덜 튀도록 한 값. 여기 한 줄만 바꾸면 버튼 톤이 조정됨.
+  /// (더 차분하게: 0xFF5AA593 쪽 / 더 진하게: primary(0xFF27AC88) 쪽)
+  static const Color primaryMuted = Color(0xFF4CA892);
+
   // ========================================================
   // SECONDARY - 코랄 (액센트 컬러)
   // ========================================================
@@ -144,27 +149,27 @@ class AppColors {
   /// 카드 기본 그림자. 일반 카드에 사용.
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: primaryDeep.withValues(alpha: 0.10), // 0.18 → 0.10
-      blurRadius: 10, // 14 → 10
-      offset: const Offset(0, 4), // (0,6) → (0,4)
+      color: primaryDeep.withValues(alpha: 0.05), // 0.10 → 0.05 (더 연하게)
+      blurRadius: 8, // 10 → 8
+      offset: const Offset(0, 3), // (0,4) → (0,3)
     ),
   ];
 
   /// 강조 카드 그림자. 메인 카드 (활동 요약, 환경 영향력)에 사용.
   static List<BoxShadow> get cardShadowStrong => [
     BoxShadow(
-      color: const Color(0xFF000000).withValues(alpha: 0.06),
-      blurRadius: 24,
-      offset: const Offset(0, 8),
+      color: const Color(0xFF000000).withValues(alpha: 0.04), // 0.06 → 0.04
+      blurRadius: 18, // 24 → 18
+      offset: const Offset(0, 5), // (0,8) → (0,5)
     ),
   ];
 
   /// 버튼 그림자. CTA 버튼에 사용.
   static List<BoxShadow> get buttonShadow => [
     BoxShadow(
-      color: primary.withValues(alpha: 0.25),
-      blurRadius: 16,
-      offset: const Offset(0, 6),
+      color: primary.withValues(alpha: 0.12), // 0.25 → 0.12 (확 연하게)
+      blurRadius: 12, // 16 → 12
+      offset: const Offset(0, 4), // (0,6) → (0,4)
     ),
   ];
 }

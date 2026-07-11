@@ -46,6 +46,11 @@ final isLoggedInProvider = Provider<bool>((ref) {
   return authState.maybeWhen(data: (user) => user != null, orElse: () => false);
 });
 
+// 하단 네비 셸(탭 화면들)이 쓰는 내비게이터 키.
+// 탭을 누를 때 이 키로 위에 쌓인 상세 화면(환경영향력/뉴스/동네 상세 등)을 정리한다.
+final GlobalKey<NavigatorState> _shellNavigatorKey =
+    GlobalKey<NavigatorState>();
+
 @riverpod
 GoRouter appRouter(Ref ref) {
   final isLoggedIn = ref.watch(isLoggedInProvider);
@@ -93,6 +98,7 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const NicknameSetupScreen(),
       ),
       ShellRoute(
+        navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) {
           return _ScaffoldWithBottomNav(child: child);
         },
@@ -202,13 +208,21 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
   static const double _startIconSize = 33; // 버튼 안 달리기 아이콘 크기
   static const double _startLabelSize = 14; // 버튼 안 '시작' 글씨 크기
   static const double _navBottomPad = 0; // ★ 아이콘 아래 여백 (작을수록 아이콘이 더 아래로)
+  static const double _barLift = 12; // ★ 네비 아이콘을 바 안에서 위로 끌어올리는 높이 (클수록 더 위로)
   static const double _startBumpSize = 88; // 흰 혹(원) 지름 = 버튼 둘레 흰 여백 (높이 아님!)
   static const Color _startBtnColor = Color(0xFF0C7D5E); // 시작 버튼 색
   // ▲▲▲ 직접 조절하는 값 ▲▲▲
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: child, bottomNavigationBar: _buildBar(context));
+    // extendBody: 본문을 바 뒤까지 깔아 둥근 모서리로 컨텐츠가 비치게 한다.
+    // 각 탭 화면은 스크롤 하단에 '실제 시스템바 인셋 + 바 높이'만큼 여백을 줘서
+    // 마지막 컨텐츠가 바에 안 가리게 한다.
+    return Scaffold(
+      extendBody: true,
+      body: child,
+      bottomNavigationBar: _buildBar(context),
+    );
   }
 
   Widget _buildBar(BuildContext context) {
@@ -216,18 +230,20 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return SizedBox(
-      height: _barHeight + bottomInset,
+      height: _barHeight + bottomInset + _barLift,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // 흰 바 + 회색 테두리 (둥근 모서리까지 그대로 따라감)
+          // 흰 바 + 회색 테두리 (둥근 위 모서리까지 그대로 따라감).
+          // 바를 화면 맨 아래까지 채워 아래 탁한 배경/바닥 선을 가리고,
+          // '위로'는 아래 padding(bottomInset + _barLift)으로 아이콘을 끌어올려 만든다.
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             child: Container(
-              height: _barHeight + bottomInset,
-              padding: EdgeInsets.only(bottom: bottomInset),
+              height: _barHeight + bottomInset + _barLift,
+              padding: EdgeInsets.only(bottom: bottomInset + _barLift),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: const BorderRadius.vertical(
@@ -372,6 +388,10 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
   void _onTap(BuildContext context, int index) {
     switch (index) {
       case 0:
+        // 홈은 '이미 홈 탭'일 때 context.go가 무효라, 위에 쌓인 상세 화면
+        // (환경영향력/뉴스/동네 상세)을 먼저 정리해서 홈으로 확실히 돌아가게 한다.
+        // ※ 다른 탭은 context.go가 알아서 정리하므로 pop을 넣지 않는다(잔상 방지).
+        _shellNavigatorKey.currentState?.popUntil((route) => route.isFirst);
         context.go(AppRoutes.home);
       case 1:
         context.go(AppRoutes.group);

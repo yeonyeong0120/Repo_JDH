@@ -157,7 +157,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: AppColors.appBG,
       // bottomNavigationBar 없음 — ShellRoute 가 처리
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 28),
+        // 마지막 컨텐츠가 바에 안 가리게: 실제 시스템바 인셋 + 바 높이(63+12+혹13+여유)
+        padding: EdgeInsets.only(
+          bottom: MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -183,7 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ClipPath(
           clipper: _BottomCurveClipper(),
           child: Container(
-            height: 330,
+            height: 310, // 내용 내린 만큼 곡선 헤더도 키움(원래 330→285→310)
             width: double.infinity,
             color: AppColors.primaryPale,
           ),
@@ -199,15 +202,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '줍다행',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    // 큰 제목 '줍다행' 제거(요청). 위 여백으로 전체를 아래로 내림.
+                    const SizedBox(height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: _days.map(_dayCell).toList(),
@@ -520,7 +516,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // TODO: 줍댕이(물개) 캐릭터 이미지로 교체 (assets/images/jupdaengi.png)
           const Align(
             alignment: Alignment.centerRight,
-            child: Text('🦭', style: TextStyle(fontSize: 52)),
+            child: Text('🦭', style: TextStyle(fontSize: 40)), // 52 → 40 축소
           ),
         ],
       ),
@@ -537,7 +533,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 뉴스 썸네일 (종이 뉴스 아이콘)
           Align(
             alignment: Alignment.centerRight,
-            child: const Text('📰', style: TextStyle(fontSize: 44)),
+            child: const Text(
+              '📰',
+              style: TextStyle(fontSize: 32),
+            ), // 44 → 32 축소
           ),
           const SizedBox(height: 10),
           const Text(
