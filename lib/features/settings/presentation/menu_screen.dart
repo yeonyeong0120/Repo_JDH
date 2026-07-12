@@ -254,15 +254,56 @@ class _MenuScreenState extends State<MenuScreen> {
               ],
             ),
           ),
-          Icon(icon, size: 20, color: AppColors.textTertiary),
-          const SizedBox(width: 4),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: Colors.white,
-            activeTrackColor: AppColors.primary,
-          ),
+          _iconSwitch(icon: icon, value: value, onChanged: onChanged),
         ],
+      ),
+    );
+  }
+
+  // 아이콘이 썸(움직이는 원) 안에 들어간 커스텀 스위치.
+  // OFF: 검정 썸(아이콘 흰색) / ON: 노랑 썸(아이콘 검정).
+  Widget _iconSwitch({
+    required IconData icon,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    const dur = Duration(milliseconds: 240); // ← 애니메이션 속도(작을수록 빠름)
+    const w = 56.0, h = 32.0, thumb = 26.0;
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: dur,
+        curve: Curves.easeInOut,
+        width: w,
+        height: h,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          // 트랙: OFF 연회색 / ON 연한 크림(톤다운)
+          color: value ? const Color(0xFFF7EBC9) : AppColors.divider,
+          borderRadius: BorderRadius.circular(h / 2),
+        ),
+        child: AnimatedAlign(
+          duration: dur,
+          curve: Curves.easeInOut,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: AnimatedContainer(
+            duration: dur,
+            curve: Curves.easeInOut,
+            width: thumb,
+            height: thumb,
+            decoration: BoxDecoration(
+              // 썸: OFF 차콜 그레이 / ON 부드러운 골드 (원색 톤다운)
+              color: value ? const Color(0xFFFFEA76) : const Color(0xFF4D4D4D),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: 15,
+              color: value ? const Color(0xFF4D4D4D) : const Color(0xFFF5F5F5),
+            ),
+          ),
+        ),
       ),
     );
   }

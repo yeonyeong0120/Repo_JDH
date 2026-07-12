@@ -186,7 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ClipPath(
           clipper: _BottomCurveClipper(),
           child: Container(
-            height: 310, // 내용 내린 만큼 곡선 헤더도 키움(원래 330→285→310)
+            height: 310, // 내용 살짝 올린 만큼 곡선도(330→285→290→316→310)
             width: double.infinity,
             color: AppColors.primaryPale,
           ),
@@ -202,7 +202,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 큰 제목 '줍다행' 제거(요청). 위 여백으로 전체를 아래로 내림.
+                    // 큰 제목 '줍다행' 제거(요청). 위 여백(6+32) — 메뉴보다 살짝 위.
                     const SizedBox(height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -385,7 +385,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Row(
+                // 라벨을 윗줄로 빼고 스탯을 아랫줄 전체 폭으로 → 글자 안 쪼그라들고 커짐
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       '이번주 플로깅 활동',
@@ -394,17 +396,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
                       child: FittedBox(
-                        alignment: Alignment.centerRight,
                         fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
                         child: Row(
                           children: [
                             _stat(Symbols.steps, '2000 보'),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 18),
                             _stat(Symbols.delete, '1.3 kg'),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 18),
                             _stat(Symbols.local_fire_department, '3012 kcal'),
                           ],
                         ),
@@ -429,8 +432,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Text(
           text,
           style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
             color: AppColors.textPrimary,
           ),
         ),
@@ -479,44 +482,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text.rich(
-            TextSpan(
-              children: [
+          // ── 위: 제목 + 물개(작게, 오른쪽) ──
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text.rich(
                 TextSpan(
-                  text: '5일 연속\n',
+                  children: [
+                    TextSpan(
+                      text: '5일 연속\n',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '줍다행 중!',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              // TODO: 줍댕이(물개) 캐릭터 이미지로 교체 (assets/images/jupdaengi.png)
+              const Align(
+                alignment: Alignment.centerRight,
+                child: Text('🦭', style: TextStyle(fontSize: 40)),
+              ),
+            ],
+          ),
+          // ── 아래: 뉴스 카드 '고냐니 기자 >' 스타일 CTA ──
+          Row(
+            children: const [
+              Expanded(
+                child: Text(
+                  '기록 확인하러 가기',
                   style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                TextSpan(
-                  text: '줍다행 중!',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            '나의 기록을\n확인해볼까요?',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 6),
-          // TODO: 줍댕이(물개) 캐릭터 이미지로 교체 (assets/images/jupdaengi.png)
-          const Align(
-            alignment: Alignment.centerRight,
-            child: Text('🦭', style: TextStyle(fontSize: 40)), // 52 → 40 축소
+              ),
+              SizedBox(width: 4),
+              Icon(
+                Symbols.chevron_right,
+                color: AppColors.textTertiary,
+                size: 20,
+              ),
+            ],
           ),
         ],
       ),

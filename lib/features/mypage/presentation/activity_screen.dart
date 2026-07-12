@@ -36,23 +36,77 @@ class _ActivityScreenState extends State<ActivityScreen> {
         child: Column(
           children: [
             _buildHeader(),
+            // 그래프 영역(주간/월간/누적)일 때만 기간 토글이 헤더 아래 고정으로 나타남.
+            // 기간 스와이프 시 이 토글은 그대로 있고 아래 내용만 슬라이드된다.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              child: _tab >= 2
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 2),
+                      child: _periodToggleBar(),
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
             Expanded(
               child: PageView(
                 controller: _pageController,
-                // 좌우 스와이프로 탭 이동 → 토글 pill·그래프 애니메이션도 따라오게
+                // 기록·뱃지·주간·월간·누적을 한 줄로 → 모든 탭이 공평하게 스와이프됨
                 onPageChanged: (i) => setState(() {
                   _tab = i;
-                  if (i == 2) _graphPlay++;
+                  if (i >= 2) _graphPlay++; // 그래프 영역 진입 → 애니메이션 재생
                 }),
                 children: [
                   const _RecordsTab(),
                   const _BadgesTab(),
-                  _GraphTab(playToken: _graphPlay),
+                  _GraphTab(period: 0, playToken: _graphPlay),
+                  _GraphTab(period: 1, playToken: _graphPlay),
+                  _GraphTab(period: 2, playToken: _graphPlay),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // 그래프 기간 토글 (주간/월간/누적) — 그래프 영역에서만 헤더 아래 고정 표시.
+  // 탭하면 해당 기간 페이지로 슬라이드(_goPeriod).
+  Widget _periodToggleBar() {
+    const labels = ['주간', '월간', '누적'];
+    final cur = _tab >= 2 ? _tab - 2 : 0;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.primaryPale,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: List.generate(labels.length, (i) {
+          final selected = cur == i;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => _goPeriod(i),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  labels[i],
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -84,8 +138,18 @@ class _ActivityScreenState extends State<ActivityScreen> {
     );
   }
 
+  // 그래프 기간(주간/월간/누적) 토글 → 해당 페이지(2+p)로 슬라이드
+  void _goPeriod(int p) {
+    _pageController.animateToPage(
+      2 + p,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   Widget _tabItem(String label, int index) {
-    final selected = _tab == index;
+    // '그래프'(2)는 주간/월간/누적(page 2~4) 어디에 있어도 선택 표시
+    final selected = index == 2 ? _tab >= 2 : _tab == index;
     return GestureDetector(
       onTap: () => _pageController.animateToPage(
         index,
@@ -519,8 +583,9 @@ class _BadgesTab extends StatelessWidget {
 
 // ════════════════════════════ 그래프 탭 ════════════════════════════
 class _GraphTab extends StatefulWidget {
-  final int playToken; // 값이 바뀌면 애니메이션 재생 (탭 재진입마다)
-  const _GraphTab({required this.playToken});
+  final int period; // 이 페이지가 담당하는 기간 (0:주간 1:월간 2:누적)
+  final int playToken; // 값이 바뀌면 애니메이션 재생
+  const _GraphTab({required this.period, required this.playToken});
 
   @override
   State<_GraphTab> createState() => _GraphTabState();
@@ -530,8 +595,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
   late final AnimationController _ac; // 꺾은선(월간)용 900ms
   late final AnimationController _acFast; // 막대·도넛용 800ms
 
-  int _period = 0; // 0:주간 1:월간 2:누적
-  int _offset = 0; // 현재 보고 있는 주/월 인덱스 (0=가장 최근)
+  int _offset = 0; // 이 기간 안에서 보고 있는 주/월 인덱스 (0=가장 최근)
 
   // TODO: 실제 기간별 데이터로 교체 (지금은 더미)
   // 주간: 요일별(월~일) 막대
@@ -617,15 +681,14 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     _Segment('유리', 3, AppColors.categoryPurple),
   ];
 
-  // 현재 기간의 데이터셋 목록 (누적은 단일)
-  List<_GData> get _currentList => _period == 0 ? _weekly : _monthly;
+  // 이 페이지 기간의 데이터셋 목록 (누적은 단일)
+  List<_GData> get _currentList => widget.period == 0 ? _weekly : _monthly;
 
-  // 특정 기간 페이지용 데이터 (스와이프 대상 페이지가 자기 기간으로 그리게)
+  // 이 페이지 기간의 데이터 (오프셋만큼 과거로)
   _GData _dataFor(int period) {
     if (period == 2) return _cumulative;
     final list = period == 0 ? _weekly : _monthly;
-    final off = (period == _period) ? _offset : 0; // 현재 페이지만 오프셋 적용
-    return list[off.clamp(0, list.length - 1)];
+    return list[_offset.clamp(0, list.length - 1)];
   }
 
   @override
@@ -662,17 +725,9 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     _acFast.forward(from: 0);
   }
 
-  void _changePeriod(int p) {
-    setState(() {
-      _period = p;
-      _offset = 0; // 기간 바꾸면 최근으로 리셋
-    });
-    _replay(); // 데이터 바뀌면 다시 차오름
-  }
-
   // 화살표: older = 과거로(오프셋+1), newer = 최근으로(오프셋-1)
   void _shift(int delta) {
-    if (_period == 2) return; // 누적은 이동 없음
+    if (widget.period == 2) return; // 누적은 이동 없음
     final max = _currentList.length - 1;
     setState(() => _offset = (_offset + delta).clamp(0, max));
     _replay();
@@ -680,33 +735,23 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // 고정: 기간 토글 (스와이프해도 위에 그대로)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
-          child: _periodToggle(),
-        ),
-        const SizedBox(height: 22),
-        // 현재 기간 내용만 표시 (기간 전환은 위 토글 탭).
-        // 여기에 PageView를 두면 메인 탭 스와이프가 막혀서 안 씀.
-        Expanded(child: _periodBody(_period)),
-      ],
-    );
+    // 기간 토글은 부모(_ActivityScreenState)가 헤더 아래 고정으로 그린다.
+    // 이 페이지는 내용만 → 기간 스와이프 시 내용만 슬라이드된다.
+    return _periodBody(widget.period);
   }
 
-  // 기간 페이지 1개 (주간/월간/누적) — 자기 기간으로 그린다
+  // 이 페이지의 기간 내용 (주간/월간/누적)
   Widget _periodBody(int period) {
     final d = _dataFor(period);
     final isCumulative = period == 2;
-    final off = (period == _period) ? _offset : 0;
+    final off = _offset;
     final listLen = period == 0
         ? _weekly.length
         : (period == 1 ? _monthly.length : 1);
     return ListView(
       padding: EdgeInsets.fromLTRB(
         20,
-        0,
+        10,
         20,
         MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
       ),
@@ -760,6 +805,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               'track_thick.svg',
               iconSize: 58,
               iconBottom: 2,
+              dx: 8, // 가운데쪽으로(오른쪽), 아이콘도 같이
             ),
             _summaryStat(
               '칼로리',
@@ -767,13 +813,16 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               AppColors.categoryRed,
               'fire_thick.svg',
               iconBottom: 8,
+              dx: 0, // 정중앙 (기준)
             ),
             _summaryStat(
               '수거량',
               d.weight,
               AppColors.categoryGreen,
               'garbage_thick.svg',
-              iconBottom: 2,
+              iconBottom: 4, // 아이콘마다 투명배경 여백이 달라 개별 보정(사용자 조정값)
+              dx: -8, // 가운데쪽으로(왼쪽), 걸음수와 대칭
+              textY: -0.35, // 수거량 글씨만 미세하게 위로
             ),
           ],
         ),
@@ -783,7 +832,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           _chartCard(
             '요일별 활동',
             SizedBox(
-              height: 130,
+              height: 145, // 왕관 얹을 여유 포함(원래 130)
               child: AnimatedBuilder(
                 animation: _acFast,
                 builder: (_, __) =>
@@ -827,43 +876,6 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     );
   }
 
-  Widget _periodToggle() {
-    final labels = ['주간', '월간', '누적'];
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.primaryPale,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: List.generate(labels.length, (i) {
-          final selected = _period == i;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => _changePeriod(i),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: selected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  labels[i],
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
   Widget _summaryStat(
     String label,
     String value,
@@ -871,58 +883,75 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     String asset, {
     double iconSize = 46,
     double iconBottom = 6,
+    double dx = 0, // 묶음(글씨+아이콘)을 통째로 좌우 이동(px) — 둘이 항상 같은 픽셀로 이동
+    double textY = 0, // 글씨 세로 위치 (0=가운데, 음수=위)
   }) {
     return Expanded(
       child: SizedBox(
         height: 64,
-        child: Stack(
-          // 살짝 왼쪽으로 치우치되 오른쪽 배경 아이콘과 겹치게 (-1=완전왼쪽, 0=가운데)
-          alignment: const Alignment(-0.3, 0),
-          clipBehavior: Clip.hardEdge, // 아이콘이 칸 밖으로 안 나가게
-          children: [
-            // 배경 아이콘 (아이콘마다 밑변 위치 보정)
-            Positioned(
-              right: 0,
-              bottom: iconBottom,
-              child: SvgPicture.asset(
-                'assets/icons/$asset',
-                width: iconSize,
-                height: iconSize,
-                colorFilter: ColorFilter.mode(
-                  AppColors.textTertiary.withValues(alpha: 0.18),
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-            // 글자 (왼쪽 정렬 + 폭에 맞춰 축소)
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: color,
+        child: Align(
+          alignment: Alignment.center,
+          child: Transform.translate(
+            offset: Offset(dx, 0),
+            child: SizedBox(
+              // ★ 고정 폭 묶음: 글씨(왼쪽) + 아이콘(오른쪽)이 한 덩어리로 같이 이동
+              width: 92,
+              height: 64,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // 배경 흑백 아이콘 — 묶음 오른쪽에 peek (글씨 뒤에 안 묻힘)
+                  Positioned(
+                    right: 0,
+                    bottom: iconBottom,
+                    child: SvgPicture.asset(
+                      'assets/icons/$asset',
+                      width: iconSize,
+                      height: iconSize,
+                      colorFilter: ColorFilter.mode(
+                        AppColors.textTertiary.withValues(alpha: 0.18),
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  // 글씨 — 묶음 왼쪽
+                  Align(
+                    alignment: Alignment(-1, textY),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        SizedBox(
+                          height: 32,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              value,
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: color,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -968,6 +997,14 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              // 최다 활동 막대 위에 2D 왕관 (도형, 차트 색과 맞춤)
+              if (peak) ...[
+                CustomPaint(
+                  size: const Size(18, 13),
+                  painter: _CrownPainter(const Color(0xFFFFEA76)),
+                ),
+                const SizedBox(height: 3),
+              ],
               Container(
                 width: 16,
                 height: 90 * bars[i] * t,
@@ -1271,6 +1308,42 @@ class _LinePainter extends CustomPainter {
       old.values != values ||
       old.peakIndex != peakIndex ||
       old.progress != progress;
+}
+
+// 2D 심플 왕관 (3봉우리 납작한 도형 — 그래프 톤에 맞춘 단색)
+class _CrownPainter extends CustomPainter {
+  final Color color;
+  _CrownPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..strokeJoin = StrokeJoin.round;
+
+    final body = Path()
+      ..moveTo(0, h) // 왼쪽 아래
+      ..lineTo(0, h * 0.35) // 왼쪽 뿔
+      ..lineTo(w * 0.28, h * 0.62) // 골
+      ..lineTo(w * 0.5, h * 0.06) // 가운데 뿔(제일 높음)
+      ..lineTo(w * 0.72, h * 0.62) // 골
+      ..lineTo(w, h * 0.35) // 오른쪽 뿔
+      ..lineTo(w, h) // 오른쪽 아래
+      ..close(); // 아래 밑변
+    canvas.drawPath(body, paint);
+
+    // 뿔 끝 동그란 보석(귀엽게)
+    final r = h * 0.12;
+    canvas.drawCircle(Offset(w * 0.05, h * 0.32), r, paint);
+    canvas.drawCircle(Offset(w * 0.5, h * 0.10), r, paint);
+    canvas.drawCircle(Offset(w * 0.95, h * 0.32), r, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CrownPainter old) => old.color != color;
 }
 
 class _Segment {
