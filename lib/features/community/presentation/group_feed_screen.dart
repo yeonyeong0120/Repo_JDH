@@ -32,8 +32,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       '2.1 km',
       33,
       '00:42',
-      likes: 5,
-      liked: true,
+      likes: 5, // 남들이 누른 좋아요 수(내 글이라 내가 누르는 하트는 숨김)
+      isMine: true,
     ),
     _FeedItem(
       '박서연',
@@ -108,7 +108,15 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
         widgets.add(const SizedBox(height: 12));
         lastLabel = label;
       }
-      widgets.add(_feedCard(it));
+      // 내 것은 오른쪽으로(왼쪽 여백), 남의 것은 왼쪽으로(오른쪽 여백) — 카드 위치만
+      widgets.add(
+        Padding(
+          padding: it.isMine
+              ? const EdgeInsets.only(left: 52)
+              : const EdgeInsets.only(right: 52),
+          child: _feedCard(it),
+        ),
+      );
       widgets.add(const SizedBox(height: 12));
     }
     return widgets;
@@ -463,7 +471,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryPale,
+      backgroundColor: AppColors.appBG, // 홈 등 다른 화면과 통일
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -529,6 +537,23 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
 
   // ───────────────────────── 활동 공유 카드 (A안) ─────────────────────────
   Widget _feedCard(_FeedItem item) {
+    final mine = item.isMine;
+    const avatar = CircleAvatar(
+      radius: 18,
+      backgroundColor: AppColors.primaryPale,
+      child: Icon(Icons.person, size: 20, color: AppColors.textTertiary),
+    );
+    // 기록: 흰 바탕에 컴팩트하게 (왼쪽 밑)
+    final record = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _statInline('거리', item.distance),
+        _dot(),
+        _statInline('수거', '${item.trash}개'),
+        _dot(),
+        _statInline('시간', item.duration),
+      ],
+    );
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBG,
@@ -539,17 +564,17 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 봉투 인증샷 (스킵으로 마친 활동은 사진 없음)
+          // 인증샷 (크게, 오버레이 없음)
           // TODO: 실제 사진(Image.network(item.photoUrl))으로 교체
           if (item.hasPhoto)
             Container(
-              height: 160,
+              height: 180, // 사진 크기(160↔230 사이로 축소)
               width: double.infinity,
               color: AppColors.primaryPale,
               alignment: Alignment.center,
               child: const Icon(
                 Icons.photo_camera_outlined,
-                size: 32,
+                size: 40,
                 color: AppColors.textTertiary,
               ),
             ),
@@ -558,19 +583,10 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 작성자 + 시간 + (오른쪽) 좋아요
+                // 작성자 줄 (다 왼쪽 정렬) — 내 글은 신고/좋아요 버튼 없음
                 Row(
                   children: [
-                    // TODO: 실제 프로필 이미지로 교체
-                    const CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.primaryPale,
-                      child: Icon(
-                        Icons.person,
-                        size: 20,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
+                    avatar,
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -594,30 +610,16 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                         ],
                       ),
                     ),
-                    _reportButton(item),
+                    // 신고는 프로필 줄 오른쪽 (내 글엔 없음)
+                    if (!mine) _reportButton(item),
                   ],
                 ),
-                const SizedBox(height: 12),
-                // 결과 요약 (왼쪽) + 좋아요 (오른쪽 끝)
+                const SizedBox(height: 10),
+                // 기록(왼쪽) + 좋아요(오른쪽 끝) — 내 글엔 좋아요 없음
                 Row(
                   children: [
-                    Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Row(
-                          children: [
-                            _statInline('거리', item.distance),
-                            _dot(),
-                            _statInline('수거', '${item.trash}개'),
-                            _dot(),
-                            _statInline('시간', item.duration),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _likeButton(item),
+                    record,
+                    if (!mine) ...[const Spacer(), _likeButton(item)],
                   ],
                 ),
               ],
@@ -629,18 +631,19 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   }
 
   // 한 줄 수치 (라벨 + 값)
+  // 한 줄 수치 (라벨 + 값) — 컴팩트
   Widget _statInline(String label, String value) {
     return Text.rich(
       TextSpan(
         children: [
           TextSpan(
             text: '$label ',
-            style: const TextStyle(fontSize: 13, color: AppColors.textTertiary),
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
           TextSpan(
             text: value,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
@@ -652,10 +655,10 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
 
   Widget _dot() {
     return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.symmetric(horizontal: 6),
       child: Text(
         '·',
-        style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
+        style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
       ),
     );
   }
@@ -720,6 +723,7 @@ class _FeedItem {
   final bool hasPhoto;
   int likes;
   bool liked;
+  final bool isMine; // 내가 올린 기록인지 (오른쪽 정렬 + 하트 숨김)
   _FeedItem(
     this.name,
     this.date,
@@ -729,5 +733,6 @@ class _FeedItem {
     this.hasPhoto = true,
     this.likes = 0,
     this.liked = false,
+    this.isMine = false,
   });
 }

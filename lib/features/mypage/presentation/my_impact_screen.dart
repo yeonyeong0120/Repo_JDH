@@ -169,16 +169,8 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
                         valueColor: AppColors.primaryDeep,
                       ),
 
-                      const SizedBox(height: 40),
-
-                      // 목표 달성 (HOME-02)
-                      _badge(
-                        '목표 달성',
-                        bg: AppColors.chartActivity.withValues(alpha: 0.15),
-                        fg: AppColors.chartActivityPeak,
-                      ),
-                      const SizedBox(height: 20),
-                      // 꽉 찬 파이 (목표 대비 달성률) — 스크롤 위치에 따라 채워짐
+                      const SizedBox(height: 34),
+                      // 감축 목표 달성률 파이 (위 온실가스 감축량과 한 파트) — 스크롤로 채워짐
                       // TODO: 실제 목표/달성 데이터로 교체 (지금 더미 62%)
                       KeyedSubtree(
                         key: _pieKey,
@@ -209,13 +201,17 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
                       // 상세 수치 (2열 그리드)
                       _badge('상세 기록'),
                       const SizedBox(height: 16),
-                      GridView.count(
-                        crossAxisCount: 2,
+                      GridView(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 14,
-                        crossAxisSpacing: 14,
-                        childAspectRatio: 1.3,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 14,
+                              crossAxisSpacing: 14,
+                              // 고정 높이 → 화면 좁아도 카드 내용 안 넘침(오버플로우 방지)
+                              mainAxisExtent: 138,
+                            ),
                         children: const [
                           _StatCard('♻️', '누적 수거량', '38.5', 'kg'),
                           _StatCard('🚶', '활동 횟수', '32', '회'),
@@ -259,24 +255,36 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
   //  progress: 파이 채움 정도(스크롤 0~1) — 숫자는 안 변하고 그래프만 참
   Widget _goalPie(double target, double progress) {
     return SizedBox(
-      width: 190,
-      height: 168,
+      width: 180,
+      height: 180,
       child: Stack(
+        alignment: Alignment.center,
         children: [
           Positioned.fill(
-            child: CustomPaint(painter: _PiePainter(target * progress)),
+            child: CustomPaint(painter: _DonutPainter(target * progress)),
           ),
-          // 윗면 중심에 (아래 두께만큼 위로, 살짝 오른쪽)
-          Align(
-            alignment: const Alignment(0.18, -0.2),
-            child: Text(
-              '${(target * 100).round()}%',
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
+          // 가운데: 퍼센트 + 감축 목표 달성
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${(target * 100).round()}%',
+                style: const TextStyle(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.chartActivityPeak,
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              const Text(
+                '감축 목표 달성',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -361,74 +369,49 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
   }
 }
 
-// 목표 달성률 파이 (정원 + 아래 옆면 두께로 살짝 입체)
-class _PiePainter extends CustomPainter {
-  final double ratio; // 0~1 (달성 비율)
-  _PiePainter(this.ratio);
+// 목표 달성률 도넛 링 (트랙 + 그라데이션 진행 아크 + 라운드 캡)
+class _DonutPainter extends CustomPainter {
+  final double ratio; // 0~1 (달성 비율 × 스크롤 진행도)
+  _DonutPainter(this.ratio);
 
   @override
   void paint(Canvas canvas, Size size) {
     final r = ratio.clamp(0.0, 1.0);
-    const depthRatio = 0.14;
-    final cx = size.width / 2;
-    // 가로로 살짝 긴 타원: rx(가로) > ry(세로)
-    final rx = size.width / 2;
-    final ry = min(rx * 0.86, size.height / (2 + depthRatio));
-    final depth = ry * depthRatio;
-    final cy = ry; // 윗면 중심
-    final topRect = Rect.fromCenter(
-      center: Offset(cx, cy),
-      width: rx * 2,
-      height: ry * 2,
-    );
+    final center = Offset(size.width / 2, size.height / 2);
+    final stroke = size.width * 0.15; // 링 두께
+    final radius = (size.width - stroke) / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
 
-    const start = -pi / 2; // 12시
-    final doneSweep = -2 * pi * r; // 반시계(왼쪽으로 채움)
+    // 배경 트랙
+    final track = Paint()
+      ..color = AppColors.divider
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke;
+    canvas.drawArc(rect, 0, 2 * pi, false, track);
 
-    final donePaint = Paint()..color = AppColors.chartActivity;
-    final restPaint = Paint()..color = AppColors.divider;
-    final doneSide = Paint()..color = AppColors.chartActivityPeak;
-    final restSide = Paint()..color = const Color(0xFFC9CCD1);
+    if (r <= 0) return;
 
-    // ── 아래 옆면(두께) : 앞쪽 반원(0~pi)만 보임 ──
-    void drawSide(double a0, double a1, Paint side) {
-      final path = Path();
-      const steps = 48;
-      for (int i = 0; i <= steps; i++) {
-        final a = a0 + (a1 - a0) * (i / steps);
-        final x = cx + rx * cos(a);
-        final y = cy + ry * sin(a);
-        if (i == 0) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-      for (int i = steps; i >= 0; i--) {
-        final a = a0 + (a1 - a0) * (i / steps);
-        final x = cx + rx * cos(a);
-        final y = cy + depth + ry * sin(a);
-        path.lineTo(x, y);
-      }
-      path.close();
-      canvas.drawPath(path, side);
-    }
-
-    // 미달성 옆면(앞면 전체) → 달성 걸치는 구간만 청보라 옆면
-    drawSide(0, pi, restSide);
-    final s = doneSweep.abs();
-    double thetaStar = (2 * pi - s) - pi / 2;
-    thetaStar %= 2 * pi;
-    if (thetaStar < 0) thetaStar += 2 * pi;
-    if (thetaStar < pi) drawSide(thetaStar, pi, doneSide);
-
-    // ── 윗면(정원) ──
-    canvas.drawArc(topRect, 0, 2 * pi, true, restPaint); // 미달성
-    canvas.drawArc(topRect, start, doneSweep, true, donePaint); // 달성
+    const start = -pi / 2; // 12시부터
+    final sweep = 2 * pi * r;
+    // 시작·끝 색을 같게(연초록→진초록→연초록) 매핑 → 12시(0/2π) 경계에서 색이 안 튀어 이음새 없음
+    final progress = Paint()
+      ..shader = SweepGradient(
+        colors: const [
+          AppColors.chartActivity,
+          AppColors.chartActivityPeak,
+          AppColors.chartActivity,
+        ],
+        stops: [0.0, r, 1.0],
+        transform: const GradientRotation(-pi / 2),
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, start, sweep, false, progress);
   }
 
   @override
-  bool shouldRepaint(covariant _PiePainter old) => old.ratio != ratio;
+  bool shouldRepaint(covariant _DonutPainter old) => old.ratio != ratio;
 }
 
 class _StatCard extends StatelessWidget {
