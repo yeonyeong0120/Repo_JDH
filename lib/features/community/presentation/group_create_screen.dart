@@ -27,7 +27,6 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     if (widget.alreadyInGroup) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showBlocked());
     }
-    _nameController.addListener(() => setState(() {}));
   }
 
   @override
@@ -49,18 +48,21 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   }
 
   void _create() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      AppSnackBar.show(context, '그룹 이름을 입력해주세요');
+      return;
+    }
     // TODO: 실제 그룹 생성 로직 (Firestore 저장 + 자동 가입)
-    AppSnackBar.show(context, '\'${_nameController.text.trim()}\' 그룹을 만들었어요');
+    AppSnackBar.show(context, '\'$name\' 그룹을 만들었어요');
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final canCreate = _nameController.text.trim().isNotEmpty;
     return Scaffold(
       backgroundColor: AppColors.appBG,
       body: SafeArea(
-        bottom: false,
         child: Column(
           children: [
             // 상단 바
@@ -182,11 +184,11 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
 
             // 하단 만들기 버튼
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 18),
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 32),
               child: AppButton(
                 label: '그룹 만들기',
                 onTap: _create,
-                enabled: canCreate,
+                enabled: true,
                 type: AppButtonType.primary,
               ),
             ),

@@ -61,7 +61,6 @@ class GroupDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.appBG,
       body: SafeArea(
-        bottom: false,
         child: Column(
           children: [
             // 상단 바
@@ -184,7 +183,7 @@ class GroupDetailScreen extends StatelessWidget {
 
             // 하단 가입 버튼
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 18),
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 32),
               child: AppButton(
                 label: '가입하기',
                 onTap: () => _join(context),

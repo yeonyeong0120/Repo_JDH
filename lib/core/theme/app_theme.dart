@@ -16,6 +16,43 @@ class AppTheme {
         backgroundColor: Colors.white,
       ),
 
+      // ── 날짜 선택 달력(showDatePicker) 앱 톤 통일 ──
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.cardBG,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: AppColors.primaryPale,
+        headerForegroundColor: AppColors.primaryDeep,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        // 선택한 날짜
+        dayBackgroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? AppColors.primary : null,
+        ),
+        dayForegroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? Colors.white
+              : AppColors.textPrimary,
+        ),
+        // 오늘
+        todayForegroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? Colors.white
+              : AppColors.primary,
+        ),
+        todayBackgroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? AppColors.primary : null,
+        ),
+        todayBorder: const BorderSide(color: AppColors.primary),
+        // 연도 선택
+        yearBackgroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? AppColors.primary : null,
+        ),
+        yearForegroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? Colors.white
+              : AppColors.textPrimary,
+        ),
+      ),
+
       // ── 버튼 톤다운 ──
       // 브랜드 primary는 그대로 두고, 버튼/팝업 액션만 채도 낮춘 primaryMuted 사용.
       // 주의: 화면에서 color/backgroundColor를 직접 지정한 버튼엔 적용되지 않음

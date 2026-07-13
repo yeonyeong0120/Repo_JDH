@@ -202,7 +202,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 큰 제목 '줍다행' 제거(요청). 위 여백(6+32) — 메뉴보다 살짝 위.
                     const SizedBox(height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -482,49 +481,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── 위: 제목 + 물개(작게, 오른쪽) ──
-          Column(
+          const Text(
+            '5일 연속',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '5일 연속\n',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '줍다행 중!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
+            children: const [
+              Text(
+                '플로깅 중',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 6),
-              // TODO: 줍댕이(물개) 캐릭터 이미지로 교체 (assets/images/jupdaengi.png)
-              const Align(
-                alignment: Alignment.centerRight,
-                child: Text('🦭', style: TextStyle(fontSize: 40)),
-              ),
+              SizedBox(width: 8),
+              // TODO: 줍댕이(물개) 캐릭터 이미지로 교체
+              Text('🦭', style: TextStyle(fontSize: 40)),
             ],
           ),
-          // ── 아래: 뉴스 카드 '고냐니 기자 >' 스타일 CTA ──
+          // 이 값으로 "대단해요!"를 팁 카드 "올바른..." 높이에 맞춤 (미세조정)
+          const SizedBox(height: 20),
+          const Text(
+            '대단해요! 꾸준함이 지구를 바꾸는 중이에요',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          const Spacer(), // CTA를 바닥으로 → 고냐니 기자와 수평
           Row(
             children: const [
               Expanded(
                 child: Text(
-                  '기록 확인하러 가기',
+                  '변화 확인하기',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -575,6 +569,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
+          const Spacer(), // 바이라인을 카드 바닥으로 → 스트릭 CTA와 수평
           Row(
             children: const [
               CircleAvatar(
