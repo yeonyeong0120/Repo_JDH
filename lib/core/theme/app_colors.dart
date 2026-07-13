@@ -75,7 +75,7 @@ class AppColors {
   static const Color warning = Color(0xFFFFB547);
 
   /// 오류, 위험 (활동 취소 등).
-  static const Color error = Color(0xFFE83737);
+  static const Color error = Color.fromARGB(255, 224, 60, 60);
 
   /// 정보 안내 (primary와 동일하지만 의미 구분용).
   static const Color info = primary;

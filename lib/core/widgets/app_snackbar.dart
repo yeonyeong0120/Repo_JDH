@@ -11,13 +11,18 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 /// AppSnackBar.show(context, '이미지 업로드 중...', neutral: true); // 중립(회색)
 /// ```
 class AppSnackBar {
+  // 스낵바 기본 배경 (차콜) — 어느 화면에서도 흰 글씨가 잘 보임
+  static const Color _charcoal = Color(0xFF323232);
+
   static void show(
     BuildContext context,
     String message, {
-    bool neutral = false, // true면 회색 중립 톤
+    bool neutral = false, // (호환용) 예전 회색 옵션
+    bool error = false, // true면 에러(빨강)
     Duration duration = const Duration(seconds: 2),
   }) {
-    final Color bg = neutral ? AppColors.textPrimary : AppColors.primary;
+    // 기본: 차콜 / 에러: 빨강
+    final Color bg = error ? AppColors.error : _charcoal;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -74,7 +79,7 @@ class AppSnackBar {
               ),
             ],
           ),
-          backgroundColor: AppColors.textPrimary,
+          backgroundColor: AppColors.textTertiary,
           behavior: SnackBarBehavior.floating,
           elevation: 0,
           duration: duration,

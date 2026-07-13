@@ -67,6 +67,9 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     '유가을',
   ];
 
+  // 오른쪽 멤버 드로어(endDrawer) 열고/닫기용 키
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   void _toggleLike(_FeedItem it) {
     setState(() {
       it.liked = !it.liked;
@@ -112,12 +115,12 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       widgets.add(
         Padding(
           padding: it.isMine
-              ? const EdgeInsets.only(left: 52)
-              : const EdgeInsets.only(right: 52),
+              ? const EdgeInsets.only(left: 80)
+              : const EdgeInsets.only(right: 80),
           child: _feedCard(it),
         ),
       );
-      widgets.add(const SizedBox(height: 12));
+      widgets.add(const SizedBox(height: 14)); // 카드 사이 간격(더 촘촘하게)
     }
     return widgets;
   }
@@ -142,111 +145,98 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     );
   }
 
-  // ───────── 오른쪽 위 메뉴(≡): 멤버 보기 / 신고 / 그룹 탈퇴 ─────────
-  void _showGroupMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
+  // ───────── 오른쪽 멤버 드로어 (≡ 누르면 오른쪽에서 슬라이드) ─────────
+  Widget _buildMemberDrawer() {
+    return Drawer(
+      backgroundColor: AppColors.cardBG,
+      width: 300,
+      child: SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 8),
-            _menuItem(
-              icon: Icons.group_outlined,
-              label: '멤버 보기',
-              onTap: () {
-                Navigator.pop(ctx);
-                _showMembers();
-              },
-            ),
-            _menuItem(
-              icon: Icons.logout,
-              label: '그룹 탈퇴',
-              danger: true,
-              onTap: () {
-                Navigator.pop(ctx);
-                _confirmLeave();
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _menuItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool danger = false,
-  }) {
-    final color = danger ? AppColors.error : AppColors.textPrimary;
-    return ListTile(
-      leading: Icon(icon, color: color, size: 22),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-      onTap: onTap,
-    );
-  }
-
-  // ───────── 멤버 보기 ─────────
-  void _showMembers() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+            // 헤더
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+              padding: const EdgeInsets.fromLTRB(20, 14, 8, 10),
               child: Row(
                 children: [
                   Text(
                     '멤버 ${_members.length}명',
                     style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 22),
+                    color: AppColors.textSecondary,
+                    onPressed: () =>
+                        _scaffoldKey.currentState?.closeEndDrawer(),
+                  ),
                 ],
               ),
             ),
-            Flexible(
+            const Divider(height: 1, color: AppColors.divider),
+            // 멤버 목록 (쫙)
+            Expanded(
               child: ListView.builder(
-                shrinkWrap: true,
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: _members.length,
-                itemBuilder: (_, i) => ListTile(
-                  leading: const CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppColors.primaryPale,
-                    child: Icon(
-                      Icons.person,
-                      size: 20,
-                      color: AppColors.textTertiary,
+                itemBuilder: (_, i) {
+                  final me = _members[i] == '김연영'; // TODO: 실제 로그인 사용자
+                  return ListTile(
+                    leading: const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppColors.primaryPale,
+                      child: Icon(
+                        Icons.person,
+                        size: 20,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
+                    title: Text(
+                      _members[i],
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    trailing: me
+                        ? const Text(
+                            '나',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : null,
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.divider),
+            // 하단 탈퇴하기
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    _scaffoldKey.currentState?.closeEndDrawer();
+                    _confirmLeave();
+                  },
+                  icon: const Icon(Icons.logout, size: 20),
+                  label: const Text(
+                    '탈퇴하기',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
-                  title: Text(
-                    _members[i],
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
@@ -471,7 +461,9 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.appBG, // 홈 등 다른 화면과 통일
+      endDrawer: _buildMemberDrawer(), // 오른쪽에서 슬라이드되는 멤버 패널
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -479,7 +471,13 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
             _buildTopBar(),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                // 하단 여백(과했던 +92 → +16로 축소)
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  18,
+                  16,
+                  MediaQueryData.fromView(View.of(context)).padding.bottom + 16,
+                ),
                 children: _buildFeed(),
               ),
             ),
@@ -524,11 +522,11 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
               ],
             ),
           ),
-          // 오른쪽 위 메뉴 (≡)
+          // 오른쪽 위 ≡ → 오른쪽 멤버 드로어 열기
           IconButton(
             icon: const Icon(Icons.menu),
             color: AppColors.textSecondary,
-            onPressed: _showGroupMenu,
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
       ),
@@ -567,19 +565,21 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
           // 인증샷 (크게, 오버레이 없음)
           // TODO: 실제 사진(Image.network(item.photoUrl))으로 교체
           if (item.hasPhoto)
-            Container(
-              height: 180, // 사진 크기(160↔230 사이로 축소)
-              width: double.infinity,
-              color: AppColors.primaryPale,
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.photo_camera_outlined,
-                size: 40,
-                color: AppColors.textTertiary,
+            AspectRatio(
+              aspectRatio: 16 / 9, // 넓적한 띠 대신 자연스러운 가로 사진 비율
+              child: Container(
+                width: double.infinity,
+                color: AppColors.primaryPale,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.photo_camera_outlined,
+                  size: 36,
+                  color: AppColors.textTertiary,
+                ),
               ),
             ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8), // 상하 더 타이트하게
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -614,12 +614,28 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                     if (!mine) _reportButton(item),
                   ],
                 ),
-                const SizedBox(height: 10),
-                // 기록(왼쪽) + 좋아요(오른쪽 끝) — 내 글엔 좋아요 없음
+                const SizedBox(height: 6),
+                // 기록 + 하트·숫자 — 내것/남의것 모두 오른쪽 46px 예약 → 기록 폭 동일(글자 크기 일치)
                 Row(
                   children: [
-                    record,
-                    if (!mine) ...[const Spacer(), _likeButton(item)],
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: record,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 46,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: _likeArea(item, mine),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -677,37 +693,37 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     );
   }
 
-  Widget _likeButton(_FeedItem item) {
+  // 하트 + 좋아요 수. 내 글은 받은 수 표시(회색·누르기 X), 남의 글은 눌러서 토글.
+  Widget _likeArea(_FeedItem item, bool mine) {
+    final content = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          // 내 글: 채워진 회색 하트(받은 수 표시) / 남의 글: 눌렀으면 빨강, 아니면 빈 하트
+          mine
+              ? Icons.favorite
+              : (item.liked ? Icons.favorite : Icons.favorite_border),
+          size: 18,
+          color: mine
+              ? AppColors.textTertiary
+              : (item.liked ? AppColors.error : AppColors.textTertiary),
+        ),
+        const SizedBox(width: 3),
+        Text(
+          '${item.likes}',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+    if (mine) return content; // 내 글: 받은 좋아요 수 표시만
     return GestureDetector(
       onTap: () => _toggleLike(item),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: item.liked
-              ? AppColors.error.withValues(alpha: 0.10)
-              : AppColors.appBG,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              item.liked ? Icons.favorite : Icons.favorite_border,
-              size: 16,
-              color: item.liked ? AppColors.error : AppColors.textTertiary,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              '${item.likes}',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: item.liked ? AppColors.error : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
+      behavior: HitTestBehavior.opaque,
+      child: content,
     );
   }
 }

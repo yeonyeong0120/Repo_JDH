@@ -1042,7 +1042,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     return Column(
       children: [
         SizedBox(
-          height: 110,
+          height: 128, // 왕관 얹을 여유 포함(원래 110)
           width: double.infinity,
           child: CustomPaint(painter: _LinePainter(values, peakIndex, t)),
         ),
@@ -1238,7 +1238,7 @@ class _LinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (values.isEmpty) return;
     final n = values.length;
-    const padTop = 12.0;
+    const padTop = 26.0; // 최고점 위 왕관 자리
     const padBottom = 6.0;
     final chartH = size.height - padTop - padBottom;
     double xOf(int i) => ((i + 0.5) / n) * size.width;
@@ -1301,6 +1301,42 @@ class _LinePainter extends CustomPainter {
           ..strokeWidth = 2,
       );
     }
+
+    // 최고 지점 위에 왕관 (주간 막대와 동일 톤)
+    final peakFrac = n == 1 ? 0.0 : peakIndex / (n - 1);
+    if (peakIndex >= 0 && peakIndex < n && peakFrac <= progress) {
+      _drawCrown(
+        canvas,
+        Offset(xOf(peakIndex), yOf(values[peakIndex])),
+        const Color(0xFFFFEA76),
+      );
+    }
+  }
+
+  // 주어진 지점 위에 2D 왕관 (_CrownPainter와 동일 모양)
+  void _drawCrown(Canvas canvas, Offset point, Color color) {
+    const cw = 18.0;
+    const ch = 13.0;
+    final left = point.dx - cw / 2;
+    final top = point.dy - 5.5 - 4 - ch; // 점 반지름+간격 위
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..strokeJoin = StrokeJoin.round;
+    final body = Path()
+      ..moveTo(left, top + ch)
+      ..lineTo(left, top + ch * 0.35)
+      ..lineTo(left + cw * 0.28, top + ch * 0.62)
+      ..lineTo(left + cw * 0.5, top + ch * 0.06)
+      ..lineTo(left + cw * 0.72, top + ch * 0.62)
+      ..lineTo(left + cw, top + ch * 0.35)
+      ..lineTo(left + cw, top + ch)
+      ..close();
+    canvas.drawPath(body, paint);
+    final r = ch * 0.12;
+    canvas.drawCircle(Offset(left + cw * 0.05, top + ch * 0.32), r, paint);
+    canvas.drawCircle(Offset(left + cw * 0.5, top + ch * 0.10), r, paint);
+    canvas.drawCircle(Offset(left + cw * 0.95, top + ch * 0.32), r, paint);
   }
 
   @override

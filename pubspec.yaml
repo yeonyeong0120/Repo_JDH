@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # ===== 상태 관리 =====
   flutter_riverpod: ^2.6.1
@@ -78,6 +80,8 @@ dev_dependencies:
   riverpod_generator: ^2.6.4
   custom_lint: ^0.7.5
   riverpod_lint: ^2.6.4
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
 
 flutter:
   uses-material-design: true
@@ -99,7 +103,24 @@ flutter:
         - asset: assets/fonts/Pretendard-Bold.otf
           weight: 700
 
+    # 로그인 화면
+    - family: HumanBeomseokNeo
+      fonts:
+        - asset: assets/fonts/HumanBeomseokNeo-Medium.ttf
+
     # 백업 폰트 (나중에 삭제 가능)
     - family: NotoSansKR
       fonts:
         - asset: assets/fonts/NotoSansKR-VariableFont_wght.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+
+flutter_native_splash:
+  color: "#E3F6EC"
+  image: "assets/images/app_icon.png"
+  android_12:
+    color: "#E3F6EC"
+    image: "assets/images/app_icon.png"
