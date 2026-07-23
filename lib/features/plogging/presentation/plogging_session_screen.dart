@@ -17,6 +17,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:repo_jdh/core/router/app_router.dart';
+import 'package:repo_jdh/core/providers/tracking_provider.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/features/plogging/domain/plogging_session_providers.dart';
 import 'package:repo_jdh/features/plogging/domain/route_models.dart';
 import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
@@ -31,6 +33,39 @@ class PloggingSessionScreen extends ConsumerStatefulWidget {
 }
 
 class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
+  // PLOG-10 트래킹 중단 복구 — 강제 종료된 세션이 있으면 이어할지 묻는다
+  Future<void> _checkInterrupted() async {
+    TrackingState? saved;
+    try {
+      saved = await TrackingNotifier.loadSaved();
+    } catch (_) {
+      return;
+    }
+    if (saved == null || !mounted) return;
+
+    final km = saved.distanceKm.toStringAsFixed(1);
+    final ok = await AppDialog.show(
+      context,
+      title: '활동이 중단되었어요',
+      message:
+          '예기치 못하게 종료되었습니다.\n\n'
+          '${saved.durationText} · ${km}km 까지 기록되어 있어요.\n'
+          '이어서 하시겠습니까?',
+      cancelText: '종료하기',
+      confirmText: '이어서 하기',
+      barrierDismissible: false,
+    );
+    if (!mounted) return;
+
+    if (ok == true) {
+      ref.read(trackingProvider.notifier).resume(saved);
+      context.push(AppRoutes.ploggingTracking);
+    } else {
+      // 종료 선택 → 기록 폐기
+      await TrackingNotifier.clearSaved();
+    }
+  }
+
   // GPS를 아직 못 받았을 때 보여줄 기본 카메라 위치(인천 부평구청 부근).
   static const _fallback = NLatLng(37.5074, 126.7218);
 
@@ -59,6 +94,8 @@ class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
     Future.microtask(() {
       if (mounted) ref.read(routeNotifierProvider.notifier).reset();
     });
+    // 강제 종료된 활동이 있으면 이어할지 묻는다
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkInterrupted());
   }
 
   @override

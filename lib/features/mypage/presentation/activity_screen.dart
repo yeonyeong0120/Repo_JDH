@@ -5,6 +5,10 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
+import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/mypage/presentation/badge_dialog.dart';
+import 'package:repo_jdh/features/mypage/presentation/character_screen.dart';
+import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 
 /// 줍다행 - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
@@ -19,7 +23,24 @@ class ActivityScreen extends StatefulWidget {
 class _ActivityScreenState extends State<ActivityScreen> {
   int _tab = 0; // 0:기록 1:뱃지 2:그래프
   int _graphPlay = 0; // 그래프 탭 진입 때마다 +1 → 애니메이션 재생 트리거
+  int _badgeVersion = 0; // 획득 현황 로드되면 +1 → 뱃지 탭 갱신
   final PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBadges();
+  }
+
+  // Firestore 획득 현황 → BadgeRepo 채우고 뱃지 탭 갱신
+  Future<void> _loadBadges() async {
+    try {
+      await BadgeService.loadEarned();
+    } catch (_) {
+      return; // 실패 시 더미 유지
+    }
+    if (mounted) setState(() => _badgeVersion++);
+  }
 
   @override
   void dispose() {
@@ -58,7 +79,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 }),
                 children: [
                   const _RecordsTab(),
-                  const _BadgesTab(),
+                  _BadgesTab(key: ValueKey(_badgeVersion)),
                   _GraphTab(period: 0, playToken: _graphPlay),
                   _GraphTab(period: 1, playToken: _graphPlay),
                   _GraphTab(period: 2, playToken: _graphPlay),
@@ -177,26 +198,63 @@ class _ActivityScreenState extends State<ActivityScreen> {
 }
 
 // ════════════════════════════ 기록 탭 ════════════════════════════
-class _RecordsTab extends StatelessWidget {
+class _RecordsTab extends StatefulWidget {
   const _RecordsTab();
 
+  @override
+  State<_RecordsTab> createState() => _RecordsTabState();
+}
+
+class _RecordsTabState extends State<_RecordsTab> {
   static const List<_Activity> _activities = [
     _Activity('26.02.01 06:15', '석촌호수길', 2000, '70 g', 120, '0:30'),
     _Activity('26.02.01 17:15', '로데오거리', 3000, '40 g', 125, '0:40'),
   ];
 
-  // 퀘스트 색: 걸음수 파랑 / 칼로리 빨강 / 수거량 초록 / 그룹참여 주황 / 시간 보라
-  static const List<_Quest> _quests = [
-    _Quest(
-      '누적 10,000보 걷기',
-      6200,
-      10000,
-      Icons.directions_walk,
-      AppColors.categoryBlue,
-    ),
-    _Quest('수거량 5kg 달성', 3200, 5000, Icons.recycling, AppColors.categoryGreen),
-    _Quest('그룹 활동 5회 참여', 3, 5, Icons.groups, AppColors.categoryOrange),
-  ];
+  // 진행 중인 퀘스트 (달성률 높은 순 3개)
+  List<_Quest> _quests = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuests();
+  }
+
+  Future<void> _loadQuests() async {
+    UserStats stats = const UserStats();
+    try {
+      stats = await BadgeService.loadStats();
+    } catch (_) {
+      // 실패 시 빈 목록
+    }
+    if (!mounted) return;
+    final list = <_Quest>[];
+    for (final b in kBadges) {
+      final (cur, total) = BadgeService.progressOf(b, stats);
+      if (cur >= total) continue; // 완료된 건 제외
+      list.add(_Quest(b.quest, cur, total, b.icon, _questColor(b)));
+    }
+    list.sort((a, b) => (b.current / b.total).compareTo(a.current / a.total));
+    setState(() => _quests = list.take(3).toList());
+  }
+
+  Color _questColor(BadgeData b) {
+    final id = b.id;
+    if (id.startsWith('steps') || id.startsWith('distance')) {
+      return AppColors.categoryBlue;
+    }
+    if (id.startsWith('kcal')) return AppColors.categoryRed;
+    if (id.startsWith('weight') || id.startsWith('plastic')) {
+      return AppColors.categoryGreen;
+    }
+    if (id.startsWith('group') || id.startsWith('share')) {
+      return AppColors.categoryOrange;
+    }
+    if (id.startsWith('time') || id == 'first_30min') {
+      return AppColors.categoryPurple;
+    }
+    return AppColors.primary;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -430,20 +488,11 @@ class _RecordsTab extends StatelessWidget {
 
 // ════════════════════════════ 뱃지 탭 ════════════════════════════
 class _BadgesTab extends StatelessWidget {
-  const _BadgesTab();
-
-  static const List<_Badge> _earned = [
-    _Badge('첫 걸음', Icons.directions_walk),
-    _Badge('작심 7일', Icons.verified),
-    _Badge('사교의 왕', Icons.groups),
-    _Badge('스치면 분류 끝', Icons.recycling),
-  ];
-
-  static const int _total = 24;
+  const _BadgesTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final lockedCount = 8; // 잠긴 뱃지 표시 개수 (?? 로 표시)
+    final earnedCount = kBadges.where((b) => BadgeRepo.isEarned(b.id)).length;
     return ListView(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -452,43 +501,55 @@ class _BadgesTab extends StatelessWidget {
         MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
       ),
       children: [
-        // 줍댕이 꾸미기 배너
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: AppColors.cardBG,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: AppColors.cardShadow,
+        // 줍댕이 꾸미기 배너 → 꾸미기 화면
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CharacterScreen()),
           ),
-          child: Row(
-            children: const [
-              // TODO: 줍댕이(물개) 캐릭터 이미지로 교체
-              Text('🦭', style: TextStyle(fontSize: 44)),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '줍댕이 꾸미기',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.cardBG,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: AppColors.cardShadow,
+            ),
+            child: Row(
+              children: const [
+                // TODO: 줍댕이(물개) 2D 캐릭터 이미지로 교체
+                Text('🦭', style: TextStyle(fontSize: 44)),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '줍댕이 꾸미기',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '획득한 아이템으로 나만의 캐릭터를 만들어요',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                      SizedBox(height: 4),
+                      Text(
+                        '획득한 아이템으로 나만의 캐릭터를 만들어요',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textTertiary,
+                  size: 22,
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -505,7 +566,7 @@ class _BadgesTab extends StatelessWidget {
               ),
             ),
             Text(
-              '${_earned.length} / $_total개 획득',
+              '$earnedCount / ${kBadges.length}개 획득',
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -515,68 +576,57 @@ class _BadgesTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
+        // 획득/미획득 모두 탭 → 상세 모달(획득조건 항상 노출)
         GridView.count(
           crossAxisCount: 4,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 18,
           crossAxisSpacing: 12,
-          // 오버플로우 방지를 위해 0.78 에서 0.70 으로 비율을 수정하여 세로 공간 확보
           childAspectRatio: 0.70,
-          children: [
-            ..._earned.map(_earnedBadge),
-            ...List.generate(lockedCount, (_) => _lockedBadge()),
-          ],
+          children: [for (final b in kBadges) _badgeTile(context, b)],
         ),
       ],
     );
   }
 
-  Widget _earnedBadge(_Badge b) {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.primaryPale,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          padding: const EdgeInsets.all(14),
-          child: Icon(b.icon, color: AppColors.primary, size: 30),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          b.label,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _lockedBadge() {
-    return Column(
-      children: [
-        AspectRatio(
-          aspectRatio: 1,
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.divider,
-              borderRadius: BorderRadius.circular(18),
+  Widget _badgeTile(BuildContext context, BadgeData b) {
+    final earned = BadgeRepo.isEarned(b.id);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => showBadgeDetail(context, b),
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: earned ? AppColors.primaryPale : AppColors.divider,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              // TODO: 실제 2D 뱃지 이미지로 교체
+              child: Icon(
+                earned ? b.icon : Icons.lock_outline,
+                color: earned ? AppColors.primary : AppColors.textTertiary,
+                size: 28,
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          '???',
-          style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
-        ),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            earned ? b.name : '???',
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: earned ? AppColors.textPrimary : AppColors.textTertiary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1219,12 +1269,6 @@ class _Quest {
   final IconData icon;
   final Color color;
   const _Quest(this.title, this.current, this.total, this.icon, this.color);
-}
-
-class _Badge {
-  final String label;
-  final IconData icon;
-  const _Badge(this.label, this.icon);
 }
 
 // 월간 주별 활동 꺾은선 차트

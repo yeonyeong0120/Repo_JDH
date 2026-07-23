@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -10,9 +11,13 @@ import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
 import 'package:repo_jdh/features/plogging/domain/plogging_session_providers.dart';
 import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
 import 'package:repo_jdh/features/auth/data/auth_repository.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/core/providers/tracking_provider.dart';
+import 'package:repo_jdh/features/plogging/data/location_repository.dart';
+import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 
 class PloggingHomeScreen extends ConsumerStatefulWidget {
   const PloggingHomeScreen({super.key});
@@ -45,10 +50,30 @@ Widget _buildCircleButton({
 }
 
 class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
-  final String _duration = '06:12';
-  final String _distance = '0.12';
-  final String _totalDistance = '0.9';
-  final int _steps = 125;
+  // 실측값은 trackingProvider 가 보관 (경과 시간 · 이동 거리)
+  Timer? _ticker;
+  StreamSubscription<double>? _distanceSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // 트래킹 시작 + 1초마다 경과 시간 갱신
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 이어하기로 들어온 경우엔 이미 복원돼 있으므로 새로 시작하지 않음
+      if (!ref.read(trackingProvider).running) {
+        ref.read(trackingProvider.notifier).start();
+      }
+    });
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      ref.read(trackingProvider.notifier).tick();
+    });
+    _maybeShowGuide();
+    // GPS 이동분을 거리로 누적 (걸음·칼로리는 거리에서 환산됨)
+    _distanceSub = LocationRepository().watchDistanceMeters().listen(
+      (m) => ref.read(trackingProvider.notifier).addDistance(m),
+      onError: (_) {}, // 위치 실패해도 시간은 계속 측정
+    );
+  }
 
   String? _selectedButton = 'camera';
   bool _isExpanded = false;
@@ -58,6 +83,109 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   bool _mapCentered = false;
   static const _fallback = NLatLng(37.5074, 126.7218); // GPS 전 기본 위치
   static const _routeColor = Color(0xFF1D9E75);
+
+  // PLOG-04 플로깅 가이드 — 첫 활동에서 1회만 노출
+  Future<void> _maybeShowGuide() async {
+    bool seen = true;
+    try {
+      seen = await UserService.hasSeenPloggingGuide();
+    } catch (_) {
+      return; // 조회 실패 시 방해하지 않음
+    }
+    if (seen || !mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: AppColors.cardBG,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 36),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 26, 22, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🦭', style: TextStyle(fontSize: 44)),
+              const SizedBox(height: 12),
+              const Text(
+                '플로깅 시작 전에 알려드려요',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _guideRow(Icons.place, '지도의 초록색 마커는 정화 거점이에요.\n근처에서 쓰레기를 모아주세요.'),
+              const SizedBox(height: 14),
+              _guideRow(
+                Icons.photo_camera_outlined,
+                '활동을 마칠 때 사진을 찍어 인증하면\n수거량이 기록돼요.',
+              ),
+              const SizedBox(height: 22),
+              GestureDetector(
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    await UserService.markPloggingGuideSeen();
+                  } catch (_) {
+                    // 저장 실패해도 진행
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Text(
+                    '이해했습니다',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _guideRow(IconData icon, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: AppColors.primaryPale,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: AppColors.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.6,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   // 지도를 현재 GPS로 최초 1회 이동
   void _centerOnGps(Map<String, dynamic>? loc) {
@@ -202,6 +330,13 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _distanceSub?.cancel();
+    super.dispose();
+  }
+
   // PLOG-07 종료 컨펌 → 정산 화면으로
   Future<void> _endPlogging() async {
     final counts = ref.read(ploggingProvider).totalCounts;
@@ -214,9 +349,24 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
       confirmText: '종료',
       danger: true, // 종료는 빨강으로 통일
     );
-    if (ok == true && mounted) {
-      context.push(AppRoutes.ploggingSettlement); // 정산 화면으로
+    if (ok != true || !mounted) return;
+
+    // 트래킹 정지 + 활동 기록 저장 (퀘스트·뱃지 판정에 사용)
+    final t = ref.read(trackingProvider);
+    ref.read(trackingProvider.notifier).stop();
+    try {
+      await ActivityService.saveCompleted(
+        startedAt: t.startedAt ?? DateTime.now(),
+        endedAt: DateTime.now(),
+        durationSeconds: t.elapsedSeconds,
+        distanceMeters: t.distanceMeters,
+        trashCounts: counts,
+      );
+    } catch (_) {
+      // 저장 실패해도 정산 화면은 보여줌
     }
+    if (!mounted) return;
+    context.push(AppRoutes.ploggingSettlement); // 정산 화면으로
   }
 
   Widget _buildStatBox(String value, String label) {
@@ -360,11 +510,24 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                             padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
                             child: Row(
                               children: [
-                                Expanded(child: _buildStatBox(_duration, '시간')),
                                 Expanded(
-                                  child: _buildStatBox(_distance, '거리(km)'),
+                                  child: _buildStatBox(
+                                    ref.watch(trackingProvider).durationText,
+                                    '시간',
+                                  ),
                                 ),
-                                Expanded(child: _buildStatBox('$_steps', '걸음')),
+                                Expanded(
+                                  child: _buildStatBox(
+                                    ref.watch(trackingProvider).distanceText,
+                                    '거리(km)',
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildStatBox(
+                                    '${ref.watch(trackingProvider).steps}',
+                                    '걸음',
+                                  ),
+                                ),
                                 InkWell(
                                   onTap: () => setState(
                                     () => _isExpanded = !_isExpanded,

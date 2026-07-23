@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import '../data/auth_repository.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 
 /// 회원가입 화면 (AUTH-03) — 플로고
 /// 필수: 이메일 · 비밀번호(*) / 선택: 성별 · 나이 · 키 · 몸무게 · 지역 (안 채워도 가입)
@@ -14,7 +15,7 @@ class SignupScreen extends ConsumerStatefulWidget {
 }
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
-  static const Color _bg = AppColors.primaryPale;
+  static const Color _bg = Color(0xFFE3F6EC);
 
   final _formKey = GlobalKey<FormState>();
 
@@ -24,9 +25,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   // 선택 (프로필용 — 안 채워도 가입)
   String? _gender;
-  int? _age;
-  int? _height;
-  int? _weight;
+  int? _age; // 나이는 휠 선택
+  final _heightController = TextEditingController(); // 키는 직접 입력
+  final _weightController = TextEditingController(); // 몸무게는 직접 입력
   final _regionController = TextEditingController();
 
   bool _isLoading = false;
@@ -35,6 +36,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
     _regionController.dispose();
     super.dispose();
   }
@@ -57,6 +60,21 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         SnackBar(content: Text(error), backgroundColor: AppColors.error),
       );
     } else {
+      // 선택 정보(성별·나이·키·몸무게·지역)를 프로필에 저장 — 나중에 메뉴에서 수정 가능
+      try {
+        await UserService.updateProfileFields(
+          gender: _gender,
+          age: _age,
+          height: int.tryParse(_heightController.text.trim()),
+          weight: int.tryParse(_weightController.text.trim()),
+          region: _regionController.text.trim().isEmpty
+              ? null
+              : _regionController.text.trim(),
+        );
+      } catch (_) {
+        // 프로필 저장 실패해도 가입은 완료된 상태
+      }
+      if (!mounted) return;
       Navigator.pop(context);
     }
   }
@@ -372,26 +390,21 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: _pickerField(
-                                      '키',
-                                      'cm',
-                                      _height,
-                                      100,
-                                      220,
-                                      165,
-                                      (v) => setState(() => _height = v),
+                                    child: TextFormField(
+                                      controller: _heightController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: _input('키', suffixText: 'cm'),
                                     ),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
-                                    child: _pickerField(
-                                      '몸무게',
-                                      'kg',
-                                      _weight,
-                                      30,
-                                      150,
-                                      60,
-                                      (v) => setState(() => _weight = v),
+                                    child: TextFormField(
+                                      controller: _weightController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: _input(
+                                        '몸무게',
+                                        suffixText: 'kg',
+                                      ),
                                     ),
                                   ),
                                 ],

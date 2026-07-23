@@ -9,7 +9,8 @@ class NewsFeedScreen extends StatelessWidget {
   const NewsFeedScreen({super.key});
 
   // TODO: 실제 기사 데이터로 교체 (API / Firestore 등)
-  static const List<NewsArticle> _articles = [
+  //       최신순으로 정렬해서 넣을 것 — 홈 카드가 첫 번째를 최신 기사로 사용한다.
+  static const List<NewsArticle> articles = [
     NewsArticle(
       category: '재활용',
       title: '페트병 라벨, 이렇게 떼세요!',
@@ -93,9 +94,9 @@ class NewsFeedScreen extends StatelessWidget {
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                itemCount: _articles.length,
+                itemCount: articles.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 14),
-                itemBuilder: (context, i) => _newsCard(context, _articles[i]),
+                itemBuilder: (context, i) => _newsCard(context, articles[i]),
               ),
             ),
           ],
@@ -108,9 +109,20 @@ class NewsFeedScreen extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
+        // 같은 분류 기사를 관련 뉴스로 전달 (부족하면 나머지 기사로 채움)
+        final sameCategory = articles
+            .where((x) => x != a && x.category == a.category)
+            .toList();
+        final others = articles
+            .where((x) => x != a && x.category != a.category)
+            .toList();
+        final related = [...sameCategory, ...others].take(3).toList();
+
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => NewsDetailScreen(article: a)),
+          MaterialPageRoute(
+            builder: (_) => NewsDetailScreen(article: a, related: related),
+          ),
         );
       },
       child: Container(

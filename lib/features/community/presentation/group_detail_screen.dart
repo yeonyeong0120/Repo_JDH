@@ -4,11 +4,13 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 
 /// 줍다행 - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
 /// 채팅방(멤버 인증샷)은 가입 전엔 보여주지 않고, 소개 + 가입만.
 /// 위치 권장: lib/features/community/presentation/group_detail_screen.dart
 class GroupDetailScreen extends StatelessWidget {
+  final String groupId;
   final String name;
   final String region;
   final String meta;
@@ -17,6 +19,7 @@ class GroupDetailScreen extends StatelessWidget {
   final bool alreadyInGroup;
   const GroupDetailScreen({
     super.key,
+    this.groupId = '',
     required this.name,
     required this.region,
     required this.meta,
@@ -49,11 +52,16 @@ class GroupDetailScreen extends StatelessWidget {
     );
   }
 
-  void _doJoin(BuildContext context) {
-    // TODO: 실제 가입 로직 연결 (그룹 소속 Firestore 저장)
-    //       지금은 임시로 가입 성공 처리 → 그 그룹 채팅방으로 이동.
+  Future<void> _doJoin(BuildContext context) async {
+    try {
+      if (groupId.isNotEmpty) await GroupService.joinGroup(groupId);
+    } catch (e) {
+      if (context.mounted) AppSnackBar.show(context, '가입하지 못했어요');
+      return;
+    }
+    if (!context.mounted) return;
     AppSnackBar.show(context, '$name 그룹에 가입했어요');
-    context.push('/group/feed', extra: name);
+    context.push('/group/feed', extra: {'id': groupId, 'name': name});
   }
 
   @override
