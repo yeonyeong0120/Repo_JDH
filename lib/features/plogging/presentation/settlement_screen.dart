@@ -4,7 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/core/providers/shared_group_provider.dart';
+import 'package:repo_jdh/core/providers/tracking_provider.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
+import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/mypage/presentation/badge_dialog.dart';
+import 'package:repo_jdh/features/mypage/data/badge_service.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 
 /// 줍다행 - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
 class SettlementScreen extends ConsumerStatefulWidget {
@@ -24,6 +29,30 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     _TrashDef('일반', 'trash.png', 'trash'),
   ];
 
+  // ACT-09 뱃지 획득 모달 (홈으로 나가기 직전 노출)
+  // 누적 통계 집계 → 조건 판정 → 새로 딴 것만 저장 후 모달
+  Future<void> _showBadgesIfAny() async {
+    List<BadgeData> badges = const [];
+    try {
+      badges = await BadgeService.checkAndSave();
+    } catch (_) {
+      return; // 판정 실패해도 홈 이동은 막지 않음
+    }
+    if (badges.isEmpty || !mounted) return;
+    final t = ref.read(trackingProvider);
+    final total = ref
+        .read(ploggingProvider)
+        .totalCounts
+        .values
+        .fold<int>(0, (s, v) => s + v);
+    await showBadgeEarned(
+      context,
+      badges: badges,
+      summary:
+          '걸음 ${t.steps} · ${t.kcal} kcal · ${(total * 0.1).toStringAsFixed(1)} kg',
+    );
+  }
+
   // 찍기 → 봉투 인증샷 촬영 → 자동 그룹 공유 → 홈 + AUTO-02 팝업
   Future<void> _takePhoto() async {
     // TODO: PLOG-08 카메라(봉투 모드) → PLOG-09 미리보기 → 사진 DB 저장
@@ -40,17 +69,43 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
   Future<void> _skip() async {
     await ref.read(ploggingProvider.notifier).reset();
     if (!mounted) return;
+    await _showBadgesIfAny(); // 뱃지 획득 시 축하 모달 → 닫으면 홈
+    ref.read(trackingProvider.notifier).reset();
+    if (!mounted) return;
     context.go('/home');
   }
 
   // 사진 결정(찍기/갤러리) 공통: 자동 그룹 공유 후 홈 이동
   Future<void> _shareAndHome() async {
-    // TODO: 활동 기록 + 봉투 인증샷 Firestore 저장, 그룹 피드에 활동 카드 게시
-    // TODO: 실제 "내 그룹명"으로 교체 (지금은 placeholder)
-    const myGroupName = '우리 동네 그룹';
+    // 내 그룹 피드에 활동 카드 게시 (공유 횟수도 함께 누적 → 'share_10' 뱃지)
+    String myGroupName = '우리 동네 그룹';
+    try {
+      final myGroup = await GroupService.myGroup();
+      if (myGroup != null) {
+        myGroupName = myGroup.name;
+        // TODO: 인증샷 업로드 후 imageUrl 전달
+        final t = ref.read(trackingProvider);
+        final total = ref
+            .read(ploggingProvider)
+            .totalCounts
+            .values
+            .fold<int>(0, (s, v) => s + v);
+        await GroupService.addPost(
+          groupId: myGroup.id,
+          distance: '${t.distanceText} km',
+          trash: total,
+          duration: t.durationText,
+        );
+      }
+    } catch (_) {
+      // 공유 실패해도 홈 이동은 계속
+    }
     await ref.read(ploggingProvider.notifier).reset();
     // AUTO-02 신호: 홈이 이 값을 읽어 공유 완료 팝업을 띄움
     ref.read(sharedGroupProvider.notifier).set(myGroupName);
+    if (!mounted) return;
+    await _showBadgesIfAny(); // 뱃지 획득 시 축하 모달 → 닫으면 홈
+    ref.read(trackingProvider.notifier).reset();
     if (!mounted) return;
     context.go('/home');
   }
@@ -62,31 +117,35 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     final counts = state.totalCounts;
     final totalTrash = counts.values.fold<int>(0, (s, v) => s + v);
 
-    return Scaffold(
-      backgroundColor: AppColors.appBG,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _buildHero(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                child: Column(
-                  children: [
-                    _mapCard(),
-                    const SizedBox(height: 14),
-                    _recordCard(),
-                    const SizedBox(height: 14),
-                    _trashCard(counts, totalTrash),
-                    const SizedBox(height: 14),
-                    _rewardCard(),
-                  ],
+    // 정산은 되돌아갈 수 없음 — 기기 뒤로가기로 트래킹/지도에 복귀하지 않게 막는다
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.appBG,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildHero(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                  child: Column(
+                    children: [
+                      _mapCard(),
+                      const SizedBox(height: 14),
+                      _recordCard(totalTrash),
+                      const SizedBox(height: 14),
+                      _trashCard(counts, totalTrash),
+                      const SizedBox(height: 14),
+                      _rewardCard(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            _bottomButtons(),
-          ],
+              _bottomButtons(),
+            ],
+          ),
         ),
       ),
     );
@@ -117,11 +176,6 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            '오늘도 줍다행 했어요',
-            style: TextStyle(fontSize: 14, color: Colors.white),
           ),
         ],
       ),
@@ -156,31 +210,32 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     );
   }
 
-  // ───────────────────────── 오늘의 기록 ─────────────────────────
-  // TODO: 시간/거리/걸음/칼로리/무게는 아직 provider에 없음(추적값 미저장).
-  //       GPS·걸음·무게추정을 provider/state에 담으면 실제 값으로 교체.
-  Widget _recordCard() {
+  // ───────────────────────── 오늘의 기록 (트래킹 실측값) ─────────────────────────
+  Widget _recordCard(int totalTrash) {
+    final t = ref.watch(trackingProvider);
+    // TODO: 무게는 개당 100g 가정. 실제 추정 로직 생기면 교체.
+    final weight = (totalTrash * 0.1).toStringAsFixed(1);
     return _card(
       title: '오늘의 기록',
       child: Column(
         children: [
           Row(
             children: [
-              _metric('시간', '00:42'),
+              _metric('시간', t.durationText),
               const SizedBox(width: 10),
-              _metric('거리', '2.1 km'),
+              _metric('거리', '${t.distanceText} km'),
             ],
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              _metric('걸음', '3,120'),
+              _metric('걸음', '${t.steps}'),
               const SizedBox(width: 10),
-              _metric('칼로리', '245'),
+              _metric('칼로리', '${t.kcal}'),
             ],
           ),
           const SizedBox(height: 10),
-          Row(children: [_metric('무게(추정)', '1.2 kg')]),
+          Row(children: [_metric('무게(추정)', '$weight kg')]),
         ],
       ),
     );

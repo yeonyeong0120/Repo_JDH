@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:repo_jdh/core/dev/dev_user.dart';
+import 'package:repo_jdh/core/dev/dev_data.dart';
 
 class FirestoreRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  String? get _currentUid => FirebaseAuth.instance.currentUser?.uid;
+  String? get _currentUid => DevUser.resolve();
 
   CollectionReference<Map<String, dynamic>>? get _detectionsRef {
     final uid = _currentUid;
@@ -34,6 +36,7 @@ class FirestoreRepository {
     String? imageUrl,
     Map<String, dynamic>? location,
   }) async {
+    if (DevData.enabled) return; // 더미 모드에서는 저장 생략
     final detectionsRef = _detectionsRef;
     if (detectionsRef == null) {
       print('❌ 로그인 안 됨 — 등록 기록 저장 스킵');

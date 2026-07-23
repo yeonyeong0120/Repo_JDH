@@ -66,7 +66,13 @@ class ActivityDetailScreen extends StatelessWidget {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                // 하단 네비바 가림 방지
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+                ),
                 children: [
                   Text(
                     dateTime,

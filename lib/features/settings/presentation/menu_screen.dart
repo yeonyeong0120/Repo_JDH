@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/features/mypage/domain/profile_detail.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
+import 'package:repo_jdh/features/mypage/presentation/profile_screen.dart';
+import 'package:repo_jdh/features/settings/presentation/notice_screen.dart';
+import 'package:repo_jdh/features/settings/presentation/faq_screen.dart';
+import 'package:repo_jdh/features/settings/presentation/terms_screen.dart';
+import 'package:repo_jdh/features/settings/presentation/licenses_screen.dart';
+import 'package:repo_jdh/features/shop/presentation/shop_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
+import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 
 /// 줍다행 - 메뉴 화면 (프로필 / 다크모드 / 알림 / 에코포인트 상점 / 약관 등)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
@@ -14,6 +25,32 @@ class MenuScreen extends StatefulWidget {
 class _MenuScreenState extends State<MenuScreen> {
   bool _darkMode = false;
   bool _notifications = false;
+
+  ProfileDetail _profile = const ProfileDetail();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final p = await UserService.loadProfileDetail();
+      if (mounted) setState(() => _profile = p);
+    } catch (_) {
+      // 실패 시 기본값 유지
+    }
+  }
+
+  // 프로필 카드 → 수정 화면 (돌아오면 갱신)
+  Future<void> _openProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+    );
+    _loadProfile();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,16 +89,36 @@ class _MenuScreenState extends State<MenuScreen> {
                   _linkCard(
                     title: '에코포인트 상점',
                     big: true,
-                    onTap: () {
-                      // TODO: 에코포인트 상점(reward) 화면으로 이동
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ShopScreen()),
+                      );
+                      _loadProfile(); // 포인트 사용했을 수 있으니 갱신
                     },
                   ),
                   const SizedBox(height: 22),
-                  _menuItem(Icons.campaign_outlined, '공지 사항'),
+                  _menuItem(
+                    Icons.campaign_outlined,
+                    '공지 사항',
+                    const NoticeListScreen(),
+                  ),
                   const SizedBox(height: 14),
-                  _menuItem(Icons.help_outline, '자주 묻는 질문'),
+                  _menuItem(Icons.help_outline, '자주 묻는 질문', const FaqScreen()),
                   const SizedBox(height: 14),
-                  _menuItem(Icons.description_outlined, '이용 약관 및 정책'),
+                  _menuItem(
+                    Icons.description_outlined,
+                    '이용 약관 및 정책',
+                    const TermsScreen(),
+                  ),
+                  const SizedBox(height: 14),
+                  _menuItem(
+                    Icons.copyright_outlined,
+                    '오픈소스 및 출처',
+                    const LicensesScreen(),
+                  ),
+                  const SizedBox(height: 26),
+                  _accountActions(),
                 ],
               ),
             ),
@@ -99,120 +156,147 @@ class _MenuScreenState extends State<MenuScreen> {
 
   // ───────────────────────── 프로필 카드 ─────────────────────────
   Widget _profileCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.cardBG,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.cardShadowStrong,
-      ),
-      child: Row(
-        children: [
-          // TODO: 실제 프로필 이미지로 교체
-          Container(
-            width: 56,
-            height: 56,
-            clipBehavior: Clip.antiAlias,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primaryPale,
-            ),
-            child: const Icon(
-              Icons.pets,
-              color: AppColors.textTertiary,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      '가나디',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+    return GestureDetector(
+      onTap: _openProfile,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppColors.cardBG,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppColors.cardShadowStrong,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              clipBehavior: Clip.antiAlias,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primaryPale,
+              ),
+              child: (_profile.photoUrl == null || _profile.photoUrl!.isEmpty)
+                  ? const Icon(
+                      Icons.pets,
+                      color: AppColors.textTertiary,
+                      size: 30,
+                    )
+                  : Image.network(
+                      _profile.photoUrl!,
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.pets,
+                        color: AppColors.textTertiary,
+                        size: 30,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        _profile.nickname.isEmpty ? '플로거' : _profile.nickname,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryPale,
-                        borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPale,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'Lv.${_profile.level}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDeep,
+                          ),
+                        ),
                       ),
-                      child: const Text(
-                        'Lv.11',
-                        style: TextStyle(
+                      const Spacer(),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '${_formatPoints(_profile.points)} ',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const TextSpan(
+                              text: 'P',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.mintDeep,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _profile.levelProgress,
+                            minHeight: 8,
+                            backgroundColor: AppColors.divider,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '${_profile.xpInLevel}/100',
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primaryDeep,
+                          color: AppColors.textTertiary,
                         ),
                       ),
-                    ),
-                    const Spacer(),
-                    const Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '2,900 ',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          TextSpan(
-                            text: 'P',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.mintDeep,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: const LinearProgressIndicator(
-                          value: 0.8,
-                          minHeight: 8,
-                          backgroundColor: AppColors.divider,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      '80/100',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  // 1234 → '1,234'
+  String _formatPoints(int v) {
+    final s = v.toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+      buf.write(s[i]);
+    }
+    return buf.toString();
   }
 
   // ───────────────────────── 토글 카드 ─────────────────────────
@@ -342,12 +426,69 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
+  // ───────────────────────── 탈퇴 / 로그아웃 ─────────────────────────
+  Widget _accountActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        TextButton(
+          onPressed: _confirmDelete,
+          child: const Text(
+            '탈퇴하기',
+            style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+          ),
+        ),
+        Container(width: 1, height: 12, color: AppColors.divider),
+        TextButton(
+          onPressed: _confirmSignOut,
+          child: const Text(
+            '로그아웃',
+            style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _confirmSignOut() async {
+    final ok = await AppDialog.show(
+      context,
+      title: '로그아웃',
+      message: '로그아웃 하시겠습니까?',
+      cancelText: '아니오',
+      confirmText: '로그아웃',
+    );
+    if (ok != true || !mounted) return;
+    await UserService.signOut();
+    if (mounted) context.go('/login');
+  }
+
+  Future<void> _confirmDelete() async {
+    final ok = await AppDialog.show(
+      context,
+      title: '회원 탈퇴',
+      message: '정말 탈퇴하시겠습니까?\n\n활동 기록과 뱃지, 포인트가 모두 사라지며 되돌릴 수 없어요.',
+      cancelText: '아니오',
+      confirmText: '탈퇴',
+      danger: true,
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await UserService.deleteAccount();
+    } catch (_) {
+      if (mounted) {
+        AppSnackBar.show(context, '탈퇴하지 못했어요. 다시 로그인 후 시도해주세요');
+      }
+      return;
+    }
+    if (mounted) context.go('/login');
+  }
+
   // ───────────────────────── 하단 메뉴 항목 ─────────────────────────
-  Widget _menuItem(IconData icon, String label) {
+  Widget _menuItem(IconData icon, String label, Widget screen) {
     return GestureDetector(
-      onTap: () {
-        // TODO: 각 항목 화면으로 이동 (공지/FAQ/약관)
-      },
+      onTap: () =>
+          Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(

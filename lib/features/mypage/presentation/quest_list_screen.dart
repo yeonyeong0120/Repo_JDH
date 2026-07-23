@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 
 /// 줍다행 - 전체 퀘스트 (ACT-09)
 /// 기록 탭 "진행 중인 퀘스트 →" → 이 화면. 실제 데이터는 더미 + TODO.
@@ -17,36 +19,50 @@ class _QuestListScreenState extends State<QuestListScreen> {
   final PageController _pageController = PageController();
 
   // 퀘스트 색: 걸음수 파랑 / 칼로리 빨강 / 수거량 초록 / 그룹참여 주황 / 시간 보라
-  // TODO: 실제 퀘스트 데이터로 교체
-  static const List<_Q> _quests = [
-    _Q(
-      '누적 10,000보 걷기',
-      6200,
-      10000,
-      Icons.directions_walk,
-      AppColors.categoryBlue,
-    ),
-    _Q(
-      '누적 30,000보 걷기',
-      0,
-      30000,
-      Icons.directions_walk,
-      AppColors.categoryBlue,
-    ),
-    _Q(
-      '칼로리 500kcal 소모',
-      500,
-      500,
-      Icons.local_fire_department,
-      AppColors.categoryRed,
-    ),
-    _Q('수거량 5kg 달성', 3200, 5000, Icons.recycling, AppColors.categoryGreen),
-    _Q('수거량 1kg 달성', 1000, 1000, Icons.recycling, AppColors.categoryGreen),
-    _Q('그룹 활동 5회 참여', 3, 5, Icons.groups, AppColors.categoryOrange),
-    _Q('그룹 활동 10회 참여', 0, 10, Icons.groups, AppColors.categoryOrange),
-    _Q('누적 3시간 플로깅', 90, 180, Icons.timer, AppColors.categoryPurple),
-    _Q('첫 30분 플로깅', 30, 30, Icons.timer, AppColors.categoryPurple),
-  ];
+  List<_Q> _quests = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  // 누적 통계 → 퀘스트 20개 진행률
+  Future<void> _load() async {
+    UserStats stats = const UserStats();
+    try {
+      stats = await BadgeService.loadStats();
+    } catch (_) {
+      // 실패 시 진행률 0으로 표시
+    }
+    if (!mounted) return;
+    setState(() {
+      _quests = kBadges.map((b) {
+        final (cur, total) = BadgeService.progressOf(b, stats);
+        return _Q(b.quest, cur, total, b.icon, _colorOf(b));
+      }).toList();
+      _loading = false;
+    });
+  }
+
+  Color _colorOf(BadgeData b) {
+    final id = b.id;
+    if (id.startsWith('steps') || id.startsWith('distance')) {
+      return AppColors.categoryBlue;
+    }
+    if (id.startsWith('kcal')) return AppColors.categoryRed;
+    if (id.startsWith('weight') || id.startsWith('plastic')) {
+      return AppColors.categoryGreen;
+    }
+    if (id.startsWith('group') || id.startsWith('share')) {
+      return AppColors.categoryOrange;
+    }
+    if (id.startsWith('time') || id == 'first_30min') {
+      return AppColors.categoryPurple;
+    }
+    return AppColors.primary; // 첫 인증·연속 출석 등
+  }
 
   @override
   void dispose() {
@@ -68,6 +84,14 @@ class _QuestListScreenState extends State<QuestListScreen> {
 
   // 탭별 페이지 (리스트 or 빈 상태) — PageView 의 한 페이지
   Widget _questPage(int tab) {
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+          strokeWidth: 2,
+        ),
+      );
+    }
     final list = _listFor(tab);
     if (list.isEmpty) {
       return const Center(

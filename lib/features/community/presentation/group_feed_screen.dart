@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/features/community/domain/group.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
@@ -9,11 +11,13 @@ import 'package:repo_jdh/core/widgets/app_button.dart';
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
 /// 위치 권장: lib/features/community/presentation/group_feed_screen.dart
 class GroupFeedScreen extends StatefulWidget {
+  final String groupId;
   final String groupName;
   final int memberCount;
 
   const GroupFeedScreen({
     super.key,
+    this.groupId = '',
     this.groupName = '00동 같이 주워봐요',
     this.memberCount = 12,
   });
@@ -25,7 +29,8 @@ class GroupFeedScreen extends StatefulWidget {
 class _GroupFeedScreenState extends State<GroupFeedScreen> {
   // 피드 데이터 (placeholder — 실제 그룹 활동 공유로 교체)
   // date = 게시(=활동) 시각. TODO: 실제 활동 데이터의 DateTime으로 교체
-  final List<_FeedItem> _items = [
+  // groupId 가 있으면 Firestore 피드로 교체됨 (없으면 아래 더미 유지)
+  List<_FeedItem> _items = [
     _FeedItem(
       '김연영',
       DateTime.now().subtract(const Duration(hours: 2)),
@@ -56,7 +61,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
 
   // 멤버 목록 (placeholder)
   // TODO: 실제 그룹 멤버 데이터로 교체
-  final List<String> _members = const [
+  List<String> _members = const [
     '김연영',
     '박서연',
     '이준호',
@@ -70,11 +75,63 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   // 오른쪽 멤버 드로어(endDrawer) 열고/닫기용 키
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  void _toggleLike(_FeedItem it) {
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  // 피드 + 멤버 불러오기
+  Future<void> _load() async {
+    if (widget.groupId.isEmpty) return; // 더미 모드
+    try {
+      final posts = await GroupService.posts(widget.groupId);
+      final names = await GroupService.memberNames(widget.groupId);
+      if (!mounted) return;
+      setState(() {
+        _items = posts.map(_fromPost).toList();
+        if (names.isNotEmpty) _members = names;
+      });
+    } catch (_) {
+      // 실패 시 기존 목록 유지
+    }
+  }
+
+  _FeedItem _fromPost(GroupPost p) => _FeedItem(
+    p.userName,
+    p.createdAt,
+    p.distance,
+    p.trash,
+    p.duration,
+    hasPhoto: p.imageUrl != null,
+    likes: p.likes,
+    liked: p.likedByMe,
+    isMine: p.isMine,
+    postId: p.id,
+    photoUrl: p.photoUrl,
+    imageUrl: p.imageUrl,
+  );
+
+  Future<void> _toggleLike(_FeedItem it) async {
+    final wasLiked = it.liked;
     setState(() {
-      it.liked = !it.liked;
+      it.liked = !wasLiked;
       it.likes += it.liked ? 1 : -1;
     });
+    if (widget.groupId.isEmpty || it.postId == null) return;
+    try {
+      await GroupService.toggleLike(
+        groupId: widget.groupId,
+        postId: it.postId!,
+        liked: wasLiked,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        it.liked = wasLiked; // 실패 → 원복
+        it.likes += it.liked ? 1 : -1;
+      });
+    }
   }
 
   // 날짜 헤더 라벨 (오늘 / 어제 / N월 N일 / 작년 이전이면 연도까지)
@@ -441,6 +498,121 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     );
   }
 
+  // ───────── 그룹 상세 정보 (소개/동네/인원) ─────────
+  Future<void> _showGroupInfo() async {
+    Group? g;
+    if (widget.groupId.isNotEmpty) {
+      try {
+        g = await GroupService.getGroup(widget.groupId);
+      } catch (_) {
+        // 실패 시 이름만 표시
+      }
+    }
+    if (!mounted) return;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.cardBG,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // TODO: 그룹 대표 이미지로 교체
+              Container(
+                width: 76,
+                height: 76,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryPale,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text('🌱', style: TextStyle(fontSize: 36)),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                g?.name ?? widget.groupName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                g == null ? '' : '${g.region}  ·  ${g.meta}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.appBG,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '그룹 소개',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      (g?.intro.isNotEmpty ?? false)
+                          ? g!.intro
+                          : '아직 소개글이 없어요.',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        height: 1.7,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  width: double.infinity,
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Text(
+                    '확인',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ───────── 그룹 탈퇴 (탈퇴는 여기서만 가능 — 기획서 GRP-05) ─────────
   Future<void> _confirmLeave() async {
     final ok = await AppDialog.show(
@@ -451,11 +623,18 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       confirmText: '탈퇴',
       danger: true,
     );
-    if (ok == true && mounted) {
-      // TODO: 실제 그룹 탈퇴 로직 (소속 해제 Firestore)
-      AppSnackBar.show(context, '그룹에서 탈퇴했어요');
-      context.go('/group');
+    if (ok != true || !mounted) return;
+    try {
+      if (widget.groupId.isNotEmpty) {
+        await GroupService.leaveGroup(widget.groupId);
+      }
+    } catch (_) {
+      if (mounted) AppSnackBar.show(context, '탈퇴하지 못했어요');
+      return;
     }
+    if (!mounted) return;
+    AppSnackBar.show(context, '그룹에서 탈퇴했어요');
+    context.go('/group');
   }
 
   @override
@@ -522,6 +701,12 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
               ],
             ),
           ),
+          // 그룹 정보 (가입 전에 봤던 소개·동네·인원)
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            color: AppColors.textSecondary,
+            onPressed: _showGroupInfo,
+          ),
           // 오른쪽 위 ≡ → 오른쪽 멤버 드로어 열기
           IconButton(
             icon: const Icon(Icons.menu),
@@ -536,10 +721,16 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   // ───────────────────────── 활동 공유 카드 (A안) ─────────────────────────
   Widget _feedCard(_FeedItem item) {
     final mine = item.isMine;
-    const avatar = CircleAvatar(
+    final photo = item.photoUrl;
+    final avatar = CircleAvatar(
       radius: 18,
       backgroundColor: AppColors.primaryPale,
-      child: Icon(Icons.person, size: 20, color: AppColors.textTertiary),
+      backgroundImage: (photo != null && photo.isNotEmpty)
+          ? NetworkImage(photo)
+          : null,
+      child: (photo != null && photo.isNotEmpty)
+          ? null
+          : const Icon(Icons.person, size: 20, color: AppColors.textTertiary),
     );
     // 기록: 흰 바탕에 컴팩트하게 (왼쪽 밑)
     final record = Row(
@@ -571,11 +762,22 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 width: double.infinity,
                 color: AppColors.primaryPale,
                 alignment: Alignment.center,
-                child: const Icon(
-                  Icons.photo_camera_outlined,
-                  size: 36,
-                  color: AppColors.textTertiary,
-                ),
+                child: (item.imageUrl?.startsWith('http') ?? false)
+                    ? Image.network(
+                        item.imageUrl!,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.photo_camera_outlined,
+                          size: 36,
+                          color: AppColors.textTertiary,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.photo_camera_outlined,
+                        size: 36,
+                        color: AppColors.textTertiary,
+                      ),
               ),
             ),
           Padding(
@@ -740,6 +942,9 @@ class _FeedItem {
   int likes;
   bool liked;
   final bool isMine; // 내가 올린 기록인지 (오른쪽 정렬 + 하트 숨김)
+  final String? postId; // Firestore 문서 id (더미는 null)
+  final String? photoUrl; // 작성자 프로필 사진
+  final String? imageUrl; // 봉투 인증샷 URL
   _FeedItem(
     this.name,
     this.date,
@@ -750,5 +955,8 @@ class _FeedItem {
     this.likes = 0,
     this.liked = false,
     this.isMine = false,
+    this.postId,
+    this.photoUrl,
+    this.imageUrl,
   });
 }

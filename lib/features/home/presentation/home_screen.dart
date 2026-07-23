@@ -539,6 +539,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _tipCard() {
+    // 설계서 NEWS-01 기준 — 홈 카드는 최신 기사 1개를 보여준다
+    final latest = NewsFeedScreen.articles.first;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
@@ -554,9 +556,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ), // 44 → 32 축소
           ),
           const SizedBox(height: 10),
-          const Text(
-            '페트병 라벨,\n이렇게 떼세요!',
-            style: TextStyle(
+          Text(
+            latest.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -564,15 +568,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            '올바른 분리배출 꿀팁 알아보기',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          Text(
+            latest.summary,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 12),
           const Spacer(), // 바이라인을 카드 바닥으로 → 스트릭 CTA와 수평
           Row(
-            children: const [
-              CircleAvatar(
+            children: [
+              const CircleAvatar(
                 radius: 10,
                 backgroundColor: AppColors.primaryPale,
                 child: Icon(
@@ -581,13 +590,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   color: AppColors.textTertiary,
                 ),
               ),
-              SizedBox(width: 6),
-              Text(
-                '고냐니 기자',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  latest.reporter,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
-              Spacer(),
-              Icon(
+              const Icon(
                 Symbols.chevron_right,
                 color: AppColors.textTertiary,
                 size: 20,

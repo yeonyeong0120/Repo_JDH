@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/features/community/domain/group.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'group_detail_screen.dart';
 
 /// 줍다행 - 그룹 검색 화면 (GRP-02)
@@ -24,16 +26,14 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
   static const List<String> _regionOptions = ['내 동네', '전체'];
   static const List<String> _sortOptions = ['인원 많은 순', '최신순'];
 
-  // 검색 대상 (placeholder — 실제 그룹 데이터로 교체)
-  // TODO: 실제 그룹 목록/검색 API로 교체
-  static const List<_Group> _all = [
-    _Group('00동 모여랏'),
-    _Group('활동 가치해윱'),
-    _Group('14년생만 ><'),
-    _Group('00중학교 0학년 0반'),
-    _Group('주말 플로깅 크루'),
-    _Group('한강 같이 걸어요'),
-  ];
+  List<Group> _results = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   @override
   void dispose() {
@@ -41,13 +41,24 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     super.dispose();
   }
 
-  // 이름/동네로 프론트 필터링 (지역 필터·정렬은 TODO)
-  List<_Group> get _results {
-    if (_query.trim().isEmpty) return _all;
-    final q = _query.trim();
-    return _all
-        .where((g) => g.name.contains(q) || g.region.contains(q))
-        .toList();
+  // 검색어 없으면 전체 목록, 있으면 이름 검색
+  // TODO: 지역 필터(_region)·정렬(_sort)도 쿼리에 반영
+  Future<void> _load() async {
+    if (mounted) setState(() => _loading = true);
+    List<Group> list = [];
+    try {
+      final q = _query.trim();
+      list = q.isEmpty
+          ? await GroupService.otherGroups(limit: 30)
+          : await GroupService.search(q);
+    } catch (_) {
+      // 실패 시 빈 목록
+    }
+    if (!mounted) return;
+    setState(() {
+      _results = list;
+      _loading = false;
+    });
   }
 
   @override
@@ -90,7 +101,10 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                             child: TextField(
                               controller: _controller,
                               autofocus: true,
-                              onChanged: (v) => setState(() => _query = v),
+                              onChanged: (v) {
+                                setState(() => _query = v);
+                                _load();
+                              },
                               decoration: const InputDecoration(
                                 isCollapsed: true,
                                 border: InputBorder.none,
@@ -158,10 +172,26 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
             const SizedBox(height: 8),
             // 결과
             Expanded(
-              child: results.isEmpty
+              child: _loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : results.isEmpty
                   ? _empty()
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      // 하단 네비바에 마지막 카드가 가리지 않게 여유
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQueryData.fromView(
+                              View.of(context),
+                            ).padding.bottom +
+                            92,
+                      ),
                       itemCount: results.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) => _groupCard(results[i]),
@@ -192,19 +222,23 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     );
   }
 
-  Widget _groupCard(_Group g) {
+  Widget _groupCard(Group g) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => GroupDetailScreen(
-            name: g.name,
-            region: g.region,
-            meta: g.meta,
-            alreadyInGroup: widget.alreadyInGroup,
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GroupDetailScreen(
+              groupId: g.id,
+              name: g.name,
+              region: g.region,
+              meta: g.meta,
+              alreadyInGroup: widget.alreadyInGroup,
+            ),
           ),
-        ),
-      ),
+        );
+        _load();
+      },
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -487,11 +521,4 @@ class _FilterDropdownState extends State<_FilterDropdown>
       ),
     );
   }
-}
-
-class _Group {
-  final String name;
-  final String region;
-  final String meta;
-  const _Group(this.name) : region = '00구 00동', meta = '00명 · 오늘 활동 인원 0명';
 }

@@ -76,4 +76,30 @@ class LocationRepository {
       return null;
     }
   }
+
+  /// 트래킹용 이동 거리 스트림 — 직전 위치와의 이동분(m)을 흘려보낸다.
+  /// distanceFilter 만큼 움직여야 이벤트가 오므로 배터리 부담이 적다.
+  Stream<double> watchDistanceMeters({int distanceFilter = 5}) async* {
+    Position? last;
+    final stream = Geolocator.getPositionStream(
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: distanceFilter,
+      ),
+    );
+
+    await for (final p in stream) {
+      if (last != null) {
+        final m = Geolocator.distanceBetween(
+          last.latitude,
+          last.longitude,
+          p.latitude,
+          p.longitude,
+        );
+        // GPS 튐 보정: 너무 작거나(오차) 너무 큰(순간이동) 값은 버림
+        if (m >= 3 && m < 200) yield m;
+      }
+      last = p;
+    }
+  }
 }

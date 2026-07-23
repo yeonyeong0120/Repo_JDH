@@ -1,13 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
+import 'package:repo_jdh/core/dev/dev_user.dart';
+import 'package:repo_jdh/core/dev/dev_data.dart';
 
 /// 활동 세션 CRUD
 /// Firestore 경로: users/{uid}/activities/{activityId}
 class ActivityService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  static String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+  static String? get _uid => DevUser.resolve();
 
   static CollectionReference<Map<String, dynamic>>? _activitiesCol() {
     final uid = _uid;
@@ -89,11 +91,7 @@ class ActivityService {
 
     await col.doc(activityId).update({
       'path': FieldValue.arrayUnion([
-        {
-          'lat': lat,
-          'lng': lng,
-          't': Timestamp.fromDate(DateTime.now()),
-        }
+        {'lat': lat, 'lng': lng, 't': Timestamp.fromDate(DateTime.now())},
       ]),
     });
   }
@@ -160,8 +158,41 @@ class ActivityService {
     return Activity.fromJson(data);
   }
 
+  /// 트래킹 종료 시 완료된 활동을 한 번에 저장 (시작/종료를 나눠 부르지 않는 경우)
+  static Future<String?> saveCompleted({
+    required DateTime startedAt,
+    required DateTime endedAt,
+    required int durationSeconds,
+    required double distanceMeters,
+    Map<String, int> trashCounts = const {},
+    String? groupId,
+    int pointsEarned = 0,
+  }) async {
+    if (DevData.enabled) return 'dev_activity';
+    final col = _activitiesCol();
+    if (col == null) return null;
+
+    final total = trashCounts.values.fold<int>(0, (a, b) => a + b);
+    final doc = await col.add({
+      'startedAt': Timestamp.fromDate(startedAt),
+      'endedAt': Timestamp.fromDate(endedAt),
+      'durationSeconds': durationSeconds,
+      'distanceMeters': distanceMeters,
+      'trashCounts': trashCounts,
+      'totalTrash': total,
+      'imageUrls': <String>[],
+      'detectionIds': <String>[],
+      'path': <Map<String, dynamic>>[],
+      'pointsEarned': pointsEarned,
+      'status': ActivityStatus.completed,
+      if (groupId != null) 'groupId': groupId,
+    });
+    return doc.id;
+  }
+
   /// 완료된 활동 최근 N개 (내 활동 화면용)
   static Future<List<Activity>> getRecentCompleted({int limit = 20}) async {
+    if (DevData.enabled) return DevData.activities; // 개발용 로컬 더미
     final col = _activitiesCol();
     if (col == null) return [];
 

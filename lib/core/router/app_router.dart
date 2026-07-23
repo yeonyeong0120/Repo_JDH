@@ -61,6 +61,8 @@ GoRouter appRouter(Ref ref) {
     debugLogDiagnostics: true,
 
     redirect: (context, state) {
+      // ⚠️ 개발용 — Firebase Auth 연동이 막혀 있어 로그인을 건너뛴다.
+      //    로그인 흐름을 켜려면 아래 줄을 주석 처리할 것.
       return null;
       final loggingIn = state.matchedLocation == AppRoutes.login;
       final settingNickname = state.matchedLocation == AppRoutes.nicknameSetup;
@@ -140,8 +142,15 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.groupFeed,
         builder: (context, state) {
-          final name = state.extra as String?;
-          return GroupFeedScreen(groupName: name ?? '그룹');
+          // extra: {'id': 그룹 id, 'name': 그룹명} (구버전 호환: String = 그룹명)
+          final extra = state.extra;
+          if (extra is Map) {
+            return GroupFeedScreen(
+              groupId: (extra['id'] as String?) ?? '',
+              groupName: (extra['name'] as String?) ?? '그룹',
+            );
+          }
+          return GroupFeedScreen(groupName: (extra as String?) ?? '그룹');
         },
       ),
       GoRoute(

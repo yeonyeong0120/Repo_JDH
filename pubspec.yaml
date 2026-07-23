@@ -37,7 +37,7 @@ dependencies:
   flutter_foreground_task: ^8.16.0
 
   # ===== 카메라 =====
-  image_picker: ^1.1.2
+  image_picker: ^1.2.3
 
   # ===== HTTP 통신 (FastAPI 호출용) =====
   dio: ^5.8.0+1
@@ -55,7 +55,7 @@ dependencies:
 
   # ===== 권한 / 로컬 저장 =====
   permission_handler: ^11.3.1
-  shared_preferences: ^2.3.3
+  shared_preferences: ^2.5.5
 
   # ===== 유틸 =====
   intl: ^0.20.2
@@ -70,6 +70,10 @@ dependencies:
   geocoding: ^3.0.0
   flutter_svg: ^2.3.0
   material_symbols_icons: ^4.2928.1
+  share_plus: ^12.0.2
+  path_provider: ^2.1.6
+  gal: ^2.3.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

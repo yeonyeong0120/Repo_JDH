@@ -3,6 +3,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 
 /// 줍다행 - 그룹 만들기 화면 (GRP-03)
 /// 이름·사진·동네(자동)·소개·공개설정 입력. 이미 그룹 소속이면 GRP-04 차단.
@@ -47,15 +48,31 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     if (mounted) Navigator.pop(context); // 만들기 화면 닫기
   }
 
-  void _create() {
+  bool _creating = false;
+
+  Future<void> _create() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       AppSnackBar.show(context, '그룹 이름을 입력해주세요');
       return;
     }
-    // TODO: 실제 그룹 생성 로직 (Firestore 저장 + 자동 가입)
-    AppSnackBar.show(context, '\'$name\' 그룹을 만들었어요');
-    Navigator.pop(context);
+    if (_creating) return;
+    setState(() => _creating = true);
+    try {
+      // TODO: 대표 사진 업로드 후 imageUrl 전달, 동네는 실제 위치로
+      await GroupService.createGroup(
+        name: name,
+        region: '00구 00동',
+        intro: _introController.text.trim(),
+      );
+      if (!mounted) return;
+      AppSnackBar.show(context, '\'$name\' 그룹을 만들었어요');
+      Navigator.pop(context, true); // true = 목록 새로고침 신호
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _creating = false);
+      AppSnackBar.show(context, '그룹을 만들지 못했어요');
+    }
   }
 
   @override
@@ -186,9 +203,9 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 6, 20, 32),
               child: AppButton(
-                label: '그룹 만들기',
+                label: _creating ? '만드는 중...' : '그룹 만들기',
                 onTap: _create,
-                enabled: true,
+                enabled: !_creating,
                 type: AppButtonType.primary,
               ),
             ),
