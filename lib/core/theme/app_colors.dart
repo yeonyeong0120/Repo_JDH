@@ -172,4 +172,34 @@ class AppColors {
       offset: const Offset(0, 4), // (0,6) → (0,4)
     ),
   ];
+
+  // ========================================================
+  // CLAUDE DESIGN 호환 별칭 (새 컴포넌트/홈이 쓰는 이름)
+  // 기존 팔레트에 매핑 — 값 조정은 여기서
+  // ========================================================
+
+  // 그린 스케일
+  static const Color green50 = primaryPale; // 가장 옅은 배경
+  static const Color green200 = primaryLight;
+  static const Color green700 = primary;
+  static const Color green800 = primaryDeep;
+
+  // 뉴트럴 스케일
+  static const Color neutral100 = Color(0xFFF2F3F5); // 옅은 배경/구분
+  static const Color neutral400 = textTertiary;
+  static const Color neutral500 = Color(0xFF7A7A7A);
+  static const Color neutral700 = textSecondary;
+
+  // 표면·경계·배경
+  static const Color surface = cardBG; // 카드 표면
+  static const Color surfaceBrand = primaryPale; // 브랜드 톤 표면
+  static const Color border = divider;
+  static const Color bg = appBG;
+
+  /// 주어진 색의 연한 틴트 배경 (아이콘 타일 등)
+  static Color tint(Color c) => c.withValues(alpha: 0.12);
+
+  // 브랜드/액션 텍스트
+  static const Color textBrand = primaryDeep;
+  static const Color actionPrimary = primary;
 }
