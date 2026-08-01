@@ -1,0 +1,1725 @@
+[{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_card.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'surfaceBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'surfaceBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'surfaceBrand'.",
+	"source": "dart",
+	"startLineNumber": 41,
+	"startColumn": 32,
+	"endLineNumber": 41,
+	"endColumn": 44,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_card.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'surface' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'surface', correcting the name to the name of an existing getter, or defining a getter or field named 'surface'.",
+	"source": "dart",
+	"startLineNumber": 41,
+	"startColumn": 57,
+	"endLineNumber": 41,
+	"endColumn": 64,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_card.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'border' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'border', correcting the name to the name of an existing getter, or defining a getter or field named 'border'.",
+	"source": "dart",
+	"startLineNumber": 49,
+	"startColumn": 64,
+	"endLineNumber": 49,
+	"endColumn": 70,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_card.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 124,
+	"startColumn": 22,
+	"endLineNumber": 124,
+	"endColumn": 42,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_card.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral400' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral400', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral400'.",
+	"source": "dart",
+	"startLineNumber": 124,
+	"startColumn": 32,
+	"endLineNumber": 124,
+	"endColumn": 42,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_card.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green700' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green700', correcting the name to the name of an existing getter, or defining a getter or field named 'green700'.",
+	"source": "dart",
+	"startLineNumber": 143,
+	"startColumn": 28,
+	"endLineNumber": 143,
+	"endColumn": 36,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_card.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_method",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_method",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The method 'tint' isn't defined for the type 'AppColors'.\nTry correcting the name to the name of an existing method, or defining a method named 'tint'.",
+	"source": "dart",
+	"startLineNumber": 153,
+	"startColumn": 26,
+	"endLineNumber": 153,
+	"endColumn": 30,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_section.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 73,
+	"startColumn": 30,
+	"endLineNumber": 73,
+	"endColumn": 50,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_section.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral400' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral400', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral400'.",
+	"source": "dart",
+	"startLineNumber": 73,
+	"startColumn": 40,
+	"endLineNumber": 73,
+	"endColumn": 50,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_stat.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 62,
+	"startColumn": 46,
+	"endLineNumber": 62,
+	"endColumn": 55,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_stat.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral100' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral100', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral100'.",
+	"source": "dart",
+	"startLineNumber": 117,
+	"startColumn": 36,
+	"endLineNumber": 117,
+	"endColumn": 46,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_stat.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'actionPrimary' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'actionPrimary', correcting the name to the name of an existing getter, or defining a getter or field named 'actionPrimary'.",
+	"source": "dart",
+	"startLineNumber": 119,
+	"startColumn": 30,
+	"endLineNumber": 119,
+	"endColumn": 43,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/core/widgets/app_stat.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 132,
+	"startColumn": 67,
+	"endLineNumber": 132,
+	"endColumn": 76,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "duplicate_definition",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/duplicate_definition",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The name 'DayLog' is already defined.\nTry renaming one of the declarations.",
+	"source": "dart",
+	"startLineNumber": 231,
+	"startColumn": 7,
+	"endLineNumber": 231,
+	"endColumn": 13,
+	"relatedInformation": [
+		{
+			"startLineNumber": 29,
+			"startColumn": 7,
+			"endLineNumber": 29,
+			"endColumn": 13,
+			"message": "The first definition of this name.",
+			"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart"
+		}
+	],
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "duplicate_definition",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/duplicate_definition",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The name 'NewsItem' is already defined.\nTry renaming one of the declarations.",
+	"source": "dart",
+	"startLineNumber": 238,
+	"startColumn": 7,
+	"endLineNumber": 238,
+	"endColumn": 15,
+	"relatedInformation": [
+		{
+			"startLineNumber": 36,
+			"startColumn": 7,
+			"endLineNumber": 36,
+			"endColumn": 15,
+			"message": "The first definition of this name.",
+			"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart"
+		}
+	],
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "duplicate_definition",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/duplicate_definition",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The name 'NeighborGroup' is already defined.\nTry renaming one of the declarations.",
+	"source": "dart",
+	"startLineNumber": 255,
+	"startColumn": 7,
+	"endLineNumber": 255,
+	"endColumn": 20,
+	"relatedInformation": [
+		{
+			"startLineNumber": 53,
+			"startColumn": 7,
+			"endLineNumber": 53,
+			"endColumn": 20,
+			"message": "The first definition of this name.",
+			"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart"
+		}
+	],
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "duplicate_definition",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/duplicate_definition",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The name 'HomeView' is already defined.\nTry renaming one of the declarations.",
+	"source": "dart",
+	"startLineNumber": 270,
+	"startColumn": 7,
+	"endLineNumber": 270,
+	"endColumn": 15,
+	"relatedInformation": [
+		{
+			"startLineNumber": 68,
+			"startColumn": 7,
+			"endLineNumber": 68,
+			"endColumn": 15,
+			"message": "The first definition of this name.",
+			"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart"
+		}
+	],
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "duplicate_definition",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/duplicate_definition",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The name 'homeViewProvider' is already defined.\nTry renaming one of the declarations.",
+	"source": "dart",
+	"startLineNumber": 316,
+	"startColumn": 7,
+	"endLineNumber": 316,
+	"endColumn": 23,
+	"relatedInformation": [
+		{
+			"startLineNumber": 113,
+			"startColumn": 7,
+			"endLineNumber": 113,
+			"endColumn": 23,
+			"message": "The first definition of this name.",
+			"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart"
+		}
+	],
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'DevData'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 319,
+	"startColumn": 13,
+	"endLineNumber": 319,
+	"endColumn": 20,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'DevData'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 320,
+	"startColumn": 16,
+	"endLineNumber": 320,
+	"endColumn": 23,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'DevData'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 321,
+	"startColumn": 13,
+	"endLineNumber": 321,
+	"endColumn": 20,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'NewsFeedScreen'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 344,
+	"startColumn": 21,
+	"endLineNumber": 344,
+	"endColumn": 35,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'DevData'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 356,
+	"startColumn": 21,
+	"endLineNumber": 356,
+	"endColumn": 28,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'DevData'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 381,
+	"startColumn": 29,
+	"endLineNumber": 381,
+	"endColumn": 36,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "duplicate_definition",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/duplicate_definition",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The name '_weekdayKo' is already defined.\nTry renaming one of the declarations.",
+	"source": "dart",
+	"startLineNumber": 385,
+	"startColumn": 8,
+	"endLineNumber": 385,
+	"endColumn": 18,
+	"relatedInformation": [
+		{
+			"startLineNumber": 221,
+			"startColumn": 8,
+			"endLineNumber": 221,
+			"endColumn": 18,
+			"message": "The first definition of this name.",
+			"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart"
+		}
+	],
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'bg' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'bg', correcting the name to the name of an existing getter, or defining a getter or field named 'bg'.",
+	"source": "dart",
+	"startLineNumber": 402,
+	"startColumn": 34,
+	"endLineNumber": 402,
+	"endColumn": 36,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'surface' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'surface', correcting the name to the name of an existing getter, or defining a getter or field named 'surface'.",
+	"source": "dart",
+	"startLineNumber": 498,
+	"startColumn": 24,
+	"endLineNumber": 498,
+	"endColumn": 31,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 534,
+	"startColumn": 28,
+	"endLineNumber": 534,
+	"endColumn": 50,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'surfaceBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'surfaceBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'surfaceBrand'.",
+	"source": "dart",
+	"startLineNumber": 534,
+	"startColumn": 38,
+	"endLineNumber": 534,
+	"endColumn": 50,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 540,
+	"startColumn": 28,
+	"endLineNumber": 540,
+	"endColumn": 46,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green700' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green700', correcting the name to the name of an existing getter, or defining a getter or field named 'green700'.",
+	"source": "dart",
+	"startLineNumber": 540,
+	"startColumn": 38,
+	"endLineNumber": 540,
+	"endColumn": 46,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green50' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green50', correcting the name to the name of an existing getter, or defining a getter or field named 'green50'.",
+	"source": "dart",
+	"startLineNumber": 554,
+	"startColumn": 38,
+	"endLineNumber": 554,
+	"endColumn": 45,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green200' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green200', correcting the name to the name of an existing getter, or defining a getter or field named 'green200'.",
+	"source": "dart",
+	"startLineNumber": 556,
+	"startColumn": 57,
+	"endLineNumber": 556,
+	"endColumn": 65,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 564,
+	"startColumn": 46,
+	"endLineNumber": 564,
+	"endColumn": 55,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 571,
+	"startColumn": 46,
+	"endLineNumber": 571,
+	"endColumn": 55,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 605,
+	"startColumn": 51,
+	"endLineNumber": 605,
+	"endColumn": 69,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green800' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green800', correcting the name to the name of an existing getter, or defining a getter or field named 'green800'.",
+	"source": "dart",
+	"startLineNumber": 605,
+	"startColumn": 61,
+	"endLineNumber": 605,
+	"endColumn": 69,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green800' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green800', correcting the name to the name of an existing getter, or defining a getter or field named 'green800'.",
+	"source": "dart",
+	"startLineNumber": 611,
+	"startColumn": 36,
+	"endLineNumber": 611,
+	"endColumn": 44,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 625,
+	"startColumn": 32,
+	"endLineNumber": 625,
+	"endColumn": 50,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green200' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green200', correcting the name to the name of an existing getter, or defining a getter or field named 'green200'.",
+	"source": "dart",
+	"startLineNumber": 625,
+	"startColumn": 42,
+	"endLineNumber": 625,
+	"endColumn": 50,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'surface' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'surface', correcting the name to the name of an existing getter, or defining a getter or field named 'surface'.",
+	"source": "dart",
+	"startLineNumber": 634,
+	"startColumn": 36,
+	"endLineNumber": 634,
+	"endColumn": 43,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral700' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral700', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral700'.",
+	"source": "dart",
+	"startLineNumber": 657,
+	"startColumn": 69,
+	"endLineNumber": 657,
+	"endColumn": 79,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'surface' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'surface', correcting the name to the name of an existing getter, or defining a getter or field named 'surface'.",
+	"source": "dart",
+	"startLineNumber": 680,
+	"startColumn": 32,
+	"endLineNumber": 680,
+	"endColumn": 39,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'actionPrimary' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'actionPrimary', correcting the name to the name of an existing getter, or defining a getter or field named 'actionPrimary'.",
+	"source": "dart",
+	"startLineNumber": 682,
+	"startColumn": 51,
+	"endLineNumber": 682,
+	"endColumn": 64,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'actionPrimary' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'actionPrimary', correcting the name to the name of an existing getter, or defining a getter or field named 'actionPrimary'.",
+	"source": "dart",
+	"startLineNumber": 697,
+	"startColumn": 35,
+	"endLineNumber": 697,
+	"endColumn": 48,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green800' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green800', correcting the name to the name of an existing getter, or defining a getter or field named 'green800'.",
+	"source": "dart",
+	"startLineNumber": 699,
+	"startColumn": 35,
+	"endLineNumber": 699,
+	"endColumn": 43,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'actionPrimary' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'actionPrimary', correcting the name to the name of an existing getter, or defining a getter or field named 'actionPrimary'.",
+	"source": "dart",
+	"startLineNumber": 711,
+	"startColumn": 41,
+	"endLineNumber": 711,
+	"endColumn": 54,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral500' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral500', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral500'.",
+	"source": "dart",
+	"startLineNumber": 711,
+	"startColumn": 67,
+	"endLineNumber": 711,
+	"endColumn": 77,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green800' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green800', correcting the name to the name of an existing getter, or defining a getter or field named 'green800'.",
+	"source": "dart",
+	"startLineNumber": 724,
+	"startColumn": 61,
+	"endLineNumber": 724,
+	"endColumn": 69,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 731,
+	"startColumn": 18,
+	"endLineNumber": 731,
+	"endColumn": 41,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'actionPrimary' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'actionPrimary', correcting the name to the name of an existing getter, or defining a getter or field named 'actionPrimary'.",
+	"source": "dart",
+	"startLineNumber": 731,
+	"startColumn": 28,
+	"endLineNumber": 731,
+	"endColumn": 41,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 740,
+	"startColumn": 18,
+	"endLineNumber": 740,
+	"endColumn": 38,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral500' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral500', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral500'.",
+	"source": "dart",
+	"startLineNumber": 740,
+	"startColumn": 28,
+	"endLineNumber": 740,
+	"endColumn": 38,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 776,
+	"startColumn": 26,
+	"endLineNumber": 776,
+	"endColumn": 46,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral100' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral100', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral100'.",
+	"source": "dart",
+	"startLineNumber": 776,
+	"startColumn": 36,
+	"endLineNumber": 776,
+	"endColumn": 46,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 788,
+	"startColumn": 26,
+	"endLineNumber": 788,
+	"endColumn": 46,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral100' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral100', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral100'.",
+	"source": "dart",
+	"startLineNumber": 788,
+	"startColumn": 36,
+	"endLineNumber": 788,
+	"endColumn": 46,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green50' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green50', correcting the name to the name of an existing getter, or defining a getter or field named 'green50'.",
+	"source": "dart",
+	"startLineNumber": 805,
+	"startColumn": 32,
+	"endLineNumber": 805,
+	"endColumn": 39,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green800' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green800', correcting the name to the name of an existing getter, or defining a getter or field named 'green800'.",
+	"source": "dart",
+	"startLineNumber": 822,
+	"startColumn": 65,
+	"endLineNumber": 822,
+	"endColumn": 73,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral700' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral700', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral700'.",
+	"source": "dart",
+	"startLineNumber": 830,
+	"startColumn": 40,
+	"endLineNumber": 830,
+	"endColumn": 50,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 839,
+	"startColumn": 32,
+	"endLineNumber": 839,
+	"endColumn": 52,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral100' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral100', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral100'.",
+	"source": "dart",
+	"startLineNumber": 839,
+	"startColumn": 42,
+	"endLineNumber": 839,
+	"endColumn": 52,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral700' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral700', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral700'.",
+	"source": "dart",
+	"startLineNumber": 846,
+	"startColumn": 64,
+	"endLineNumber": 846,
+	"endColumn": 74,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 855,
+	"startColumn": 42,
+	"endLineNumber": 855,
+	"endColumn": 51,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 906,
+	"startColumn": 28,
+	"endLineNumber": 906,
+	"endColumn": 47,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 906,
+	"startColumn": 38,
+	"endLineNumber": 906,
+	"endColumn": 47,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 914,
+	"startColumn": 28,
+	"endLineNumber": 914,
+	"endColumn": 47,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 914,
+	"startColumn": 38,
+	"endLineNumber": 914,
+	"endColumn": 47,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral100' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral100', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral100'.",
+	"source": "dart",
+	"startLineNumber": 952,
+	"startColumn": 32,
+	"endLineNumber": 952,
+	"endColumn": 42,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'neutral100' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'neutral100', correcting the name to the name of an existing getter, or defining a getter or field named 'neutral100'.",
+	"source": "dart",
+	"startLineNumber": 1013,
+	"startColumn": 32,
+	"endLineNumber": 1013,
+	"endColumn": 42,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "invalid_constant",
+	"severity": 8,
+	"message": "Invalid constant value.",
+	"source": "dart",
+	"startLineNumber": 1034,
+	"startColumn": 34,
+	"endLineNumber": 1034,
+	"endColumn": 53,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 1034,
+	"startColumn": 44,
+	"endLineNumber": 1034,
+	"endColumn": 53,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green50' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green50', correcting the name to the name of an existing getter, or defining a getter or field named 'green50'.",
+	"source": "dart",
+	"startLineNumber": 1053,
+	"startColumn": 32,
+	"endLineNumber": 1053,
+	"endColumn": 39,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'green200' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'green200', correcting the name to the name of an existing getter, or defining a getter or field named 'green200'.",
+	"source": "dart",
+	"startLineNumber": 1055,
+	"startColumn": 51,
+	"endLineNumber": 1055,
+	"endColumn": 59,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "undefined_getter",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_getter",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "The getter 'textBrand' isn't defined for the type 'AppColors'.\nTry importing the library that defines 'textBrand', correcting the name to the name of an existing getter, or defining a getter or field named 'textBrand'.",
+	"source": "dart",
+	"startLineNumber": 1061,
+	"startColumn": 34,
+	"endLineNumber": 1061,
+	"endColumn": 43,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "unused_local_variable",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/unused_local_variable",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 4,
+	"message": "The value of the local variable 'weekSteps' isn't used.\nTry removing the variable or using it.",
+	"source": "dart",
+	"startLineNumber": 123,
+	"startColumn": 7,
+	"endLineNumber": 123,
+	"endColumn": 16,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "unused_local_variable",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/unused_local_variable",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 4,
+	"message": "The value of the local variable 'weekKcal' isn't used.\nTry removing the variable or using it.",
+	"source": "dart",
+	"startLineNumber": 123,
+	"startColumn": 22,
+	"endLineNumber": 123,
+	"endColumn": 30,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "unused_local_variable",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/unused_local_variable",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 4,
+	"message": "The value of the local variable 'weekWeightG' isn't used.\nTry removing the variable or using it.",
+	"source": "dart",
+	"startLineNumber": 123,
+	"startColumn": 36,
+	"endLineNumber": 123,
+	"endColumn": 47,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": {
+		"value": "unused_element",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/unused_element",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 4,
+	"message": "The declaration '_weekdayKo' isn't referenced.\nTry removing the declaration of '_weekdayKo'.",
+	"source": "dart",
+	"startLineNumber": 385,
+	"startColumn": 8,
+	"endLineNumber": 385,
+	"endColumn": 18,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 실제 provider 조합으로 교체.",
+	"source": "dart",
+	"startLineNumber": 313,
+	"startColumn": 5,
+	"endLineNumber": 313,
+	"endColumn": 31,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 마이 임팩트 화면",
+	"source": "dart",
+	"startLineNumber": 446,
+	"startColumn": 45,
+	"endLineNumber": 446,
+	"endColumn": 60,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 뉴스 피드",
+	"source": "dart",
+	"startLineNumber": 451,
+	"startColumn": 45,
+	"endLineNumber": 451,
+	"endColumn": 56,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 그룹 탭",
+	"source": "dart",
+	"startLineNumber": 465,
+	"startColumn": 45,
+	"endLineNumber": 465,
+	"endColumn": 55,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 마이페이지",
+	"source": "dart",
+	"startLineNumber": 528,
+	"startColumn": 34,
+	"endLineNumber": 528,
+	"endColumn": 45,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 에코포인트 상점",
+	"source": "dart",
+	"startLineNumber": 546,
+	"startColumn": 34,
+	"endLineNumber": 546,
+	"endColumn": 48,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 실제 에셋 경로로 교체",
+	"source": "dart",
+	"startLineNumber": 629,
+	"startColumn": 23,
+	"endLineNumber": 629,
+	"endColumn": 41,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 계산 방법 안내 화면",
+	"source": "dart",
+	"startLineNumber": 826,
+	"startColumn": 36,
+	"endLineNumber": 826,
+	"endColumn": 53,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 뉴스 상세",
+	"source": "dart",
+	"startLineNumber": 942,
+	"startColumn": 24,
+	"endLineNumber": 942,
+	"endColumn": 35,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+},{
+	"resource": "/C:/flutter_project/Repo_JDH/lib/features/home/presentation/home_screen.dart",
+	"owner": "dartAnalysisLSP",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: 그룹 상세로 이동",
+	"source": "dart",
+	"startLineNumber": 1004,
+	"startColumn": 24,
+	"endLineNumber": 1004,
+	"endColumn": 39,
+	"modelVersionId": 11,
+	"origin": "extHost1"
+}]
