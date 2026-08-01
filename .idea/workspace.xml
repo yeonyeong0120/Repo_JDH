@@ -5,16 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ed0c1b8e-7d21-468f-a97c-10fa9b1f0709" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/router/app_router.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/router/app_router.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/theme/app_colors.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/theme/app_colors.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/presentation/signup_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/presentation/signup_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_detail_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_detail_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_list_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/router/app_router.g.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/router/app_router.g.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/data/user_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/data/user_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/community/data/group_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/community/data/group_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/community/presentation/group_feed_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/community/presentation/group_feed_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/community/presentation/group_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/community/presentation/group_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/home/presentation/home_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/home/presentation/home_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/mypage/data/badge_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/data/badge_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/mypage/domain/profile_detail.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/domain/profile_detail.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/activity_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/my_impact_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/my_impact_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/features/mypage/presentation/quest_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/mypage/presentation/quest_list_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/plogging/presentation/plogging_home_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/plogging/presentation/plogging_home_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/news/presentation/news_feed_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/news/presentation/news_feed_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/plogging/data/activity_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/plogging/data/activity_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/settings/presentation/menu_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/settings/presentation/menu_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/shop/data/shop_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/shop/data/shop_service.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,23 +64,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;uxui&quot;,
-    &quot;io.flutter.project.isFirstOpen&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/flutter_project/Repo_JDH&quot;,
-    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "f/yolo",
+    "io.flutter.project.isFirstOpen": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/dev/Repo_JDH",
+    "show.migrate.to.gradle.popup": "false"
   }
-}</component>
+}]]></component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="ed0c1b8e-7d21-468f-a97c-10fa9b1f0709" name="Changes" comment="" />

@@ -1,8 +1,14 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/features/auth/data/user_profile_provider.dart';
+import 'package:repo_jdh/features/plogging/data/activity_service.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
+import 'package:repo_jdh/features/mypage/domain/impact_metrics.dart';
 
 /// 나의 환경 영향력 화면 (개인 통계)
 /// 위치 제안: lib/features/mypage/presentation/my_impact_screen.dart
@@ -10,20 +16,22 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 ///
 /// 이미지("지금 우리는") 톤을 개인 버전으로: 배지 → 연한 소제목 → 굵은 제목
 /// → 일러스트(이모지 placeholder) → 하이라이트 숫자 박스, 세로 스크롤.
-class MyImpactScreen extends StatefulWidget {
-  // 가입년도. 넘겨주지 않으면 기본값(2024) 사용.
-  // TODO: 실제 사용자 프로필의 가입일(연도)로 넘기면 자동 반영
-  //       예: MyImpactScreen(joinYear: profile.joinedAt.year)
+class MyImpactScreen extends ConsumerStatefulWidget {
+  // 가입년도. 넘기지 않으면 FirebaseAuth 계정 생성 시각에서 자동으로 읽는다.
+  // (특정 연도를 강제로 보여주고 싶을 때만 넘기면 됨)
   final int? joinYear;
   const MyImpactScreen({super.key, this.joinYear});
 
   @override
-  State<MyImpactScreen> createState() => _MyImpactScreenState();
+  ConsumerState<MyImpactScreen> createState() => _MyImpactScreenState();
 }
 
-class _MyImpactScreenState extends State<MyImpactScreen> {
-  // TODO: 실제 개인 누적 데이터로 교체
-  static const String _userName = '김연영';
+class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
+  // ── 실제 누적 데이터 (활동 기록에서 계산) ──
+  int _totalWeightG = 0; // 누적 수거량(g)
+  int _activityCount = 0; // 활동 횟수
+  double _totalDistanceM = 0; // 누적 거리(m)
+  int _totalKcal = 0; // 누적 칼로리
 
   // 목표 달성 파이의 스크롤 진행도 (0=빔, 1=꽉 참)
   final GlobalKey _pieKey = GlobalKey();
@@ -32,7 +40,44 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
   @override
   void initState() {
     super.initState();
+    _loadImpact(); // 누적 데이터 불러오기
     WidgetsBinding.instance.addPostFrameCallback((_) => _updatePieProgress());
+  }
+
+  // 활동 기록 전체를 합산해 누적 수치 계산
+  Future<void> _loadImpact() async {
+    try {
+      final acts = await ActivityService.getRecentCompleted(limit: 500);
+      int weight = 0, kcal = 0;
+      double distance = 0;
+      for (final a in acts) {
+        weight += ActivityMetrics.weightGrams(a.trashCounts);
+        kcal += ActivityMetrics.estimateKcal(a.distanceMeters);
+        distance += a.distanceMeters;
+      }
+      if (!mounted) return;
+      setState(() {
+        _totalWeightG = weight;
+        _activityCount = acts.length;
+        _totalDistanceM = distance;
+        _totalKcal = kcal;
+      });
+    } catch (_) {
+      // 실패해도 0으로 표시 (화면은 안 깨지게)
+    }
+  }
+
+  // ── 환산값 (계수는 ImpactMetrics 에 근거와 함께 정의) ──
+  double get _co2Kg => ImpactMetrics.co2FromGrams(_totalWeightG);
+  double get _trees => ImpactMetrics.treesFromCo2(_co2Kg);
+  double get _goalRatio => ImpactMetrics.goalProgress(_co2Kg);
+
+  /// 가입 연도 — 파라미터로 받으면 그것, 없으면 계정 생성 시각에서 읽음.
+  /// (FirebaseAuth 의 creationTime = 회원가입 시각)
+  int get _joinYear {
+    if (widget.joinYear != null) return widget.joinYear!;
+    final created = FirebaseAuth.instance.currentUser?.metadata.creationTime;
+    return created?.year ?? DateTime.now().year; // 못 읽으면 올해로 표시
   }
 
   // 파이가 화면 아래에서 올라와 세로 중앙에 오면 progress=1, 아래면 0
@@ -51,6 +96,9 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 실제 로그인 사용자 닉네임 (불러오는 중이면 '플로거')
+    final nickname =
+        ref.watch(userProfileProvider).valueOrNull?.nickname ?? '플로거';
     return Scaffold(
       backgroundColor: AppColors.appBG,
       body: SafeArea(
@@ -93,7 +141,7 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
                       const Text('🦭', style: TextStyle(fontSize: 84)),
                       const SizedBox(height: 18),
                       Text(
-                        '$_userName님의 착한 행동이',
+                        '$nickname님의 착한 행동이',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 15,
@@ -113,7 +161,7 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
                       const SizedBox(height: 22),
                       _highlightBox(
                         prefix: '지금까지',
-                        value: '38.5',
+                        value: ImpactMetrics.oneDecimal(_totalWeightG / 1000.0),
                         suffix: 'kg 를 주웠어요',
                         bg: AppColors.primaryPale,
                         valueColor: AppColors.primaryDeep,
@@ -133,13 +181,15 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text.rich(
+                      Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: '온실가스 배출이\n'),
-                            TextSpan(text: '12.4kgCO₂eq'),
+                            const TextSpan(text: '온실가스 배출이\n'),
+                            TextSpan(
+                              text: '${ImpactMetrics.oneDecimal(_co2Kg)}kgCO₂eq',
+                            ),
                           ],
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
                             height: 1.35,
@@ -163,7 +213,7 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
                       const SizedBox(height: 20),
                       _highlightBox(
                         prefix: '나무를',
-                        value: '2.1',
+                        value: ImpactMetrics.oneDecimal(_trees),
                         suffix: '그루 심은 효과예요',
                         bg: AppColors.primaryPale,
                         valueColor: AppColors.primaryDeep,
@@ -171,23 +221,25 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
 
                       const SizedBox(height: 34),
                       // 감축 목표 달성률 파이 (위 온실가스 감축량과 한 파트) — 스크롤로 채워짐
-                      // TODO: 실제 목표/달성 데이터로 교체 (지금 더미 62%)
                       KeyedSubtree(
                         key: _pieKey,
-                        child: _goalPie(0.62, _pieProgress),
+                        child: _goalPie(_goalRatio, _pieProgress),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        '목표 20kg 중 12.4kg 감축했어요',
+                      Text(
+                        '목표 ${ImpactMetrics.goalCo2Kg.toStringAsFixed(0)}kg 중 '
+                        '${ImpactMetrics.oneDecimal(_co2Kg)}kg 감축했어요',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 20),
                       // 지역 상위 랭킹
-                      // TODO: 실제 지역 랭킹 데이터로 교체 (지금 더미 상위 8%)
+                      // TODO: 아직 더미 — 실제 랭킹은 '다른 사용자들의 수거량'과
+                      //       비교해야 하므로 전체 사용자 집계 데이터가 필요하다.
+                      //       (예: 지역별 통계를 Firestore 에 따로 집계해두고 조회)
                       _highlightBox(
                         prefix: '우리 지역',
                         value: '상위 8%',
@@ -212,16 +264,31 @@ class _MyImpactScreenState extends State<MyImpactScreen> {
                               // 고정 높이 → 화면 좁아도 카드 내용 안 넘침(오버플로우 방지)
                               mainAxisExtent: 138,
                             ),
-                        children: const [
-                          _StatCard('♻️', '누적 수거량', '38.5', 'kg'),
-                          _StatCard('🚶', '활동 횟수', '32', '회'),
-                          _StatCard('👟', '누적 거리', '46.2', 'km'),
-                          _StatCard('🔥', '소모 칼로리', '18,400', 'kcal'),
+                        children: [
+                          _StatCard(
+                            '♻️',
+                            '누적 수거량',
+                            ImpactMetrics.oneDecimal(_totalWeightG / 1000.0),
+                            'kg',
+                          ),
+                          _StatCard('🚶', '활동 횟수', '$_activityCount', '회'),
+                          _StatCard(
+                            '👟',
+                            '누적 거리',
+                            ImpactMetrics.oneDecimal(_totalDistanceM / 1000.0),
+                            'km',
+                          ),
+                          _StatCard(
+                            '🔥',
+                            '소모 칼로리',
+                            ImpactMetrics.comma(_totalKcal),
+                            'kcal',
+                          ),
                         ],
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        '* ${widget.joinYear ?? 2024}년부터 누적된 나의 기록이에요.',
+                        '* $_joinYear년부터 누적된 나의 기록이에요.',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textTertiary,

@@ -2,9 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/features/plogging/data/firestore_repository.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/core/dev/dev_user.dart';
+// ignore: unused_import
+// 더미 스위치를 다시 켤 때 필요 (현재 해당 블록들은 주석 처리됨)
 import 'package:repo_jdh/core/dev/dev_data.dart';
 
 /// 뱃지 판정에 쓰는 누적 통계
@@ -103,37 +106,44 @@ class BadgeService {
   ///   activities : 활동 1건마다 시간 · 거리        → 시간 · 거리 · 걸음 · 칼로리
   /// (totals/main 은 정산 때 reset 되는 세션값이라 누적에는 쓰지 않음)
   static Future<UserStats> loadStats() async {
-    if (DevData.enabled) return DevData.stats; // 개발용 로컬 더미
+    // ⚠️ 더미 전환: 실제 데이터를 쓰려면 아래 줄을 주석 처리한 상태로 둔다.
+    //    (DevData.enabled 가 true 면 아래 계산을 건너뛰고 가짜 통계를 반환함)
+    // if (DevData.enabled) return DevData.stats; // 개발용 로컬 더미
     final counters = await GroupService.badgeCounters();
     final rows = await FirestoreRepository().getAllDetections();
     final acts = await ActivityService.getRecentCompleted(limit: 500);
 
-    // ── 인증 기록 → 수거량 · 플라스틱 · 인증 횟수 ──
+    // ── 인증 기록 → 플라스틱 개수 · 인증 횟수 ──
+    // (수거 무게는 아래 활동 기록의 trashCounts 로 계산 — 계수 통일)
     int plastic = 0;
-    int trashTotal = 0;
     final days = <DateTime>{};
 
     for (final r in rows) {
       plastic += (r['plastic'] as num?)?.toInt() ?? 0;
-      for (final k in ['plastic', 'can', 'paper', 'glass', 'trash']) {
-        trashTotal += (r[k] as num?)?.toInt() ?? 0;
-      }
       final t = r['timestamp'];
       final d = t is Timestamp ? t.toDate() : null;
       if (d != null) days.add(DateTime(d.year, d.month, d.day));
     }
 
-    // ── 활동 기록 → 시간 · 거리 ──
+    // ── 활동 기록 → 시간 · 거리 · 걸음 · 칼로리 · 무게 ──
+    // 걸음/칼로리/무게는 ActivityMetrics 로 계산해 다른 화면과 숫자를 통일한다.
     int totalSeconds = 0;
     int maxSeconds = 0;
     double totalMeters = 0;
     int groupCount = 0;
+    int totalSteps = 0;
+    int totalKcal = 0;
+    int totalWeightG = 0;
 
     for (final a in acts) {
       totalSeconds += a.durationSeconds;
       totalMeters += a.distanceMeters;
       if (a.durationSeconds > maxSeconds) maxSeconds = a.durationSeconds;
       if (a.groupId != null) groupCount++;
+      // 화면들과 동일한 계산식 사용
+      totalSteps += ActivityMetrics.estimateSteps(a.distanceMeters);
+      totalKcal += ActivityMetrics.estimateKcal(a.distanceMeters);
+      totalWeightG += ActivityMetrics.weightGrams(a.trashCounts);
       final d = a.endedAt ?? a.startedAt;
       days.add(DateTime(d.year, d.month, d.day));
     }
@@ -144,14 +154,14 @@ class BadgeService {
       ploggingCount: acts.isNotEmpty ? acts.length : days.length,
       verifyCount: rows.length,
       maxSessionMinutes: maxSeconds ~/ 60,
-      // TODO: 만보기 붙이면 실제 걸음수로 교체 (지금은 거리 환산)
-      totalSteps: (km * 1400).round(),
+      // TODO: Health Connect 붙이면 실제 걸음수로 교체 (지금은 거리 환산)
+      totalSteps: totalSteps,
       totalDistanceKm: km,
       totalMinutes: totalSeconds ~/ 60,
-      // TODO: 체중 기반 계산으로 교체 (지금은 거리 환산)
-      totalKcal: (km * 60).round(),
-      // TODO: 개당 100g 가정. 실제 무게 추정 로직 생기면 교체.
-      totalWeightKg: trashTotal * 0.1,
+      // TODO: Health Connect 붙이면 실측 칼로리로 교체 (지금은 거리 환산)
+      totalKcal: totalKcal,
+      // 카테고리별 평균 무게 합산 (ActivityMetrics 기준)
+      totalWeightKg: totalWeightG / 1000.0,
       plasticCount: plastic,
       groupActivityCount: groupCount,
       shareCount: counters.shareCount,
@@ -231,10 +241,11 @@ class BadgeService {
 
   /// 획득 현황을 Firestore 에서 읽어 BadgeRepo 에 채움 (앱 시작/내 활동 진입 시)
   static Future<void> loadEarned() async {
-    if (DevData.enabled) {
-      BadgeRepo.earned = Map.of(DevData.earnedBadges);
-      return;
-    }
+    // ⚠️ 더미 전환: 실제 획득 현황을 쓰려면 아래 블록을 주석 처리한 상태로 둔다.
+    // if (DevData.enabled) {
+    //   BadgeRepo.earned = Map.of(DevData.earnedBadges);
+    //   return;
+    // }
     final col = _badgeCol();
     if (col == null) return;
     final snap = await col.get();
@@ -246,13 +257,15 @@ class BadgeService {
 
   /// 새로 딴 뱃지 저장 + 포인트 적립
   static Future<void> saveEarned(List<BadgeData> badges) async {
-    if (DevData.enabled) {
-      for (final x in badges) {
-        DevData.earnedBadges[x.id] = '오늘';
-        BadgeRepo.earned[x.id] = '오늘';
-      }
-      return;
-    }
+    // ⚠️ 더미 전환: 실제 저장(+포인트 적립)을 하려면 아래 블록을 주석 처리한 상태로 둔다.
+    //    (loadEarned 만 해제하고 이 줄이 켜져 있으면 뱃지를 따도 저장되지 않는다)
+    // if (DevData.enabled) {
+    //   for (final x in badges) {
+    //     DevData.earnedBadges[x.id] = '오늘';
+    //     BadgeRepo.earned[x.id] = '오늘';
+    //   }
+    //   return;
+    // }
     final col = _badgeCol();
     if (col == null || badges.isEmpty) return;
 

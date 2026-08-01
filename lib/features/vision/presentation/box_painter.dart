@@ -1,31 +1,37 @@
 import 'package:flutter/material.dart';
 import '../data/detector.dart';
 
+/// 쓰레기 종류별 화면 표시 정보 (한국어 라벨 + 박스 색)
+///
+/// 서버가 주는 class_name 은 영어(can, glass ...)라 그대로 보여주면
+/// 사용자가 알아보기 어렵다. 여기서 한 번에 한국어로 매핑한다.
+/// 종류가 늘어나면 이 표에 한 줄만 추가하면 된다.
+class TrashLabel {
+  static const Map<String, (String label, Color color)> _meta = {
+    'can': ('캔', Colors.red),
+    'glass': ('유리', Colors.blue),
+    'paper': ('종이', Colors.amber),
+    'plastic': ('플라스틱', Colors.green),
+    'trash': ('일반쓰레기', Colors.purple),
+  };
+
+  /// 한국어 라벨 (모르는 종류면 원문 그대로)
+  static String labelOf(String className) =>
+      _meta[className]?.$1 ?? className;
+
+  /// 박스 색 (모르는 종류면 흰색)
+  static Color colorOf(String className) =>
+      _meta[className]?.$2 ?? Colors.white;
+}
+
 class DetectionPainter extends CustomPainter {
   final List<DetectionResult> detections;
   DetectionPainter({required this.detections});
 
-  Color _colorForClass(String name) {
-    switch (name) {
-      case 'can':
-        return Colors.red;
-      case 'glass':
-        return Colors.blue;
-      case 'paper':
-        return Colors.amber;
-      case 'plastic':
-        return Colors.green;
-      case 'trash':
-        return Colors.purple;
-      default:
-        return Colors.white;
-    }
-  }
-
   @override
   void paint(Canvas canvas, Size size) {
     for (final det in detections) {
-      final color = _colorForClass(det.className);
+      final color = TrashLabel.colorOf(det.className);
 
       final left = det.x1 * size.width;
       final top = det.y1 * size.height;
@@ -39,8 +45,8 @@ class DetectionPainter extends CustomPainter {
         ..style = PaintingStyle.stroke;
       canvas.drawRect(rect, boxPaint);
 
-      final labelText =
-          '${det.className} ${(det.confidence * 100).toStringAsFixed(0)}%';
+      // 라벨은 한국어 종류명만 표시 (신뢰도 % 는 사용자에게 불필요)
+      final labelText = TrashLabel.labelOf(det.className);
       final textSpan = TextSpan(
         text: labelText,
         style: const TextStyle(

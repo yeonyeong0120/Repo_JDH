@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
+import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
 import 'group_detail_screen.dart';
 import 'group_search_screen.dart';
 import 'group_create_screen.dart';
@@ -44,6 +45,23 @@ class _GroupScreenState extends State<GroupScreen> {
       _others = others;
       _loading = false;
     });
+  }
+
+  // ⚠️ 개발용 — 가짜 그룹 심기/지우기 (배포 전 삭제)
+  Future<void> _runSeed({required bool seed}) async {
+    try {
+      final n = seed ? await DevSeed.seedGroups() : await DevSeed.clearGroups();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${seed ? "심기" : "삭제"} $n건 완료')),
+      );
+      _load(); // 목록 갱신
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('실패: $e')));
+    }
   }
 
   @override
@@ -161,6 +179,18 @@ class _GroupScreenState extends State<GroupScreen> {
                   );
                   _load(); // 생성 후 목록 갱신
                 },
+              ),
+              // ⚠️ 개발용 임시 버튼 — 가짜 그룹 심기/지우기
+              //    배포 전 이 블록과 위 dev_seed import 를 삭제할 것
+              const SizedBox(width: 8),
+              _iconButton(
+                Icons.science_outlined,
+                onTap: () => _runSeed(seed: true),
+              ),
+              const SizedBox(width: 8),
+              _iconButton(
+                Icons.delete_outline,
+                onTap: () => _runSeed(seed: false),
               ),
             ],
           ),

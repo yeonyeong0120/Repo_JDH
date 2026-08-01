@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
+import 'package:repo_jdh/features/plogging/data/location_repository.dart';
 
 /// 진행 중인 플로깅 세션의 실측값
 /// 트래킹 화면에서 갱신 → 정산 화면 / 뱃지 판정에서 사용
@@ -8,12 +10,14 @@ class TrackingState {
   final DateTime? startedAt;
   final int elapsedSeconds; // 경과 시간(초)
   final double distanceMeters; // 누적 이동 거리(m)
+  final List<TrackPoint> path; // 지나온 경로 (지도 Polyline 용)
 
   const TrackingState({
     this.running = false,
     this.startedAt,
     this.elapsedSeconds = 0,
     this.distanceMeters = 0,
+    this.path = const [],
   });
 
   TrackingState copyWith({
@@ -21,22 +25,37 @@ class TrackingState {
     DateTime? startedAt,
     int? elapsedSeconds,
     double? distanceMeters,
+    List<TrackPoint>? path,
   }) {
     return TrackingState(
       running: running ?? this.running,
       startedAt: startedAt ?? this.startedAt,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       distanceMeters: distanceMeters ?? this.distanceMeters,
+      path: path ?? this.path,
     );
   }
 
+  /// Firestore 저장용 형식 [{lat, lng, t}, ...]
+  List<Map<String, dynamic>> get pathJson => path
+      .map((p) => {'lat': p.lat, 'lng': p.lng, 't': p.at.toIso8601String()})
+      .toList();
+
+  /// 시작/끝 지점 (없으면 null)
+  Map<String, double>? get startLocation =>
+      path.isEmpty ? null : {'lat': path.first.lat, 'lng': path.first.lng};
+  Map<String, double>? get endLocation =>
+      path.isEmpty ? null : {'lat': path.last.lat, 'lng': path.last.lng};
+
   double get distanceKm => distanceMeters / 1000;
 
-  /// TODO: 만보기(pedometer) 붙이면 실제 걸음수로 교체. 지금은 거리 환산.
-  int get steps => (distanceKm * 1400).round();
+  /// 걸음 수 — 다른 화면과 동일한 계산식 사용 (ActivityMetrics)
+  /// TODO: 만보기(pedometer) 붙이면 실제 걸음수로 교체
+  int get steps => ActivityMetrics.estimateSteps(distanceMeters);
 
-  /// TODO: 체중 기반 계산으로 교체. 지금은 거리 환산(1km ≈ 60kcal).
-  int get kcal => (distanceKm * 60).round();
+  /// 칼로리 — 다른 화면과 동일한 계산식 사용 (ActivityMetrics)
+  /// TODO: 체중 기반 계산으로 교체
+  int get kcal => ActivityMetrics.estimateKcal(distanceMeters);
 
   /// '06:12' 형식 (분:초) — 1시간 넘으면 '1:02:33'
   String get durationText {
@@ -128,6 +147,18 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
   void addDistance(double meters) {
     if (!state.running || meters <= 0) return;
     state = state.copyWith(distanceMeters: state.distanceMeters + meters);
+    _persist();
+  }
+
+  /// 경로 점 추가 — 좌표를 쌓고 이동분만큼 거리도 누적한다.
+  ///
+  /// (addDistance 와 중복 호출하지 말 것. 이 함수 하나로 둘 다 처리됨)
+  void addTrackPoint(TrackPoint p) {
+    if (!state.running) return;
+    state = state.copyWith(
+      path: [...state.path, p],
+      distanceMeters: state.distanceMeters + p.moveMeters,
+    );
     _persist();
   }
 

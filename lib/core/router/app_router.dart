@@ -8,7 +8,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:repo_jdh/core/router/placeholder_screen.dart';
 import 'package:repo_jdh/core/providers/auth_provider.dart';
 import 'package:repo_jdh/features/auth/presentation/login_screen.dart';
-// ✚ 추가: 닉네임 화면 + 프로필 프로바이더
 import 'package:repo_jdh/features/auth/presentation/nickname_setup_screen.dart';
 import 'package:repo_jdh/features/auth/data/user_profile_provider.dart';
 import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
@@ -25,6 +24,7 @@ import 'package:repo_jdh/features/plogging/presentation/plogging_session_screen.
 part 'app_router.g.dart';
 
 class AppRoutes {
+  static const splash = '/splash'; // ✚ 인증 확인 중 보여줄 로딩 화면
   static const login = '/login';
   static const nicknameSetup = '/nickname-setup';
   static const home = '/home';
@@ -41,39 +41,92 @@ class AppRoutes {
   static const groupFeed = '/group/feed';
 }
 
-final isLoggedInProvider = Provider<bool>((ref) {
-  final authState = ref.watch(authStateProvider);
-  return authState.maybeWhen(data: (user) => user != null, orElse: () => false);
+// ─────────────────────────────────────────────────────────────
+// [문제 ②] 인증 상태 3분법
+// ─────────────────────────────────────────────────────────────
+// 기존 isLoggedInProvider 는 true/false 2가지뿐이라,
+// Firebase 가 로그인 정보를 복원하는 "확인 중(loading)" 순간을
+// false(비로그인)로 뭉개버렸다. → 로그인한 사용자도 켤 때마다
+// 로그인 화면이 번쩍 스쳐 지나가는 버그의 원인.
+//
+// 그래서 "아직 모름(unknown)" 상태를 별도로 둔다.
+enum AuthStatus { unknown, signedIn, signedOut }
+
+final authStatusProvider = Provider<AuthStatus>((ref) {
+  final async = ref.watch(authStateProvider);
+  // ▼ 디버그: Firebase 인증 스트림이 실제로 어떤 상태를 뱉는지 눈으로 확인
+  //   (원인 파악 후 이 debugPrint 줄은 지워도 된다)
+  debugPrint('[AUTH] asyncValue=$async');
+  return async.when(
+    // 핵심: loading 을 signedOut 으로 뭉개지 않는다.
+    loading: () => AuthStatus.unknown,
+    error: (e, __) {
+      debugPrint('[AUTH] ❌ 인증 스트림 에러: $e');
+      return AuthStatus.signedOut; // 조회 실패 = 비로그인 취급
+    },
+    data: (user) =>
+        user != null ? AuthStatus.signedIn : AuthStatus.signedOut,
+  );
 });
 
 // 하단 네비 셸(탭 화면들)이 쓰는 내비게이터 키.
-// 탭을 누를 때 이 키로 위에 쌓인 상세 화면(환경영향력/뉴스/동네 상세 등)을 정리한다.
 final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>();
 
 @riverpod
 GoRouter appRouter(Ref ref) {
-  final isLoggedIn = ref.watch(isLoggedInProvider);
-  final profileAsync = ref.watch(userProfileProvider);
+  // ─────────────────────────────────────────────────────────
+  // [문제 ⑤ + 로딩 멈춤] 라우터 통째 재생성 방지 + 알림 통로 통일
+  // ─────────────────────────────────────────────────────────
+  // 기존엔 여기서 ref.watch(...) 를 했다. 그러면 로그인/프로필이
+  // 바뀔 때마다 GoRouter '객체 자체'가 새로 만들어져서 스택이 날아간다.
+  //
+  // 또한 기존 refreshListenable 은 FirebaseAuth 스트림을 직접 감시했는데,
+  // 정작 redirect 는 authStatusProvider(Riverpod) 값을 읽는다.
+  // 두 통로가 어긋나면 상태가 바뀌어도 라우터가 redirect 를 다시 계산하지
+  // 않아, 스플래시(unknown)에서 영영 멈춘다.  → 알림 통로를 Riverpod 으로 통일.
+  final refresh = _RouterRefresh();
+  // authStatusProvider 값이 바뀔 때마다 라우터에 '다시 계산해' 알림을 보낸다.
+  ref.listen(authStatusProvider, (_, __) => refresh.ping());
+  // 프로필(닉네임 여부)도 라우팅에 영향을 주므로 같이 감시.
+  ref.listen(userProfileProvider, (_, __) => refresh.ping());
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: AppRoutes.home,
+    // [문제 ②] 스플래시로 시작 — 인증 확인 중 홈이 잠깐 보였다가
+    // 로그인으로 밀리는 깜빡임을 막는다. (splash 라우트는 아래에 정의)
+    initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
 
-    redirect: (context, state) {
-      // ⚠️ 개발용 — Firebase Auth 연동이 막혀 있어 로그인을 건너뛴다.
-      //    로그인 흐름을 켜려면 아래 줄을 주석 처리할 것.
-      return null;
-      final loggingIn = state.matchedLocation == AppRoutes.login;
-      final settingNickname = state.matchedLocation == AppRoutes.nicknameSetup;
+    refreshListenable: refresh,
 
-      // 로그인 체크
-      if (!isLoggedIn) {
+    redirect: (context, state) {
+      // [문제 ①] 기존 맨 위의 'return null;' 을 삭제했다.
+      //          (그 아래 로직이 전부 dead code 였던 원인)
+
+      final authStatus = ref.read(authStatusProvider); // watch 아님, read
+      final loc = state.matchedLocation;
+      final onSplash = loc == AppRoutes.splash;
+      final loggingIn = loc == AppRoutes.login;
+      final settingNickname = loc == AppRoutes.nicknameSetup;
+
+      // ① 아직 확인 중 → 스플래시에 머무른다 (섣불리 이동하지 않음)
+      if (authStatus == AuthStatus.unknown) {
+        return onSplash ? null : AppRoutes.splash;
+      }
+
+      // ② 비로그인 → 로그인 화면으로
+      if (authStatus == AuthStatus.signedOut) {
         return loggingIn ? null : AppRoutes.login;
       }
-      if (loggingIn) return AppRoutes.home;
 
-      // 닉네임 체크
+      // ── 여기부터는 로그인된 상태 ──
+
+      // ③ 로그인 상태인데 로그인/스플래시 화면에 있으면 홈으로
+      if (loggingIn || onSplash) return AppRoutes.home;
+
+      // ④ 닉네임 미설정 체크
+      final profileAsync = ref.read(userProfileProvider);
       return profileAsync.maybeWhen(
         data: (profile) {
           final needsNickname =
@@ -86,11 +139,17 @@ GoRouter appRouter(Ref ref) {
           }
           return null;
         },
+        // 프로필 로딩 중엔 이동 없음 — 성급히 닉네임 화면으로 보내지 않는다
         orElse: () => null,
       );
     },
 
     routes: [
+      // [문제 ②] 스플래시 라우트: 인증 확인이 끝날 때까지 보여줄 로딩 화면
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (context, state) => const _SplashScreen(),
+      ),
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const LoginScreen(),
@@ -142,7 +201,6 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.groupFeed,
         builder: (context, state) {
-          // extra: {'id': 그룹 id, 'name': 그룹명} (구버전 호환: String = 그룹명)
           final extra = state.extra;
           if (extra is Map) {
             return GroupFeedScreen(
@@ -172,6 +230,28 @@ GoRouter appRouter(Ref ref) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// 라우터 새로고침 알림기
+// ─────────────────────────────────────────────────────────────
+// ping() 이 불릴 때마다 notifyListeners() 를 호출해, GoRouter 가
+// redirect 를 다시 계산하게 한다. 위에서 ref.listen 으로
+// authStatusProvider / userProfileProvider 변화를 여기에 연결한다.
+class _RouterRefresh extends ChangeNotifier {
+  void ping() => notifyListeners();
+}
+
+// 스플래시(로딩) 화면 — 로고/스피너만 있으면 충분하다.
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
 class _BumpTopArcPainter extends CustomPainter {
   final double bumpRise;
   final Color color;
@@ -192,7 +272,7 @@ class _BumpTopArcPainter extends CustomPainter {
       ..arcToPoint(
         Offset(r + half, bumpRise),
         radius: Radius.circular(r),
-        clockwise: true, // ← 만약 곡선이 아래로 패이면 false로 바꾸세요
+        clockwise: true,
       );
     canvas.drawPath(path, paint);
   }
@@ -206,27 +286,24 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
   const _ScaffoldWithBottomNav({required this.child});
 
   // ▼▼▼ 직접 조절하는 값 ▼▼▼
-  static const double _barHeight = 63; // 바 높이(시작버튼 제외)
-  static const double _bumpRise = 13; // 시작버튼이 바 위로 튀어나오는 높이(이만큼만 화면 가림)
-  static const double _navIconSize = 32; // 홈/그룹/내활동/메뉴 아이콘
-  static const double _navLabelSize = 13; // 라벨 글씨
-  static const double _navItemWidth = 73; // 각 아이콘 항목 폭
-  static const double _itemGap = 0; // 홈-그룹 / 내활동-메뉴 사이 간격
-  static const double _centerGap = 86; // 가운데 시작버튼 자리 폭(이걸로 좌우 간격 조절)
-  static const double _startBtnSize = 75; // 시작 파란 버튼 크기
-  static const double _startIconSize = 33; // 버튼 안 달리기 아이콘 크기
-  static const double _startLabelSize = 14; // 버튼 안 '시작' 글씨 크기
-  static const double _navBottomPad = 0; // ★ 아이콘 아래 여백 (작을수록 아이콘이 더 아래로)
-  static const double _barLift = 12; // ★ 네비 아이콘을 바 안에서 위로 끌어올리는 높이 (클수록 더 위로)
-  static const double _startBumpSize = 88; // 흰 혹(원) 지름 = 버튼 둘레 흰 여백 (높이 아님!)
-  static const Color _startBtnColor = Color(0xFF0C7D5E); // 시작 버튼 색
+  static const double _barHeight = 63;
+  static const double _bumpRise = 13;
+  static const double _navIconSize = 32;
+  static const double _navLabelSize = 13;
+  static const double _navItemWidth = 73;
+  static const double _itemGap = 0;
+  static const double _centerGap = 86;
+  static const double _startBtnSize = 75;
+  static const double _startIconSize = 33;
+  static const double _startLabelSize = 14;
+  static const double _navBottomPad = 0;
+  static const double _barLift = 12;
+  static const double _startBumpSize = 88;
+  static const Color _startBtnColor = Color(0xFF0C7D5E);
   // ▲▲▲ 직접 조절하는 값 ▲▲▲
 
   @override
   Widget build(BuildContext context) {
-    // extendBody: 본문을 바 뒤까지 깔아 둥근 모서리로 컨텐츠가 비치게 한다.
-    // 각 탭 화면은 스크롤 하단에 '실제 시스템바 인셋 + 바 높이'만큼 여백을 줘서
-    // 마지막 컨텐츠가 바에 안 가리게 한다.
     return Scaffold(
       extendBody: true,
       body: child,
@@ -243,9 +320,6 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // 흰 바 + 회색 테두리 (둥근 위 모서리까지 그대로 따라감).
-          // 바를 화면 맨 아래까지 채워 아래 탁한 배경/바닥 선을 가리고,
-          // '위로'는 아래 padding(bottomInset + _barLift)으로 아이콘을 끌어올려 만든다.
           Positioned(
             left: 0,
             right: 0,
@@ -287,7 +361,6 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
               ),
             ),
           ),
-          // 둥근 흰 혹 + 파란 시작 버튼 (테두리 없음 → 네모 선 안 생김)
           Positioned(
             top: -_bumpRise,
             left: 0,
@@ -331,7 +404,7 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => _onTap(context, index),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.end, // 아래쪽 정렬
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Icon(icon, color: color, size: _navIconSize, weight: 400),
             const SizedBox(height: 3),
@@ -343,7 +416,7 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: _navBottomPad), // 아래 여백
+            const SizedBox(height: _navBottomPad),
           ],
         ),
       ),
@@ -397,15 +470,12 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
   void _onTap(BuildContext context, int index) {
     switch (index) {
       case 0:
-        // 홈은 '이미 홈 탭'일 때 context.go가 무효라, 위에 쌓인 상세 화면
-        // (환경영향력/뉴스/동네 상세)을 먼저 정리해서 홈으로 확실히 돌아가게 한다.
-        // ※ 다른 탭은 context.go가 알아서 정리하므로 pop을 넣지 않는다(잔상 방지).
         _shellNavigatorKey.currentState?.popUntil((route) => route.isFirst);
         context.go(AppRoutes.home);
       case 1:
         context.go(AppRoutes.group);
       case 2:
-        context.push(AppRoutes.ploggingRoute); // 시작 → 플로깅 준비 화면(지도+현재위치+도착지+경로)
+        context.push(AppRoutes.ploggingRoute);
       case 3:
         context.go(AppRoutes.mypage);
       case 4:

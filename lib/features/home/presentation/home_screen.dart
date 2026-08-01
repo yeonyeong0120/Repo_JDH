@@ -5,10 +5,20 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/providers/shared_group_provider.dart';
+import 'package:repo_jdh/features/auth/data/user_profile_provider.dart';
+import 'package:repo_jdh/features/plogging/data/activity_service.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_stats.dart';
+import 'package:repo_jdh/features/mypage/domain/level_system.dart';
+import 'package:repo_jdh/features/plogging/data/attendance_service.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
+import 'package:repo_jdh/features/news/presentation/news_service.dart';
+import 'package:repo_jdh/features/news/presentation/news_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/my_impact_screen.dart';
 import 'package:repo_jdh/features/community/presentation/group_detail_screen.dart';
+import 'package:repo_jdh/features/community/domain/group.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 
 /// 줍다행 - 홈 탭 화면 (본문만)
 /// 하단 네비 / '시작' 버튼은 app_router.dart 의 ShellRoute(_ScaffoldWithBottomNav)가
@@ -27,14 +37,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   OverlayEntry? _popupEntry;
   Timer? _popupTimer;
 
+  // 이번주 플로깅 활동 요약 (걸음·수거량·칼로리). null = 로딩 중
+  int _weekSteps = 0;
+  int _weekWeightG = 0;
+  int _weekKcal = 0;
+  int _totalXp = 0; // 전체 활동 기반 XP (활동 1회 = 20 XP)
+  int _activeDays = 0; // 총 활동 일수 (하루에 여러 번 해도 1일)
+
+  // 홈 카드에 보여줄 최신 뉴스 1개 (null = 아직 못 불러옴)
+  NewsArticle? _latestNews;
+
+  // '지금 우리 동네는' — 내가 속하지 않은 다른 그룹들
+  List<Group> _neighborGroups = [];
+  bool _inGroup = false; // 내가 이미 그룹에 속해 있는지 (가입 화면에 전달)
+
   @override
   void initState() {
     super.initState();
+    _loadWeekStats(); // 이번주 활동 통계 불러오기
+    _loadAttendance(); // 오늘 출석 찍고 이번주 출석 불러오기
+    _loadLatestNews(); // 홈 카드용 최신 뉴스 1개
+    _loadNeighborGroups(); // '지금 우리 동네는' 그룹 목록
     // 홈 진입 시점에 이미 공유 신호가 있으면 (정산 → 홈 이동 케이스)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final g = ref.read(sharedGroupProvider.notifier).consume();
       if (g != null) _showAutoShare(g);
     });
+  }
+
+  // '지금 우리 동네는' — 내 그룹을 뺀 다른 그룹들
+  Future<void> _loadNeighborGroups() async {
+    try {
+      final others = await GroupService.otherGroups(limit: 10);
+      final mine = await GroupService.myGroupId();
+      if (!mounted) return;
+      setState(() {
+        _neighborGroups = others;
+        _inGroup = mine != null;
+      });
+    } catch (_) {
+      // 실패해도 홈은 안 깨지게 — 섹션이 비어 보일 뿐
+    }
+  }
+
+  // 홈 뉴스 카드용 — 서버에서 최신 뉴스 1개만 가져옴
+  Future<void> _loadLatestNews() async {
+    try {
+      final list = await NewsService.fetchNews(display: 1);
+      if (!mounted || list.isEmpty) return;
+      setState(() => _latestNews = list.first);
+    } catch (_) {
+      // 실패해도 홈은 안 깨지게 — 카드가 안내 문구를 보여줌
+    }
+  }
+
+  // 활동 기록 → 이번주 통계 + 전체 XP 계산
+  Future<void> _loadWeekStats() async {
+    try {
+      final acts = await ActivityService.getRecentCompleted(limit: 200);
+      final thisWeek = ActivityStats.inWeek(acts, 0); // 0 = 이번주
+      int steps = 0, weight = 0, kcal = 0;
+      for (final a in thisWeek) {
+        steps += ActivityMetrics.estimateSteps(a.distanceMeters);
+        kcal += ActivityMetrics.estimateKcal(a.distanceMeters);
+        weight += ActivityMetrics.weightGrams(a.trashCounts);
+      }
+      if (!mounted) return;
+      setState(() {
+        _weekSteps = steps;
+        _weekWeightG = weight;
+        _weekKcal = kcal;
+        // XP: 전체 활동 횟수 × 20 (UserService 와 동일 규칙)
+        _totalXp = acts.length * 20;
+        // 총 활동 일수 (스트릭 카드용)
+        _activeDays = ActivityStats.totalActiveDays(acts);
+      });
+    } catch (_) {
+      // 실패해도 0으로 표시 (홈은 안 깨지는 게 우선)
+    }
   }
 
   @override
@@ -106,10 +186,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         label: '그룹으로 보러가기',
                         type: AppButtonType.primary,
                         expand: false,
-                        onTap: () {
+                        onTap: () async {
                           _dismissPopup();
+                          // 피드 화면은 groupId 가 있어야 실제 데이터를 불러온다.
+                          // (이름만 넘기면 더미 모드로 표시됨)
+                          String? id;
+                          try {
+                            id = await GroupService.myGroupId();
+                          } catch (_) {
+                            // 조회 실패 시 이름만으로 이동
+                          }
+                          if (!mounted) return;
                           // TODO: 방금 올린 내 활동 카드로 자동 스크롤
-                          context.push('/group/feed', extra: groupName);
+                          context.push(
+                            '/group/feed',
+                            extra: {'id': id ?? '', 'name': groupName},
+                          );
                         },
                       ),
                     ),
@@ -133,16 +225,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _popupEntry = null;
   }
 
-  // 주간 활동 스트립 (날짜 / 활동함 / 오늘 / 빨강표시)
-  static const List<_Day> _days = [
-    _Day(4, active: true, danger: true),
-    _Day(5, active: true),
-    _Day(6),
-    _Day(7),
-    _Day(8, active: true, today: true),
-    _Day(9),
-    _Day(10, active: true),
-  ];
+  // 주간 출석 스트립 (이번 주 월~일 + 출석 여부)
+  // _loadAttendance() 에서 실제 날짜·출석으로 채운다.
+  List<_Day> _days = _thisWeekDays({});
+
+  // 이번 주(월~일) 날짜 목록을 만든다. attended: 출석한 요일 인덱스 집합
+  static List<_Day> _thisWeekDays(Set<int> attended) {
+    final now = DateTime.now();
+    final base = DateTime(now.year, now.month, now.day);
+    final monday = base.subtract(Duration(days: base.weekday - 1));
+    final todayIdx = base.weekday - 1; // 오늘 요일 (월=0)
+
+    return List.generate(7, (i) {
+      final d = monday.add(Duration(days: i));
+      return _Day(
+        d.day,
+        active: attended.contains(i), // 출석하면 초록 화분
+        today: i == todayIdx, // 오늘 강조
+      );
+    });
+  }
+
+  // 출석 기록: 오늘 출석 찍고 → 이번 주 출석 불러와서 화분 갱신
+  Future<void> _loadAttendance() async {
+    try {
+      await AttendanceService.markToday(); // 홈 진입 = 오늘 출석
+      final attended = await AttendanceService.weekAttendance();
+      if (!mounted) return;
+      setState(() => _days = _thisWeekDays(attended));
+    } catch (_) {
+      // 실패해도 날짜 스트립은 보이게 (출석만 회색으로)
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -153,6 +267,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (g != null) _showAutoShare(g);
       }
     });
+
+    // 실제 로그인 사용자의 프로필(닉네임 포함)을 불러온다.
+    // 불러오는 중이거나 프로필이 없으면 '플로거'로 임시 표시 (빈 화면 방지).
+    final profileAsync = ref.watch(userProfileProvider);
+    final nickname = profileAsync.valueOrNull?.nickname ?? '플로거';
+
     return Scaffold(
       backgroundColor: AppColors.appBG,
       // bottomNavigationBar 없음 — ShellRoute 가 처리
@@ -164,7 +284,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeaderWithCard(),
+            _buildHeaderWithCard(nickname),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -179,7 +299,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ───────── 곡선 헤더 + 현재활동 카드 (헤더가 카드 중간까지 내려옴) ─────────
-  Widget _buildHeaderWithCard() {
+  Widget _buildHeaderWithCard(String nickname) {
     return Stack(
       children: [
         // 배경: 아래가 곡선인 헤더 (현재활동 카드 중간까지)
@@ -213,7 +333,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildActivityCard(),
+                child: _buildActivityCard(nickname),
               ),
             ],
           ),
@@ -257,7 +377,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ───────────────────────── 현재 활동 카드 ─────────────────────────
-  Widget _buildActivityCard() {
+  Widget _buildActivityCard(String nickname) {
+    // 전체 XP → 레벨 정보(레벨/진행률/남은 XP) 계산
+    final lv = LevelSystem.of(_totalXp);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -271,25 +393,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
+              // const 제거: nickname 이 사람마다 바뀌는 값이라 고정(const)할 수 없다.
+              Expanded(
                 child: Text.rich(
                   TextSpan(
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                       height: 1.25,
                     ),
                     children: [
-                      TextSpan(text: '김연영'),
-                      TextSpan(
+                      // 박아둔 '김연영' → 실제 로그인 사용자 닉네임
+                      TextSpan(text: nickname),
+                      const TextSpan(
                         text: ' 님의',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           color: AppColors.textTertiary,
                         ),
                       ),
-                      TextSpan(
+                      const TextSpan(
                         text: '\n현재 활동',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
@@ -332,37 +456,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    const Text(
-                      '현재 레벨 11',
-                      style: TextStyle(
+                    Text(
+                      '현재 레벨 ${lv.level}',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      '(다음 레벨까지 20 XP)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
                     const Spacer(),
-                    const Text.rich(
+                    // 남은 XP 안내는 제거 — 오른쪽 '현재/필요' 수치로 이미 알 수 있음
+                    Text.rich(
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: '80',
-                            style: TextStyle(
+                            text: '${lv.currentXp}',
+                            style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
                               color: AppColors.primaryDeep,
                             ),
                           ),
                           TextSpan(
-                            text: '/100',
-                            style: TextStyle(
+                            text: '/${lv.neededXp}',
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textTertiary,
@@ -376,8 +493,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 10),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: const LinearProgressIndicator(
-                    value: 0.8, // 80 / 100
+                  child: LinearProgressIndicator(
+                    value: lv.progress, // 실제 진행률 (currentXp / neededXp)
                     minHeight: 8,
                     backgroundColor: AppColors.cardBG,
                     color: AppColors.primary,
@@ -403,11 +520,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         alignment: Alignment.centerLeft,
                         child: Row(
                           children: [
-                            _stat(Symbols.steps, '2000 보'),
+                            // 활동 화면과 순서 통일: 걸음 → 칼로리 → 수거량
+                            _stat(Symbols.steps,
+                                '${ActivityStats.comma(_weekSteps)} 보'),
                             const SizedBox(width: 18),
-                            _stat(Symbols.delete, '1.3 kg'),
+                            _stat(Symbols.local_fire_department,
+                                '${ActivityStats.comma(_weekKcal)} kcal'),
                             const SizedBox(width: 18),
-                            _stat(Symbols.local_fire_department, '3012 kcal'),
+                            _stat(Symbols.delete,
+                                ActivityStats.weightLabel(_weekWeightG)),
                           ],
                         ),
                       ),
@@ -477,15 +598,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _streakCard() {
+    // 총 활동 일수 기준 (연속이 아니라 누적 — 하루에 여러 번 해도 1일)
+    final days = _activeDays;
+    // 활동이 없을 때는 시작을 권하는 문구로
+    final cheer = days == 0
+        ? '첫 플로깅을 시작해볼까요?'
+        : '대단해요! 꾸준함이 지구를 바꾸는 중이에요';
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '5일 연속',
-            style: TextStyle(
+          Text(
+            '$days일 활동',
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
@@ -509,9 +636,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           // 이 값으로 "대단해요!"를 팁 카드 "올바른..." 높이에 맞춤 (미세조정)
           const SizedBox(height: 20),
-          const Text(
-            '대단해요! 꾸준함이 지구를 바꾸는 중이에요',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          Text(
+            cheer,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
           ),
           const Spacer(), // CTA를 바닥으로 → 고냐니 기자와 수평
           Row(
@@ -539,8 +669,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _tipCard() {
-    // 설계서 NEWS-01 기준 — 홈 카드는 최신 기사 1개를 보여준다
-    final latest = NewsFeedScreen.articles.first;
+    // 설계서 NEWS-01 기준 — 홈 카드는 최신 기사 1개를 보여준다 (서버에서 로드)
+    final latest = _latestNews;
+    // 아직 못 불러왔으면 안내 문구 (로딩 중이거나 실패)
+    final title = latest?.title ?? '환경 뉴스를 불러오는 중…';
+    final summary = latest?.summary ?? '잠시 후 최신 소식이 표시돼요.';
+    final reporter = latest?.reporter ?? '';
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
@@ -557,7 +691,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            latest.title,
+            title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -569,7 +703,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            latest.summary,
+            summary,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -593,7 +727,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  latest.reporter,
+                  reporter,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -616,9 +750,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // ───────────────────────── 지금 우리 동네는 (HOME-03) ─────────────────────────
   Widget _buildNeighborhood(BuildContext context) {
-    // 우리 지역 · 최근 7일 활동 · 내 그룹 제외 · 최신순
-    // TODO: 실제 동네 그룹 데이터로 교체 (placeholder)
-    const groups = ['00동 모여랏', '한강 같이 걸어요', '주말 플로깅 크루', '활동 가치해윱'];
+    // 내 그룹을 제외한 다른 그룹들 (GroupService 실연동)
+    final groups = _neighborGroups;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -634,36 +767,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        SizedBox(
-          height: 174,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: groups.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, i) => _neighborCard(context, groups[i]),
+        // 그룹이 없을 때는 안내 문구 (아직 로딩 중이거나 실제로 없음)
+        if (groups.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              '아직 우리 동네 그룹이 없어요',
+              style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+            ),
+          )
+        else
+          SizedBox(
+            height: 174,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: groups.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, i) => _neighborCard(context, groups[i]),
+            ),
           ),
-        ),
       ],
     );
   }
 
-  Widget _neighborCard(BuildContext context, String name) {
+  Widget _neighborCard(BuildContext context, Group g) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       // 내가 안 속한 동네 그룹 → 소개/가입 화면 (검색 결과와 동일)
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => GroupDetailScreen(
-            name: name,
-            region: '00구 00동', // TODO: 실제 그룹 지역
-            meta: '00명 · 오늘 활동 인원 0명', // TODO: 실제 인원 데이터
-            // TODO: 실제 "내 그룹 소속 여부"로 교체
-            alreadyInGroup: false,
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GroupDetailScreen(
+              groupId: g.id,
+              name: g.name,
+              region: g.region,
+              meta: g.meta,
+              alreadyInGroup: _inGroup, // 실제 소속 여부
+            ),
           ),
-        ),
-      ),
+        );
+        _loadNeighborGroups(); // 가입했을 수 있으니 갱신
+      },
       child: Container(
         width: 150,
         clipBehavior: Clip.antiAlias,
@@ -711,7 +857,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      name,
+                      g.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

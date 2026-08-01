@@ -14,7 +14,11 @@ class UserService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // 로그인 전이면 개발용 uid 사용 (DevUser.enabled=false 로 끄기)
+  // 참고: DevUser.resolve() 는 이미 "실제 로그인 있으면 그걸 먼저" 쓰므로,
+  //      로그인 흐름만 살아나면 자동으로 실제 uid 를 사용한다.
   static String? get _uid => DevUser.resolve();
+
+  static User? get _user => FirebaseAuth.instance.currentUser;
 
   /// 현재 로그인 사용자의 프로필 조회
   static Future<UserProfile?> getCurrentProfile() async {
@@ -62,18 +66,31 @@ class UserService {
   }
 
   /// 닉네임만 업데이트
+  ///
+  /// [문제 ④] update() → set(merge:true) 로 변경.
+  ///   update() 는 문서가 없으면 not-found 예외를 던진다.
+  ///   신규 가입자는 닉네임 설정 시점에 아직 users/{uid} 문서가 없을 수 있고,
+  ///   이 앱은 '닉네임 설정'이 회원가입 직후 필수 관문이라 반드시 이 경로를 지난다.
+  ///   set(merge:true) 는 없으면 생성, 있으면 해당 필드만 덮어써 안전하다.
   static Future<void> updateNickname(String nickname) async {
     final uid = _uid;
     if (uid == null) throw Exception('로그인이 필요합니다');
 
-    await _db.collection('users').doc(uid).update({
+    await _db.collection('users').doc(uid).set({
       'nickname': nickname,
-      'lastActiveAt': Timestamp.fromDate(DateTime.now()),
-    });
+      // 기기 시계 대신 서버 시각 — 사용자가 기기 시간을 바꿔도 순서가 안 꼬인다
+      'lastActiveAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    // 닉네임은 계정 표시명에도 반영 (그룹 피드 작성자명 등에 쓰임)
+    await _user?.updateDisplayName(nickname);
   }
 
   /// 닉네임 중복 확인 (대소문자 구분)
-  /// 정확히 같은 닉네임이 이미 있으면 true
+  ///
+  /// ⚠️ 주의: 이 메서드는 '다른 사람의' users 문서를 조회한다.
+  ///   Firestore 보안 규칙이 본인 문서만 읽도록 돼 있으면 permission-denied 가 뜬다.
+  ///   그 경우 nicknames/{nickname} 같은 공개 컬렉션을 따로 두는 방식으로 바꿔야 한다.
   static Future<bool> isNicknameTaken(String nickname) async {
     final trimmed = nickname.trim();
     if (trimmed.isEmpty) return false;
@@ -99,11 +116,11 @@ class UserService {
     final uid = _uid;
     if (uid == null) return;
 
-    await _db.collection('users').doc(uid).update({
+    await _db.collection('users').doc(uid).set({
       'region': region,
       if (lat != null) 'regionLat': lat,
       if (lng != null) 'regionLng': lng,
-    });
+    }, SetOptions(merge: true)); // update→set(merge) 로 통일 (문서 없어도 안전)
   }
 
   /// 마지막 활동 시각 갱신 (홈 진입 시 호출 권장)
@@ -111,9 +128,9 @@ class UserService {
     final uid = _uid;
     if (uid == null) return;
     try {
-      await _db.collection('users').doc(uid).update({
-        'lastActiveAt': Timestamp.fromDate(DateTime.now()),
-      });
+      await _db.collection('users').doc(uid).set({
+        'lastActiveAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (_) {
       // 실패해도 무시 (네트워크 일시 오류 등)
     }
@@ -121,20 +138,28 @@ class UserService {
 
   // ─────────────── 프로필 화면(메뉴 → 프로필)용 ───────────────
 
-  static User? get _user => FirebaseAuth.instance.currentUser;
-
   /// 프로필 상세 (Firestore + 계정 정보 + 활동 기반 XP)
   static Future<ProfileDetail> loadProfileDetail() async {
-    if (DevData.enabled) return DevData.profile; // 개발용 로컬 더미
+    // ⚠️ 더미 전환: 실제 프로필을 쓰려면 아래 줄을 주석 처리한 상태로 둔다.
+    //    (켜져 있으면 아래 계산을 건너뛰고 가짜 프로필 '김연영/Lv.2/5,000P' 반환)
+    // if (DevData.enabled) return DevData.profile; // 개발용 로컬 더미
+
     final uid = _uid;
-    if (uid == null) return const ProfileDetail();
-    final user = _user; // 로그인 전이면 null 일 수 있음
+    // [문제 ③ 관련] 조용히 빈 값을 반환하면 UI 가 "데이터 없음"인지
+    //   "로그인 안 됨"인지 구분 못 한다. 예외를 던지고 UI 에서 처리하게 한다.
+    if (uid == null) throw StateError('로그인이 필요합니다');
+
+    final user = _user;
 
     final snap = await _db.collection('users').doc(uid).get();
     final base = ProfileDetail.fromJson(snap.data() ?? {});
 
     // 활동 횟수 → XP (1회 = 20 XP). 별도 저장 없이 기록에서 계산.
-    // TODO: 활동 외 보상으로도 XP 를 주게 되면 users/{uid}.xp 로 옮길 것
+    // ⚠️ [멘토 팁 ③] 이 방식은 프로필 열 때마다 활동 문서를 최대 500건 읽는다.
+    //    Firestore 무료 읽기 할당량을 빠르게 소모하므로, 활동 저장 시점에
+    //    users/{uid}.xp 를 FieldValue.increment(20) 로 누적해두고
+    //    여기선 필드 하나만 읽도록 바꾸는 것을 권장. (아래 TODO)
+    // TODO: XP 를 users/{uid}.xp 필드로 이전하여 매 조회 시 500 reads 제거
     int xp = 0;
     try {
       final acts = await ActivityService.getRecentCompleted(limit: 500);
@@ -144,9 +169,14 @@ class UserService {
     }
 
     return base.copyWith(
-      nickname: base.nickname.isEmpty ? DevUser.displayName : base.nickname,
+      // [문제 ③] DevUser.* → 실제 계정 정보로 교체.
+      //   기존엔 이 줄들이 if(DevData.enabled) 바깥이라, 더미를 꺼도
+      //   프로필에 개발용 이메일/이름이 계속 표시됐다.
+      nickname: base.nickname.isEmpty
+          ? (user?.displayName ?? '플로거')
+          : base.nickname,
       photoUrl: base.photoUrl ?? user?.photoURL,
-      email: DevUser.email,
+      email: user?.email ?? '', // ★ DevUser.email 제거
       xp: xp,
       joinedAt: user?.metadata.creationTime,
     );

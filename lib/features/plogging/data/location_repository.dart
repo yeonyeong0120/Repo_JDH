@@ -102,4 +102,66 @@ class LocationRepository {
       last = p;
     }
   }
+
+  /// 트래킹용 — 좌표와 이동분을 함께 흘려보낸다.
+  ///
+  /// watchDistanceMeters 는 거리(m)만 주기 때문에 경로를 그릴 수 없다.
+  /// 활동 경로 지도를 그리려면 지나온 좌표가 필요하므로 이 스트림을 쓴다.
+  ///
+  /// moveMeters 는 직전 지점과의 거리. 첫 지점은 0 이다.
+  Stream<TrackPoint> watchTrackPoints({int distanceFilter = 5}) async* {
+    Position? last;
+    final stream = Geolocator.getPositionStream(
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: distanceFilter,
+      ),
+    );
+
+    await for (final p in stream) {
+      if (last == null) {
+        // 첫 지점 — 경로 시작점으로 기록 (이동분 0)
+        yield TrackPoint(
+          lat: p.latitude,
+          lng: p.longitude,
+          moveMeters: 0,
+          at: DateTime.now(),
+        );
+        last = p;
+        continue;
+      }
+
+      final m = Geolocator.distanceBetween(
+        last.latitude,
+        last.longitude,
+        p.latitude,
+        p.longitude,
+      );
+      // GPS 튐 보정: 너무 작거나(오차) 너무 큰(순간이동) 값은 버림
+      if (m >= 3 && m < 200) {
+        yield TrackPoint(
+          lat: p.latitude,
+          lng: p.longitude,
+          moveMeters: m,
+          at: DateTime.now(),
+        );
+        last = p; // 유효한 이동일 때만 기준점 갱신
+      }
+    }
+  }
+}
+
+/// 트래킹 중 수집하는 경로 한 점
+class TrackPoint {
+  final double lat;
+  final double lng;
+  final double moveMeters; // 직전 지점과의 거리(m)
+  final DateTime at;
+
+  const TrackPoint({
+    required this.lat,
+    required this.lng,
+    required this.moveMeters,
+    required this.at,
+  });
 }

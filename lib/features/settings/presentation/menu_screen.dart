@@ -12,7 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 
-/// 줍다행 - 메뉴 화면 (프로필 / 다크모드 / 알림 / 에코포인트 상점 / 약관 등)
+/// 줍다행 - 메뉴 화면 (프로필 / 알림 / 에코포인트 상점 / 약관 등)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
 /// 위치 권장: lib/features/settings/presentation/menu_screen.dart
 class MenuScreen extends StatefulWidget {
@@ -23,7 +23,6 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  bool _darkMode = false;
   bool _notifications = false;
 
   ProfileDetail _profile = const ProfileDetail();
@@ -70,14 +69,6 @@ class _MenuScreenState extends State<MenuScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  _toggleCard(
-                    icon: Icons.lightbulb_outline,
-                    title: '다크모드',
-                    value: _darkMode,
-                    onChanged: (v) => setState(() => _darkMode = v),
-                    // TODO: 테마 프로바이더에 연결해서 실제 다크모드 적용
-                  ),
-                  const SizedBox(height: 14),
                   _toggleCard(
                     icon: Icons.notifications_none,
                     title: '실시간 알림 설정',
@@ -270,7 +261,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        '${_profile.xpInLevel}/100',
+                        '${_profile.xpInLevel}/${_profile.xpNeeded}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
