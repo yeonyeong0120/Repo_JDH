@@ -52,7 +52,7 @@ Widget _buildCircleButton({
 class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   // 실측값은 trackingProvider 가 보관 (경과 시간 · 이동 거리)
   Timer? _ticker;
-  StreamSubscription<double>? _distanceSub;
+  StreamSubscription<TrackPoint>? _pointSub;
 
   @override
   void initState() {
@@ -68,9 +68,10 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
       ref.read(trackingProvider.notifier).tick();
     });
     _maybeShowGuide();
-    // GPS 이동분을 거리로 누적 (걸음·칼로리는 거리에서 환산됨)
-    _distanceSub = LocationRepository().watchDistanceMeters().listen(
-      (m) => ref.read(trackingProvider.notifier).addDistance(m),
+    // GPS 좌표를 경로로 쌓으면서 거리도 함께 누적
+    // (경로는 정산 화면의 활동 경로 지도에 쓰인다)
+    _pointSub = LocationRepository().watchTrackPoints().listen(
+      (p) => ref.read(trackingProvider.notifier).addTrackPoint(p),
       onError: (_) {}, // 위치 실패해도 시간은 계속 측정
     );
   }
@@ -333,7 +334,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
-    _distanceSub?.cancel();
+    _pointSub?.cancel();
     super.dispose();
   }
 

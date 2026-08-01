@@ -14,9 +14,33 @@ import 'package:repo_jdh/core/dev/dev_data.dart';
 class GroupService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  /// ⚠️ 이 파일 전용 더미 스위치.
+  /// 그룹 기능은 실제 Firestore 연동이 완료되어 false 로 둔다.
+  /// 다시 더미로 보고 싶으면 이 한 줄만 `DevData.enabled` 로 바꾸면 된다.
+  static const bool _useDummy = false;
+
   static String? get _uid => DevUser.resolve();
-  static String get _userName => DevUser.displayName;
   static String? get _userPhoto => FirebaseAuth.instance.currentUser?.photoURL;
+
+  /// 표시 이름 — Firestore 의 실제 닉네임을 우선 사용한다.
+  ///
+  /// FirebaseAuth 의 displayName 은 이메일 가입 시 비어 있을 수 있어,
+  /// 그 값만 쓰면 멤버 목록에 이름이 빈칸으로 저장된다.
+  /// (users/{uid}.nickname 이 앱에서 실제로 쓰는 닉네임)
+  static Future<String> _resolveUserName() async {
+    final doc = _userDoc();
+    if (doc != null) {
+      try {
+        final nickname = (await doc.get()).data()?['nickname'] as String?;
+        if (nickname != null && nickname.trim().isNotEmpty) return nickname;
+      } catch (_) {
+        // 읽기 실패 시 아래 대체값 사용
+      }
+    }
+    final authName = FirebaseAuth.instance.currentUser?.displayName;
+    if (authName != null && authName.trim().isNotEmpty) return authName;
+    return '플로거'; // 최후 대체값 (빈칸으로 저장되지 않게)
+  }
 
   static CollectionReference<Map<String, dynamic>> get _groups =>
       _db.collection('groups');
@@ -29,7 +53,7 @@ class GroupService {
 
   /// 내가 속한 그룹 id (없으면 null) — 1인 1그룹
   static Future<String?> myGroupId() async {
-    if (DevData.enabled) return DevData.myGroup?.id;
+    if (_useDummy) return DevData.myGroup?.id;
     final doc = _userDoc();
     if (doc == null) return null;
     final snap = await doc.get();
@@ -40,14 +64,14 @@ class GroupService {
 
   /// 내 그룹 정보
   static Future<Group?> myGroup() async {
-    if (DevData.enabled) return DevData.myGroup;
+    if (_useDummy) return DevData.myGroup;
     final id = await myGroupId();
     if (id == null) return null;
     return getGroup(id);
   }
 
   static Future<Group?> getGroup(String groupId) async {
-    if (DevData.enabled) {
+    if (_useDummy) {
       if (DevData.myGroup?.id == groupId) return DevData.myGroup;
       for (final x in DevData.otherGroups) {
         if (x.id == groupId) return x;
@@ -65,7 +89,7 @@ class GroupService {
 
   /// 내 그룹을 제외한 다른 그룹들 (최신순)
   static Future<List<Group>> otherGroups({int limit = 20}) async {
-    if (DevData.enabled) return DevData.otherGroups;
+    if (_useDummy) return DevData.otherGroups;
     final mine = await myGroupId();
     final query = await _groups
         .orderBy('createdAt', descending: true)
@@ -84,7 +108,7 @@ class GroupService {
   static Future<List<Group>> search(String keyword) async {
     final k = keyword.trim();
     if (k.isEmpty) return [];
-    if (DevData.enabled) {
+    if (_useDummy) {
       return DevData.otherGroups.where((x) => x.name.contains(k)).toList();
     }
     final query = await _groups
@@ -110,7 +134,7 @@ class GroupService {
     String intro = '',
     String? imageUrl,
   }) async {
-    if (DevData.enabled) {
+    if (_useDummy) {
       DevData.myGroup = Group(
         id: 'g_new',
         name: name,
@@ -140,7 +164,7 @@ class GroupService {
     await ref.collection('members').doc(uid).set({
       'joinedAt': FieldValue.serverTimestamp(),
       'role': 'owner',
-      'userName': _userName,
+      'userName': await _resolveUserName(),
     });
     await _userDoc()!.set({'groupId': ref.id}, SetOptions(merge: true));
 
@@ -149,7 +173,7 @@ class GroupService {
 
   /// 그룹 가입. 이미 다른 그룹 소속이면 예외 (GRP-04 차단과 동일 규칙).
   static Future<void> joinGroup(String groupId) async {
-    if (DevData.enabled) {
+    if (_useDummy) {
       final i = DevData.otherGroups.indexWhere((x) => x.id == groupId);
       if (i >= 0) {
         DevData.myGroup = DevData.otherGroups.removeAt(i);
@@ -160,12 +184,13 @@ class GroupService {
     if (uid == null) throw Exception('로그인이 필요합니다');
     if (await isInGroup()) throw Exception('이미 그룹에 가입되어 있습니다');
 
+    final userName = await _resolveUserName(); // batch 전에 미리 읽어둠
     final ref = _groups.doc(groupId);
     final batch = _db.batch();
     batch.set(ref.collection('members').doc(uid), {
       'joinedAt': FieldValue.serverTimestamp(),
       'role': 'member',
-      'userName': _userName,
+      'userName': userName,
     });
     batch.update(ref, {'memberCount': FieldValue.increment(1)});
     batch.set(_userDoc()!, {'groupId': groupId}, SetOptions(merge: true));
@@ -174,7 +199,7 @@ class GroupService {
 
   /// 그룹 탈퇴
   static Future<void> leaveGroup(String groupId) async {
-    if (DevData.enabled) {
+    if (_useDummy) {
       final g = DevData.myGroup;
       if (g != null) DevData.otherGroups.insert(0, g);
       DevData.myGroup = null;
@@ -196,7 +221,7 @@ class GroupService {
     String groupId, {
     int limit = 8,
   }) async {
-    if (DevData.enabled) return DevData.memberNames;
+    if (_useDummy) return DevData.memberNames;
     final snap = await _groups
         .doc(groupId)
         .collection('members')
@@ -211,7 +236,7 @@ class GroupService {
 
   /// 피드 글 목록 (최신순)
   static Future<List<GroupPost>> posts(String groupId, {int limit = 30}) async {
-    if (DevData.enabled) return DevData.posts;
+    if (_useDummy) return DevData.posts;
     final uid = _uid ?? '';
     final snap = await _groups
         .doc(groupId)
@@ -253,14 +278,17 @@ class GroupService {
     required int trash,
     required String duration,
   }) async {
-    if (DevData.enabled) return;
+    if (_useDummy) return;
     final uid = _uid;
     if (uid == null) return;
 
+    final userName = await _resolveUserName(); // batch 전에 미리 읽어둠
     final batch = _db.batch();
     batch.set(_groups.doc(groupId).collection('posts').doc(), {
       'uid': uid,
-      'userName': _userName,
+      'userName': userName,
+      'type': PostType.activity, // 활동 인증 카드
+      'text': '',
       'photoUrl': _userPhoto,
       'imageUrl': imageUrl,
       'distance': distance,
@@ -276,13 +304,46 @@ class GroupService {
     await batch.commit();
   }
 
+  /// 그룹 채팅 메시지 전송
+  ///
+  /// 인증샷(activity)과 같은 posts 컬렉션에 저장한다.
+  /// → 시간순으로 자연스럽게 섞여서 표시된다.
+  static Future<void> sendMessage({
+    required String groupId,
+    required String text,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return; // 빈 메시지 방지
+    if (_useDummy) return;
+
+    final uid = _uid;
+    if (uid == null) throw Exception('로그인이 필요합니다');
+
+    final userName = await _resolveUserName();
+    await _groups.doc(groupId).collection('posts').add({
+      'uid': uid,
+      'userName': userName,
+      'photoUrl': _userPhoto,
+      'type': PostType.message, // 채팅 메시지
+      'text': trimmed,
+      // 활동 카드 필드는 비워둠 (모델 기본값으로 처리됨)
+      'imageUrl': null,
+      'distance': '',
+      'trash': 0,
+      'duration': '',
+      'likes': 0,
+      'likedBy': <String>[],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// 좋아요 토글 (내 글에는 사용하지 않음)
   static Future<void> toggleLike({
     required String groupId,
     required String postId,
     required bool liked, // 현재 상태
   }) async {
-    if (DevData.enabled) return; // 화면 상태만 바뀜
+    if (_useDummy) return; // 화면 상태만 바뀜
     final uid = _uid;
     if (uid == null) return;
 
@@ -298,7 +359,7 @@ class GroupService {
 
   /// (그룹 가입 여부, 인증샷 공유 횟수)
   static Future<({bool joined, int shareCount})> badgeCounters() async {
-    if (DevData.enabled) {
+    if (_useDummy) {
       return (joined: DevData.myGroup != null, shareCount: 3);
     }
     final doc = _userDoc();

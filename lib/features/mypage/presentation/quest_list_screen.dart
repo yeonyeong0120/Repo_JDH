@@ -4,7 +4,9 @@ import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 
 /// 줍다행 - 전체 퀘스트 (ACT-09)
-/// 기록 탭 "진행 중인 퀘스트 →" → 이 화면. 실제 데이터는 더미 + TODO.
+/// 기록 탭 "진행 중인 퀘스트 →" → 이 화면.
+/// 진행률은 BadgeService.loadStats() 의 실제 누적 통계로 계산된다.
+/// (걸음·칼로리·무게 계수는 ActivityMetrics 와 통일)
 /// 상단 [전체 / 진행중 / 완료됨] 탭으로 분류.
 /// 위치 권장: lib/features/mypage/presentation/quest_list_screen.dart
 class QuestListScreen extends StatefulWidget {

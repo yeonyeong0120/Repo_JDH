@@ -60,13 +60,26 @@ class Group {
   }
 }
 
-/// 그룹 피드 글 (인증샷 + 활동 기록)
+/// 피드 항목 종류
+/// - activity : 플로깅 인증 카드 (거리·수거량·시간)
+/// - message  : 그룹 채팅 메시지 (텍스트)
+class PostType {
+  static const String activity = 'activity';
+  static const String message = 'message';
+}
+
+/// 그룹 피드 항목 (인증샷 카드 + 채팅 메시지)
 /// Firestore: groups/{groupId}/posts/{postId}
+///
+/// 같은 컬렉션에 두 종류를 담아 시간순으로 자연스럽게 섞이게 한다.
+/// (컬렉션을 나누면 조회 후 다시 정렬해야 해서 복잡해진다)
 class GroupPost {
   final String id;
   final String uid;
   final String userName;
   final String? photoUrl; // 작성자 프로필 사진
+  final String type; // activity / message
+  final String text; // 채팅 메시지 내용 (activity 면 빈 문자열)
   final String? imageUrl; // 봉투 인증샷 (없으면 스킵으로 마친 활동)
   final String distance; // '2.1 km'
   final int trash; // 수거 개수
@@ -81,6 +94,8 @@ class GroupPost {
     required this.uid,
     this.userName = '',
     this.photoUrl,
+    this.type = PostType.activity, // 기존 데이터는 전부 활동 카드
+    this.text = '',
     this.imageUrl,
     this.distance = '',
     this.trash = 0,
@@ -91,6 +106,9 @@ class GroupPost {
     required this.createdAt,
   });
 
+  /// 채팅 메시지인지
+  bool get isMessage => type == PostType.message;
+
   factory GroupPost.fromJson(Map<String, dynamic> json, String myUid) {
     final likedBy = ((json['likedBy'] as List?) ?? const []).cast<String>();
     return GroupPost(
@@ -98,6 +116,9 @@ class GroupPost {
       uid: (json['uid'] as String?) ?? '',
       userName: (json['userName'] as String?) ?? '',
       photoUrl: json['photoUrl'] as String?,
+      // type 이 없는 기존 문서는 활동 카드로 취급
+      type: (json['type'] as String?) ?? PostType.activity,
+      text: (json['text'] as String?) ?? '',
       imageUrl: json['imageUrl'] as String?,
       distance: (json['distance'] as String?) ?? '',
       trash: (json['trash'] as num?)?.toInt() ?? 0,

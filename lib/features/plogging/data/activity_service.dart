@@ -9,6 +9,11 @@ import 'package:repo_jdh/core/dev/dev_data.dart';
 class ActivityService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  /// ⚠️ 이 파일 전용 더미 스위치.
+  /// 활동 기록은 실제 Firestore 연동이 완료되어 false 로 둔다.
+  /// 다시 더미로 보고 싶으면 이 한 줄만 `DevData.enabled` 로 바꾸면 된다.
+  static const bool _useDummy = false;
+
   static String? get _uid => DevUser.resolve();
 
   static CollectionReference<Map<String, dynamic>>? _activitiesCol() {
@@ -167,8 +172,11 @@ class ActivityService {
     Map<String, int> trashCounts = const {},
     String? groupId,
     int pointsEarned = 0,
+    List<Map<String, dynamic>> path = const [], // 지나온 경로 [{lat,lng,t}]
+    Map<String, double>? startLocation,
+    Map<String, double>? endLocation,
   }) async {
-    if (DevData.enabled) return 'dev_activity';
+    if (_useDummy) return 'dev_activity';
     final col = _activitiesCol();
     if (col == null) return null;
 
@@ -182,7 +190,9 @@ class ActivityService {
       'totalTrash': total,
       'imageUrls': <String>[],
       'detectionIds': <String>[],
-      'path': <Map<String, dynamic>>[],
+      'path': path, // 활동 경로 (지도 표시용)
+      'startLocation': startLocation,
+      'endLocation': endLocation,
       'pointsEarned': pointsEarned,
       'status': ActivityStatus.completed,
       if (groupId != null) 'groupId': groupId,
@@ -192,7 +202,7 @@ class ActivityService {
 
   /// 완료된 활동 최근 N개 (내 활동 화면용)
   static Future<List<Activity>> getRecentCompleted({int limit = 20}) async {
-    if (DevData.enabled) return DevData.activities; // 개발용 로컬 더미
+    if (_useDummy) return DevData.activities; // 개발용 로컬 더미
     final col = _activitiesCol();
     if (col == null) return [];
 

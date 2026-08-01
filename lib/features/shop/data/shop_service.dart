@@ -11,6 +11,12 @@ import 'package:repo_jdh/core/dev/dev_data.dart';
 ///   users/{uid}/coupons/{id}      교환한 쿠폰
 class ShopService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  /// ⚠️ 이 파일 전용 더미 스위치.
+  /// 상점은 실제 Firestore 연동이 완료되어 false 로 둔다.
+  /// 다시 더미로 보고 싶으면 이 한 줄만 `DevData.enabled` 로 바꾸면 된다.
+  static const bool _useDummy = false;
+
   static String? get _uid => DevUser.resolve();
 
   static DocumentReference<Map<String, dynamic>>? _userDoc() {
@@ -104,7 +110,7 @@ class ShopService {
   // ───────────────────────── 포인트 ─────────────────────────
 
   static Future<int> myPoints() async {
-    if (DevData.enabled) return DevData.profile.points;
+    if (_useDummy) return DevData.profile.points;
     final doc = _userDoc();
     if (doc == null) return 0;
     final snap = await doc.get();
@@ -116,7 +122,7 @@ class ShopService {
   /// 상품 교환 — 포인트 차감과 쿠폰 발급을 트랜잭션으로 함께 처리
   /// 포인트가 모자라면 예외
   static Future<void> exchange(ShopItem item) async {
-    if (DevData.enabled) {
+    if (_useDummy) {
       if (DevData.profile.points < item.price) {
         throw Exception('포인트가 부족합니다');
       }
@@ -167,7 +173,7 @@ class ShopService {
   // ───────────────────────── 쿠폰함 ─────────────────────────
 
   static Future<List<Coupon>> myCoupons() async {
-    if (DevData.enabled) return DevData.coupons;
+    if (_useDummy) return DevData.coupons;
     final col = _coupons();
     if (col == null) return [];
     final snap = await col.orderBy('createdAt', descending: true).get();
@@ -180,7 +186,7 @@ class ShopService {
 
   /// 사용 완료 처리 / 되돌리기 (실수 방지용으로 복구 가능)
   static Future<void> setUsed(String couponId, bool used) async {
-    if (DevData.enabled) {
+    if (_useDummy) {
       DevData.setCouponUsed(couponId, used);
       return;
     }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
@@ -6,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
+import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
 
 /// 줍다행 - 그룹 세부 화면 (활동 공유 피드)
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
@@ -75,25 +77,94 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   // 오른쪽 멤버 드로어(endDrawer) 열고/닫기용 키
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  // 채팅 입력창
+  final TextEditingController _msgController = TextEditingController();
+  bool _sending = false; // 중복 전송 방지
+
+  // 실시간 피드 구독 (메시지가 오면 즉시 반영)
+  StreamSubscription<List<GroupPost>>? _postsSub;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _subscribePosts(); // 실시간 구독 시작
   }
 
-  // 피드 + 멤버 불러오기
+  @override
+  void dispose() {
+    _postsSub?.cancel(); // 구독 해제 (안 하면 메모리 누수)
+    _msgController.dispose();
+    super.dispose();
+  }
+
+  // 피드 실시간 구독 — 누가 글/메시지를 올리면 바로 목록에 반영된다
+  void _subscribePosts() {
+    if (widget.groupId.isEmpty) return; // 더미 모드
+    _postsSub = GroupService.watchPosts(widget.groupId).listen(
+      (posts) {
+        if (!mounted) return;
+        setState(() => _items = posts.map(_fromPost).toList());
+      },
+      onError: (_) {
+        // 실패해도 기존 목록 유지 (화면이 비어버리지 않게)
+      },
+    );
+  }
+
+  // 채팅 메시지 전송
+  Future<void> _sendMessage() async {
+    final text = _msgController.text.trim();
+    if (text.isEmpty || _sending) return;
+    if (widget.groupId.isEmpty) return;
+
+    setState(() => _sending = true);
+    _msgController.clear(); // 먼저 비워서 반응이 빠르게 느껴지도록
+    try {
+      await GroupService.sendMessage(groupId: widget.groupId, text: text);
+      // 목록은 실시간 구독이 알아서 갱신한다
+    } catch (e) {
+      if (!mounted) return;
+      _msgController.text = text; // 실패 시 입력 복구
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('전송 실패: $e')));
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  // 멤버 목록 불러오기 (피드는 실시간 구독이 담당)
   Future<void> _load() async {
     if (widget.groupId.isEmpty) return; // 더미 모드
     try {
-      final posts = await GroupService.posts(widget.groupId);
       final names = await GroupService.memberNames(widget.groupId);
       if (!mounted) return;
       setState(() {
-        _items = posts.map(_fromPost).toList();
         if (names.isNotEmpty) _members = names;
       });
     } catch (_) {
       // 실패 시 기존 목록 유지
+    }
+  }
+
+  // ⚠️ 개발용 — 가짜 피드 글 심기/지우기 (배포 전 삭제)
+  Future<void> _runSeed({required bool seed}) async {
+    if (widget.groupId.isEmpty) return;
+    try {
+      final n = seed
+          ? await DevSeed.seedPosts(widget.groupId)
+          : await DevSeed.clearPosts(widget.groupId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${seed ? "심기" : "삭제"} $n건 완료')),
+      );
+      _load(); // 피드 갱신
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('실패: $e')));
     }
   }
 
@@ -110,6 +181,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     postId: p.id,
     photoUrl: p.photoUrl,
     imageUrl: p.imageUrl,
+    isMessage: p.isMessage, // 채팅 메시지 여부
+    text: p.text,
   );
 
   Future<void> _toggleLike(_FeedItem it) async {
@@ -650,16 +723,13 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
             _buildTopBar(),
             Expanded(
               child: ListView(
-                // 하단 여백(과했던 +92 → +16로 축소)
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  18,
-                  16,
-                  MediaQueryData.fromView(View.of(context)).padding.bottom + 16,
-                ),
+                // 입력창이 아래를 차지하므로 여백을 줄임
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
                 children: _buildFeed(),
               ),
             ),
+            // 하단 채팅 입력창
+            _chatInputBar(),
           ],
         ),
       ),
@@ -707,6 +777,17 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
             color: AppColors.textSecondary,
             onPressed: _showGroupInfo,
           ),
+          // ⚠️ 개발용 임시 버튼 — 가짜 피드 글 심기/지우기 (배포 전 삭제)
+          IconButton(
+            icon: const Icon(Icons.science_outlined),
+            color: AppColors.textTertiary,
+            onPressed: () => _runSeed(seed: true),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            color: AppColors.textTertiary,
+            onPressed: () => _runSeed(seed: false),
+          ),
           // 오른쪽 위 ≡ → 오른쪽 멤버 드로어 열기
           IconButton(
             icon: const Icon(Icons.menu),
@@ -719,7 +800,172 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   }
 
   // ───────────────────────── 활동 공유 카드 (A안) ─────────────────────────
+  // 채팅 말풍선 — 내 메시지는 오른쪽(초록), 남의 메시지는 왼쪽(흰색)
+  Widget _chatBubble(_FeedItem item) {
+    final mine = item.isMine;
+    final photo = item.photoUrl;
+    final avatar = CircleAvatar(
+      radius: 14,
+      backgroundColor: AppColors.primaryPale,
+      backgroundImage: (photo != null && photo.isNotEmpty)
+          ? NetworkImage(photo)
+          : null,
+      child: (photo != null && photo.isNotEmpty)
+          ? null
+          : const Icon(Icons.person, size: 16, color: AppColors.textTertiary),
+    );
+
+    final bubble = Container(
+      // 시각 라벨('오전 7:30')이 옆에 붙으므로 폭을 조금 여유 있게 잡는다
+      constraints: const BoxConstraints(maxWidth: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: mine ? AppColors.primary : AppColors.cardBG,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Text(
+        item.text,
+        style: TextStyle(
+          fontSize: 14,
+          height: 1.35,
+          color: mine ? Colors.white : AppColors.textPrimary,
+        ),
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment:
+            mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: mine
+            ? [
+                // 내 메시지: 시각 → 말풍선
+                Padding(
+                  padding: const EdgeInsets.only(right: 6, top: 4),
+                  child: Text(
+                    _timeLabel(item.date),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+                bubble,
+              ]
+            : [
+                // 남의 메시지: 아바타 → (이름 + 말풍선) → 시각
+                avatar,
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    bubble,
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 6, top: 22),
+                  child: Text(
+                    _timeLabel(item.date),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+              ],
+      ),
+    );
+  }
+
+  // 하단 채팅 입력창
+  Widget _chatInputBar() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        12,
+        8,
+        12,
+        MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 12,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.cardBG,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _msgController,
+                minLines: 1,
+                maxLines: 4, // 길어지면 최대 4줄까지
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendMessage(),
+                decoration: InputDecoration(
+                  hintText: '메시지를 입력하세요',
+                  hintStyle: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textTertiary,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.appBG,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // 전송 버튼 (전송 중엔 스피너)
+            GestureDetector(
+              onTap: _sending ? null : _sendMessage,
+              child: Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: _sending
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send, color: Colors.white, size: 20),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _feedCard(_FeedItem item) {
+    // 채팅 메시지는 말풍선으로 표시 (활동 카드와 구분)
+    if (item.isMessage) return _chatBubble(item);
+
     final mine = item.isMine;
     final photo = item.photoUrl;
     final avatar = CircleAvatar(
@@ -945,6 +1191,8 @@ class _FeedItem {
   final String? postId; // Firestore 문서 id (더미는 null)
   final String? photoUrl; // 작성자 프로필 사진
   final String? imageUrl; // 봉투 인증샷 URL
+  final bool isMessage; // true 면 채팅 말풍선으로 표시
+  final String text; // 채팅 메시지 내용
   _FeedItem(
     this.name,
     this.date,
@@ -958,5 +1206,7 @@ class _FeedItem {
     this.postId,
     this.photoUrl,
     this.imageUrl,
+    this.isMessage = false,
+    this.text = '',
   });
 }

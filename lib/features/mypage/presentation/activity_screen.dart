@@ -9,6 +9,11 @@ import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/presentation/badge_dialog.dart';
 import 'package:repo_jdh/features/mypage/presentation/character_screen.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
+import 'package:repo_jdh/features/plogging/data/activity_service.dart';
+import 'package:repo_jdh/features/plogging/domain/activity.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_stats.dart';
+import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
 
 /// 줍다행 - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
@@ -26,10 +31,24 @@ class _ActivityScreenState extends State<ActivityScreen> {
   int _badgeVersion = 0; // 획득 현황 로드되면 +1 → 뱃지 탭 갱신
   final PageController _pageController = PageController();
 
+  // 그래프용 활동 기록 (집계 대상). null = 로딩 중
+  List<Activity>? _graphActivities;
+
   @override
   void initState() {
     super.initState();
     _loadBadges();
+    _loadGraphActivities();
+  }
+
+  // 그래프용 활동 기록 불러오기 (집계하려면 넉넉히)
+  Future<void> _loadGraphActivities() async {
+    try {
+      final list = await ActivityService.getRecentCompleted(limit: 200);
+      if (mounted) setState(() => _graphActivities = list);
+    } catch (_) {
+      if (mounted) setState(() => _graphActivities = []); // 실패 시 빈 목록
+    }
   }
 
   // Firestore 획득 현황 → BadgeRepo 채우고 뱃지 탭 갱신
@@ -80,9 +99,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 children: [
                   const _RecordsTab(),
                   _BadgesTab(key: ValueKey(_badgeVersion)),
-                  _GraphTab(period: 0, playToken: _graphPlay),
-                  _GraphTab(period: 1, playToken: _graphPlay),
-                  _GraphTab(period: 2, playToken: _graphPlay),
+                  _GraphTab(
+                    period: 0,
+                    playToken: _graphPlay,
+                    activities: _graphActivities,
+                  ),
+                  _GraphTab(
+                    period: 1,
+                    playToken: _graphPlay,
+                    activities: _graphActivities,
+                  ),
+                  _GraphTab(
+                    period: 2,
+                    playToken: _graphPlay,
+                    activities: _graphActivities,
+                  ),
                 ],
               ),
             ),
@@ -152,6 +183,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
               _tabItem('뱃지', 1),
               const SizedBox(width: 8),
               _tabItem('그래프', 2),
+              const Spacer(),
+              // ⚠️ 개발용 임시 버튼 — 그래프 테스트용 가짜 데이터 심기/지우기
+              //    배포 전 이 _DevSeedButtons() 와 위 import 를 삭제할 것
+              const _DevSeedButtons(),
             ],
           ),
         ],
@@ -206,10 +241,14 @@ class _RecordsTab extends StatefulWidget {
 }
 
 class _RecordsTabState extends State<_RecordsTab> {
-  static const List<_Activity> _activities = [
-    _Activity('26.02.01 06:15', '석촌호수길', 2000, '70 g', 120, '0:30'),
-    _Activity('26.02.01 17:15', '로데오거리', 3000, '40 g', 125, '0:40'),
-  ];
+  // 기록 탭에 보여줄 최근 활동 개수.
+  // TODO: 팀 논의 후 조정 가능 (심는 개수(dev_seed)와는 별개)
+  static const int _displayLimit = 3;
+
+  // ── 실제 활동 기록 ──
+  // null: 아직 로딩 중 / []: 로딩됐고 기록 0건 / [.. ]: 기록 있음
+  List<_Activity>? _activities; // null = 로딩 중
+  Object? _loadError; // null 이 아니면 에러 발생
 
   // 진행 중인 퀘스트 (달성률 높은 순 3개)
   List<_Quest> _quests = [];
@@ -217,7 +256,42 @@ class _RecordsTabState extends State<_RecordsTab> {
   @override
   void initState() {
     super.initState();
+    _loadActivities(); // 실제 활동 기록 불러오기
     _loadQuests();
+  }
+
+  // 활동 기록 불러오기 (서버 Activity → 화면 _Activity 로 변환)
+  Future<void> _loadActivities() async {
+    try {
+      final list =
+          await ActivityService.getRecentCompleted(limit: _displayLimit);
+      // 서버 데이터(Activity)를 화면용(_Activity)으로 변환
+      final mapped = list.map(_toDisplay).toList();
+      if (!mounted) return;
+      setState(() {
+        _activities = mapped;
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e; // 에러 화면에서 사용
+      });
+    }
+  }
+
+  // 서버 Activity → 화면 _Activity 변환
+  // (걸음·칼로리·무게는 ActivityMetrics 로 계산, 장소명은 아직 없어 임시 표시)
+  _Activity _toDisplay(Activity a) {
+    return _Activity(
+      ActivityMetrics.dateTimeLabel(a.startedAt),
+      // TODO: 역지오코딩으로 실제 장소명 채우기 (지금은 임시)
+      a.groupId != null ? '그룹 플로깅' : '플로깅 기록',
+      ActivityMetrics.estimateSteps(a.distanceMeters),
+      ActivityMetrics.weightLabel(a.trashCounts),
+      ActivityMetrics.estimateKcal(a.distanceMeters),
+      ActivityMetrics.durationLabel(a.durationSeconds),
+    );
   }
 
   Future<void> _loadQuests() async {
@@ -274,12 +348,8 @@ class _RecordsTabState extends State<_RecordsTab> {
           ),
         ),
         const SizedBox(height: 12),
-        ..._activities.map(
-          (a) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _activityCard(context, a),
-          ),
-        ),
+        // ── 4가지 상태 처리: 로딩 / 에러 / 빈 기록 / 데이터 ──
+        ..._buildRecordsSection(context),
         const SizedBox(height: 22),
         _sectionHeader(
           '진행 중인 퀘스트',
@@ -297,6 +367,44 @@ class _RecordsTabState extends State<_RecordsTab> {
         ),
       ],
     );
+  }
+
+  // 최근 활동 섹션: 상태에 따라 다른 위젯 목록을 반환
+  List<Widget> _buildRecordsSection(BuildContext context) {
+    // ① 에러
+    if (_loadError != null) {
+      return [
+        _ErrorBox(onRetry: () {
+          setState(() {
+            _loadError = null;
+            _activities = null; // 다시 로딩 상태로
+          });
+          _loadActivities();
+        }),
+      ];
+    }
+    // ② 로딩 중 (아직 null)
+    if (_activities == null) {
+      return const [
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
+    }
+    // ③ 로딩 완료 & 기록 0건 → 빈 화면
+    if (_activities!.isEmpty) {
+      return const [_EmptyRecords()];
+    }
+    // ④ 데이터 있음
+    return _activities!
+        .map(
+          (a) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _activityCard(context, a),
+          ),
+        )
+        .toList();
   }
 
   Widget _sectionHeader(String text, {required VoidCallback onTap}) {
@@ -635,7 +743,12 @@ class _BadgesTab extends StatelessWidget {
 class _GraphTab extends StatefulWidget {
   final int period; // 이 페이지가 담당하는 기간 (0:주간 1:월간 2:누적)
   final int playToken; // 값이 바뀌면 애니메이션 재생
-  const _GraphTab({required this.period, required this.playToken});
+  final List<Activity>? activities; // 집계 대상 (null = 로딩 중)
+  const _GraphTab({
+    required this.period,
+    required this.playToken,
+    required this.activities,
+  });
 
   @override
   State<_GraphTab> createState() => _GraphTabState();
@@ -647,89 +760,72 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
 
   int _offset = 0; // 이 기간 안에서 보고 있는 주/월 인덱스 (0=가장 최근)
 
-  // TODO: 실제 기간별 데이터로 교체 (지금은 더미)
-  // 주간: 요일별(월~일) 막대
-  static const List<_GData> _weekly = [
-    _GData(
-      '이번주',
-      '5.24 ~ 5.31',
-      '8,240',
-      '1,089',
-      '1.3kg',
-      [0.5, 0.72, 0.4, 0.66, 0.46, 1.0, 0.6],
-      _dayLabels,
-      5,
-    ),
-    _GData(
-      '지난주',
-      '5.17 ~ 5.23',
-      '6,110',
-      '842',
-      '0.9kg',
-      [0.3, 0.55, 0.7, 0.4, 0.85, 0.5, 0.35],
-      _dayLabels,
-      4,
-    ),
-    _GData(
-      '2주 전',
-      '5.10 ~ 5.16',
-      '9,530',
-      '1,240',
-      '1.6kg',
-      [0.8, 0.6, 0.5, 0.9, 0.7, 0.65, 1.0],
-      _dayLabels,
-      6,
-    ),
-  ];
-
-  // 월간: 1~5주 단위 막대
-  static const List<String> _weekLabels = ['1주', '2주', '3주', '4주', '5주'];
-  static const List<_GData> _monthly = [
-    _GData(
-      '이번달',
-      '2026.05',
-      '32,600',
-      '4,210',
-      '5.2kg',
-      [0.6, 0.8, 0.5, 1.0, 0.4],
-      _weekLabels,
-      3,
-    ),
-    _GData(
-      '지난달',
-      '2026.04',
-      '28,140',
-      '3,690',
-      '4.4kg',
-      [0.5, 0.7, 0.9, 0.6, 0.3],
-      _weekLabels,
-      2,
-    ),
-  ];
-
-  // 누적: 가입일부터 현재까지 (막대 없음, 큰 숫자)
-  // TODO: 가입일은 실제 프로필 가입일로 교체
-  static const _GData _cumulative = _GData(
-    '전체',
-    '가입일(2024.03.15~)부터',
-    '184,320',
-    '24,860',
-    '31.5kg',
-    [],
-    [],
-    0,
-  );
-
   static const List<String> _dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
 
-  // 수거 종류 색: 플라스틱 파랑 / 일반 빨강 / 종이 초록 / 캔 주황 / 유리 보라
-  final List<_Segment> _segments = const [
-    _Segment('플라스틱', 11, AppColors.categoryBlue),
-    _Segment('일반', 10, AppColors.categoryRed),
-    _Segment('종이', 9, AppColors.categoryGreen),
-    _Segment('캔', 5, AppColors.categoryOrange),
-    _Segment('유리', 3, AppColors.categoryPurple),
-  ];
+  // ── 실제 집계 결과 (widget.activities 로부터 계산) ──
+  // 매 build 마다 다시 계산하지 않도록 캐시. activities 가 바뀌면 갱신.
+  List<_GData> _weekly = const [];
+  List<_GData> _monthly = const [];
+  _GData _cumulative = const _GData('전체', '', '0', '0', '0g', [], [], 0);
+
+  // 도넛 색·한글 라벨 매핑 (영문 카테고리 → 화면 표시)
+  static const Map<String, (String, Color)> _catMeta = {
+    'plastic': ('플라스틱', AppColors.categoryBlue),
+    'trash': ('일반', AppColors.categoryRed),
+    'paper': ('종이', AppColors.categoryGreen),
+    'can': ('캔', AppColors.categoryOrange),
+    'glass': ('유리', AppColors.categoryPurple),
+  };
+
+
+  // 집계 실행 — activities 로 _weekly/_monthly/_cumulative 채움
+  // (도넛 _segments 는 '지금 보는 기간' 기준이라 _segmentsFor 에서 따로 계산)
+  void _recompute() {
+    final acts = widget.activities ?? const [];
+
+    _weekly = ActivityStats.weekly(acts)
+        .map((b) => _bucketToGData(b))
+        .toList();
+    _monthly = ActivityStats.monthly(acts)
+        .map((b) => _bucketToGData(b))
+        .toList();
+    _cumulative = _bucketToGData(ActivityStats.cumulative(acts));
+  }
+
+  // 지금 보고 있는 기간의 활동만 골라 도넛 세그먼트 생성
+  List<_Segment> _segmentsFor(int period) {
+    final acts = widget.activities ?? const [];
+    // 기간에 맞는 활동만 필터 (누적은 전체)
+    final List<Activity> scoped;
+    if (period == 0) {
+      scoped = ActivityStats.inWeek(acts, _offset); // 주간: 보고 있는 주
+    } else if (period == 1) {
+      scoped = ActivityStats.inMonth(acts, _offset); // 월간: 보고 있는 달
+    } else {
+      scoped = acts; // 누적: 전체
+    }
+
+    final cats = ActivityStats.categoryTotals(scoped)
+      ..sort((a, b) => b.count.compareTo(a.count));
+    return cats.map((c) {
+      final meta = _catMeta[c.category] ?? (c.category, AppColors.textTertiary);
+      return _Segment(meta.$1, c.count, meta.$2);
+    }).toList();
+  }
+
+  // 집계 결과(GraphBucket) → 화면 데이터(_GData) 변환
+  _GData _bucketToGData(GraphBucket b) {
+    return _GData(
+      b.title,
+      b.range,
+      ActivityStats.comma(b.steps),
+      ActivityStats.comma(b.kcal),
+      ActivityStats.weightLabel(b.weightG),
+      b.bars,
+      b.barLabels,
+      b.peakIndex,
+    );
+  }
 
   // 이 페이지 기간의 데이터셋 목록 (누적은 단일)
   List<_GData> get _currentList => widget.period == 0 ? _weekly : _monthly;
@@ -738,6 +834,19 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
   _GData _dataFor(int period) {
     if (period == 2) return _cumulative;
     final list = period == 0 ? _weekly : _monthly;
+    if (list.isEmpty) {
+      // 데이터 없을 때 빈 그래프
+      return _GData(
+        period == 0 ? '이번주' : '이번달',
+        '기록 없음',
+        '0',
+        '0',
+        '0g',
+        List<double>.filled(period == 0 ? 7 : 5, 0.0),
+        period == 0 ? _dayLabels : const ['1주', '2주', '3주', '4주', '5주'],
+        0,
+      );
+    }
     return list[_offset.clamp(0, list.length - 1)];
   }
 
@@ -752,11 +861,16 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 850),
     )..forward();
+    _recompute(); // 초기 집계
   }
 
   @override
   void didUpdateWidget(covariant _GraphTab old) {
     super.didUpdateWidget(old);
+    // 부모가 활동 데이터를 (늦게) 전달/갱신하면 다시 집계
+    if (old.activities != widget.activities) {
+      _recompute();
+    }
     // 그래프 탭 재진입 → 처음부터 다시 재생
     if (old.playToken != widget.playToken) {
       _replay();
@@ -909,7 +1023,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           '수거 종류',
           AnimatedBuilder(
             animation: _acFast,
-            builder: (_, __) => _trashDonut(_acFast.value),
+            builder: (_, __) => _trashDonut(_acFast.value, period),
           ),
         ),
       ],
@@ -1119,7 +1233,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     );
   }
 
-  Widget _trashDonut(double t) {
+  Widget _trashDonut(double t, int period) {
+    final segments = _segmentsFor(period); // 지금 보는 기간의 수거 종류
     return Row(
       children: [
         SizedBox(
@@ -1130,20 +1245,20 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
             children: [
               CustomPaint(
                 size: const Size(120, 120),
-                painter: _DonutPainter(_segments, t),
+                painter: _DonutPainter(segments, t),
               ),
-              const Column(
+              Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '40개',
-                    style: TextStyle(
+                    '${segments.fold<int>(0, (a, s) => a + s.value)}개',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  Text(
+                  const Text(
                     '총 수거',
                     style: TextStyle(
                       fontSize: 12,
@@ -1156,7 +1271,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           ),
         ),
         const SizedBox(width: 20),
-        Expanded(child: Column(children: _segments.map(_legendRow).toList())),
+        Expanded(child: Column(children: segments.map(_legendRow).toList())),
       ],
     );
   }
@@ -1245,6 +1360,156 @@ class _DonutPainter extends CustomPainter {
 }
 
 // ──────────────── 데이터 모델 ────────────────
+
+// ⚠️ 개발용 임시 버튼 — 배포 전 삭제
+// 가짜 활동 심기 / 지우기. 결과는 스낵바로 알림.
+class _DevSeedButtons extends StatefulWidget {
+  const _DevSeedButtons();
+
+  @override
+  State<_DevSeedButtons> createState() => _DevSeedButtonsState();
+}
+
+class _DevSeedButtonsState extends State<_DevSeedButtons> {
+  bool _busy = false; // 중복 탭 방지
+
+  Future<void> _run(Future<int> Function() action, String verb) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final n = await action();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$verb $n건 완료 — 앱을 다시 열면 반영돼요')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('실패: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_busy) {
+      return const Padding(
+        padding: EdgeInsets.all(8),
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: '가짜 데이터 심기',
+          icon: const Icon(Icons.add_circle_outline, size: 22),
+          color: AppColors.textTertiary,
+          onPressed: () => _run(() => DevSeed.seedActivities(), '심기'),
+        ),
+        IconButton(
+          tooltip: '가짜 데이터 지우기',
+          icon: const Icon(Icons.delete_outline, size: 22),
+          color: AppColors.textTertiary,
+          onPressed: () => _run(() => DevSeed.clearActivities(), '삭제'),
+        ),
+        // 뱃지 판정 실행 — 조건 충족한 뱃지를 저장하고 포인트를 적립한다.
+        // (원래는 플로깅 정산 화면에서 자동 호출됨)
+        IconButton(
+          tooltip: '뱃지 판정 실행',
+          icon: const Icon(Icons.military_tech_outlined, size: 22),
+          color: AppColors.textTertiary,
+          onPressed: () => _run(() async {
+            final fresh = await BadgeService.checkAndSave();
+            return fresh.length; // 새로 딴 뱃지 개수
+          }, '뱃지 획득'),
+        ),
+      ],
+    );
+  }
+}
+
+// 기록이 0건일 때 보여주는 빈 화면
+class _EmptyRecords extends StatelessWidget {
+  const _EmptyRecords();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBG,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        children: const [
+          Icon(Icons.directions_walk, size: 48, color: AppColors.textTertiary),
+          SizedBox(height: 12),
+          Text(
+            '아직 플로깅 기록이 없어요',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            '첫 플로깅을 시작해볼까요?',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 불러오기 실패 시 보여주는 에러 박스 (재시도 버튼 포함)
+class _ErrorBox extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _ErrorBox({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBG,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.cloud_off, size: 44, color: AppColors.textTertiary),
+          const SizedBox(height: 12),
+          const Text(
+            '기록을 불러오지 못했어요',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: onRetry,
+            child: const Text('다시 시도'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Activity {
   final String dateTime;
   final String title;

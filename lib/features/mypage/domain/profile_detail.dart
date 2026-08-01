@@ -1,3 +1,5 @@
+import 'package:repo_jdh/features/mypage/domain/level_system.dart';
+
 /// 프로필 화면(메뉴 → 프로필)에서 쓰는 상세 정보
 /// Firestore: users/{uid} + FirebaseAuth 계정 정보(email · 가입일)
 /// (auth/domain/user_profile.dart 의 UserProfile 과는 별개 — 화면 표시용)
@@ -28,10 +30,24 @@ class ProfileDetail {
     this.joinedAt,
   });
 
-  /// 100 XP 마다 레벨업
-  int get level => xp ~/ 100 + 1;
-  int get xpInLevel => xp % 100;
-  double get levelProgress => xpInLevel / 100;
+  /// 레벨/XP 계산 — LevelSystem 으로 통일 (홈 화면 등 다른 화면과 동일 규칙)
+  /// 규칙: 레벨 n → n+1 필요 XP = 100 + (n-1)*50  (100, 150, 200 ...)
+  LevelInfo get _levelInfo => LevelSystem.of(xp);
+
+  /// 현재 레벨
+  int get level => _levelInfo.level;
+
+  /// 이번 레벨에서 모은 XP (예: 50)
+  int get xpInLevel => _levelInfo.currentXp;
+
+  /// 이번 레벨에 필요한 총 XP (예: 200) — 화면에서 '50/200' 처럼 표시
+  int get xpNeeded => _levelInfo.neededXp;
+
+  /// 다음 레벨까지 남은 XP
+  int get xpRemaining => _levelInfo.remainingXp;
+
+  /// 진행률 0.0~1.0
+  double get levelProgress => _levelInfo.progress;
 
   /// '2026년 2월 5일'
   String get joinedText {
