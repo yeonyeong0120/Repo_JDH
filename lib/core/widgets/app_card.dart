@@ -12,7 +12,8 @@ enum CardTone {
 }
 
 /// 앱 전체 카드의 단일 소스.
-/// 그림자를 쓰지 않고 선(border)으로 경계를 만든다.
+/// v2: 선 대신 부드러운 그림자로 띄운다 (레퍼런스 어휘).
+/// 틴트 카드(brand)는 그림자 없이 색면으로만 구분한다.
 /// 탭 가능한 카드는 onTap을 넘기면 잉크 리플과 최소 높이가 자동 적용된다.
 class AppCard extends StatelessWidget {
   final Widget child;
@@ -37,17 +38,17 @@ class AppCard extends StatelessWidget {
       child: child,
     );
 
-    return Material(
-      color: brand ? AppColors.surfaceBrand : AppColors.surface,
-      borderRadius: Radii.cardR,
-      child: InkWell(
-        onTap: onTap,
+    return DecoratedBox(
+      decoration: BoxDecoration(
         borderRadius: Radii.cardR,
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: Radii.cardR,
-            border: brand ? null : Border.all(color: AppColors.border),
-          ),
+        boxShadow: brand ? null : AppColors.cardShadow,
+      ),
+      child: Material(
+        color: brand ? AppColors.surfaceBrand : AppColors.surface,
+        borderRadius: Radii.cardR,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: Radii.cardR,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: Touch.min),
             child: body,
@@ -140,7 +141,7 @@ class AppIconTile extends StatelessWidget {
   const AppIconTile({
     super.key,
     required this.icon,
-    this.color = AppColors.green700,
+    this.color = AppColors.green600,
     this.size = 48,
   });
 

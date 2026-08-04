@@ -36,7 +36,7 @@ class LicensesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -94,7 +94,7 @@ class LicensesScreen extends StatelessWidget {
                         vertical: 18,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.cardBG,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: AppColors.cardShadow,
                       ),
@@ -112,7 +112,7 @@ class LicensesScreen extends StatelessWidget {
                           ),
                           const Icon(
                             Icons.chevron_right,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                           ),
                         ],
                       ),
@@ -131,7 +131,7 @@ class LicensesScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
@@ -157,7 +157,7 @@ class LicensesScreen extends StatelessWidget {
                     ? null
                     : const Border(
                         bottom: BorderSide(
-                          color: AppColors.divider,
+                          color: AppColors.border,
                           width: 0.8,
                         ),
                       ),
@@ -168,7 +168,7 @@ class LicensesScreen extends StatelessWidget {
                   Text(
                     items[i].name,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -177,8 +177,8 @@ class LicensesScreen extends StatelessWidget {
                   Text(
                     '${items[i].author} · ${items[i].source}',
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],

@@ -44,7 +44,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +130,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: AppColors.cardShadow,
         ),
@@ -143,7 +143,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
               height: 66,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.primaryPale,
+                color: AppColors.surfaceBrand,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(a.emoji, style: const TextStyle(fontSize: 34)),
@@ -156,9 +156,9 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                   Text(
                     a.category,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDeep,
+                      color: AppColors.green800,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -167,7 +167,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       height: 1.25,
                       color: AppColors.textPrimary,
@@ -182,7 +182,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -191,8 +191,8 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                       Text(
                         a.date,
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -226,7 +226,7 @@ class _CenterMessage extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 48, color: AppColors.textTertiary),
+          Icon(icon, size: 48, color: AppColors.textSecondary),
           const SizedBox(height: 12),
           Text(
             title,

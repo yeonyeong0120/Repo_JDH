@@ -116,7 +116,7 @@ class AppProgressBar extends StatelessWidget {
         minHeight: height,
         backgroundColor: AppColors.neutral100,
         valueColor: AlwaysStoppedAnimation<Color>(
-          color ?? AppColors.actionPrimary,
+          color ?? AppColors.progress,
         ),
       ),
     );
@@ -124,7 +124,7 @@ class AppProgressBar extends StatelessWidget {
 }
 
 /// 카드 상단 분류 라벨. 반드시 색과 함께 쓴다.
-/// 예) '연속 기록'(reward), '이번 주'(brand)
+/// 예) '연속 기록'(accent), '이번 주'(brand)
 class AppOverline extends StatelessWidget {
   final String text;
   final Color color;

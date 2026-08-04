@@ -234,7 +234,7 @@ class _NicknameSetupScreenState extends ConsumerState<NicknameSetupScreen> {
                       : const Text(
                           '시작하기',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

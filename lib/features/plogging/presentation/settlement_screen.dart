@@ -188,7 +188,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: AppColors.appBG,
+        backgroundColor: AppColors.bg,
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -263,7 +263,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           // 경로가 없으면(위치 못 받음 / 너무 짧음) 안내만 표시
           child: path.length < 2
               ? Container(
-                  color: AppColors.primaryPale,
+                  color: AppColors.surfaceBrand,
                   alignment: Alignment.center,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -271,14 +271,14 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
                       Icon(
                         Icons.map_outlined,
                         size: 32,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                       SizedBox(height: 6),
                       Text(
                         '기록된 경로가 없어요',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -377,7 +377,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.primaryPale,
+          color: AppColors.surfaceBrand,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -386,8 +386,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textTertiary,
+                fontSize: 13,
+                color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 4),
@@ -412,15 +412,15 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.primaryPale,
+          color: AppColors.surfaceBrand,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           '총 $total개',
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppColors.primaryDeep,
+            color: AppColors.green800,
           ),
         ),
       ),
@@ -444,18 +444,18 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
               Text(
                 '$c',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: active
                       ? AppColors.textPrimary
-                      : AppColors.textTertiary,
+                      : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 d.label,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   color: AppColors.textSecondary,
                 ),
               ),
@@ -495,7 +495,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           child: Text(
             label,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               color: AppColors.textSecondary,
             ),
           ),
@@ -503,7 +503,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         Text(
           value,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 17,
             fontWeight: FontWeight.w700,
             color: color,
           ),
@@ -593,7 +593,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),

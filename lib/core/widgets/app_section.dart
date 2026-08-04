@@ -64,13 +64,14 @@ class SectionHeader extends StatelessWidget {
                     Text(
                       moreLabel,
                       style: AppType.caption.copyWith(
-                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textBrandOnLight,
                       ),
                     ),
                     const Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: AppColors.neutral400,
+                      color: AppColors.textBrandOnLight,
                     ),
                   ],
                 ),
@@ -88,6 +89,7 @@ class AppSection extends StatelessWidget {
   final String title;
   final String? caption;
   final VoidCallback? onMore;
+  final String moreLabel;
   final Widget child;
 
   /// 마지막 섹션이면 true — 아래 여백을 없앤다.
@@ -99,6 +101,7 @@ class AppSection extends StatelessWidget {
     required this.child,
     this.caption,
     this.onMore,
+    this.moreLabel = '더보기',
     this.last = false,
   });
 
@@ -110,7 +113,12 @@ class AppSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          SectionHeader(title: title, caption: caption, onMore: onMore),
+          SectionHeader(
+            title: title,
+            caption: caption,
+            onMore: onMore,
+            moreLabel: moreLabel,
+          ),
           child,
         ],
       ),

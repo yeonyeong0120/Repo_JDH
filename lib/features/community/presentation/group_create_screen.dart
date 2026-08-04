@@ -78,7 +78,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -119,12 +119,12 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                           height: 92,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryPale,
+                            color: AppColors.surfaceBrand,
                             borderRadius: BorderRadius.circular(22),
                           ),
                           child: const Icon(
                             Icons.add_a_photo_outlined,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                             size: 30,
                           ),
                         ),
@@ -135,8 +135,8 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                       child: Text(
                         '대표 사진 (선택)',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -161,7 +161,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.divider.withValues(alpha: 0.35),
+                        color: AppColors.border.withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
@@ -169,14 +169,14 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                           Icon(
                             Icons.location_on_outlined,
                             size: 18,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                           ),
                           SizedBox(width: 8),
                           // TODO: 실제 현재 위치(동네)로 자동 설정
                           Text(
                             '00구 00동 (현재 위치로 자동 설정)',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -219,7 +219,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
@@ -238,16 +238,16 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 14, color: AppColors.textTertiary),
+        hintStyle: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
         filled: true,
-        fillColor: AppColors.cardBG,
+        fillColor: AppColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.divider),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.divider),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -258,7 +258,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
           vertical: 12,
         ),
       ),
-      style: const TextStyle(fontSize: 14),
+      style: const TextStyle(fontSize: 15),
     );
   }
 }

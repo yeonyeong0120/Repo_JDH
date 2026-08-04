@@ -1,205 +1,206 @@
-// 앱 전체에서 사용하는 컬러 시스템
+// 앱 전체에서 사용하는 컬러 시스템 (v2 — 밝게 재조정)
 // 변경 시 모든 화면에 영향 가니까 신중하게.
+//
+// 규칙 3가지만 기억하면 됩니다.
+//  1. 화면 코드에서는 SEMANTIC 섹션의 이름만 씁니다. green600 같은 스케일 값 직접 참조 금지.
+//  2. textBrand(초록 글씨)는 흰 카드 위에서만. 배경·틴트 위에서는 textBrandOnLight.
+//  3. actionPrimary(꽉 찬 초록)는 화면당 하나. 두 번째 버튼은 actionSecondary.
 import 'package:flutter/material.dart';
 
 class AppColors {
   AppColors._(); // 인스턴스화 방지 (정적 클래스로만 사용)
 
   // ========================================================
-  // PRIMARY - 파스텔 블루 (메인 컬러)
+  // GREEN — 브랜드 스케일 (hue 157)
+  // v1의 primary / mint / success / categoryGreen 을 하나로 통합
   // ========================================================
 
-  static const Color primary = Color(0xFF27AC88); // 14A57D↔3AB295 중간
-  static const Color primaryDeep = Color(0xFF12805F); // 살짝만 연하게
-  static const Color primaryLight = Color(0xFF95E4CD);
-  static const Color primaryPale = Color(0xFFEAF8F2);
-
-  /// 버튼·팝업 액션 전용 톤다운 primary. 브랜드 primary보다 채도를 낮춰
-  /// 실기기에서 색이 덜 튀도록 한 값. 여기 한 줄만 바꾸면 버튼 톤이 조정됨.
-  /// (더 차분하게: 0xFF5AA593 쪽 / 더 진하게: primary(0xFF27AC88) 쪽)
-  static const Color primaryMuted = Color(0xFF4CA892);
-
-  // ========================================================
-  // SECONDARY - 코랄 (액센트 컬러)
-  // ========================================================
-
-  /// 코랄 액센트. 좋아요, 알림 뱃지, 마스코트 강조에 사용.
-  static const Color coral = Color(0xFFFFB89A);
-
-  /// 진한 코랄. "공감!" 누른 상태, 강한 강조에 사용.
-  static const Color coralDeep = Color(0xFFFF8B6B);
+  static const Color green50 = Color(0xFFF3FBF6);
+  static const Color green100 = Color(0xFFE4F6EB);
+  static const Color green200 = Color(0xFFC7EDD5);
+  static const Color green300 = Color(0xFF9CDDB6);
+  static const Color green400 = Color(0xFF64C795);
+  static const Color green500 = Color(0xFF34AE77);
+  static const Color green600 = Color(0xFF17855A); // ★ 브랜드. 흰 글씨 4.63:1
+  static const Color green700 = Color(0xFF106B49);
+  static const Color green800 = Color(0xFF0B5238);
+  static const Color green900 = Color(0xFF073725);
 
   // ========================================================
-  // TERTIARY - 민트 (환경 메시지 컬러)
+  // NEUTRAL — 아주 옅은 초록기 (초록과 같은 공기)
   // ========================================================
 
-  /// 민트. 환경 영향력, "다행이야!" 긍정 메시지에 사용.
-  static const Color mint = Color(0xFF7DD3C0);
-
-  /// 진한 민트. 성공 토스트, 완료 상태에 사용.
-  static const Color mintDeep = Color(0xFF4FB8A1);
-
-  // ========================================================
-  // NEUTRALS - 텍스트 및 배경
-  // ========================================================
-
-  /// 본문 메인 텍스트.
-  static const Color textPrimary = Color(0xFF1A1A1A);
-
-  /// 부가 텍스트, 캡션.
-  static const Color textSecondary = Color(0xFF5C5C5C);
-
-  /// 힌트, 비활성 텍스트.
-  static const Color textTertiary = Color(0xFF9A9A9A);
-
-  /// 구분선.
-  static const Color divider = Color(0xFFE8E8E8);
-
-  /// 카드 외곽선.
-  static const Color cardBorder = Color(0xFFF0F0F0);
-
-  /// 전체 앱 배경 (살짝 푸른빛 도는 흰색).
-  static const Color appBG = Color(0xFFFAFBFC);
-
-  /// 카드 배경 (순백).
-  static const Color cardBG = Color(0xFFFFFFFF);
+  static const Color neutral0 = Color(0xFFFFFFFF);
+  static const Color neutral50 = Color(0xFFF9FBFA);
+  static const Color neutral75 = Color(0xFFF4F8F5); // 앱 배경 전용
+  static const Color neutral100 = Color(0xFFF1F5F2);
+  static const Color neutral200 = Color(0xFFE4EAE6);
+  static const Color neutral300 = Color(0xFFCBD3CE);
+  static const Color neutral400 = Color(0xFF9FA9A4);
+  static const Color neutral500 = Color(0xFF7D8783);
+  static const Color neutral600 = Color(0xFF5C6862); // 텍스트 하한 5.7:1
+  static const Color neutral700 = Color(0xFF414B46);
+  static const Color neutral900 = Color(0xFF24302B);
 
   // ========================================================
-  // SEMANTIC - 의미를 가진 색
+  // CORAL — 유일한 액센트 (연속 기록, 수거 핫스팟)
   // ========================================================
 
-  /// 성공 (활동 인증 성공 등).
-  static const Color success = Color(0xFF52C896);
-
-  /// 경고 (날씨 안내, 안전 안내).
-  static const Color warning = Color(0xFFFFB547);
-
-  /// 오류, 위험 (활동 취소 등).
-  static const Color error = Color.fromARGB(255, 224, 60, 60);
-
-  /// 정보 안내 (primary와 동일하지만 의미 구분용).
-  static const Color info = primary;
+  static const Color coral50 = Color(0xFFFFF4F0);
+  static const Color coral100 = Color(0xFFFFDFD5);
+  static const Color coral300 = Color(0xFFF5A78C); // 일러스트·장식 전용
+  static const Color coral600 = Color(0xFFC74A32); // 텍스트·아이콘 4.70:1
+  static const Color coral800 = Color(0xFF992F1C);
 
   // ========================================================
-  // TRASH CATEGORIES - 5종 쓰레기 분류 색
-  // 기존 팔레트 재활용 (별도 색 추가 안 함)
-  // PLOG-05 트래킹, PLOG-10 AI 분석, PLOG-11 정산에 사용
+  // SEMANTIC — 화면 코드에서는 아래 이름만 사용
   // ========================================================
 
-  // 카테고리 5색 (퀘스트·수거 종류 공용)
-  // 도넛 차트·퀘스트용 파스텔 5색 (UI 상태색과 별개)
-  static const Color categoryBlue = Color(0xFF7FB3F0); // 플라스틱 · 걸음수
-  static const Color categoryRed = Color(0xFFF5928A); // 일반 · 칼로리
-  static const Color categoryGreen = Color(0xFF6FCFB0); // 종이 · 수거량
-  static const Color categoryOrange = Color(0xFFFFC773); // 캔 · 그룹참여
-  static const Color categoryPurple = Color(0xFFA99BD4); // 유리 · 시간
+  static const Color bg = neutral75;
+  static const Color surface = neutral0;
+  static const Color surfaceBrand = green200; // 틴트 헤더. 화면당 1곳
+  // green100 은 흰 배경에서 거의 안 보여 배경으로 쓰지 않는다 (테두리·구분용만)
+  static const Color border = neutral200;
 
-  // 요일별 활동 그래프
-  static const Color chartActivity = Color(0xFF8E9BE0); // 요일별 막대 (종합 활동량)
-  static const Color chartActivityPeak = Color(0xFF6B78C9); // 오늘/피크 강조
+  static const Color textPrimary = neutral900; // 13.7:1
+  static const Color textSecondary = neutral600; // 5.7:1 (하한)
+  static const Color textOnTint = neutral700; // green100 위 본문 8.1:1
+  static const Color textBrand = green600; // 흰 카드 위에서만 4.63:1
+  static const Color textBrandOnLight = green700; // bg·틴트 위 5.4:1
+  static const Color textDisabled = neutral400; // 실제 정보에는 금지
+  static const Color textOnBrand = neutral0; // 초록 배경 위는 순백만
+
+  static const Color actionPrimary = green600; // 화면당 1개
+  static const Color actionSecondary = green100; // 보조 버튼 배경 (초록 글씨와 함께)
+  static const Color actionPressed = green700;
+  static const Color actionDanger = Color(0xFFC4342E);
+
+  static const Color progress = green500; // 진행 바·게이지·차트 막대
+  static const Color success = green600;
+  static const Color warning = Color(0xFFB0770A); // 3.8:1 — 아이콘·테두리 전용
+  static const Color warningBg = Color(0xFFFDF5E6);
+  static const Color accent = coral600;
 
   // ========================================================
-  // GRADIENTS - Reflectly 스타일 그라데이션
-  // 카드 1~2개에만 사용 (전체 화면의 20% 미만 컬러 원칙 유지)
+  // DATA — 쓰레기 5분류. 전부 흰 배경 4.5:1 이상이라 라벨로도 사용 가능
   // ========================================================
 
-  /// 메인 그라데이션. CTA 버튼, 활성 카드.
-  /// "플로깅 시작" 버튼, HOME-01 활동 요약 카드.
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [primaryLight, primary],
-  );
+  static const Color dataPlastic = Color(0xFF3A75AE); // 4.71:1
+  static const Color dataGeneral = Color(0xFFB44E3D); // 5.02:1
+  static const Color dataPaper = green600; // 4.63:1
+  static const Color dataCan = Color(0xFF96650A); // 5.25:1
+  static const Color dataGlass = Color(0xFF7A63BC); // 4.84:1
 
-  /// 민트 그라데이션. 환경 영향력 카드.
-  /// HOME-02 CO₂ 절감량 도넛 차트 배경.
-  static const LinearGradient mintGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFFB8E8DC), mint],
-  );
+  /// 분류색을 흰 배경 위 옅은 면으로 바꾼다.
+  /// 차트 조각, 아이콘 타일 배경 등 "색은 유지하되 넓게 깔 때" 사용.
+  /// 원색은 선·범례 도트·라벨 텍스트에만.
+  static Color tint(Color c, [double amount = 0.15]) =>
+      Color.alphaBlend(c.withValues(alpha: amount), neutral0);
 
-  /// 따뜻한 그라데이션. 보상·뱃지 획득.
-  /// ACT-08 뱃지 획득 모달.
+  // ========================================================
+  // ELEVATION — 2단계뿐. 카드는 선, 떠 있는 것만 그림자
+  // 초록기를 뺀 중성 회색 (v1 그림자가 화면 전체를 물들였음)
+  // ========================================================
+
+  /// 카드 기본. border 1px 과 함께 사용.
+  static List<BoxShadow> get cardShadow => const [
+    BoxShadow(
+      color: Color(0x0F24302B),
+      blurRadius: 12,
+      offset: Offset(0, 3),
+    ),
+  ];
+
+  /// 떠 있는 것 — 바텀시트, 모달, FAB.
+  static List<BoxShadow> get sheetShadow => const [
+    BoxShadow(
+      color: Color(0x2924302B),
+      blurRadius: 24,
+      offset: Offset(0, 8),
+    ),
+  ];
+
+  // ========================================================
+  // LEGACY — 기존 화면이 참조하는 이름들.
+  // 값만 v2로 바뀌므로 마이그레이션 안 한 화면도 함께 밝아진다.
+  // 화면을 하나씩 새 이름으로 고치면서 이 블록을 지워 나갈 것.
+  // ========================================================
+
+  @Deprecated('actionPrimary 사용') static const Color primary = green600;
+  @Deprecated('green800 사용') static const Color primaryDeep = green800;
+  @Deprecated('green300 사용') static const Color primaryLight = green300;
+  @Deprecated('surfaceBrand 사용') static const Color primaryPale = green100;
+  @Deprecated('actionPrimary 사용') static const Color primaryMuted = green600;
+
+  @Deprecated('coral100 사용') static const Color coral = coral100;
+  @Deprecated('accent 사용') static const Color coralDeep = coral600;
+
+  @Deprecated('green300 사용') static const Color mint = green300;
+  @Deprecated('green600 사용') static const Color mintDeep = green600;
+
+  @Deprecated('textSecondary 사용 — 대비 미달로 폐기')
+  static const Color textTertiary = neutral600;
+  @Deprecated('border 사용') static const Color divider = neutral200;
+  @Deprecated('border 사용') static const Color cardBorder = neutral200;
+  @Deprecated('bg 사용') static const Color appBG = bg;
+  @Deprecated('surface 사용') static const Color cardBG = neutral0;
+
+  @Deprecated('actionDanger 사용') static const Color error = actionDanger;
+  @Deprecated('textBrand 사용') static const Color info = green600;
+
+  @Deprecated('dataPlastic 사용') static const Color categoryBlue = dataPlastic;
+  @Deprecated('dataGeneral 사용') static const Color categoryRed = dataGeneral;
+  @Deprecated('dataPaper 사용') static const Color categoryGreen = dataPaper;
+  @Deprecated('dataCan 사용') static const Color categoryOrange = dataCan;
+  @Deprecated('dataGlass 사용') static const Color categoryPurple = dataGlass;
+
+  @Deprecated('dataPlastic 사용') static const Color chartActivity = dataPlastic;
+  @Deprecated('progress 사용') static const Color chartActivityPeak = green600;
+
+  @Deprecated('cardShadow 사용')
+  static List<BoxShadow> get cardShadowStrong => sheetShadow;
+  @Deprecated('그림자 없는 솔리드 버튼 사용')
+  static List<BoxShadow> get buttonShadow => const [
+    BoxShadow(
+      color: Color(0x1F24302B),
+      blurRadius: 12,
+      offset: Offset(0, 4),
+    ),
+  ];
+
+  // ── 그라데이션: 뱃지 획득 모달의 warmGradient 1종만 유지 ──
+  // 나머지는 넓은 면을 색으로 채우지 않는다는 v2 원칙과 충돌하므로
+  // 별칭으로만 남긴다. 참조처를 정리한 뒤 삭제할 것.
+
+  /// 뱃지 획득 모달 전용. v2에서 유일하게 살아남은 그라데이션.
   static const LinearGradient warmGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFFD4C2), coral],
+    colors: [coral100, coral300],
   );
 
-  /// 히어로 그라데이션. 홈 상단 배경 (옵션, 거의 사용 안 함).
+  @Deprecated('솔리드 actionPrimary 사용')
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [green500, green600],
+  );
+  @Deprecated('surfaceBrand 단색 사용')
+  static const LinearGradient mintGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [green100, green200],
+  );
+  @Deprecated('흰 배경 + 큰 타이포로 대체')
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [primaryPale, cardBG],
+    colors: [green100, neutral0],
   );
-
-  /// 강조 그라데이션. 다크 버튼 (옵션, 거의 사용 안 함).
+  @Deprecated('솔리드 green800 사용')
   static const LinearGradient darkGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryDeep, primary],
+    colors: [green800, green700],
   );
-
-  // ========================================================
-  // SHADOWS - 클레이모피즘 그림자
-  // 카드의 부드러운 입체감 (그림자는 색이 아니므로 20% 원칙 무관)
-  // ========================================================
-
-  /// 카드 기본 그림자. 일반 카드에 사용.
-  static List<BoxShadow> get cardShadow => [
-    BoxShadow(
-      color: primaryDeep.withValues(alpha: 0.05), // 0.10 → 0.05 (더 연하게)
-      blurRadius: 8, // 10 → 8
-      offset: const Offset(0, 3), // (0,4) → (0,3)
-    ),
-  ];
-
-  /// 강조 카드 그림자. 메인 카드 (활동 요약, 환경 영향력)에 사용.
-  static List<BoxShadow> get cardShadowStrong => [
-    BoxShadow(
-      color: const Color(0xFF000000).withValues(alpha: 0.04), // 0.06 → 0.04
-      blurRadius: 18, // 24 → 18
-      offset: const Offset(0, 5), // (0,8) → (0,5)
-    ),
-  ];
-
-  /// 버튼 그림자. CTA 버튼에 사용.
-  static List<BoxShadow> get buttonShadow => [
-    BoxShadow(
-      color: primary.withValues(alpha: 0.12), // 0.25 → 0.12 (확 연하게)
-      blurRadius: 12, // 16 → 12
-      offset: const Offset(0, 4), // (0,6) → (0,4)
-    ),
-  ];
-
-  // ========================================================
-  // CLAUDE DESIGN 호환 별칭 (새 컴포넌트/홈이 쓰는 이름)
-  // 기존 팔레트에 매핑 — 값 조정은 여기서
-  // ========================================================
-
-  // 그린 스케일
-  static const Color green50 = primaryPale; // 가장 옅은 배경
-  static const Color green200 = primaryLight;
-  static const Color green700 = primary;
-  static const Color green800 = primaryDeep;
-
-  // 뉴트럴 스케일
-  static const Color neutral100 = Color(0xFFF2F3F5); // 옅은 배경/구분
-  static const Color neutral400 = textTertiary;
-  static const Color neutral500 = Color(0xFF7A7A7A);
-  static const Color neutral700 = textSecondary;
-
-  // 표면·경계·배경
-  static const Color surface = cardBG; // 카드 표면
-  static const Color surfaceBrand = primaryPale; // 브랜드 톤 표면
-  static const Color border = divider;
-  static const Color bg = appBG;
-
-  /// 주어진 색의 연한 틴트 배경 (아이콘 타일 등)
-  static Color tint(Color c) => c.withValues(alpha: 0.12);
-
-  // 브랜드/액션 텍스트
-  static const Color textBrand = primaryDeep;
-  static const Color actionPrimary = primary;
 }

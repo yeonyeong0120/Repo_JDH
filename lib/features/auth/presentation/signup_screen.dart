@@ -57,7 +57,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: AppColors.error),
+        SnackBar(content: Text(error), backgroundColor: AppColors.actionDanger),
       );
     } else {
       // 선택 정보(성별·나이·키·몸무게·지역)를 프로필에 저장 — 나중에 메뉴에서 수정 가능
@@ -90,21 +90,21 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 16),
+      hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 17),
       prefixIcon: icon == null
           ? null
-          : Icon(icon, color: AppColors.textTertiary, size: 20),
+          : Icon(icon, color: AppColors.textSecondary, size: 20),
       suffixIcon: suffix,
       suffixText: suffixText,
       suffixStyle: const TextStyle(
         color: AppColors.textSecondary,
-        fontSize: 14,
+        fontSize: 15,
       ),
       contentPadding: const EdgeInsets.symmetric(vertical: 14),
-      enabledBorder: line(AppColors.divider),
+      enabledBorder: line(AppColors.border),
       focusedBorder: line(AppColors.primary, 1.6),
-      errorBorder: line(AppColors.error),
-      focusedErrorBorder: line(AppColors.error, 1.6),
+      errorBorder: line(AppColors.actionDanger),
+      focusedErrorBorder: line(AppColors.actionDanger, 1.6),
     );
   }
 
@@ -115,8 +115,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       selected: selected,
       onSelected: (v) => setState(() => _gender = v ? g : null),
       showCheckmark: false,
-      backgroundColor: AppColors.appBG,
-      selectedColor: AppColors.primaryPale,
+      backgroundColor: AppColors.bg,
+      selectedColor: AppColors.surfaceBrand,
       labelStyle: TextStyle(
         fontSize: 13,
         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
@@ -124,7 +124,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       ),
       shape: StadiumBorder(
         side: BorderSide(
-          color: selected ? AppColors.primary : AppColors.divider,
+          color: selected ? AppColors.primary : AppColors.border,
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -151,7 +151,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           label,
           suffix: const Icon(
             Icons.keyboard_arrow_down,
-            color: AppColors.textTertiary,
+            color: AppColors.textSecondary,
             size: 22,
           ),
         ),
@@ -161,7 +161,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             : Text(
                 '$value$unit',
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 17,
                   color: AppColors.textPrimary,
                 ),
               ),
@@ -180,7 +180,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     int temp = initial;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.cardBG,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -197,7 +197,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       Text(
                         label,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         ),
@@ -231,7 +231,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         Center(
                           child: Text(
                             '$n $unit',
-                            style: const TextStyle(fontSize: 18),
+                            style: const TextStyle(fontSize: 20),
                           ),
                         ),
                     ],
@@ -269,7 +269,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         // ── 카드 ──
                         Container(
                           decoration: BoxDecoration(
-                            color: AppColors.cardBG,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
@@ -295,7 +295,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   children: [
                                     TextSpan(
                                       text: '*',
-                                      style: TextStyle(color: AppColors.error),
+                                      style: TextStyle(color: AppColors.actionDanger),
                                     ),
                                   ],
                                 ),
@@ -334,7 +334,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                       _obscurePassword
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
-                                      color: AppColors.textTertiary,
+                                      color: AppColors.textSecondary,
                                       size: 20,
                                     ),
                                     onPressed: () => setState(
@@ -362,8 +362,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   const Text(
                                     '성별',
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      color: AppColors.textTertiary,
+                                      fontSize: 17,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                   const Spacer(),
@@ -430,7 +430,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: AppColors.primaryMuted,
+                              disabledBackgroundColor: AppColors.actionPrimary,
                               elevation: 3,
                               shadowColor: Colors.black.withValues(alpha: 0.22),
                               shape: RoundedRectangleBorder(
@@ -449,7 +449,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 : const Text(
                                     '가입하기',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 17,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
@@ -465,7 +465,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               '이미 계정이 있으신가요? ',
                               style: TextStyle(
                                 color: AppColors.textSecondary,
-                                fontSize: 14,
+                                fontSize: 15,
                               ),
                             ),
                             TextButton(
@@ -483,7 +483,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               child: const Text(
                                 '로그인',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),

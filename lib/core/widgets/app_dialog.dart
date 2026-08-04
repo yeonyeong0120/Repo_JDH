@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/theme/app_spacing.dart';
+import 'package:repo_jdh/core/theme/app_typography.dart';
+import 'package:repo_jdh/core/widgets/app_button.dart';
 
-/// 줍다행 공용 팝업 위젯.
-/// 둥근 카드 + 연회색 채움 보조 버튼 + 색 채움 주 버튼(좌우 나란히).
-/// 버튼 1개짜리 안내용은 AppDialog.showInfo 사용.
-/// 위치 권장: lib/core/widgets/app_dialog.dart
+/// 줍다행 공용 팝업.
+/// 제목 + 본문 + 버튼(1개 또는 2개). 버튼은 AppButton으로 통일.
 class AppDialog extends StatelessWidget {
   final String title;
   final String message;
   final String cancelText;
   final String confirmText;
-  final bool danger; // 주 버튼(강조) 색: true 빨강 / false 초록
+  final bool danger; // 확정 버튼을 파괴적 행동으로 표시
   final bool isInfo; // true면 버튼 1개(확인)만
-  // true면 강조(주 버튼)를 '취소' 쪽에 둠 → 파괴적 확정 버튼을 덜 강조.
-  // 실수로 뜰 수 있는 팝업(활동 취소 등)에서 안전한 선택을 강조할 때 사용.
+
+  /// true면 '취소'를 주 버튼으로 강조.
+  /// 실수로 뜰 수 있는 파괴적 팝업(활동 취소 등)에서 안전한 선택을 강조.
   final bool primaryIsCancel;
 
   const AppDialog({
@@ -41,6 +43,7 @@ class AppDialog extends StatelessWidget {
     return showDialog<bool>(
       context: context,
       barrierDismissible: barrierDismissible,
+      barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
       builder: (_) => AppDialog(
         title: title,
         message: message,
@@ -64,6 +67,7 @@ class AppDialog extends StatelessWidget {
     return showDialog<void>(
       context: context,
       barrierDismissible: barrierDismissible,
+      barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
       builder: (_) => AppDialog(
         title: title,
         message: message,
@@ -76,104 +80,60 @@ class AppDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color confirmColor = danger ? AppColors.error : AppColors.primary;
+    final confirmType = danger ? AppButtonType.danger : AppButtonType.primary;
+
     return Dialog(
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: Gap.xl3),
+      shape: RoundedRectangleBorder(borderRadius: Radii.sheetR),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
+        padding: const EdgeInsets.all(Gap.xl2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
+            Text(title, style: AppType.title2),
+            Gap.h8,
             Text(
               message,
-              style: const TextStyle(
-                fontSize: 14,
-                height: 1.75,
-                color: AppColors.textSecondary,
-              ),
+              style: AppType.bodyLarge.copyWith(color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 22),
+            Gap.h24,
             if (isInfo)
-              // 버튼 1개 (꽉 찬 주 버튼)
-              _button(
+              AppButton(
                 label: confirmText,
-                bg: confirmColor,
-                fg: Colors.white,
+                type: confirmType,
+                size: AppButtonSize.compact,
                 onTap: () => Navigator.pop(context),
               )
             else
-              Builder(
-                builder: (context) {
-                  // 확인 동작(pop true) / 취소 동작(pop false)
-                  final confirmBtn = _button(
-                    label: confirmText,
-                    bg: primaryIsCancel ? AppColors.appBG : confirmColor,
-                    fg: primaryIsCancel
-                        ? AppColors.textSecondary
-                        : Colors.white,
-                    onTap: () => Navigator.pop(context, true),
-                  );
-                  final cancelBtn = _button(
-                    label: cancelText,
-                    bg: primaryIsCancel ? AppColors.primary : AppColors.appBG,
-                    fg: primaryIsCancel
-                        ? Colors.white
-                        : AppColors.textSecondary,
-                    onTap: () => Navigator.pop(context, false),
-                  );
-                  // 오른쪽 = 강조(색 채움) 자리 고정.
-                  // 기본: 오른쪽 확인 / primaryIsCancel: 오른쪽 취소
-                  final left = primaryIsCancel ? confirmBtn : cancelBtn;
-                  final right = primaryIsCancel ? cancelBtn : confirmBtn;
-                  return Row(
-                    children: [
-                      Expanded(child: left),
-                      const SizedBox(width: 10),
-                      Expanded(child: right),
-                    ],
-                  );
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      label: cancelText,
+                      type: primaryIsCancel
+                          ? AppButtonType.primary
+                          : AppButtonType.secondary,
+                      size: AppButtonSize.compact,
+                      onTap: () => Navigator.pop(context, false),
+                    ),
+                  ),
+                  Gap.w12,
+                  Expanded(
+                    child: AppButton(
+                      label: confirmText,
+                      type: primaryIsCancel
+                          ? AppButtonType.secondary
+                          : confirmType,
+                      size: AppButtonSize.compact,
+                      onTap: () => Navigator.pop(context, true),
+                    ),
+                  ),
+                ],
               ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _button({
-    required String label,
-    required Color bg,
-    required Color fg,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 46,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: fg,
-          ),
         ),
       ),
     );

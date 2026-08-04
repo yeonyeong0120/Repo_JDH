@@ -1,93 +1,140 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/theme/app_spacing.dart';
+import 'package:repo_jdh/core/theme/app_typography.dart';
+
+/// 스낵바 종류. 색은 여기서만 결정한다.
+enum SnackKind { neutral, success, error }
 
 /// 줍다행 공용 스낵바.
-/// 하단에서 살짝 떠서 둥근 형태로 나타났다 사라지는 알림.
-/// 위치 권장: lib/core/widgets/app_snackbar.dart
 ///
-/// 사용 예:
 /// ```dart
-/// AppSnackBar.show(context, '그룹에서 탈퇴했어요');           // 기본(초록)
-/// AppSnackBar.show(context, '이미지 업로드 중...', neutral: true); // 중립(회색)
+/// AppSnackBar.show(context, '그룹에서 탈퇴했어요');
+/// AppSnackBar.show(context, '활동을 저장했어요', kind: SnackKind.success);
+/// AppSnackBar.show(context, '업로드에 실패했어요', kind: SnackKind.error);
+/// AppSnackBar.showLoading(context, '이미지 업로드 중...');
 /// ```
 class AppSnackBar {
-  // 스낵바 기본 배경 (차콜) — 어느 화면에서도 흰 글씨가 잘 보임
-  static const Color _charcoal = Color(0xFF323232);
+  AppSnackBar._();
 
   static void show(
     BuildContext context,
     String message, {
-    bool neutral = false, // (호환용) 예전 회색 옵션
-    bool error = false, // true면 에러(빨강)
-    Duration duration = const Duration(seconds: 2),
+    SnackKind kind = SnackKind.neutral,
+    Duration duration = const Duration(seconds: 3), // 중장년 기준 2초는 짧음
+    String? actionLabel,
+    VoidCallback? onAction,
+    @Deprecated('kind: SnackKind.neutral 이 기본값이므로 그냥 지우면 된다')
+    bool neutral = false,
   }) {
-    // 기본: 차콜 / 에러: 빨강
-    final Color bg = error ? AppColors.error : _charcoal;
+    // neutral: true 는 기본값과 같으므로 무시해도 결과가 같다.
+    late final Color bg;
+    late final IconData? icon;
+    switch (kind) {
+      case SnackKind.neutral:
+        bg = AppColors.neutral900;
+        icon = null;
+      case SnackKind.success:
+        bg = AppColors.green800;
+        icon = Icons.check_circle_rounded;
+      case SnackKind.error:
+        bg = AppColors.actionDanger;
+        icon = Icons.error_rounded;
+    }
+
+    _show(
+      context,
+      bg: bg,
+      duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
+      content: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 20, color: AppColors.neutral0),
+            Gap.w12,
+          ],
+          Expanded(
+            child: Text(
+              message,
+              style: AppType.label.copyWith(color: AppColors.neutral0),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 스피너 + 텍스트. 완료되면 hide()로 직접 닫을 것.
+  static void showLoading(
+    BuildContext context,
+    String message, {
+    Duration duration = const Duration(seconds: 10),
+  }) {
+    _show(
+      context,
+      bg: AppColors.neutral900,
+      duration: duration,
+      content: Row(
+        children: [
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.green300),
+            ),
+          ),
+          Gap.w12,
+          Expanded(
+            child: Text(
+              message,
+              style: AppType.label.copyWith(color: AppColors.neutral0),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void hide(BuildContext context) =>
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+  static void _show(
+    BuildContext context, {
+    required Widget content,
+    required Color bg,
+    required Duration duration,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(
-            message,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
+          content: content,
           backgroundColor: bg,
           behavior: SnackBarBehavior.floating,
           elevation: 0,
           duration: duration,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+          shape: RoundedRectangleBorder(borderRadius: Radii.tileR),
+          margin: const EdgeInsets.fromLTRB(
+            Gap.lg,
+            0,
+            Gap.lg,
+            Gap.lg,
           ),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-      );
-  }
-
-  /// 로딩 표시가 필요한 경우 (스피너 + 텍스트, 길게 유지)
-  static void showLoading(
-    BuildContext context,
-    String message, {
-    Duration duration = const Duration(seconds: 5),
-  }) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Text(
-                message,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+          padding: const EdgeInsets.symmetric(
+            horizontal: Gap.lg,
+            vertical: Gap.lg,
           ),
-          backgroundColor: AppColors.textTertiary,
-          behavior: SnackBarBehavior.floating,
-          elevation: 0,
-          duration: duration,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          action: (actionLabel != null && onAction != null)
+              ? SnackBarAction(
+                  label: actionLabel,
+                  textColor: AppColors.green300,
+                  onPressed: onAction,
+                )
+              : null,
         ),
       );
   }

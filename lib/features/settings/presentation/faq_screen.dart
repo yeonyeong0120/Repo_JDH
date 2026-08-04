@@ -65,7 +65,7 @@ class _FaqScreenState extends State<FaqScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -113,7 +113,7 @@ class _FaqScreenState extends State<FaqScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
       decoration: BoxDecoration(
-        color: AppColors.primaryPale,
+        color: AppColors.surfaceBrand,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -172,7 +172,7 @@ class _FaqScreenState extends State<FaqScreen> {
         curve: Curves.easeOut,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
@@ -207,19 +207,19 @@ class _FaqScreenState extends State<FaqScreen> {
                   child: const Icon(
                     Icons.expand_more,
                     size: 22,
-                    color: AppColors.textTertiary,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
             ),
             if (open) ...[
               const SizedBox(height: 14),
-              const Divider(color: AppColors.divider, height: 1),
+              const Divider(color: AppColors.border, height: 1),
               const SizedBox(height: 14),
               Text(
                 a,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   height: 1.7,
                   color: AppColors.textSecondary,
                 ),

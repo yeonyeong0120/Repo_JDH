@@ -67,7 +67,7 @@ class GroupDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -85,7 +85,7 @@ class GroupDetailScreen extends StatelessWidget {
                   const Text(
                     '그룹 소개',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -106,7 +106,7 @@ class GroupDetailScreen extends StatelessWidget {
                       height: 96,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPale,
+                        color: AppColors.surfaceBrand,
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: const Text('🌱', style: TextStyle(fontSize: 44)),
@@ -125,8 +125,8 @@ class GroupDetailScreen extends StatelessWidget {
                     Text(
                       region,
                       style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textTertiary,
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -134,7 +134,7 @@ class GroupDetailScreen extends StatelessWidget {
                       meta,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -147,7 +147,7 @@ class GroupDetailScreen extends StatelessWidget {
                         '우리 동네를 함께 깨끗하게! 가볍게 걷고 주우며 포인트도 받아가요. '
                         '누구나 편하게 참여할 수 있는 동네 플로깅 모임이에요.',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           height: 1.6,
                           color: AppColors.textSecondary,
                         ),
@@ -165,11 +165,11 @@ class GroupDetailScreen extends StatelessWidget {
                               padding: const EdgeInsets.only(right: 8),
                               child: CircleAvatar(
                                 radius: 18,
-                                backgroundColor: AppColors.primaryPale,
+                                backgroundColor: AppColors.surfaceBrand,
                                 child: const Icon(
                                   Icons.person,
                                   size: 20,
-                                  color: AppColors.textTertiary,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -178,7 +178,7 @@ class GroupDetailScreen extends StatelessWidget {
                             '외 여러 명',
                             style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textTertiary,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -209,7 +209,7 @@ class GroupDetailScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),

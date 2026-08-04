@@ -227,8 +227,8 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
             child: Icon(
               _serverConnected ? Icons.cloud_done : Icons.cloud_off,
               color: _serverConnected
-                  ? AppColors.primaryLight
-                  : AppColors.error,
+                  ? AppColors.green400
+                  : AppColors.actionDanger,
             ),
           ),
         ],
@@ -278,7 +278,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
                                 '사진 촬영 중...',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -310,7 +310,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
                         const SizedBox(width: 6),
                         const Text(
                           '현재 인식:',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                          style: TextStyle(color: Colors.white70, fontSize: 15),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -320,7 +320,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
                               color: currentText.isEmpty
                                   ? Colors.white54
                                   : Colors.white,
-                              fontSize: 16,
+                              fontSize: 17,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

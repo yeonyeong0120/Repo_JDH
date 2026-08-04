@@ -60,7 +60,7 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -184,16 +184,16 @@ class _ShopScreenState extends State<ShopScreen> {
               height: 46,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: on ? AppColors.primary : AppColors.cardBG,
+                color: on ? AppColors.primary : AppColors.surface,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: on ? AppColors.primary : AppColors.divider,
+                  color: on ? AppColors.primary : AppColors.border,
                 ),
               ),
               child: Icon(
                 c.icon,
                 size: 21,
-                color: on ? Colors.white : AppColors.textTertiary,
+                color: on ? Colors.white : AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 7),
@@ -202,10 +202,10 @@ class _ShopScreenState extends State<ShopScreen> {
               textAlign: TextAlign.center,
               maxLines: 2,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 height: 1.2,
                 fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                color: on ? AppColors.primaryDeep : AppColors.textTertiary,
+                color: on ? AppColors.green800 : AppColors.textSecondary,
               ),
             ),
           ],
@@ -221,7 +221,7 @@ class _ShopScreenState extends State<ShopScreen> {
       return const Center(
         child: Text(
           '준비 중인 카테고리예요',
-          style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
         ),
       );
     }
@@ -246,7 +246,7 @@ class _ShopScreenState extends State<ShopScreen> {
       onTap: () => _confirmExchange(item),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: AppColors.cardShadow,
         ),
@@ -261,7 +261,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   width: double.infinity,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppColors.appBG,
+                    color: AppColors.bg,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   // TODO: 실제 상품 이미지(Image.network)로 교체
@@ -269,7 +269,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     Symbols.redeem,
                     weight: 300,
                     size: 40,
-                    color: enough ? AppColors.primaryLight : AppColors.divider,
+                    color: enough ? AppColors.green400 : AppColors.border,
                   ),
                 ),
               ),
@@ -282,8 +282,8 @@ class _ShopScreenState extends State<ShopScreen> {
                   Text(
                     item.brand,
                     style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -292,7 +292,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -306,7 +306,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         size: 15,
                         color: enough
                             ? AppColors.primary
-                            : AppColors.textTertiary,
+                            : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -316,7 +316,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           fontWeight: FontWeight.w800,
                           color: enough
                               ? AppColors.textPrimary
-                              : AppColors.textTertiary,
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -337,14 +337,14 @@ class _ShopScreenState extends State<ShopScreen> {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.appBG,
+        color: AppColors.bg,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Icon(
         Symbols.redeem,
         weight: 400,
         size: size * 0.42,
-        color: AppColors.primaryLight,
+        color: AppColors.green400,
       ),
     );
   }
@@ -359,7 +359,7 @@ class _ShopScreenState extends State<ShopScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: AppColors.cardBG,
+        backgroundColor: AppColors.surface,
         insetPadding: const EdgeInsets.symmetric(horizontal: 40),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
@@ -390,7 +390,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.appBG,
+                  color: AppColors.bg,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
@@ -415,7 +415,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         height: 48,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColors.appBG,
+                          color: AppColors.bg,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Text(
@@ -484,7 +484,7 @@ class _ShopScreenState extends State<ShopScreen> {
           style: TextStyle(
             fontSize: strong ? 15 : 13,
             fontWeight: strong ? FontWeight.w800 : FontWeight.w700,
-            color: strong ? AppColors.primaryDeep : AppColors.textPrimary,
+            color: strong ? AppColors.green800 : AppColors.textPrimary,
           ),
         ),
       ],
@@ -496,7 +496,7 @@ class _ShopScreenState extends State<ShopScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: AppColors.cardBG,
+        backgroundColor: AppColors.surface,
         insetPadding: const EdgeInsets.symmetric(horizontal: 46),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
@@ -509,7 +509,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 height: 64,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
-                  color: AppColors.primaryPale,
+                  color: AppColors.surfaceBrand,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -522,7 +522,7 @@ class _ShopScreenState extends State<ShopScreen> {
               const Text(
                 '교환되었습니다',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
@@ -543,13 +543,13 @@ class _ShopScreenState extends State<ShopScreen> {
                         height: 48,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColors.appBG,
+                          color: AppColors.bg,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Text(
                           '계속 둘러보기',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textSecondary,
                           ),
@@ -574,7 +574,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         child: const Text(
                           '쿠폰함 가기',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                           ),

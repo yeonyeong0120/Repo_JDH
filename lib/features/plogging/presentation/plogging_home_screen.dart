@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/theme/app_spacing.dart';
+import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
@@ -30,20 +33,21 @@ Widget _buildCircleButton({
   required IconData icon,
   required VoidCallback onPressed,
 }) {
-  const double buttonSize = 40; // 흰 동그라미 크기
-  const double iconSize = 20;
+  const double buttonSize = Touch.min; // 48 — 중장년 기준 최소 터치
+  const double iconSize = Touch.icon;
   return Container(
     width: buttonSize,
     height: buttonSize,
-    decoration: const BoxDecoration(
-      color: Colors.white,
+    decoration: BoxDecoration(
+      color: AppColors.surface,
       shape: BoxShape.circle,
+      boxShadow: AppColors.cardShadow,
     ),
     child: IconButton(
       padding: EdgeInsets.zero,
       iconSize: iconSize,
       icon: Icon(icon),
-      color: Colors.black87,
+      color: AppColors.textPrimary,
       onPressed: onPressed,
     ),
   );
@@ -99,57 +103,72 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Dialog(
-        backgroundColor: AppColors.cardBG,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 36),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        backgroundColor: AppColors.surface,
+        insetPadding: const EdgeInsets.symmetric(horizontal: Gap.xl3),
+        shape: RoundedRectangleBorder(borderRadius: Radii.sheetR),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 26, 22, 16),
+          padding: const EdgeInsets.fromLTRB(Gap.xl2, Gap.xl2, Gap.xl2, Gap.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('🦭', style: TextStyle(fontSize: 44)),
-              const SizedBox(height: 12),
-              const Text(
-                '플로깅 시작 전에 알려드려요',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 18),
-              _guideRow(Icons.place, '지도의 초록색 마커는 정화 거점이에요.\n근처에서 쓰레기를 모아주세요.'),
-              const SizedBox(height: 14),
-              _guideRow(
-                Icons.photo_camera_outlined,
-                '활동을 마칠 때 사진을 찍어 인증하면\n수거량이 기록돼요.',
-              ),
-              const SizedBox(height: 22),
-              GestureDetector(
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  try {
-                    await UserService.markPloggingGuideSeen();
-                  } catch (_) {
-                    // 저장 실패해도 진행
-                  }
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 48,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Text(
-                    '이해했습니다',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+              // '알려드려요'(안내) → '규칙'(지켜야 하는 것). 색도 경고 계열로.
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.coral50,
+                      borderRadius: Radii.tileR,
+                    ),
+                    child: const Icon(
+                      Symbols.priority_high,
+                      size: 22,
+                      color: AppColors.coral800,
                     ),
                   ),
+                  Gap.w12,
+                  Expanded(
+                    child: Text('플로깅 활동 규칙', style: AppType.title2),
+                  ),
+                ],
+              ),
+              Gap.h20,
+              // 가장 자주 틀리는 것부터. 순서가 곧 중요도.
+              _guideRow(
+                Symbols.photo_camera,
+                '쓰레기는 주울 때마다 촬영',
+                '한 개씩 그때그때 찍어야 수거량에 반영돼요.\n모아서 한 번에 찍으면 인정되지 않아요.',
+                warn: true,
+              ),
+              Gap.h16,
+              _guideRow(
+                Symbols.check_circle,
+                '인증샷은 마지막 한 번뿐',
+                '활동을 마칠 때 모은 봉투를 찍는 사진이에요.\n다시 찍을 수 없으니 신중히 촬영해 주세요.',
+                warn: true,
+              ),
+              Gap.h16,
+              _guideRow(
+                Symbols.place,
+                '초록색 마커는 정화 거점',
+                '근처에서 쓰레기를 모으면 더 많이 주울 수 있어요.',
+              ),
+              Gap.h24,
+              SizedBox(
+                height: Touch.min,
+                child: FilledButton(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      await UserService.markPloggingGuideSeen();
+                    } catch (_) {
+                      // 저장 실패해도 진행
+                    }
+                  },
+                  child: const Text('확인했어요'),
                 ),
               ),
             ],
@@ -159,7 +178,16 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     );
   }
 
-  Widget _guideRow(IconData icon, String text) {
+  /// warn: 놓치면 활동이 무효가 되는 규칙 — 붉은 계열로 구분한다.
+  Widget _guideRow(
+    IconData icon,
+    String title,
+    String body, {
+    bool warn = false,
+  }) {
+    final tint = warn ? AppColors.coral50 : AppColors.surfaceBrand;
+    final fg = warn ? AppColors.coral800 : AppColors.textBrandOnLight;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -167,21 +195,29 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
           width: 34,
           height: 34,
           alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: AppColors.primaryPale,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, size: 18, color: AppColors.primary),
+          decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
+          child: Icon(icon, size: 18, fill: 1, color: fg),
         ),
-        const SizedBox(width: 12),
+        Gap.w12,
         Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.6,
-              color: AppColors.textSecondary,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppType.label.copyWith(
+                  color: warn ? AppColors.coral800 : AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                body,
+                style: AppType.caption.copyWith(
+                  height: 1.6,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -373,16 +409,16 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
   Widget _buildStatBox(String value, String label) {
     return Column(
       children: [
+        // 타이머·거리는 자릿수가 바뀌므로 고정폭 숫자로 흔들림을 막는다.
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+          style: AppType.title2.copyWith(fontWeight: FontWeight.w800).tabular,
         ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+        Text(
+          label,
+          style: AppType.caption.copyWith(color: AppColors.textSecondary),
+        ),
       ],
     );
   }
@@ -394,8 +430,8 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     double size = 22,
   }) {
     final Color textColor = count > 0
-        ? AppColors.mintDeep
-        : AppColors.textTertiary;
+        ? AppColors.textBrand
+        : AppColors.textSecondary;
     return Column(
       children: [
         Row(
@@ -410,18 +446,16 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
             const SizedBox(width: 4),
             Text(
               '$count',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
+              style: AppType.title3
+                  .copyWith(fontWeight: FontWeight.w800, color: textColor)
+                  .tabular,
             ),
           ],
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+          style: AppType.caption.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -448,8 +482,8 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
     final totalCounts = ploggingState.totalCounts;
     final bool isCameraSelected = _selectedButton == 'camera';
     final bool isEndSelected = _selectedButton == 'end';
-    const Color cameraColor = Color(0xFF0C7D5E); // ◀ 카메라 색
-    const Color endColor = Color(0xFFE83737); // ◀ 종료 색
+    const Color cameraColor = AppColors.actionPrimary;
+    const Color endColor = AppColors.actionDanger;
 
     return Scaffold(
       body: GestureDetector(
@@ -495,13 +529,13 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        color: AppColors.surface,
+                        borderRadius: Radii.cardR,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            color: AppColors.neutral900.withValues(alpha: 0.10),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -563,7 +597,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                                         thickness: 1,
                                         indent: 16,
                                         endIndent: 16,
-                                        color: AppColors.divider,
+                                        color: AppColors.border,
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -646,15 +680,15 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                                 final double endW = totalW - cameraW;
                                 return Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AppColors.surface,
                                     borderRadius: BorderRadius.circular(27),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(
+                                        color: AppColors.neutral900.withValues(
                                           alpha: 0.12,
                                         ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 4),
                                       ),
                                     ],
                                   ),
@@ -690,7 +724,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                                               width: cameraW,
                                               child: _buildSegmentLabel(
                                                 label: '카메라',
-                                                subtitle: '한 번 더 누르면 촬영됩니다',
+                                                subtitle: '촬영 가이드',
                                                 selected: isCameraSelected,
                                                 baseColor: cameraColor,
                                                 onTap: _handleCameraTap,
@@ -700,7 +734,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                                               width: endW,
                                               child: _buildSegmentLabel(
                                                 label: '종료',
-                                                subtitle: '한 번 더 누르면 종료됩니다',
+                                                subtitle: '한 번 더 누르면 종료',
                                                 selected: isEndSelected,
                                                 baseColor: endColor,
                                                 onTap: _handleEndTap,
@@ -745,7 +779,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: selected ? Colors.white : baseColor,
               ),
@@ -757,7 +791,7 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
                 child: Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     color: Colors.white.withValues(alpha: 0.85),
                   ),
                   overflow: TextOverflow.ellipsis,

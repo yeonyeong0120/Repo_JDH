@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/theme/app_spacing.dart';
+import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/features/mypage/domain/profile_detail.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/features/mypage/presentation/profile_screen.dart';
@@ -54,7 +56,7 @@ class _MenuScreenState extends State<MenuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SingleChildScrollView(
         // 하단 네비바 클리어런스(바 높이 63+12+혹13+여유)
         padding: EdgeInsets.only(
@@ -64,7 +66,7 @@ class _MenuScreenState extends State<MenuScreen> {
           children: [
             // 홈처럼 곡선 파스텔 헤더 + 프로필 카드가 곡선 중간까지 걸침
             _buildHeaderWithProfile(),
-            const SizedBox(height: 22),
+            const SizedBox(height: Gap.xl2),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
@@ -76,7 +78,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     onChanged: (v) => setState(() => _notifications = v),
                     // TODO: 알림 권한/설정에 연결
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: Gap.md),
                   _linkCard(
                     title: '에코포인트 상점',
                     big: true,
@@ -88,27 +90,27 @@ class _MenuScreenState extends State<MenuScreen> {
                       _loadProfile(); // 포인트 사용했을 수 있으니 갱신
                     },
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: Gap.xl2),
                   _menuItem(
                     Icons.campaign_outlined,
                     '공지 사항',
                     const NoticeListScreen(),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: Gap.md),
                   _menuItem(Icons.help_outline, '자주 묻는 질문', const FaqScreen()),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: Gap.md),
                   _menuItem(
                     Icons.description_outlined,
                     '이용 약관 및 정책',
                     const TermsScreen(),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: Gap.md),
                   _menuItem(
                     Icons.copyright_outlined,
                     '오픈소스 및 출처',
                     const LicensesScreen(),
                   ),
-                  const SizedBox(height: 26),
+                  const SizedBox(height: Gap.xl3),
                   _accountActions(),
                 ],
               ),
@@ -124,20 +126,26 @@ class _MenuScreenState extends State<MenuScreen> {
     return Stack(
       children: [
         // 아래가 곡선인 파스텔 헤더 — 프로필 카드 중간쯤까지 내려옴
-        ClipPath(
-          clipper: _MenuCurveClipper(),
-          child: Container(
-            // height ↑ = 곡선이 더 아래로(카드 더 많이 덮음) / ↓ = 위로
-            height: 168,
-            width: double.infinity,
-            color: AppColors.primaryPale,
+        Container(
+          height: 172,
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            color: AppColors.surfaceBrand,
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(Radii.sheet),
+            ),
           ),
         ),
         SafeArea(
           bottom: false,
           child: Padding(
             // 위 여백 키워서 카드/컨텐츠 전체를 아래로 (숫자 ↑ = 더 내려감)
-            padding: const EdgeInsets.fromLTRB(20, 44, 20, 0),
+            padding: const EdgeInsets.fromLTRB(
+              Gap.screenPad,
+              Gap.xl4,
+              Gap.screenPad,
+              0,
+            ),
             child: _profileCard(),
           ),
         ),
@@ -151,11 +159,11 @@ class _MenuScreenState extends State<MenuScreen> {
       onTap: _openProfile,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(Gap.xl),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppColors.cardShadowStrong,
+          color: AppColors.surface,
+          borderRadius: Radii.cardR,
+          boxShadow: AppColors.sheetShadow,
         ),
         child: Row(
           children: [
@@ -166,12 +174,12 @@ class _MenuScreenState extends State<MenuScreen> {
               clipBehavior: Clip.antiAlias,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryPale,
+                color: AppColors.surfaceBrand,
               ),
               child: (_profile.photoUrl == null || _profile.photoUrl!.isEmpty)
                   ? const Icon(
-                      Icons.pets,
-                      color: AppColors.textTertiary,
+                      Icons.person,
+                      color: AppColors.textSecondary,
                       size: 30,
                     )
                   : Image.network(
@@ -180,8 +188,8 @@ class _MenuScreenState extends State<MenuScreen> {
                       height: 56,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Icon(
-                        Icons.pets,
-                        color: AppColors.textTertiary,
+                        Icons.person,
+                        color: AppColors.textSecondary,
                         size: 30,
                       ),
                     ),
@@ -195,11 +203,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     children: [
                       Text(
                         _profile.nickname.isEmpty ? '플로거' : _profile.nickname,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+                        style: AppType.title2,
                       ),
                       const SizedBox(width: 8),
                       Container(
@@ -208,15 +212,14 @@ class _MenuScreenState extends State<MenuScreen> {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryPale,
+                          color: AppColors.surfaceBrand,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           'Lv.${_profile.level}',
-                          style: const TextStyle(
-                            fontSize: 12,
+                          style: AppType.caption.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primaryDeep,
+                            color: AppColors.textOnTint,
                           ),
                         ),
                       ),
@@ -226,18 +229,14 @@ class _MenuScreenState extends State<MenuScreen> {
                           children: [
                             TextSpan(
                               text: '${_formatPoints(_profile.points)} ',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
+                              style: AppType.title2
+                                  .copyWith(fontWeight: FontWeight.w800)
+                                  .tabular,
                             ),
-                            const TextSpan(
+                            TextSpan(
                               text: 'P',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.mintDeep,
+                              style: AppType.title3.copyWith(
+                                color: AppColors.textBrand,
                               ),
                             ),
                           ],
@@ -254,8 +253,8 @@ class _MenuScreenState extends State<MenuScreen> {
                           child: LinearProgressIndicator(
                             value: _profile.levelProgress,
                             minHeight: 8,
-                            backgroundColor: AppColors.divider,
-                            color: AppColors.primary,
+                            backgroundColor: AppColors.neutral100,
+                            color: AppColors.progress,
                           ),
                         ),
                       ),
@@ -263,9 +262,9 @@ class _MenuScreenState extends State<MenuScreen> {
                       Text(
                         '${_profile.xpInLevel}/${_profile.xpNeeded}',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -300,7 +299,7 @@ class _MenuScreenState extends State<MenuScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
@@ -323,7 +322,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   value ? '켜짐' : '꺼짐',
                   style: const TextStyle(
                     fontSize: 13,
-                    color: AppColors.textTertiary,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -354,7 +353,7 @@ class _MenuScreenState extends State<MenuScreen> {
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
           // 트랙: OFF 연회색 / ON 연한 크림(톤다운)
-          color: value ? const Color(0xFFF7EBC9) : AppColors.divider,
+          color: value ? const Color(0xFFF7EBC9) : AppColors.border,
           borderRadius: BorderRadius.circular(h / 2),
         ),
         child: AnimatedAlign(
@@ -394,7 +393,7 @@ class _MenuScreenState extends State<MenuScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: big ? 22 : 18),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
@@ -410,7 +409,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
           ],
         ),
       ),
@@ -426,15 +425,15 @@ class _MenuScreenState extends State<MenuScreen> {
           onPressed: _confirmDelete,
           child: const Text(
             '탈퇴하기',
-            style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
         ),
-        Container(width: 1, height: 12, color: AppColors.divider),
+        Container(width: 1, height: 12, color: AppColors.border),
         TextButton(
           onPressed: _confirmSignOut,
           child: const Text(
             '로그아웃',
-            style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
         ),
       ],
@@ -483,7 +482,7 @@ class _MenuScreenState extends State<MenuScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
@@ -494,7 +493,7 @@ class _MenuScreenState extends State<MenuScreen> {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
@@ -504,25 +503,4 @@ class _MenuScreenState extends State<MenuScreen> {
       ),
     );
   }
-}
-
-// 헤더 아래쪽 곡선 클리퍼 (가운데가 살짝 더 내려오는 둥근 곡선 — 홈과 동일)
-class _MenuCurveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final p = Path();
-    p.lineTo(0, size.height - 36);
-    p.quadraticBezierTo(
-      size.width / 2,
-      size.height,
-      size.width,
-      size.height - 36,
-    );
-    p.lineTo(size.width, 0);
-    p.close();
-    return p;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

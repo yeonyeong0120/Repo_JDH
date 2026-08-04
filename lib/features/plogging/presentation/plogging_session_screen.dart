@@ -504,7 +504,7 @@ class _PinMarker extends StatelessWidget {
                 child: Text(
                   label!,
                   style: const TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),

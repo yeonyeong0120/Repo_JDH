@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: _loading
             ? const Center(
@@ -113,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _changePhoto() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.cardBG,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -178,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 alignment: Alignment.center,
                 clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(
-                  color: AppColors.primaryPale,
+                  color: AppColors.surfaceBrand,
                   shape: BoxShape.circle,
                 ),
                 child: _uploading
@@ -208,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.appBG, width: 2),
+                    border: Border.all(color: AppColors.bg, width: 2),
                   ),
                   child: const Icon(
                     Icons.photo_camera,
@@ -239,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Icon(
                 Icons.edit_outlined,
                 size: 18,
-                color: AppColors.textTertiary,
+                color: AppColors.textSecondary,
               ),
             ],
           ),
@@ -253,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: AppColors.cardShadow,
       ),
@@ -319,7 +319,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           border: last
               ? null
               : const Border(
-                  bottom: BorderSide(color: AppColors.divider, width: 0.8),
+                  bottom: BorderSide(color: AppColors.border, width: 0.8),
                 ),
         ),
         child: Row(
@@ -341,7 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(
                     value,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -352,7 +352,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Icon(
                 Icons.chevron_right,
                 size: 20,
-                color: AppColors.textTertiary,
+                color: AppColors.textSecondary,
               ),
           ],
         ),
@@ -385,7 +385,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: AppColors.cardBG,
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
@@ -410,11 +410,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   hintText: hint,
                   counterText: '',
                   hintStyle: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textTertiary,
+                    fontSize: 15,
+                    color: AppColors.textSecondary,
                   ),
                   enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.divider),
+                    borderSide: BorderSide(color: AppColors.border),
                   ),
                   focusedBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(
@@ -469,7 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _editGender() async {
     final picked = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: AppColors.cardBG,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -506,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     int temp = initial;
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.cardBG,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -522,7 +522,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       label,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
@@ -556,7 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Center(
                         child: Text(
                           '$n $unit',
-                          style: const TextStyle(fontSize: 18),
+                          style: const TextStyle(fontSize: 20),
                         ),
                       ),
                   ],

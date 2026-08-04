@@ -99,7 +99,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
       return const Center(
         child: Text(
           '해당하는 퀘스트가 없어요',
-          style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
+          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
         ),
       );
     }
@@ -125,7 +125,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -143,7 +143,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                   const Text(
                     '전체 퀘스트',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -180,7 +180,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
         return Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: AppColors.primaryPale, // 연한 트랙 (테두리 없이 부드럽게)
+            color: AppColors.surfaceBrand, // 연한 트랙 (테두리 없이 부드럽게)
             borderRadius: BorderRadius.circular(14),
           ),
           child: SizedBox(
@@ -217,7 +217,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                           child: AnimatedDefaultTextStyle(
                             duration: const Duration(milliseconds: 240),
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: selected
                                   ? Colors.white
@@ -244,7 +244,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
@@ -271,7 +271,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                       child: Text(
                         q.title,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         ),
@@ -287,9 +287,9 @@ class _QuestListScreenState extends State<QuestListScreen> {
                       Text(
                         '${q.current}/${q.total}',
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                   ],
@@ -300,7 +300,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 8,
-                    backgroundColor: AppColors.divider,
+                    backgroundColor: AppColors.border,
                     color: q.color,
                   ),
                 ),

@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/core/dev/dev_user.dart';
 import 'package:repo_jdh/core/dev/dev_data.dart';

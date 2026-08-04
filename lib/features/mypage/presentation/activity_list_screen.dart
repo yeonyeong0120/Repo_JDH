@@ -54,10 +54,10 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                     horizontal: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: sel ? AppColors.primaryPale : AppColors.appBG,
+                    color: sel ? AppColors.surfaceBrand : AppColors.bg,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: sel ? AppColors.primary : AppColors.divider,
+                      color: sel ? AppColors.primary : AppColors.border,
                     ),
                   ),
                   child: Column(
@@ -66,18 +66,18 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                       Text(
                         label,
                         style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textTertiary,
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         _fmt(value),
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: sel
-                              ? AppColors.primaryDeep
+                              ? AppColors.green800
                               : AppColors.textPrimary,
                         ),
                       ),
@@ -89,7 +89,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
           }
 
           return Dialog(
-            backgroundColor: AppColors.cardBG,
+            backgroundColor: AppColors.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -217,7 +217,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -236,7 +236,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                     child: Text(
                       '전체 활동 기록',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
@@ -259,7 +259,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                     Container(
                       padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPale,
+                        color: AppColors.surfaceBrand,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -270,7 +270,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primaryDeep,
+                              color: AppColors.green800,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -282,7 +282,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                             child: const Icon(
                               Icons.close,
                               size: 16,
-                              color: AppColors.primaryDeep,
+                              color: AppColors.green800,
                             ),
                           ),
                         ],
@@ -297,8 +297,8 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                       child: Text(
                         '해당 기간에 활동 기록이 없어요',
                         style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textTertiary,
+                          fontSize: 15,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     )
@@ -311,7 +311,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                             child: Text(
                               entry.key,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textSecondary,
                               ),
@@ -353,7 +353,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
@@ -365,10 +365,10 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
               height: 76,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.primaryPale,
+                color: AppColors.surfaceBrand,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.map, color: AppColors.primaryLight),
+              child: const Icon(Icons.map, color: AppColors.green400),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -378,7 +378,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                   Text(
                     a.time,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textSecondary,
                     ),
@@ -387,7 +387,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                   Text(
                     a.title,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -420,12 +420,12 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: AppColors.textTertiary),
+        Icon(icon, size: 15, color: AppColors.textSecondary),
         const SizedBox(width: 3),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),
