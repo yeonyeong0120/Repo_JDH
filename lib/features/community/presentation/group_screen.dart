@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/theme/app_spacing.dart';
+import 'package:repo_jdh/core/theme/app_typography.dart';
+import 'package:repo_jdh/core/widgets/app_card.dart';
+import 'package:repo_jdh/core/widgets/app_section.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
@@ -8,9 +14,13 @@ import 'group_detail_screen.dart';
 import 'group_search_screen.dart';
 import 'group_create_screen.dart';
 
-/// 플로고 - 그룹 화면 (내 그룹 / 다른 동네 그룹)
-/// 내 그룹 카드 탭 → 그룹 피드, 다른 그룹 탭 → 소개/가입 화면.
-/// 위치 권장: lib/features/community/presentation/group_screen.dart
+// ============================================================
+// 그룹 (v2)
+//  - 홈과 같은 어휘: 틴트 헤더 + 밝은 배경 + 흰 라운드 카드
+//  - 내 그룹은 '들어가기', 다른 그룹은 '오늘 활동'을 앞세운다
+//  - 오늘 활동 인원이 많은 그룹이 위로 (참여 유도)
+// ============================================================
+
 class GroupScreen extends StatefulWidget {
   const GroupScreen({super.key});
 
@@ -35,11 +45,16 @@ class _GroupScreenState extends State<GroupScreen> {
     List<Group> others = [];
     try {
       mine = await GroupService.myGroup();
-      others = await GroupService.otherGroups();
+      others = await GroupService.otherGroups(limit: 5); // 그룹탭: 최대 5개
     } catch (_) {
       // 네트워크/로그인 문제 → 빈 목록으로 표시
     }
     if (!mounted) return;
+    // 오늘 활동 많은 순 (같으면 멤버 많은 순)
+    others.sort((a, b) {
+      final t = b.todayActiveCount.compareTo(a.todayActiveCount);
+      return t != 0 ? t : b.memberCount.compareTo(a.memberCount);
+    });
     setState(() {
       _myGroup = mine;
       _others = others;
@@ -47,15 +62,20 @@ class _GroupScreenState extends State<GroupScreen> {
     });
   }
 
+  /// 동네 전체에서 오늘 활동한 인원 (내 그룹 포함)
+  int get _todayTotal =>
+      (_myGroup?.todayActiveCount ?? 0) +
+      _others.fold<int>(0, (a, g) => a + g.todayActiveCount);
+
   // ⚠️ 개발용 — 가짜 그룹 심기/지우기 (배포 전 삭제)
   Future<void> _runSeed({required bool seed}) async {
     try {
       final n = seed ? await DevSeed.seedGroups() : await DevSeed.clearGroups();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${seed ? "심기" : "삭제"} $n건 완료')),
-      );
-      _load(); // 목록 갱신
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${seed ? "심기" : "삭제"} $n건 완료')));
+      _load();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -64,63 +84,99 @@ class _GroupScreenState extends State<GroupScreen> {
     }
   }
 
+  Future<void> _openSearch() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupSearchScreen(alreadyInGroup: _myGroup != null),
+      ),
+    );
+    _load();
+  }
+
+  Future<void> _openCreate() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupCreateScreen(alreadyInGroup: _myGroup != null),
+      ),
+    );
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _Header(
+              todayTotal: _todayTotal,
+              region: _myGroup?.region ?? '',
+              loading: _loading,
+              onSearch: _openSearch,
+              onCreate: _openCreate,
+              onSeed: () => _runSeed(seed: true),
+              onClear: () => _runSeed(seed: false),
+            ),
             Expanded(
               child: _loading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: AppColors.primary,
+                        color: AppColors.progress,
                         strokeWidth: 2,
                       ),
                     )
                   : RefreshIndicator(
                       onRefresh: _load,
-                      color: AppColors.primary,
+                      color: AppColors.actionPrimary,
                       child: ListView(
-                        // 하단 네비바 클리어런스
-                        padding: EdgeInsets.fromLTRB(
-                          20,
-                          22,
-                          20,
-                          MediaQueryData.fromView(
-                                View.of(context),
-                              ).padding.bottom +
-                              92,
+                        padding: const EdgeInsets.fromLTRB(
+                          Gap.screenPad,
+                          Gap.xl,
+                          Gap.screenPad,
+                          Gap.navSafe,
                         ),
                         children: [
-                          _sectionLabel('내 그룹'),
-                          const SizedBox(height: 12),
-                          if (_myGroup == null)
-                            _emptyBox('아직 가입한 그룹이 없어요')
-                          else
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _groupCard(
-                                context,
-                                _myGroup!,
-                                isMine: true,
-                              ),
-                            ),
-                          const SizedBox(height: 24),
-                          _sectionLabel('다른 동네 그룹'),
-                          const SizedBox(height: 12),
-                          if (_others.isEmpty)
-                            _emptyBox('아직 다른 그룹이 없어요')
-                          else
-                            ..._others.map(
-                              (g) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _groupCard(context, g, isMine: false),
-                              ),
-                            ),
+                          AppSection(
+                            title: '내 그룹',
+                            child: _myGroup == null
+                                ? _NoGroupCard(onSearch: _openSearch)
+                                : _MyGroupCard(
+                                    group: _myGroup!,
+                                    onTap: () => context.push(
+                                      '/group/feed',
+                                      extra: {
+                                        'id': _myGroup!.id,
+                                        'name': _myGroup!.name,
+                                      },
+                                    ),
+                                  ),
+                          ),
+                          AppSection(
+                            title: '다른 동네 그룹',
+                            caption: _others.isEmpty ? null : '오늘 활동이 많은 순이에요',
+                            last: true,
+                            child: _others.isEmpty
+                                ? _EmptyCard(
+                                    icon: Symbols.groups,
+                                    title: '아직 다른 그룹이 없어요',
+                                    body: '첫 번째 그룹을 만들어보세요',
+                                  )
+                                : Column(
+                                    children: [
+                                      for (final g in _others) ...[
+                                        _OtherGroupCard(
+                                          group: g,
+                                          onTap: () => _openDetail(g),
+                                        ),
+                                        if (g != _others.last) Gap.h12,
+                                      ],
+                                    ],
+                                  ),
+                          ),
                         ],
                       ),
                     ),
@@ -131,194 +187,406 @@ class _GroupScreenState extends State<GroupScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Future<void> _openDetail(Group g) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupDetailScreen(
+          groupId: g.id,
+          name: g.name,
+          region: g.region,
+          meta: g.meta,
+          alreadyInGroup: _myGroup != null,
+        ),
+      ),
+    );
+    _load();
+  }
+}
+
+// ── 헤더 ────────────────────────────────────────────────
+
+class _Header extends StatelessWidget {
+  final int todayTotal;
+  final String region;
+  final bool loading;
+  final VoidCallback onSearch;
+  final VoidCallback onCreate;
+  final VoidCallback onSeed;
+  final VoidCallback onClear;
+
+  const _Header({
+    required this.todayTotal,
+    required this.region,
+    required this.loading,
+    required this.onSearch,
+    required this.onCreate,
+    required this.onSeed,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppColors.primaryPale,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+        color: AppColors.surfaceBrand,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(Radii.sheet),
+        ),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 44, 20, 12),
+      padding: const EdgeInsets.fromLTRB(
+        Gap.screenPad,
+        Gap.sm,
+        Gap.screenPad,
+        Gap.xl2,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '같이 쓰레기 줍고 포인트도 받아가자!',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
+                  region.isEmpty ? '우리 동네 그룹' : region,
+                  style: AppType.caption.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textOnTint,
                   ),
                 ),
               ),
-              _iconButton(
-                Icons.search,
-                onTap: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          GroupSearchScreen(alreadyInGroup: _myGroup != null),
-                    ),
-                  );
-                  _load();
-                },
-              ),
-              const SizedBox(width: 8),
-              _iconButton(
-                Icons.add,
-                onTap: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          GroupCreateScreen(alreadyInGroup: _myGroup != null),
-                    ),
-                  );
-                  _load(); // 생성 후 목록 갱신
-                },
-              ),
-              // ⚠️ 개발용 임시 버튼 — 가짜 그룹 심기/지우기
-              //    배포 전 이 블록과 위 dev_seed import 를 삭제할 것
-              const SizedBox(width: 8),
-              _iconButton(
-                Icons.science_outlined,
-                onTap: () => _runSeed(seed: true),
-              ),
-              const SizedBox(width: 8),
-              _iconButton(
-                Icons.delete_outline,
-                onTap: () => _runSeed(seed: false),
-              ),
+              _IconButton(icon: Symbols.search, onTap: onSearch),
+              Gap.w8,
+              _IconButton(icon: Symbols.add, onTap: onCreate),
+              // ⚠️ 개발용 임시 버튼 — 배포 전 이 두 개와 dev_seed import 삭제
+              Gap.w8,
+              _IconButton(icon: Symbols.science, onTap: onSeed, dev: true),
+              Gap.w8,
+              _IconButton(icon: Symbols.delete, onTap: onClear, dev: true),
             ],
+          ),
+          Gap.h16,
+          Text('같이 주우면\n두 배로 재밌어요', style: AppType.title1),
+          Gap.h8,
+          // 로딩 중에 0명이라고 단정하지 않는다.
+          Text(
+            loading
+                ? '동네 활동을 불러오는 중이에요'
+                : todayTotal > 0
+                ? '오늘 벌써 $todayTotal명 출동!'
+                : '오늘 1번 타자 되어볼래요?',
+            style: AppType.label.copyWith(color: AppColors.textBrandOnLight),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _iconButton(IconData icon, {required VoidCallback onTap}) {
-    return GestureDetector(
+class _IconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool dev;
+
+  const _IconButton({
+    required this.icon,
+    required this.onTap,
+    this.dev = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: Radii.tileR,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: Touch.min,
+          height: Touch.min,
+          child: Icon(
+            icon,
+            size: 22,
+            color: dev ? AppColors.neutral400 : AppColors.textBrand,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 내 그룹 ──────────────────────────────────────────────
+
+class _MyGroupCard extends StatelessWidget {
+  final Group group;
+  final VoidCallback onTap;
+  const _MyGroupCard({required this.group, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final active = group.todayActiveCount > 0;
+
+    return AppCard(
       onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: AppColors.cardBG,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: AppColors.cardShadow,
-        ),
-        child: Icon(icon, color: AppColors.textSecondary, size: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              _GroupThumb(group: group, size: 64),
+              Gap.w16,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(group.name, style: AppType.title2),
+                    Gap.h4,
+                    Text(
+                      '${group.region} · 멤버 ${group.memberCount}명',
+                      style: AppType.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Gap.h16,
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Gap.lg,
+              vertical: Gap.md,
+            ),
+            decoration: BoxDecoration(
+              color: active ? AppColors.surfaceBrand : AppColors.neutral75,
+              borderRadius: Radii.innerR,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  active ? Symbols.directions_walk : Symbols.schedule,
+                  size: 20,
+                  fill: 1,
+                  color: active
+                      ? AppColors.textBrandOnLight
+                      : AppColors.neutral500,
+                ),
+                Gap.w8,
+                Expanded(
+                  child: Text(
+                    active
+                        ? '오늘 ${group.todayActiveCount}명이 활동했어요'
+                        : '오늘 활동한 멤버가 없어요',
+                    style: AppType.label.copyWith(
+                      color: active
+                          ? AppColors.textOnTint
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                Text(
+                  '피드 보기',
+                  style: AppType.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textBrandOnLight,
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: AppColors.textBrandOnLight,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _sectionLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
+/// 그룹 미가입 — 빈 상자 대신 다음 행동을 준다.
+class _NoGroupCard extends StatelessWidget {
+  final VoidCallback onSearch;
+  const _NoGroupCard({required this.onSearch});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.green100,
+                  borderRadius: Radii.tileR,
+                ),
+                child: const Icon(
+                  Symbols.person_add,
+                  size: 26,
+                  color: AppColors.textBrandOnLight,
+                ),
+              ),
+              Gap.w16,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('아직 가입한 그룹이 없어요', style: AppType.title3),
+                    Gap.h4,
+                    Text(
+                      '이웃과 함께 걷고 기록을 나눠보세요',
+                      style: AppType.body.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Gap.h16,
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onSearch,
+              child: const Text('그룹 찾아보기'),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _emptyBox(String text) {
+// ── 다른 동네 그룹 ───────────────────────────────────────
+
+class _OtherGroupCard extends StatelessWidget {
+  final Group group;
+  final VoidCallback onTap;
+  const _OtherGroupCard({required this.group, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final active = group.todayActiveCount > 0;
+
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(Gap.lg),
+      child: Row(
+        children: [
+          _GroupThumb(group: group, size: 56),
+          Gap.w16,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(group.name, style: AppType.title3),
+                Gap.h4,
+                Text(
+                  group.region,
+                  style: AppType.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Gap.h8,
+                Row(
+                  children: [
+                    if (active) ...[
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.actionPrimary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                    Text(
+                      active
+                          ? '오늘 ${group.todayActiveCount}명 활동 중'
+                          : '멤버 ${group.memberCount}명',
+                      style: AppType.caption.copyWith(
+                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                        color: active
+                            ? AppColors.textBrand
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Gap.w8,
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: Touch.icon,
+            color: AppColors.neutral400,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GroupThumb extends StatelessWidget {
+  final Group group;
+  final double size;
+  const _GroupThumb({required this.group, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 26),
-      alignment: Alignment.center,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.divider),
+        color: AppColors.neutral100,
+        borderRadius: Radii.tileR,
       ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 13, color: AppColors.textTertiary),
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: group.imageUrl == null
+          ? Icon(Symbols.groups, size: size * 0.42, color: AppColors.neutral400)
+          : Image.network(group.imageUrl!, fit: BoxFit.cover),
     );
   }
+}
 
-  Widget _groupCard(BuildContext context, Group g, {bool isMine = false}) {
-    return GestureDetector(
-      onTap: () async {
-        if (isMine) {
-          // 내 그룹 → 그룹 피드
-          context.push('/group/feed', extra: {'id': g.id, 'name': g.name});
-        } else {
-          // 다른 동네 그룹 → 소개/가입 화면
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => GroupDetailScreen(
-                groupId: g.id,
-                name: g.name,
-                region: g.region,
-                meta: g.meta,
-                alreadyInGroup: _myGroup != null,
-              ),
-            ),
-          );
-          _load(); // 가입했을 수 있으니 갱신
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.cardBG,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppColors.cardShadow,
-        ),
-        child: Row(
-          children: [
-            // TODO: g.imageUrl 있으면 Image.network 로 교체
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    g.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    g.region,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    g.meta,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+// ── 빈 상태 ─────────────────────────────────────────────
+
+class _EmptyCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+  const _EmptyCard({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        children: [
+          Icon(icon, size: 40, color: AppColors.neutral400),
+          Gap.h12,
+          Text(title, style: AppType.title3, textAlign: TextAlign.center),
+          Gap.h4,
+          Text(
+            body,
+            style: AppType.body.copyWith(color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

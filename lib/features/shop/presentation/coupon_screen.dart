@@ -50,7 +50,7 @@ class _CouponScreenState extends State<CouponScreen> {
     final done = _coupons.where((c) => !c.usable).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -131,13 +131,13 @@ class _CouponScreenState extends State<CouponScreen> {
     padding: const EdgeInsets.symmetric(vertical: 24),
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: AppColors.cardBG,
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: AppColors.divider),
+      border: Border.all(color: AppColors.border),
     ),
     child: Text(
       t,
-      style: const TextStyle(fontSize: 13, color: AppColors.textTertiary),
+      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
     ),
   );
 
@@ -155,7 +155,7 @@ class _CouponScreenState extends State<CouponScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
@@ -170,8 +170,8 @@ class _CouponScreenState extends State<CouponScreen> {
                   Text(
                     c.brand,
                     style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -181,7 +181,7 @@ class _CouponScreenState extends State<CouponScreen> {
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: dim
-                          ? AppColors.textTertiary
+                          ? AppColors.textSecondary
                           : AppColors.textPrimary,
                     ),
                   ),
@@ -189,9 +189,9 @@ class _CouponScreenState extends State<CouponScreen> {
                   Text(
                     c.expiresText,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: dim ? AppColors.textTertiary : AppColors.primary,
+                      color: dim ? AppColors.textSecondary : AppColors.primary,
                     ),
                   ),
                 ],
@@ -201,12 +201,12 @@ class _CouponScreenState extends State<CouponScreen> {
               Text(
                 c.statusText,
                 style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textTertiary,
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
                 ),
               )
             else
-              const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
           ],
         ),
       ),
@@ -310,7 +310,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
   Widget build(BuildContext context) {
     final c = widget.coupon;
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -349,8 +349,8 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                     c.brand,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -378,7 +378,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                               c.name,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
                               ),
@@ -405,8 +405,8 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                             Text(
                               c.expiresText,
                               style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textTertiary,
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ],
@@ -426,7 +426,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 22),
-                  const Divider(color: AppColors.divider, height: 1),
+                  const Divider(color: AppColors.border, height: 1),
                   const SizedBox(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -459,7 +459,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                       height: 52,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.divider,
+                        color: AppColors.border,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Text(
@@ -467,7 +467,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     )
@@ -477,18 +477,18 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                         height: 52,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: _used ? AppColors.cardBG : AppColors.primary,
+                          color: _used ? AppColors.surface : AppColors.primary,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: _used
-                                ? AppColors.divider
+                                ? AppColors.border
                                 : AppColors.primary,
                           ),
                         ),
                         child: Text(
                           _used ? '사용 완료 취소' : '사용완료',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w800,
                             color: _used
                                 ? AppColors.textSecondary
@@ -509,9 +509,9 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                     : '매장에서 바코드를 보여준 뒤 사용 완료를 눌러주세요.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
                   height: 1.6,
-                  color: AppColors.textTertiary,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),
@@ -532,7 +532,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               color: AppColors.textSecondary,
             ),
           ),
@@ -565,7 +565,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
               Text(
                 c.code,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   letterSpacing: 4,
                   color: Colors.black,
                 ),
@@ -585,13 +585,13 @@ Widget _thumb(double size) {
     height: size,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: AppColors.primaryPale,
+      color: AppColors.surfaceBrand,
       borderRadius: BorderRadius.circular(size * 0.16),
     ),
     child: Icon(
       Icons.card_giftcard,
       size: size * 0.4,
-      color: AppColors.primaryLight,
+      color: AppColors.green400,
     ),
   );
 }

@@ -87,7 +87,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,11 +145,11 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       children: [
                         CircleAvatar(
                           radius: 12,
-                          backgroundColor: AppColors.primaryPale,
+                          backgroundColor: AppColors.surfaceBrand,
                           child: const Icon(
                             Icons.person,
                             size: 14,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -166,7 +166,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           article.date,
                           style: const TextStyle(
                             fontSize: 13,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -178,7 +178,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       height: 180,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPale,
+                        color: AppColors.surfaceBrand,
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Text(
@@ -229,7 +229,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
       decoration: BoxDecoration(
-        color: AppColors.primaryPale,
+        color: AppColors.surfaceBrand,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -243,16 +243,16 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 const Icon(
                   Icons.auto_awesome,
                   size: 18,
-                  color: AppColors.primaryDeep,
+                  color: AppColors.green800,
                 ),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
                     'AI 세 줄 요약',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primaryDeep,
+                      color: AppColors.green800,
                     ),
                   ),
                 ),
@@ -262,7 +262,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   child: const Icon(
                     Icons.expand_more,
                     size: 20,
-                    color: AppColors.primaryDeep,
+                    color: AppColors.green800,
                   ),
                 ),
               ],
@@ -312,9 +312,9 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.divider),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
@@ -325,8 +325,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   Text(
                     article.sourceName.isEmpty ? '출처' : article.sourceName,
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -344,7 +344,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             const Icon(
               Icons.open_in_new,
               size: 18,
-              color: AppColors.textTertiary,
+              color: AppColors.textSecondary,
             ),
           ],
         ),
@@ -383,7 +383,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBG,
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: AppColors.cardShadow,
                 ),
@@ -394,7 +394,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       height: 56,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPale,
+                        color: AppColors.surfaceBrand,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -412,7 +412,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               fontWeight: FontWeight.w700,
                               height: 1.35,
                               color: AppColors.textPrimary,
@@ -422,8 +422,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           Text(
                             '${a.category} · ${a.date}',
                             style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -442,15 +442,15 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.primaryPale,
+        color: AppColors.surfaceBrand,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: AppColors.primaryDeep,
+          color: AppColors.green800,
         ),
       ),
     );

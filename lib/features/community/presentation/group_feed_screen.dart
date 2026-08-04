@@ -260,13 +260,13 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             color: AppColors.textSecondary,
           ),
@@ -278,7 +278,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   // ───────── 오른쪽 멤버 드로어 (≡ 누르면 오른쪽에서 슬라이드) ─────────
   Widget _buildMemberDrawer() {
     return Drawer(
-      backgroundColor: AppColors.cardBG,
+      backgroundColor: AppColors.surface,
       width: 300,
       child: SafeArea(
         child: Column(
@@ -291,7 +291,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                   Text(
                     '멤버 ${_members.length}명',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -306,7 +306,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppColors.divider),
+            const Divider(height: 1, color: AppColors.border),
             // 멤버 목록 (쫙)
             Expanded(
               child: ListView.builder(
@@ -317,11 +317,11 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                   return ListTile(
                     leading: const CircleAvatar(
                       radius: 18,
-                      backgroundColor: AppColors.primaryPale,
+                      backgroundColor: AppColors.surfaceBrand,
                       child: Icon(
                         Icons.person,
                         size: 20,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     title: Text(
@@ -345,7 +345,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 },
               ),
             ),
-            const Divider(height: 1, color: AppColors.divider),
+            const Divider(height: 1, color: AppColors.border),
             // 하단 탈퇴하기
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -362,8 +362,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                    foregroundColor: AppColors.actionDanger,
+                    backgroundColor: AppColors.actionDanger.withValues(alpha: 0.08),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -413,7 +413,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                   Text(
                     '${item.name}님의 활동 신고',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -428,10 +428,10 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: on ? AppColors.primaryPale : AppColors.appBG,
+                          color: on ? AppColors.surfaceBrand : AppColors.bg,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: on ? AppColors.primary : AppColors.divider,
+                            color: on ? AppColors.primary : AppColors.border,
                           ),
                         ),
                         child: Row(
@@ -445,7 +445,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                                 border: Border.all(
                                   color: on
                                       ? AppColors.primary
-                                      : AppColors.textTertiary,
+                                      : AppColors.textSecondary,
                                   width: 2,
                                 ),
                               ),
@@ -470,7 +470,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                                   Text(
                                     r[0],
                                     style: const TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.textPrimary,
                                     ),
@@ -479,8 +479,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                                   Text(
                                     r[1],
                                     style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textTertiary,
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -505,26 +505,26 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                           hintText: '신고 사유를 입력해 주세요',
                           hintStyle: const TextStyle(
                             fontSize: 13,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                           ),
                           filled: true,
-                          fillColor: AppColors.appBG,
+                          fillColor: AppColors.bg,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                              color: AppColors.divider,
+                              color: AppColors.border,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                              color: AppColors.divider,
+                              color: AppColors.border,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                              color: AppColors.divider,
+                              color: AppColors.border,
                             ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
@@ -585,7 +585,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
 
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.cardBG,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -602,7 +602,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 height: 76,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryPale,
+                  color: AppColors.surfaceBrand,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text('🌱', style: TextStyle(fontSize: 36)),
@@ -622,7 +622,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 g == null ? '' : '${g.region}  ·  ${g.meta}',
                 style: const TextStyle(
                   fontSize: 13,
-                  color: AppColors.textTertiary,
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -630,7 +630,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.appBG,
+                  color: AppColors.bg,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -714,7 +714,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.appBG, // 홈 등 다른 화면과 통일
+      backgroundColor: AppColors.bg, // 홈 등 다른 화면과 통일
       endDrawer: _buildMemberDrawer(), // 오른쪽에서 슬라이드되는 멤버 패널
       body: SafeArea(
         bottom: false,
@@ -739,7 +739,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   // ───────────────────────── 상단 바 ─────────────────────────
   Widget _buildTopBar() {
     return Container(
-      color: AppColors.cardBG,
+      color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(8, 6, 6, 12),
       child: Row(
         children: [
@@ -756,7 +756,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 Text(
                   widget.groupName,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
@@ -764,8 +764,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 Text(
                   '멤버 ${widget.memberCount}명',
                   style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textTertiary,
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -780,12 +780,12 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
           // ⚠️ 개발용 임시 버튼 — 가짜 피드 글 심기/지우기 (배포 전 삭제)
           IconButton(
             icon: const Icon(Icons.science_outlined),
-            color: AppColors.textTertiary,
+            color: AppColors.textSecondary,
             onPressed: () => _runSeed(seed: true),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            color: AppColors.textTertiary,
+            color: AppColors.textSecondary,
             onPressed: () => _runSeed(seed: false),
           ),
           // 오른쪽 위 ≡ → 오른쪽 멤버 드로어 열기
@@ -806,13 +806,13 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     final photo = item.photoUrl;
     final avatar = CircleAvatar(
       radius: 14,
-      backgroundColor: AppColors.primaryPale,
+      backgroundColor: AppColors.surfaceBrand,
       backgroundImage: (photo != null && photo.isNotEmpty)
           ? NetworkImage(photo)
           : null,
       child: (photo != null && photo.isNotEmpty)
           ? null
-          : const Icon(Icons.person, size: 16, color: AppColors.textTertiary),
+          : const Icon(Icons.person, size: 16, color: AppColors.textSecondary),
     );
 
     final bubble = Container(
@@ -820,14 +820,14 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       constraints: const BoxConstraints(maxWidth: 200),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: mine ? AppColors.primary : AppColors.cardBG,
+        color: mine ? AppColors.primary : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: AppColors.cardShadow,
       ),
       child: Text(
         item.text,
         style: TextStyle(
-          fontSize: 14,
+          fontSize: 15,
           height: 1.35,
           color: mine ? Colors.white : AppColors.textPrimary,
         ),
@@ -848,8 +848,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                   child: Text(
                     _timeLabel(item.date),
                     style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -865,7 +865,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                     Text(
                       item.name,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
                       ),
@@ -879,8 +879,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                   child: Text(
                     _timeLabel(item.date),
                     style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -899,8 +899,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
         MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 12,
       ),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
-        border: Border(top: BorderSide(color: AppColors.divider)),
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: SafeArea(
         top: false,
@@ -916,11 +916,11 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요',
                   hintStyle: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textTertiary,
+                    fontSize: 15,
+                    color: AppColors.textSecondary,
                   ),
                   filled: true,
-                  fillColor: AppColors.appBG,
+                  fillColor: AppColors.bg,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -970,13 +970,13 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     final photo = item.photoUrl;
     final avatar = CircleAvatar(
       radius: 18,
-      backgroundColor: AppColors.primaryPale,
+      backgroundColor: AppColors.surfaceBrand,
       backgroundImage: (photo != null && photo.isNotEmpty)
           ? NetworkImage(photo)
           : null,
       child: (photo != null && photo.isNotEmpty)
           ? null
-          : const Icon(Icons.person, size: 20, color: AppColors.textTertiary),
+          : const Icon(Icons.person, size: 20, color: AppColors.textSecondary),
     );
     // 기록: 흰 바탕에 컴팩트하게 (왼쪽 밑)
     final record = Row(
@@ -991,7 +991,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     );
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
@@ -1006,7 +1006,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
               aspectRatio: 16 / 9, // 넓적한 띠 대신 자연스러운 가로 사진 비율
               child: Container(
                 width: double.infinity,
-                color: AppColors.primaryPale,
+                color: AppColors.surfaceBrand,
                 alignment: Alignment.center,
                 child: (item.imageUrl?.startsWith('http') ?? false)
                     ? Image.network(
@@ -1016,13 +1016,13 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                         errorBuilder: (_, __, ___) => const Icon(
                           Icons.photo_camera_outlined,
                           size: 36,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textSecondary,
                         ),
                       )
                     : const Icon(
                         Icons.photo_camera_outlined,
                         size: 36,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
               ),
             ),
@@ -1051,8 +1051,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                           Text(
                             _timeLabel(item.date),
                             style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -1102,7 +1102,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
         children: [
           TextSpan(
             text: '$label ',
-            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           TextSpan(
             text: value,
@@ -1122,7 +1122,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       padding: EdgeInsets.symmetric(horizontal: 6),
       child: Text(
         '·',
-        style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
       ),
     );
   }
@@ -1135,7 +1135,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
         child: Icon(
           Icons.flag_outlined,
           size: 18,
-          color: AppColors.textTertiary,
+          color: AppColors.textSecondary,
         ),
       ),
     );
@@ -1153,14 +1153,14 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
               : (item.liked ? Icons.favorite : Icons.favorite_border),
           size: 18,
           color: mine
-              ? AppColors.textTertiary
-              : (item.liked ? AppColors.error : AppColors.textTertiary),
+              ? AppColors.textSecondary
+              : (item.liked ? AppColors.actionDanger : AppColors.textSecondary),
         ),
         const SizedBox(width: 3),
         Text(
           '${item.likes}',
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
             color: AppColors.textSecondary,
           ),

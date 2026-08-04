@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/features/plogging/data/firestore_repository.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
@@ -8,7 +7,6 @@ import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/core/dev/dev_user.dart';
 // ignore: unused_import
 // 더미 스위치를 다시 켤 때 필요 (현재 해당 블록들은 주석 처리됨)
-import 'package:repo_jdh/core/dev/dev_data.dart';
 
 /// 뱃지 판정에 쓰는 누적 통계
 class UserStats {
@@ -278,7 +276,6 @@ class BadgeService {
       batch.set(col.doc(b.id), {
         'earnedAt': date,
         'createdAt': FieldValue.serverTimestamp(),
-        'reward': b.reward,
         'points': b.points,
       });
     }

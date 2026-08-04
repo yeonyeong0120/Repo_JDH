@@ -1,5 +1,3 @@
-import 'package:repo_jdh/features/plogging/domain/activity.dart';
-
 /// 활동 데이터 → 화면 표시값 변환 유틸.
 ///
 /// 서버(Activity)에는 거리·시간·수거 개수만 있고,

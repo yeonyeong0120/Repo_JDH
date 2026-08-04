@@ -15,7 +15,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  static const Color _bg = AppColors.primaryPale;
+  static const Color _bg = AppColors.surfaceBrand;
 
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -42,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = false);
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: AppColors.error),
+        SnackBar(content: Text(error), backgroundColor: AppColors.actionDanger),
       );
     }
   }
@@ -60,7 +60,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(error ?? '비밀번호 재설정 이메일을 전송했습니다.'),
-        backgroundColor: error != null ? AppColors.error : AppColors.primary,
+        backgroundColor: error != null ? AppColors.actionDanger : AppColors.primary,
       ),
     );
   }
@@ -72,7 +72,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = false);
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: AppColors.error),
+        SnackBar(content: Text(error), backgroundColor: AppColors.actionDanger),
       );
     }
   }
@@ -83,14 +83,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 16),
-      prefixIcon: Icon(icon, color: AppColors.textTertiary, size: 20),
+      hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 17),
+      prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
       suffixIcon: suffix,
       contentPadding: const EdgeInsets.symmetric(vertical: 14),
-      enabledBorder: line(AppColors.divider),
+      enabledBorder: line(AppColors.border),
       focusedBorder: line(AppColors.primary, 1.6),
-      errorBorder: line(AppColors.error),
-      focusedErrorBorder: line(AppColors.error, 1.6),
+      errorBorder: line(AppColors.actionDanger),
+      focusedErrorBorder: line(AppColors.actionDanger, 1.6),
     );
   }
 
@@ -205,7 +205,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               padding: const EdgeInsets.only(top: 44),
                               child: PhysicalShape(
                                 clipper: _NotchedCardClipper(),
-                                color: AppColors.cardBG,
+                                color: AppColors.surface,
                                 elevation: 8,
                                 shadowColor: Colors.black.withValues(
                                   alpha: 0.18,
@@ -250,7 +250,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                   ? Icons
                                                         .visibility_off_outlined
                                                   : Icons.visibility_outlined,
-                                              color: AppColors.textTertiary,
+                                              color: AppColors.textSecondary,
                                               size: 20,
                                             ),
                                             onPressed: () => setState(
@@ -275,7 +275,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               : _handlePasswordReset,
                                           style: TextButton.styleFrom(
                                             foregroundColor:
-                                                AppColors.textTertiary,
+                                                AppColors.textSecondary,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 4,
                                             ),
@@ -325,7 +325,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
                                     disabledBackgroundColor:
-                                        AppColors.primaryMuted,
+                                        AppColors.actionPrimary,
                                     elevation: 3,
                                     shadowColor: Colors.black.withValues(
                                       alpha: 0.22,
@@ -346,7 +346,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       : const Text(
                                           '로그인',
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 17,
                                             fontWeight: FontWeight.w800,
                                           ),
                                         ),
@@ -365,7 +365,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               '계정이 없으신가요? ',
                               style: TextStyle(
                                 color: AppColors.textSecondary,
-                                fontSize: 14,
+                                fontSize: 15,
                               ),
                             ),
                             TextButton(
@@ -388,7 +388,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: const Text(
                                 '회원가입',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w800,
                                   decoration: TextDecoration.underline,
                                   decorationColor: AppColors.primary,
@@ -407,8 +407,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             onPressed: _isLoading ? null : _handleGoogleSignIn,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.textPrimary,
-                              backgroundColor: AppColors.cardBG,
-                              side: const BorderSide(color: AppColors.divider),
+                              backgroundColor: AppColors.surface,
+                              side: const BorderSide(color: AppColors.border),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
@@ -419,7 +419,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 Text(
                                   'G',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     color: Color(0xFF4285F4),
                                   ),

@@ -31,7 +31,7 @@ class ActivityDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -50,7 +50,7 @@ class ActivityDetailScreen extends StatelessWidget {
                     child: Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
@@ -91,14 +91,14 @@ class ActivityDetailScreen extends StatelessWidget {
                       width: double.infinity,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPale,
+                        color: AppColors.surfaceBrand,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       // TODO: 실제 경로 지도(Polyline + 거점 마커)로 교체
                       child: const Icon(
                         Icons.map_outlined,
                         size: 34,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -112,14 +112,14 @@ class ActivityDetailScreen extends StatelessWidget {
                         width: double.infinity,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryPale,
+                          color: AppColors.surfaceBrand,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         // TODO: 실제 사진(Image.network)으로 교체
                         child: const Icon(
                           Icons.photo_camera_outlined,
                           size: 32,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -182,10 +182,10 @@ class ActivityDetailScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppColors.error),
+              leading: const Icon(Icons.delete_outline, color: AppColors.actionDanger),
               title: const Text(
                 '활동 삭제',
-                style: TextStyle(color: AppColors.error),
+                style: TextStyle(color: AppColors.actionDanger),
               ),
               onTap: () async {
                 Navigator.pop(ctx);
@@ -215,7 +215,7 @@ class ActivityDetailScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.primaryPale,
+          color: AppColors.surfaceBrand,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -224,8 +224,8 @@ class ActivityDetailScreen extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textTertiary,
+                fontSize: 13,
+                color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 4),
@@ -248,7 +248,7 @@ class ActivityDetailScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),

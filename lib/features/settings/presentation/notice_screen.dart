@@ -41,7 +41,7 @@ class NoticeListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -70,7 +70,7 @@ class NoticeListScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
@@ -88,7 +88,7 @@ class NoticeListScreen extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
@@ -103,15 +103,15 @@ class NoticeListScreen extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryPale,
+                            color: AppColors.surfaceBrand,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
                             'NEW',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.primaryDeep,
+                              color: AppColors.green800,
                             ),
                           ),
                         ),
@@ -122,14 +122,14 @@ class NoticeListScreen extends StatelessWidget {
                   Text(
                     n.dateText,
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
           ],
         ),
       ),
@@ -144,7 +144,7 @@ class NoticeDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -165,17 +165,17 @@ class NoticeDetailScreen extends StatelessWidget {
                   Text(
                     notice.dateText,
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 18),
-                  const Divider(color: AppColors.divider, height: 1),
+                  const Divider(color: AppColors.border, height: 1),
                   const SizedBox(height: 18),
                   Text(
                     notice.body,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       height: 1.8,
                       color: AppColors.textSecondary,
                     ),

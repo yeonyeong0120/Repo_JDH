@@ -71,7 +71,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
     return showDialog<void>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: AppColors.cardBG,
+        backgroundColor: AppColors.surface,
         insetPadding: const EdgeInsets.symmetric(horizontal: 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
@@ -84,7 +84,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                 height: 60,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
-                  color: AppColors.primaryPale,
+                  color: AppColors.surfaceBrand,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -139,7 +139,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -185,9 +185,9 @@ class _InquiryScreenState extends State<InquiryScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.cardBG,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.divider),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: TextField(
                         controller: _contentController,
@@ -200,15 +200,15 @@ class _InquiryScreenState extends State<InquiryScreen> {
                           hintStyle: TextStyle(
                             fontSize: 13,
                             height: 1.6,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                           ),
                           border: InputBorder.none,
                           counterStyle: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textTertiary,
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 14, height: 1.6),
+                        style: const TextStyle(fontSize: 15, height: 1.6),
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -217,9 +217,9 @@ class _InquiryScreenState extends State<InquiryScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: AppColors.cardBG,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.divider),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: TextField(
                         controller: _emailController,
@@ -227,21 +227,21 @@ class _InquiryScreenState extends State<InquiryScreen> {
                         decoration: const InputDecoration(
                           hintText: '이메일을 입력해주세요',
                           hintStyle: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textTertiary,
+                            fontSize: 15,
+                            color: AppColors.textSecondary,
                           ),
                           border: InputBorder.none,
                         ),
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(fontSize: 15),
                       ),
                     ),
                     const SizedBox(height: 14),
                     const Text(
                       '보내주신 내용은 운영팀만 확인하며, 답변까지 영업일 기준 3일 정도 걸릴 수 있어요.',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 13,
                         height: 1.6,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -256,14 +256,14 @@ class _InquiryScreenState extends State<InquiryScreen> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: _sending
-                          ? AppColors.primaryMuted
+                          ? AppColors.actionPrimary
                           : AppColors.primary,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       _sending ? '보내는 중...' : '접수하기',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
@@ -281,7 +281,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
   Widget _label(String t) => Text(
     t,
     style: const TextStyle(
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: FontWeight.w700,
       color: AppColors.textPrimary,
     ),
@@ -295,16 +295,16 @@ class _InquiryScreenState extends State<InquiryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: on ? AppColors.primaryPale : AppColors.cardBG,
+          color: on ? AppColors.surfaceBrand : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: on ? AppColors.primary : AppColors.divider),
+          border: Border.all(color: on ? AppColors.primary : AppColors.border),
         ),
         child: Text(
           t,
           style: TextStyle(
             fontSize: 13,
             fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-            color: on ? AppColors.primaryDeep : AppColors.textSecondary,
+            color: on ? AppColors.green800 : AppColors.textSecondary,
           ),
         ),
       ),

@@ -2,12 +2,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/theme/app_spacing.dart';
+import 'package:repo_jdh/core/theme/app_typography.dart';
+import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/presentation/badge_dialog.dart';
-import 'package:repo_jdh/features/mypage/presentation/character_screen.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
@@ -70,7 +72,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -131,7 +133,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.primaryPale,
+        color: AppColors.surfaceBrand,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -167,7 +169,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppColors.primaryPale,
+        color: AppColors.surfaceBrand,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       // 상단바 넉넉하게 + 토글을 헤더 하단에 앉힘(위 여백 크게, 아래 작게).
@@ -215,16 +217,16 @@ class _ActivityScreenState extends State<ActivityScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.cardBG : Colors.transparent,
+          color: selected ? AppColors.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           boxShadow: selected ? AppColors.cardShadow : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: selected ? AppColors.textPrimary : AppColors.textTertiary,
+            color: selected ? AppColors.textPrimary : AppColors.textSecondary,
           ),
         ),
       ),
@@ -263,8 +265,9 @@ class _RecordsTabState extends State<_RecordsTab> {
   // 활동 기록 불러오기 (서버 Activity → 화면 _Activity 로 변환)
   Future<void> _loadActivities() async {
     try {
-      final list =
-          await ActivityService.getRecentCompleted(limit: _displayLimit);
+      final list = await ActivityService.getRecentCompleted(
+        limit: _displayLimit,
+      );
       // 서버 데이터(Activity)를 화면용(_Activity)으로 변환
       final mapped = list.map(_toDisplay).toList();
       if (!mounted) return;
@@ -374,13 +377,15 @@ class _RecordsTabState extends State<_RecordsTab> {
     // ① 에러
     if (_loadError != null) {
       return [
-        _ErrorBox(onRetry: () {
-          setState(() {
-            _loadError = null;
-            _activities = null; // 다시 로딩 상태로
-          });
-          _loadActivities();
-        }),
+        _ErrorBox(
+          onRetry: () {
+            setState(() {
+              _loadError = null;
+              _activities = null; // 다시 로딩 상태로
+            });
+            _loadActivities();
+          },
+        ),
       ];
     }
     // ② 로딩 중 (아직 null)
@@ -417,12 +422,12 @@ class _RecordsTabState extends State<_RecordsTab> {
           Text(
             text,
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
         ],
       ),
     );
@@ -447,7 +452,7 @@ class _RecordsTabState extends State<_RecordsTab> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
@@ -458,10 +463,10 @@ class _RecordsTabState extends State<_RecordsTab> {
               width: 84,
               height: 84,
               decoration: BoxDecoration(
-                color: AppColors.primaryPale,
+                color: AppColors.surfaceBrand,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.map, color: AppColors.primaryLight),
+              child: const Icon(Icons.map, color: AppColors.green400),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -471,7 +476,7 @@ class _RecordsTabState extends State<_RecordsTab> {
                   Text(
                     a.dateTime,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textSecondary,
                     ),
@@ -480,7 +485,7 @@ class _RecordsTabState extends State<_RecordsTab> {
                   Text(
                     a.title,
                     style: const TextStyle(
-                      fontSize: 19,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -514,12 +519,12 @@ class _RecordsTabState extends State<_RecordsTab> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: AppColors.textTertiary),
+        Icon(icon, size: 15, color: AppColors.textSecondary),
         const SizedBox(width: 3),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),
@@ -533,7 +538,7 @@ class _RecordsTabState extends State<_RecordsTab> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
@@ -559,7 +564,7 @@ class _RecordsTabState extends State<_RecordsTab> {
                       child: Text(
                         q.title,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         ),
@@ -568,9 +573,9 @@ class _RecordsTabState extends State<_RecordsTab> {
                     Text(
                       '${q.current}/${q.total}',
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -581,7 +586,7 @@ class _RecordsTabState extends State<_RecordsTab> {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 8,
-                    backgroundColor: AppColors.divider,
+                    backgroundColor: AppColors.border,
                     color: q.color,
                   ),
                 ),
@@ -601,108 +606,176 @@ class _BadgesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final earnedCount = kBadges.where((b) => BadgeRepo.isEarned(b.id)).length;
+
     return ListView(
       padding: EdgeInsets.fromLTRB(
-        20,
-        22,
-        20,
+        Gap.screenPad,
+        Gap.xl,
+        Gap.screenPad,
         MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
       ),
       children: [
-        // 줍댕이 꾸미기 배너 → 꾸미기 화면
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CharacterScreen()),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppColors.cardBG,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: AppColors.cardShadow,
-            ),
-            child: Row(
-              children: const [
-                // TODO: 줍댕이(물개) 2D 캐릭터 이미지로 교체
-                Text('🦭', style: TextStyle(fontSize: 44)),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '줍댕이 꾸미기',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+        _ProgressCard(earned: earnedCount, total: kBadges.length),
+        const SizedBox(height: Gap.xl3),
+        // 등급별로 나눈다 — 20개를 한 판에 쏟으면 무엇부터 노릴지 안 보인다.
+        for (final tier in BadgeTier.values) ...[
+          _TierSection(tier: tier),
+          if (tier != BadgeTier.values.last)
+            const SizedBox(height: Gap.xl3),
+        ],
+      ],
+    );
+  }
+}
+
+/// 전체 진행률 — 뱃지 탭에 들어오면 가장 먼저 보이는 것.
+class _ProgressCard extends StatelessWidget {
+  final int earned;
+  final int total;
+  const _ProgressCard({required this.earned, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = total == 0 ? 0.0 : earned / total;
+
+    return AppCard(
+      tone: CardTone.brand,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '모은 뱃지',
+                      style: AppType.label.copyWith(
+                        color: AppColors.textOnTint,
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        '획득한 아이템으로 나만의 캐릭터를 만들어요',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
+                    ),
+                    Gap.h4,
+                    Text.rich(
+                      TextSpan(
+                        text: '$earned',
+                        style: AppType.display
+                            .copyWith(color: AppColors.textBrandOnLight)
+                            .tabular,
+                        children: [
+                          TextSpan(
+                            text: ' / $total',
+                            style: AppType.title3.copyWith(
+                              color: AppColors.textOnTint,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textTertiary,
-                  size: 22,
-                ),
-              ],
+              ),
+            ],
+          ),
+          Gap.h16,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 10,
+              backgroundColor: AppColors.surface,
+              color: AppColors.actionPrimary,
             ),
           ),
-        ),
-        const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+/// 등급 한 묶음. 등급 안에서는 획득한 것을 앞에 둔다.
+class _TierSection extends StatelessWidget {
+  final BadgeTier tier;
+  const _TierSection({required this.tier});
+
+  static const _desc = {
+    BadgeTier.seed: '처음 시작할 때',
+    BadgeTier.sprout: '꾸준히 걷고 모을 때',
+    BadgeTier.tree: '이웃과 함께할 때',
+    BadgeTier.forest: '매일 이어갈 때',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final list = kBadges.where((b) => b.tier == tier).toList()
+      ..sort((a, b) {
+        final ae = BadgeRepo.isEarned(a.id) ? 0 : 1;
+        final be = BadgeRepo.isEarned(b.id) ? 0 : 1;
+        return ae.compareTo(be);
+      });
+    final earned = list.where((b) => BadgeRepo.isEarned(b.id)).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text(
-              '내 뱃지',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${tier.label} 등급', style: AppType.title2),
+                  Gap.h4,
+                  Text(
+                    _desc[tier] ?? '',
+                    style: AppType.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
             Text(
-              '$earnedCount / ${kBadges.length}개 획득',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
+              '$earned / ${list.length}',
+              style: AppType.caption
+                  .copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: earned == list.length
+                        ? AppColors.textBrandOnLight
+                        : AppColors.textSecondary,
+                  )
+                  .tabular,
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        // 획득/미획득 모두 탭 → 상세 모달(획득조건 항상 노출)
+        const SizedBox(height: Gap.md),
         GridView.count(
           crossAxisCount: 4,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 18,
-          crossAxisSpacing: 12,
+          mainAxisSpacing: Gap.lg,
+          crossAxisSpacing: Gap.md,
           childAspectRatio: 0.70,
-          children: [for (final b in kBadges) _badgeTile(context, b)],
+          children: [for (final b in list) _BadgeTile(badge: b)],
         ),
       ],
     );
   }
+}
 
-  Widget _badgeTile(BuildContext context, BadgeData b) {
-    final earned = BadgeRepo.isEarned(b.id);
+class _BadgeTile extends StatelessWidget {
+  final BadgeData badge;
+  const _BadgeTile({required this.badge});
+
+  @override
+  Widget build(BuildContext context) {
+    final earned = BadgeRepo.isEarned(badge.id);
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => showBadgeDetail(context, b),
+      onTap: () => showBadgeDetail(context, badge),
       child: Column(
         children: [
           AspectRatio(
@@ -710,27 +783,32 @@ class _BadgesTab extends StatelessWidget {
             child: Container(
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: earned ? AppColors.primaryPale : AppColors.divider,
-                borderRadius: BorderRadius.circular(18),
+                color: earned
+                    ? AppColors.surfaceBrand
+                    : AppColors.neutral100,
+                borderRadius: Radii.innerR,
               ),
               // TODO: 실제 2D 뱃지 이미지로 교체
               child: Icon(
-                earned ? b.icon : Icons.lock_outline,
-                color: earned ? AppColors.primary : AppColors.textTertiary,
+                earned ? badge.icon : Icons.lock_outline,
+                color: earned
+                    ? AppColors.textBrandOnLight
+                    : AppColors.neutral400,
                 size: 28,
               ),
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            earned ? b.name : '???',
+            earned ? badge.name : '???',
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppType.caption.copyWith(
               fontWeight: FontWeight.w600,
-              color: earned ? AppColors.textPrimary : AppColors.textTertiary,
+              color: earned
+                  ? AppColors.textPrimary
+                  : AppColors.textSecondary,
             ),
           ),
         ],
@@ -777,18 +855,15 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     'glass': ('유리', AppColors.categoryPurple),
   };
 
-
   // 집계 실행 — activities 로 _weekly/_monthly/_cumulative 채움
   // (도넛 _segments 는 '지금 보는 기간' 기준이라 _segmentsFor 에서 따로 계산)
   void _recompute() {
     final acts = widget.activities ?? const [];
 
-    _weekly = ActivityStats.weekly(acts)
-        .map((b) => _bucketToGData(b))
-        .toList();
-    _monthly = ActivityStats.monthly(acts)
-        .map((b) => _bucketToGData(b))
-        .toList();
+    _weekly = ActivityStats.weekly(acts).map((b) => _bucketToGData(b)).toList();
+    _monthly = ActivityStats.monthly(
+      acts,
+    ).map((b) => _bucketToGData(b)).toList();
     _cumulative = _bucketToGData(ActivityStats.cumulative(acts));
   }
 
@@ -808,7 +883,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     final cats = ActivityStats.categoryTotals(scoped)
       ..sort((a, b) => b.count.compareTo(a.count));
     return cats.map((c) {
-      final meta = _catMeta[c.category] ?? (c.category, AppColors.textTertiary);
+      final meta = _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
       return _Segment(meta.$1, c.count, meta.$2);
     }).toList();
   }
@@ -930,7 +1005,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 Text(
                   d.title,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
@@ -939,7 +1014,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                   d.range,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: AppColors.textTertiary,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -1035,7 +1110,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
       onTap: enabled ? onTap : null,
       child: Icon(
         icon,
-        color: enabled ? AppColors.textSecondary : AppColors.divider,
+        color: enabled ? AppColors.textSecondary : AppColors.border,
       ),
     );
   }
@@ -1073,7 +1148,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                       width: iconSize,
                       height: iconSize,
                       colorFilter: ColorFilter.mode(
-                        AppColors.textTertiary.withValues(alpha: 0.18),
+                        AppColors.textSecondary.withValues(alpha: 0.18),
                         BlendMode.srcIn,
                       ),
                     ),
@@ -1088,7 +1163,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                         Text(
                           label,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w700,
                             color: color,
                           ),
@@ -1121,26 +1196,29 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     );
   }
 
-  Widget _chartCard(String title, Widget child) {
+  Widget _chartCard(String title, Widget child, {String? note}) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+          Text(title, style: AppType.title3),
+          if (note != null) ...[
+            const SizedBox(height: 4),
+            // 무엇을 그린 그래프인지 밝힌다.
+            Text(
+              note,
+              style: AppType.caption.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+          ],
+          const SizedBox(height: Gap.lg),
           child,
         ],
       ),
@@ -1187,7 +1265,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                   fontWeight: peak ? FontWeight.w700 : FontWeight.w500,
                   color: peak
                       ? AppColors.chartActivityPeak
-                      : AppColors.textTertiary,
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -1223,7 +1301,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                   fontWeight: peak ? FontWeight.w700 : FontWeight.w500,
                   color: peak
                       ? AppColors.chartActivityPeak
-                      : AppColors.textTertiary,
+                      : AppColors.textSecondary,
                 ),
               ),
             );
@@ -1261,8 +1339,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                   const Text(
                     '총 수거',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -1294,7 +1372,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
             child: Text(
               s.label,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -1302,7 +1380,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           Text(
             '${s.value}',
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
@@ -1330,7 +1408,7 @@ class _DonutPainter extends CustomPainter {
     final track = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
-      ..color = AppColors.divider;
+      ..color = AppColors.border;
 
     // 배경 트랙 (항상)
     canvas.drawArc(rect, 0, 2 * pi, false, track);
@@ -1379,14 +1457,14 @@ class _DevSeedButtonsState extends State<_DevSeedButtons> {
     try {
       final n = await action();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$verb $n건 완료 — 앱을 다시 열면 반영돼요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$verb $n건 완료 — 앱을 다시 열면 반영돼요')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('실패: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('실패: $e')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1410,13 +1488,13 @@ class _DevSeedButtonsState extends State<_DevSeedButtons> {
         IconButton(
           tooltip: '가짜 데이터 심기',
           icon: const Icon(Icons.add_circle_outline, size: 22),
-          color: AppColors.textTertiary,
+          color: AppColors.textSecondary,
           onPressed: () => _run(() => DevSeed.seedActivities(), '심기'),
         ),
         IconButton(
           tooltip: '가짜 데이터 지우기',
           icon: const Icon(Icons.delete_outline, size: 22),
-          color: AppColors.textTertiary,
+          color: AppColors.textSecondary,
           onPressed: () => _run(() => DevSeed.clearActivities(), '삭제'),
         ),
         // 뱃지 판정 실행 — 조건 충족한 뱃지를 저장하고 포인트를 적립한다.
@@ -1424,7 +1502,7 @@ class _DevSeedButtonsState extends State<_DevSeedButtons> {
         IconButton(
           tooltip: '뱃지 판정 실행',
           icon: const Icon(Icons.military_tech_outlined, size: 22),
-          color: AppColors.textTertiary,
+          color: AppColors.textSecondary,
           onPressed: () => _run(() async {
             final fresh = await BadgeService.checkAndSave();
             return fresh.length; // 새로 딴 뱃지 개수
@@ -1445,18 +1523,18 @@ class _EmptyRecords extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
       child: Column(
         children: const [
-          Icon(Icons.directions_walk, size: 48, color: AppColors.textTertiary),
+          Icon(Icons.directions_walk, size: 48, color: AppColors.textSecondary),
           SizedBox(height: 12),
           Text(
             '아직 플로깅 기록이 없어요',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
@@ -1483,13 +1561,13 @@ class _ErrorBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
       child: Column(
         children: [
-          const Icon(Icons.cloud_off, size: 44, color: AppColors.textTertiary),
+          const Icon(Icons.cloud_off, size: 44, color: AppColors.textSecondary),
           const SizedBox(height: 12),
           const Text(
             '기록을 불러오지 못했어요',
@@ -1500,10 +1578,7 @@ class _ErrorBox extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          TextButton(
-            onPressed: onRetry,
-            child: const Text('다시 시도'),
-          ),
+          TextButton(onPressed: onRetry, child: const Text('다시 시도')),
         ],
       ),
     );

@@ -100,7 +100,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
     final nickname =
         ref.watch(userProfileProvider).valueOrNull?.nickname ?? '플로거';
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,7 +145,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 15,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -163,8 +163,8 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                         prefix: '지금까지',
                         value: ImpactMetrics.oneDecimal(_totalWeightG / 1000.0),
                         suffix: 'kg 를 주웠어요',
-                        bg: AppColors.primaryPale,
-                        valueColor: AppColors.primaryDeep,
+                        bg: AppColors.surfaceBrand,
+                        valueColor: AppColors.green800,
                       ),
 
                       const SizedBox(height: 40),
@@ -177,7 +177,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -204,7 +204,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -215,8 +215,8 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                         prefix: '나무를',
                         value: ImpactMetrics.oneDecimal(_trees),
                         suffix: '그루 심은 효과예요',
-                        bg: AppColors.primaryPale,
-                        valueColor: AppColors.primaryDeep,
+                        bg: AppColors.surfaceBrand,
+                        valueColor: AppColors.green800,
                       ),
 
                       const SizedBox(height: 34),
@@ -231,7 +231,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                         '${ImpactMetrics.oneDecimal(_co2Kg)}kg 감축했어요',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -290,8 +290,8 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                       Text(
                         '* $_joinYear년부터 누적된 나의 기록이에요.',
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -348,7 +348,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textTertiary,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ],
@@ -363,7 +363,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: bg ?? AppColors.primaryPale,
+        color: bg ?? AppColors.surfaceBrand,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -371,7 +371,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: fg ?? AppColors.primaryDeep,
+          color: fg ?? AppColors.green800,
         ),
       ),
     );
@@ -399,7 +399,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
             Text(
               prefix,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
               ),
@@ -408,7 +408,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.cardBG,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -424,7 +424,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
             Text(
               suffix,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
               ),
@@ -451,7 +451,7 @@ class _DonutPainter extends CustomPainter {
 
     // 배경 트랙
     final track = Paint()
-      ..color = AppColors.divider
+      ..color = AppColors.border
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke;
     canvas.drawArc(rect, 0, 2 * pi, false, track);
@@ -493,7 +493,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.cardBG,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: AppColors.cardShadow,
       ),
@@ -529,7 +529,7 @@ class _StatCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textTertiary,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],

@@ -65,7 +65,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
   Widget build(BuildContext context) {
     final results = _results;
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -85,7 +85,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                       height: 42,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
-                        color: AppColors.cardBG,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: AppColors.cardShadow,
                       ),
@@ -94,7 +94,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                           const Icon(
                             Icons.search,
                             size: 20,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -110,11 +110,11 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                                 border: InputBorder.none,
                                 hintText: '그룹명 또는 동네 검색',
                                 hintStyle: TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textTertiary,
+                                  fontSize: 15,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
-                              style: const TextStyle(fontSize: 14),
+                              style: const TextStyle(fontSize: 15),
                             ),
                           ),
                           if (_query.isNotEmpty)
@@ -126,7 +126,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                               child: const Icon(
                                 Icons.close,
                                 size: 18,
-                                color: AppColors.textTertiary,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                         ],
@@ -208,12 +208,12 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.search_off, size: 48, color: AppColors.textTertiary),
+          const Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
           const SizedBox(height: 12),
           Text(
             '\'$_query\' 검색 결과가 없어요',
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               color: AppColors.textSecondary,
             ),
           ),
@@ -242,7 +242,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardBG,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
@@ -254,7 +254,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
               height: 56,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.primaryPale,
+                color: AppColors.surfaceBrand,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Text('🌱', style: TextStyle(fontSize: 26)),
@@ -267,7 +267,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                   Text(
                     g.name,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -277,7 +277,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                     g.region,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: AppColors.textTertiary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -285,7 +285,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                     g.meta,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: AppColors.textTertiary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -402,7 +402,7 @@ class _FilterDropdownState extends State<_FilterDropdown>
                     child: Container(
                       width: 132,
                       decoration: BoxDecoration(
-                        color: AppColors.cardBG,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: AppColors.cardShadow,
                       ),
@@ -429,7 +429,7 @@ class _FilterDropdownState extends State<_FilterDropdown>
                                             ? FontWeight.w700
                                             : FontWeight.w500,
                                         color: on
-                                            ? AppColors.primaryDeep
+                                            ? AppColors.green800
                                             : AppColors.textSecondary,
                                       ),
                                     ),
@@ -480,10 +480,10 @@ class _FilterDropdownState extends State<_FilterDropdown>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.cardBG,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: widget.open ? AppColors.primary : AppColors.divider,
+              color: widget.open ? AppColors.primary : AppColors.border,
             ),
           ),
           child: Row(
@@ -500,7 +500,7 @@ class _FilterDropdownState extends State<_FilterDropdown>
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: widget.open
-                        ? AppColors.primaryDeep
+                        ? AppColors.green800
                         : AppColors.textSecondary,
                   ),
                 ),
@@ -512,7 +512,7 @@ class _FilterDropdownState extends State<_FilterDropdown>
                 child: const Icon(
                   Icons.keyboard_arrow_down,
                   size: 18,
-                  color: AppColors.textTertiary,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ],

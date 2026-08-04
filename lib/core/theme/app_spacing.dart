@@ -63,19 +63,23 @@ class Radii {
   Radii._();
 
   /// 아이콘 타일 · 썸네일
-  static const double tile = 10;
+  static const double tile = 14;
 
   /// 카드
-  static const double card = 16;
+  static const double card = 24;
+
+  /// 카드 안의 작은 블록 (통계 타일, 안내 박스)
+  static const double inner = 16;
 
   /// 바텀시트 · 모달
-  static const double sheet = 20;
+  static const double sheet = 28;
 
   /// 칩 · FAB
   static const double full = 999;
 
   static final BorderRadius tileR = BorderRadius.circular(tile);
   static final BorderRadius cardR = BorderRadius.circular(card);
+  static final BorderRadius innerR = BorderRadius.circular(inner);
   static final BorderRadius sheetR = BorderRadius.circular(sheet);
   static final BorderRadius fullR = BorderRadius.circular(full);
 }

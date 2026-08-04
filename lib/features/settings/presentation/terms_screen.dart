@@ -18,7 +18,7 @@ class _TermsScreenState extends State<TermsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.appBG,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -59,7 +59,7 @@ class _TermsScreenState extends State<TermsScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.cardBG,
+                      color: AppColors.surface,
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: AppColors.cardShadow,
                     ),
@@ -77,8 +77,8 @@ class _TermsScreenState extends State<TermsScreen> {
                     '시행일: 2026년 2월 1일',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -100,16 +100,16 @@ class _TermsScreenState extends State<TermsScreen> {
           height: 42,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: on ? AppColors.primary : AppColors.cardBG,
+            color: on ? AppColors.primary : AppColors.surface,
             borderRadius: BorderRadius.circular(21),
             border: Border.all(
-              color: on ? AppColors.primary : AppColors.divider,
+              color: on ? AppColors.primary : AppColors.border,
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
               color: on ? Colors.white : AppColors.textSecondary,
             ),
