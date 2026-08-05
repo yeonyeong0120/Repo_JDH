@@ -8,12 +8,11 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
-import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
+import 'package:repo_jdh/features/vision/presentation/camera_detection_screen.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
-import 'package:repo_jdh/features/plogging/domain/plogging_session_providers.dart';
+import 'package:repo_jdh/features/plogging/domain/destination_providers.dart';
 import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
-import 'package:repo_jdh/features/auth/data/auth_repository.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
@@ -22,11 +21,12 @@ import 'package:repo_jdh/core/providers/tracking_provider.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 
-class PloggingHomeScreen extends ConsumerStatefulWidget {
-  const PloggingHomeScreen({super.key});
+class PloggingTrackingScreen extends ConsumerStatefulWidget {
+  const PloggingTrackingScreen({super.key});
 
   @override
-  ConsumerState<PloggingHomeScreen> createState() => _PloggingHomeScreenState();
+  ConsumerState<PloggingTrackingScreen> createState() =>
+      _PloggingTrackingScreenState();
 }
 
 Widget _buildCircleButton({
@@ -53,7 +53,8 @@ Widget _buildCircleButton({
   );
 }
 
-class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
+class _PloggingTrackingScreenState
+    extends ConsumerState<PloggingTrackingScreen> {
   // 실측값은 trackingProvider 가 보관 (경과 시간 · 이동 거리)
   Timer? _ticker;
   StreamSubscription<TrackPoint>? _pointSub;
@@ -284,20 +285,6 @@ class _PloggingHomeScreenState extends ConsumerState<PloggingHomeScreen> {
           '• 한 번 더 누르면 촬영, 종료도 한 번 더 누르면 끝나요.\n'
           '• 상단 카드를 누르면 수거 상세를 볼 수 있어요.',
     );
-  }
-
-  Future<void> _confirmLogout() async {
-    final ok = await AppDialog.show(
-      context,
-      title: '로그아웃',
-      message: '정말 로그아웃 하시겠습니까?',
-      cancelText: '취소',
-      confirmText: '로그아웃',
-      danger: true,
-    );
-    if (ok == true) {
-      await AuthRepository.signOut();
-    }
   }
 
   Future<void> _openCamera() async {

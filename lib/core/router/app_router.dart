@@ -10,16 +10,15 @@ import 'package:repo_jdh/core/providers/auth_provider.dart';
 import 'package:repo_jdh/features/auth/presentation/login_screen.dart';
 import 'package:repo_jdh/features/auth/presentation/nickname_setup_screen.dart';
 import 'package:repo_jdh/features/auth/data/user_profile_provider.dart';
-import 'package:repo_jdh/features/vision/presentation/camera_screen.dart';
-import 'package:repo_jdh/features/plogging/presentation/plogging_home_screen.dart';
-import 'package:repo_jdh/features/home/presentation/home_screen.dart'
-    as home_feature;
+import 'package:repo_jdh/features/vision/presentation/camera_detection_screen.dart';
+import 'package:repo_jdh/features/plogging/presentation/plogging_tracking_screen.dart';
+import 'package:repo_jdh/features/home/presentation/home_screen.dart';
 import 'package:repo_jdh/features/community/presentation/group_screen.dart';
-import 'package:repo_jdh/features/mypage/presentation/activity_screen.dart';
+import 'package:repo_jdh/features/mypage/presentation/my_activity_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/menu_screen.dart';
 import 'package:repo_jdh/features/plogging/presentation/settlement_screen.dart';
 import 'package:repo_jdh/features/community/presentation/group_feed_screen.dart';
-import 'package:repo_jdh/features/plogging/presentation/plogging_session_screen.dart';
+import 'package:repo_jdh/features/plogging/presentation/route_setup_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -166,7 +165,7 @@ GoRouter appRouter(Ref ref) {
         routes: [
           GoRoute(
             path: AppRoutes.home,
-            builder: (context, state) => const home_feature.HomeScreen(),
+            builder: (context, state) => const HomeScreen(),
           ),
           GoRoute(
             path: AppRoutes.group,
@@ -174,7 +173,7 @@ GoRouter appRouter(Ref ref) {
           ),
           GoRoute(
             path: AppRoutes.mypage,
-            builder: (context, state) => const ActivityScreen(),
+            builder: (context, state) => const MyActivityScreen(),
           ),
           GoRoute(
             path: AppRoutes.settings,
@@ -184,11 +183,11 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: AppRoutes.ploggingRoute,
-        builder: (context, state) => const PloggingSessionScreen(),
+        builder: (context, state) => const RouteSetupScreen(),
       ),
       GoRoute(
         path: AppRoutes.ploggingTracking,
-        builder: (context, state) => const PloggingHomeScreen(),
+        builder: (context, state) => const PloggingTrackingScreen(),
       ),
       GoRoute(
         path: AppRoutes.visionCamera,
