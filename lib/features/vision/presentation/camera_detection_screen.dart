@@ -7,9 +7,9 @@ import 'package:image/image.dart' as img;
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
-import '../data/detector.dart';
-import '../../plogging/data/location_repository.dart';
-import 'box_painter.dart';
+import 'package:repo_jdh/features/vision/data/detector.dart';
+import 'package:repo_jdh/features/plogging/data/location_repository.dart';
+import 'package:repo_jdh/features/vision/presentation/box_painter.dart';
 
 class CameraDetectionScreen extends ConsumerStatefulWidget {
   const CameraDetectionScreen({super.key});
@@ -118,7 +118,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
         });
       }
     } catch (e) {
-      print('[등록] 실패: $e');
+      debugPrint('[등록] 실패: $e');
       if (mounted) {
         Navigator.pop(context, {
           'counts': Map<String, int>.from(_liveCounts),

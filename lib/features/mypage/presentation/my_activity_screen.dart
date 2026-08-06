@@ -19,15 +19,15 @@ import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포
 
 /// 줍다행 - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
-/// 위치 권장: lib/features/mypage/presentation/activity_screen.dart
-class ActivityScreen extends StatefulWidget {
-  const ActivityScreen({super.key});
+/// 위치 권장: lib/features/mypage/presentation/my_activity_screen.dart
+class MyActivityScreen extends StatefulWidget {
+  const MyActivityScreen({super.key});
 
   @override
-  State<ActivityScreen> createState() => _ActivityScreenState();
+  State<MyActivityScreen> createState() => _MyActivityScreenState();
 }
 
-class _ActivityScreenState extends State<ActivityScreen> {
+class _MyActivityScreenState extends State<MyActivityScreen> {
   int _tab = 0; // 0:기록 1:뱃지 2:그래프
   int _graphPlay = 0; // 그래프 탭 진입 때마다 +1 → 애니메이션 재생 트리거
   int _badgeVersion = 0; // 획득 현황 로드되면 +1 → 뱃지 탭 갱신
@@ -974,7 +974,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // 기간 토글은 부모(_ActivityScreenState)가 헤더 아래 고정으로 그린다.
+    // 기간 토글은 부모(_MyActivityScreenState)가 헤더 아래 고정으로 그린다.
     // 이 페이지는 내용만 → 기간 스와이프 시 내용만 슬라이드된다.
     return _periodBody(widget.period);
   }

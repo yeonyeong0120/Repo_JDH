@@ -1,9 +1,10 @@
-// 플로깅 세션 화면(실제 흐름).
+// 플로깅 경로 설정 화면. 트래킹을 시작하기 전 준비 단계를 담당한다.
 // 1) 현재 GPS 위치를 출발지로 지도 중심에 둔다.
 // 2) 지도를 탭하면 그 지점을 도착지로 마커 표시한다(다시 탭하면 갱신).
 // 3) "경로 받기"를 누르면 출발=현재GPS, 도착=탭지점으로 경로를 추천받는다.
 // 4) 추천 결과의 polyline은 NPathOverlay, k3 핫스팟은 NMarker로 그린다. hard case면 안내.
-// 5) 하단 카메라 버튼으로 기존 YOLO 카메라 화면으로 이동한다.
+// 5) "플로깅 시작"을 누르면 트래킹 화면(PloggingTrackingScreen)으로 이동한다.
+//    또한 강제 종료된 세션이 있으면(PLOG-10) 진입 시 이어할지 묻는다.
 //
 // 가이드라인 준수: setState 미사용(Riverpod 상태로 관리), AsyncValue.when, withValues(alpha:),
 //                 package: 절대경로 import, 한국어 주석.
@@ -19,20 +20,19 @@ import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/providers/tracking_provider.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
-import 'package:repo_jdh/features/plogging/domain/plogging_session_providers.dart';
+import 'package:repo_jdh/features/plogging/domain/destination_providers.dart';
 import 'package:repo_jdh/features/plogging/domain/route_models.dart';
 import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 
-class PloggingSessionScreen extends ConsumerStatefulWidget {
-  const PloggingSessionScreen({super.key});
+class RouteSetupScreen extends ConsumerStatefulWidget {
+  const RouteSetupScreen({super.key});
 
   @override
-  ConsumerState<PloggingSessionScreen> createState() =>
-      _PloggingSessionScreenState();
+  ConsumerState<RouteSetupScreen> createState() => _RouteSetupScreenState();
 }
 
-class _PloggingSessionScreenState extends ConsumerState<PloggingSessionScreen> {
+class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
   // PLOG-10 트래킹 중단 복구 — 강제 종료된 세션이 있으면 이어할지 묻는다
   Future<void> _checkInterrupted() async {
     TrackingState? saved;
