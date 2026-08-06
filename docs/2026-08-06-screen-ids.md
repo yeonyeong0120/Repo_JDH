@@ -15,6 +15,17 @@
 
 ---
 
+## 1-1. 개정 기록
+
+| 일자 | 내용 |
+|---|---|
+| 2026-08-06 | 최초 작성 (83건) |
+| 2026-08-06 | ACT 재구성(기록·뱃지·그래프를 단일 화면의 탭으로 통합), MNU 재번호(지역 변경을 프로필 하위로 이동), ID 2건 신규 부여, 1건 삭제 |
+
+번호 회수 금지 규칙(2-4절)은 본 문서가 확정된 이후부터 적용한다. 위 개정은 확정 전에 이루어진 것이므로 결번을 남기지 않고 번호를 당겼다.
+
+---
+
 ## 2. ID 체계
 
 ### 2-1. 형식
@@ -136,6 +147,7 @@ core/router/app_router.dart
 | PLG-02-03DG | 종료 컨펌 모달 | plogging/presentation/plogging_tracking_screen.dart | `_endPlogging` | 완성 | PLOG-07 | PLOG-07 | 확인 시 `ActivityService.saveCompleted` 후 정산 화면으로 push |
 | PLG-02-04CD | 경로 이탈 재추천 카드 | - | - | 미구현 | AUTO-01 | - | 8절 참조 |
 | PLG-02-05TO | GPS 미수신 안내 | - | - | 미구현 | ERR-02 | - | 8절 참조 |
+| PLG-02-06DG | 플로깅 안내 도움말 | plogging/presentation/plogging_tracking_screen.dart | `_showGuide` | 완성 | - | - | 트래킹 화면 우상단 물음표 버튼으로 열리는 `AppDialog.showInfo`. 첫 활동 1회만 노출되는 PLG-02-01DG(활동 규칙 모달)와 다른 팝업이며, 언제든 다시 열 수 있다. 설계서에 정의되어 있지 않은 화면이다 |
 | PLG-03-00MS | 쓰레기 등록 (카메라) | vision/presentation/camera_detection_screen.dart | `CameraDetectionScreen` | 완성 | PLOG-08 | - | vision feature이나 접두사는 사용자 흐름 기준이라 PLG. 700ms 간격 스트림 추론(`GarbageDetector.detect`) + `DetectionPainter` 실시간 박스 |
 | PLG-03-01FP | AI 분석 중 | vision/presentation/camera_detection_screen.dart | (실시간 오버레이로 대체) | 미구현 | PLOG-10 | - | 8절 참조. 별도 '분석 중' 화면 없이 실시간 오버레이로 대체되어 있다 |
 | PLG-03-02DG | AI 분석 실패 | vision/presentation/camera_detection_screen.dart | `_onImage` catch / `_registerAndClose` | 부분 | ERR-03 | - | 다이얼로그 없음. 추론 실패는 `debugPrint('Detect error: $e')`로 로그만 남기고 사용자에게 노출되지 않는다. 인식 0건일 때만 스낵바 '인식된 쓰레기가 없습니다' |
@@ -153,6 +165,7 @@ core/router/app_router.dart
 | GRP-03-00MS | 그룹 만들기 | community/presentation/group_create_screen.dart | `GroupCreateScreen` | 부분 | GRP-03 | GRP-03 | 생성은 동작(`GroupService.createGroup`). 대표 사진 업로드 미연결(TODO), 동네가 `'00구 00동'` 하드코딩 |
 | GRP-03-01DG | 그룹 가입 차단 모달 | community/presentation/group_create_screen.dart<br>community/presentation/group_detail_screen.dart | `_showBlocked`<br>`_showAlreadyJoined` | 완성 | GRP-04 | GRP-04 | 그룹 상세에서도 호출되나 부모는 만들기로 통일. 만들기 쪽은 진입 즉시 차단 후 pop, 상세 쪽은 안내만 |
 | GRP-04-00MS | 그룹 상세 | community/presentation/group_detail_screen.dart | `GroupDetailScreen` | 완성 | GRP-05 | - | GRP-05를 상세·피드로 분리. 가입 확인 → `GroupService.joinGroup` → 피드로 이동 |
+| GRP-04-01DG | 그룹 가입 확인 | community/presentation/group_detail_screen.dart | `_join` 내부 `AppDialog.show` | 완성 | - | - | 그룹 상세의 '가입' 버튼을 누르면 뜨는 확인 팝업. GRP-03-01DG(가입 차단 모달)보다 먼저 노출되며, 이미 다른 그룹에 소속된 경우에만 차단 모달로 이어진다. 설계서에 정의되어 있지 않은 화면이다 |
 | GRP-05-00MS | 그룹 피드 | community/presentation/group_feed_screen.dart | `GroupFeedScreen` | 부분 | GRP-05 | GRP-05 | 위와 동일. `groupId`가 있으면 `GroupService.watchPosts` 스트림으로 교체되지만, 없으면 코드에 박힌 더미 3건이 그대로 보인다. 게시물 사진은 TODO |
 | GRP-05-01BS | 그룹 정보 시트 | community/presentation/group_feed_screen.dart | `_showGroupInfo` | 완성 | - | - | 수록 미확정. `GroupService.getGroup`으로 소개·동네 조회. 대표 이미지는 TODO |
 | GRP-05-02DG | 그룹 탈퇴 확인 | community/presentation/group_feed_screen.dart | `_confirmLeave` | 완성 | - | - | 수록 미확정. 탈퇴는 이 화면에서만 가능 |
@@ -162,22 +175,21 @@ core/router/app_router.dart
 
 | 신규 ID | 화면명 | 프로그램 ID | 클래스/함수명 | 구현 상태 | 구 ID(설계서) | 구 ID(코드) | 비고 |
 |---|---|---|---|---|---|---|---|
-| ACT-01-00MS | 내 활동 - 기록 탭 | mypage/presentation/my_activity_screen.dart | `MyActivityScreen` / `_RecordsTab` | 완성 | ACT-01 | - | `ActivityService.getRecentCompleted(limit: 3)` + `BadgeService.progressOf`로 퀘스트 3건. 기록·뱃지·그래프는 `MyActivityScreen`의 `PageView` 페이지다(5절 유형 지적 참조) |
-| ACT-01-01ES | 활동 기록 없음 | mypage/presentation/my_activity_screen.dart | `_EmptyRecords` | 완성 | EMPTY-01 | - | 로딩 완료 후 0건일 때만. 로딩 중(null)·에러와 명확히 구분되어 있다 |
-| ACT-02-00MS | 내 활동 - 뱃지 탭 | mypage/presentation/my_activity_screen.dart | `_BadgesTab` | 완성 | ACT-02 | - | `BadgeService.loadEarned()`로 Firestore 획득 현황 반영. 등급 4단계로 나눠 표시 |
-| ACT-02-01DG | 뱃지 상세 모달 | mypage/presentation/badge_dialog.dart | `showBadgeDetail` | 완성 | ACT-06 | ACT-08 | 미획득도 열람 가능(자물쇠 + '???'). 획득조건은 항상, 달성일자는 획득 시에만 |
-| ACT-02-02ES | 뱃지 미획득 | - | - | 미구현 | EMPTY-03 | - | 별도 빈 상태 없음. 미획득 뱃지도 자물쇠 타일(`_BadgeTile`)로 항상 그리드에 표시되므로 0건 상태가 발생하지 않는 구조다 |
-| ACT-03-00MS | 내 활동 - 그래프 (주간) | mypage/presentation/my_activity_screen.dart | `_GraphTab(period: 0)` | 완성 | ACT-03 | - | `ActivityService.getRecentCompleted(limit: 200)` 집계 |
-| ACT-03-01TB | 그래프 (월간) | mypage/presentation/my_activity_screen.dart | `_GraphTab(period: 1)` | 완성 | ACT-03 | - | 같은 클래스에 `period`만 다르다 |
-| ACT-03-02TB | 그래프 (누적) | mypage/presentation/my_activity_screen.dart | `_GraphTab(period: 2)` | 완성 | ACT-03 | - | 상동 |
-| ACT-03-03TT | 그래프 기준 안내 툴팁 | - | - | 미구현 | ACT-03 | - | 수록 미확정. `Tooltip` 위젯 및 기준 안내 문구 0건 |
-| ACT-04-00MS | 전체 활동 기록 | mypage/presentation/activity_list_screen.dart | `ActivityListScreen` | 부분 | ACT-04 | ACT-04 | 목록이 `static const List<_Act> _acts` 더미 4건으로 고정되어 있다(TODO: 실제 활동 데이터로 교체) |
-| ACT-04-01DG | 기간 선택 | mypage/presentation/activity_list_screen.dart | `_pickDate` | 완성 | - | - | 수록 미확정. 시작일·종료일 + 달력/휠 전환. 선택 결과는 위 더미 목록에 적용된다 |
-| ACT-05-00MS | 개별 활동 상세 | mypage/presentation/activity_detail_screen.dart | `ActivityDetailScreen` | 부분 | ACT-05 | ACT-05 | 값은 호출 측이 넘긴다. 내 활동 탭에서는 실데이터, 전체 활동 기록에서는 더미가 들어온다. 사진은 TODO |
-| ACT-05-01BS | 활동 메뉴 시트 | mypage/presentation/activity_detail_screen.dart | `_showMenu` | 부분 | - | - | 수록 미확정. '그룹에 공유'·'활동 삭제' 둘 다 스낵바만 뜨고 실제 처리가 없다(TODO 2건) |
-| ACT-06-00MS | 전체 퀘스트 목록 | mypage/presentation/quest_list_screen.dart | `QuestListScreen` | 완성 | - | ACT-09 | 코드에만 존재. `BadgeService.loadStats()` 실통계로 20개 진행률 계산. 코드 주석의 ACT-09는 뱃지 획득 모달과 충돌(6절 참조) |
-| ACT-07-00MS | 마스코트 꾸미기 | - | - | 미구현 | ACT-07 | - | badge.dart의 `reward`/`slot` 필드가 존재하나 badge_dialog.dart 주석이 "줍댕이 꾸미기 기능은 범위에서 제외 — 미사용"이라고 명시한다 |
-| ACT-07-01DG | 아이템 획득 조건 모달 | - | - | 미구현 | ACT-07 | - | 수록 미확정. 상동 |
+| ACT-01-00MS | 내 활동 - 기록 탭 | mypage/presentation/my_activity_screen.dart | `MyActivityScreen` / `_RecordsTab` | 완성 | ACT-01 | - | `ActivityService.getRecentCompleted(limit: 3)` + `BadgeService.progressOf`로 퀘스트 3건. 기록·뱃지·그래프는 `MyActivityScreen` 하나의 `PageView` 페이지이므로, 기록 탭만 MS로 두고 나머지는 이 화면의 TB 부수로 배정했다 |
+| ACT-01-01TB | 내 활동 - 뱃지 탭 | mypage/presentation/my_activity_screen.dart | `_BadgesTab` | 완성 | ACT-02 | - | `BadgeService.loadEarned()`로 Firestore 획득 현황 반영. 등급 4단계로 나눠 표시. 설계서 EMPTY-03(뱃지 미획득)은 별도 빈 상태가 아니라 이 화면의 기본 상태다. 미획득 뱃지는 자물쇠 타일로 항상 표시되므로 0건 상태가 발생하지 않는다 |
+| ACT-01-02TB | 내 활동 - 그래프 (주간) | mypage/presentation/my_activity_screen.dart | `_GraphTab(period: 0)` | 완성 | ACT-03 | - | `ActivityService.getRecentCompleted(limit: 200)` 집계 |
+| ACT-01-03TB | 내 활동 - 그래프 (월간) | mypage/presentation/my_activity_screen.dart | `_GraphTab(period: 1)` | 완성 | ACT-03 | - | 같은 클래스에 `period`만 다르다 |
+| ACT-01-04TB | 내 활동 - 그래프 (누적) | mypage/presentation/my_activity_screen.dart | `_GraphTab(period: 2)` | 완성 | ACT-03 | - | 상동 |
+| ACT-01-05ES | 활동 기록 없음 | mypage/presentation/my_activity_screen.dart | `_EmptyRecords` | 완성 | EMPTY-01 | - | 로딩 완료 후 0건일 때만. 로딩 중(null)·에러와 명확히 구분되어 있다 |
+| ACT-01-06DG | 뱃지 상세 모달 | mypage/presentation/badge_dialog.dart | `showBadgeDetail` | 완성 | ACT-06 | ACT-08 | 미획득도 열람 가능(자물쇠 + '???'). 획득조건은 항상, 달성일자는 획득 시에만 |
+| ACT-01-07TT | 그래프 기준 안내 툴팁 | - | - | 미구현 | ACT-03 | - | 수록 미확정. `Tooltip` 위젯 및 기준 안내 문구 0건 |
+| ACT-02-00MS | 전체 활동 기록 | mypage/presentation/activity_list_screen.dart | `ActivityListScreen` | 부분 | ACT-04 | ACT-04 | 목록이 `static const List<_Act> _acts` 더미 4건으로 고정되어 있다(TODO: 실제 활동 데이터로 교체) |
+| ACT-02-01DG | 기간 선택 | mypage/presentation/activity_list_screen.dart | `_pickDate` | 완성 | - | - | 수록 미확정. 시작일·종료일 + 달력/휠 전환. 선택 결과는 위 더미 목록에 적용된다 |
+| ACT-03-00MS | 개별 활동 상세 | mypage/presentation/activity_detail_screen.dart | `ActivityDetailScreen` | 부분 | ACT-05 | ACT-05 | 값은 호출 측이 넘긴다. 내 활동 탭에서는 실데이터, 전체 활동 기록에서는 더미가 들어온다. 사진은 TODO |
+| ACT-03-01BS | 활동 메뉴 시트 | mypage/presentation/activity_detail_screen.dart | `_showMenu` | 부분 | - | - | 수록 미확정. '그룹에 공유'·'활동 삭제' 둘 다 스낵바만 뜨고 실제 처리가 없다(TODO 2건) |
+| ACT-04-00MS | 전체 퀘스트 목록 | mypage/presentation/quest_list_screen.dart | `QuestListScreen` | 완성 | - | ACT-09 | 코드에만 존재. `BadgeService.loadStats()` 실통계로 20개 진행률 계산. 코드 주석의 ACT-09는 뱃지 획득 모달과 충돌(6절 참조) |
+| ACT-05-00MS | 마스코트 꾸미기 | - | - | 미구현 | ACT-07 | - | badge.dart의 `reward`/`slot` 필드가 존재하나 badge_dialog.dart 주석이 "줍댕이 꾸미기 기능은 범위에서 제외 — 미사용"이라고 명시한다 |
+| ACT-05-01DG | 아이템 획득 조건 모달 | - | - | 미구현 | ACT-07 | - | 수록 미확정. 상동 |
 
 ### 4-7. MNU 메뉴·프로필
 
@@ -191,14 +203,14 @@ core/router/app_router.dart
 | MNU-02-02DG | 닉네임 입력 | mypage/presentation/profile_screen.dart | `_editNickname` → `_textDialog` | 완성 | - | - | 수록 미확정 |
 | MNU-02-03BS | 성별 선택 | mypage/presentation/profile_screen.dart | `_editGender` | 완성 | - | - | 수록 미확정 |
 | MNU-02-04BS | 나이·키·몸무게 휠 | mypage/presentation/profile_screen.dart | `_editNumber` (나이) / `_editIntField` (키·몸무게) | 부분 | - | - | 수록 미확정. **휠 바텀시트는 나이만이다.** 키·몸무게는 `_textDialog` 기반 숫자 입력 다이얼로그이므로 하나의 BS로 묶을 수 없다 |
-| MNU-03-00MS | 지역 변경 | mypage/presentation/profile_screen.dart | `_editRegion` → `_textDialog` | 부분 | MENU-03 | - | 별도 화면이 아니라 프로필 화면 안의 텍스트 입력 다이얼로그로 존재한다. 유형이 MS가 아니라 DG에 해당한다 |
-| MNU-04-00MS | 공지사항 목록 | settings/presentation/notice_screen.dart | `NoticeListScreen` | 부분 | MENU-04 | EXTRA-03 | MENU-04를 목록·상세로 분리. 공지 3건이 `static final List<Notice> _notices` 더미(TODO: Firestore notices 컬렉션으로 교체) |
-| MNU-05-00MS | 공지사항 상세 | settings/presentation/notice_screen.dart | `NoticeDetailScreen` | 부분 | MENU-04 | EXTRA-04 | 위와 동일 파일. 더미 공지를 그대로 받는다 |
-| MNU-06-00MS | FAQ | settings/presentation/faq_screen.dart | `FaqScreen` | 부분 | MENU-05 | - | 문답이 `static const List<(String, String)> _faqs` 코드 상수. 아코디언 동작은 완성(TODO: 실제 문의 많은 항목으로 보강) |
-| MNU-07-00MS | 문의 및 신고 | settings/presentation/inquiry_screen.dart | `InquiryScreen` | 완성 | MENU-06 | - | Firestore `inquiries` 컬렉션에 실제 저장 |
-| MNU-07-01DG | 문의 접수 완료 | settings/presentation/inquiry_screen.dart | `_showDone` | 완성 | - | - | 수록 미확정. '접수되었습니다' + '확인 후 입력하신 이메일로 답변드릴게요' |
-| MNU-08-00MS | 이용약관 / 개인정보처리방침 | settings/presentation/terms_screen.dart | `TermsScreen` | 부분 | MENU-07 | - | MENU-07을 약관·오픈소스로 분리. 본문이 초안이며 파일 상단에 법률 검토 TODO가 달려 있다. 화면 안에 이용약관/개인정보 2개 내부 탭(`_tab`)이 있으나 ID가 없다 |
-| MNU-09-00MS | 오픈소스 및 출처 | settings/presentation/licenses_screen.dart | `LicensesScreen` | 부분 | MENU-07 | - | 위와 동일. 아이콘 제작자명이 전부 `'TODO: 제작자명'`으로 비어 있다 |
+| MNU-02-05DG | 지역 변경 | mypage/presentation/profile_screen.dart | `_editRegion` → `_textDialog` | 부분 | MENU-03 | - | 별도 화면이 아니라 프로필 화면 안의 텍스트 입력 다이얼로그다. 설계서 MENU-03은 지도 기반 현재 위치 호출로 정의되어 있으나, 실제 구현은 자유 텍스트 입력이다 |
+| MNU-03-00MS | 공지사항 목록 | settings/presentation/notice_screen.dart | `NoticeListScreen` | 부분 | MENU-04 | EXTRA-03 | MENU-04를 목록·상세로 분리. 공지 3건이 `static final List<Notice> _notices` 더미(TODO: Firestore notices 컬렉션으로 교체) |
+| MNU-04-00MS | 공지사항 상세 | settings/presentation/notice_screen.dart | `NoticeDetailScreen` | 부분 | MENU-04 | EXTRA-04 | 위와 동일 파일. 더미 공지를 그대로 받는다 |
+| MNU-05-00MS | FAQ | settings/presentation/faq_screen.dart | `FaqScreen` | 부분 | MENU-05 | - | 문답이 `static const List<(String, String)> _faqs` 코드 상수. 아코디언 동작은 완성(TODO: 실제 문의 많은 항목으로 보강) |
+| MNU-06-00MS | 문의 및 신고 | settings/presentation/inquiry_screen.dart | `InquiryScreen` | 완성 | MENU-06 | - | Firestore `inquiries` 컬렉션에 실제 저장 |
+| MNU-06-01DG | 문의 접수 완료 | settings/presentation/inquiry_screen.dart | `_showDone` | 완성 | - | - | 수록 미확정. '접수되었습니다' + '확인 후 입력하신 이메일로 답변드릴게요' |
+| MNU-07-00MS | 이용약관 / 개인정보처리방침 | settings/presentation/terms_screen.dart | `TermsScreen` | 부분 | MENU-07 | - | MENU-07을 약관·오픈소스로 분리. 본문이 초안이며 파일 상단에 법률 검토 TODO가 달려 있다. 화면 안에 이용약관/개인정보 2개 내부 탭(`_tab`)이 있으나 ID가 없다 |
+| MNU-08-00MS | 오픈소스 및 출처 | settings/presentation/licenses_screen.dart | `LicensesScreen` | 부분 | MENU-07 | - | 위와 동일. 아이콘 제작자명이 전부 `'TODO: 제작자명'`으로 비어 있다 |
 
 ### 4-8. SHP 에코포인트·상점
 
@@ -238,42 +250,44 @@ core/router/app_router.dart
 | AUT | 7 | 5 | 2 |
 | HOM | 4 | 2 | 2 |
 | NWS | 2 | 2 | 0 |
-| PLG | 16 | 4 | 12 |
-| GRP | 10 | 5 | 5 |
-| ACT | 16 | 7 | 9 |
-| MNU | 16 | 9 | 7 |
+| PLG | 17 | 4 | 13 |
+| GRP | 11 | 5 | 6 |
+| ACT | 15 | 5 | 10 |
+| MNU | 16 | 8 | 8 |
 | SHP | 7 | 3 | 4 |
 | PRM | 3 | 3 | 0 |
 | ERR | 2 | 2 | 0 |
-| **합계** | **83** | **42** | **41** |
+| **합계** | **84** | **39** | **45** |
 
-주화면 42건 중 40건이 MS이고, 나머지 2건은 ERR-01-00FP와 ERR-02-00DG다. 전역 오류는 부모 화면이 없어 자기 자신이 00번을 차지하면서 유형만 FP/DG가 된다.
+주화면 39건 중 37건이 MS이고, 나머지 2건은 ERR-01-00FP와 ERR-02-00DG다. 전역 오류는 부모 화면이 없어 자기 자신이 00번을 차지하면서 유형만 FP/DG가 된다.
+
+부수가 가장 많은 것은 PLG(13)와 ACT(10)다. PLG는 트래킹 흐름 전체가 모달·토스트로 분기하기 때문이고, ACT는 한 화면(`MyActivityScreen`)이 탭 4개를 품고 있기 때문이다.
 
 ### 5-2. 유형별
 
 | 유형 | 건수 |
 |---|---|
-| MS Main Screen | 40 |
-| DG Dialog | 20 |
+| MS Main Screen | 37 |
+| DG Dialog | 23 |
 | BS Bottom Sheet | 6 |
+| TB Tab | 5 |
 | FP Full Popup | 4 |
 | TO Toast | 3 |
-| TB Tab | 3 |
-| ES Empty State | 3 |
+| ES Empty State | 2 |
 | CD Card | 2 |
 | TT Tooltip | 2 |
-| **합계** | **83** |
+| **합계** | **84** |
 
 ### 5-3. 구현 상태별
 
 | 상태 | 건수 | 비율 |
 |---|---|---|
-| 완성 | 44 | 53% |
-| 부분 | 22 | 27% |
+| 완성 | 46 | 55% |
+| 부분 | 22 | 26% |
 | 스텁 | 0 | 0% |
-| 미구현 | 17 | 20% |
+| 미구현 | 16 | 19% |
 | 확인필요 | 0 | 0% |
-| **합계** | **83** | |
+| **합계** | **84** | |
 
 '스텁'이 0건인 것은 `PlaceholderScreen`을 쓰는 세 라우트(`/vision/result`, `/reward`, `/news`)가 ID 목록에 없기 때문이다(7절 참조).
 
@@ -284,16 +298,18 @@ core/router/app_router.dart
 | AUT | 4 | 2 | 1 |
 | HOM | 2 | 1 | 1 |
 | NWS | 2 | 0 | 0 |
-| PLG | 9 | 1 | 6 |
-| GRP | 6 | 4 | 0 |
-| ACT | 9 | 3 | 4 |
+| PLG | 10 | 1 | 6 |
+| GRP | 7 | 4 | 0 |
+| ACT | 9 | 3 | 3 |
 | MNU | 8 | 8 | 0 |
 | SHP | 4 | 3 | 0 |
 | PRM | 0 | 0 | 3 |
 | ERR | 0 | 0 | 2 |
-| **합계** | **44** | **22** | **17** |
+| **합계** | **46** | **22** | **16** |
 
-미구현 17건 중 11건이 PLG(6)·PRM(3)·ERR(2)에 몰려 있다. 플로깅 흐름의 보조 안내(날씨·카운트다운·이탈·GPS)와 권한·오류 처리가 통째로 비어 있는 상태다.
+미구현 16건 중 11건이 PLG(6)·PRM(3)·ERR(2)에 몰려 있다. 플로깅 흐름의 보조 안내(날씨·카운트다운·이탈·GPS)와 권한·오류 처리가 통째로 비어 있는 상태다.
+
+MNU는 미구현이 0건이나 16건 중 8건이 부분이다. 공지·FAQ·약관·출처가 모두 코드 상수 더미이기 때문이며, 화면 골격은 완성되어 있고 내용만 비어 있는 상태다.
 
 ---
 
@@ -314,17 +330,17 @@ core/router/app_router.dart
 | GRP-03 | community/presentation/group_create_screen.dart | GRP-03-00MS | 일치 |
 | GRP-04 | group_create_screen.dart ×4<br>group_detail_screen.dart ×2<br>group_search_screen.dart<br>community/data/group_service.dart | GRP-03-01DG | 일치. 8곳에 흩어져 있고 그중 하나는 data 레이어(`group_service.dart`)다. 화면 ID라기보다 정책 식별자로 쓰이고 있다 |
 | GRP-05 | community/presentation/group_feed_screen.dart | GRP-05-00MS | 일치. 신규 체계에서 옛 GRP-05가 GRP-04-00MS(상세)와 GRP-05-00MS(피드)로 분리되었으므로, 주석이 붙은 위치(피드)를 기준으로 GRP-05-00MS에 대응한다 |
-| ACT-04 | mypage/presentation/activity_list_screen.dart | ACT-04-00MS | 일치 |
-| ACT-05 | mypage/presentation/activity_detail_screen.dart | ACT-05-00MS | 일치 |
-| ACT-08 | mypage/presentation/badge_dialog.dart | ACT-02-01DG | **번호 이동.** 설계서상 뱃지 상세는 ACT-06이고, 옛 ACT-08은 뱃지 획득 모달(PLG-04-01DG)이다. 코드 주석이 설계서와 다른 번호를 쓰고 있었다 |
+| ACT-04 | mypage/presentation/activity_list_screen.dart | ACT-02-00MS | **번호 이동.** 신규 체계에서 내 활동 화면(기록·뱃지·그래프)이 ACT-01 하나로 통합되면서 이후 주화면이 두 칸씩 당겨졌다 |
+| ACT-05 | mypage/presentation/activity_detail_screen.dart | ACT-03-00MS | **번호 이동.** 위와 같은 사유 |
+| ACT-08 | mypage/presentation/badge_dialog.dart | ACT-01-06DG | **번호 이동.** 설계서상 뱃지 상세는 ACT-06이고, 옛 ACT-08은 뱃지 획득 모달(PLG-04-01DG)이다. 코드 주석이 설계서와 다른 번호를 쓰고 있었다. 신규 체계에서는 내 활동 화면의 부수로 들어간다 |
 | ACT-09 (뱃지 획득 모달) | mypage/presentation/badge_dialog.dart<br>plogging/presentation/settlement_screen.dart | PLG-04-01DG | **충돌.** 아래 항목과 같은 번호다 |
-| ACT-09 (전체 퀘스트 목록) | mypage/presentation/quest_list_screen.dart | ACT-06-00MS | **충돌.** 위 항목과 같은 번호다 |
+| ACT-09 (전체 퀘스트 목록) | mypage/presentation/quest_list_screen.dart | ACT-04-00MS | **충돌.** 위 항목과 같은 번호다 |
 | SHOP-01 | shop/presentation/shop_screen.dart | SHP-01-00MS | 일치 |
 | SHOP-02 | shop/presentation/shop_screen.dart ×2 | SHP-01-01DG | 일치 |
 | SHOP-03 | shop/presentation/coupon_screen.dart | SHP-02-00MS | **번호 이동.** 설계서상 쿠폰함은 SHOP-04이고, 옛 SHOP-03은 구매 완료 모달(SHP-01-02DG)이다 |
 | SHOP-04 | shop/presentation/coupon_screen.dart | SHP-03-00MS | **번호 이동.** 설계서상 쿠폰 상세는 SHOP-05다. 위 항목과 같은 방향으로 한 칸씩 밀려 있다 |
-| EXTRA-03 | settings/presentation/notice_screen.dart | MNU-04-00MS | 일치. 설계서에는 EXTRA 접두사가 없고 MENU-04로 되어 있어, 코드 주석만 별도 접두사를 썼다 |
-| EXTRA-04 | settings/presentation/notice_screen.dart | MNU-05-00MS | 상동. EXTRA-03과 같은 한 줄에 함께 적혀 있다 |
+| EXTRA-03 | settings/presentation/notice_screen.dart | MNU-03-00MS | 설계서에는 EXTRA 접두사가 없고 MENU-04로 되어 있어, 코드 주석만 별도 접두사를 썼다. 신규 체계에서는 지역 변경이 MNU-02의 부수로 내려가면서 이후 주화면이 한 칸씩 당겨졌다 |
+| EXTRA-04 | settings/presentation/notice_screen.dart | MNU-04-00MS | 상동. EXTRA-03과 같은 한 줄에 함께 적혀 있다 |
 
 ### 6-1. ACT-09 충돌 기록
 
@@ -334,7 +350,7 @@ core/router/app_router.dart
 |---|---|---|
 | mypage/presentation/badge_dialog.dart | 뱃지 획득 모달 | PLG-04-01DG |
 | plogging/presentation/settlement_screen.dart | 뱃지 획득 모달 (위 모달의 호출 측) | PLG-04-01DG |
-| mypage/presentation/quest_list_screen.dart | 전체 퀘스트 목록 화면 | ACT-06-00MS |
+| mypage/presentation/quest_list_screen.dart | 전체 퀘스트 목록 화면 | ACT-04-00MS |
 
 앞의 두 건은 같은 대상을 가리키므로 정상이나, `quest_list_screen.dart`는 전혀 다른 화면에 같은 번호를 쓰고 있었다. 코드만으로는 어느 쪽이 기획서와 맞는지 판별할 수 없었다. 신규 체계에서는 두 대상이 서로 다른 접두사(PLG / ACT)를 갖게 되어 충돌이 해소된다.
 
@@ -345,6 +361,8 @@ core/router/app_router.dart
 옛 코드 주석에서 실제로 쓰인 접두사는 `AUTH`, `HOME`, `AUTO`, `PLOG`, `GRP`, `ACT`, `SHOP`, `EXTRA` 8종이다. 설계서 기준으로 언급되던 `MENU`, `PERM`, `ERR`, `EMPTY`, `NEWS`는 코드 주석에 한 건도 없었다. 반대로 `EXTRA`는 설계서에 없는 접두사인데 코드에만 존재했다.
 
 신규 체계는 접두사를 3자리로 통일했으므로 `AUTH → AUT`, `HOME → HOM`, `PLOG → PLG`, `SHOP → SHP`, `MENU → MNU`, `PERM → PRM`, `NEWS → NWS`로 바뀐다. `AUTO`와 `EXTRA`는 폐기하고 각각 부모 화면(HOM, MNU)에 귀속시킨다. `EMPTY`는 유형 코드 `ES`로 흡수한다.
+
+`EMPTY` 3건 중 EMPTY-01(활동 기록 없음)은 ACT-01-05ES, EMPTY-02(그룹 미가입)는 GRP-01-01ES로 대응한다. **EMPTY-03(뱃지 미획득)은 대응 ID가 없다.** 별도 빈 상태가 아니라 뱃지 탭(ACT-01-01TB)의 기본 상태이며, 미획득 뱃지도 자물쇠 타일로 항상 표시되어 0건 상태가 발생하지 않기 때문이다. 최초 작성 시 ACT-02-02ES로 두었으나 본 개정에서 삭제했다.
 
 ---
 
@@ -362,19 +380,23 @@ core/router/app_router.dart
 
 `PlaceholderScreen` 자체(core/router/placeholder_screen.dart)도 ID가 없다. 세 라우트의 공용 껍데기이며 화면이 아니다.
 
-### 7-2. 어느 ID에도 대응하지 않는 다이얼로그·시트 (2건)
+### 7-2. 어느 ID에도 대응하지 않는 다이얼로그·시트 (0건)
 
-| 항목 | 프로그램 ID | 클래스/함수명 | 추정 사유 |
-|---|---|---|---|
-| 플로깅 안내 도움말 | plogging/presentation/plogging_tracking_screen.dart | `_showGuide` | 기획 누락. 트래킹 화면 우상단 물음표 버튼으로 열리는 `AppDialog.showInfo`이며, 첫 활동 1회만 뜨는 PLG-02-01DG(활동 규칙)와는 다른 팝업이다 |
-| 그룹 가입 확인 | community/presentation/group_detail_screen.dart | `_join` 내부 `AppDialog.show` | 기획 누락. GRP-03-01DG(차단 모달)보다 먼저 뜨는 '그룹 가입 / 예·아니오' 확인 팝업이다 |
+최초 작성 시 2건이 있었으나, 본 개정에서 둘 다 ID를 부여해 4절로 옮겼다.
+
+| 항목 | 부여한 ID |
+|---|---|
+| 플로깅 안내 도움말 (`_showGuide`) | PLG-02-06DG |
+| 그룹 가입 확인 (`_join` 내부 `AppDialog.show`) | GRP-04-01DG |
+
+두 건 모두 설계서에 정의되어 있지 않으나 실제 사용자 흐름에 노출되는 팝업이므로, 부모 화면의 부수로 편입했다. 현재 ID가 없는 다이얼로그·시트는 남아 있지 않다.
 
 ### 7-3. 어느 ID에도 대응하지 않는 탭 (4묶음)
 
 | 항목 | 프로그램 ID | 클래스/함수명 | 추정 사유 |
 |---|---|---|---|
-| 퀘스트 분류 탭 (전체/진행중/완료됨) | mypage/presentation/quest_list_screen.dart | `QuestListScreen` 내 `PageController` | 부모(ACT-06-00MS)에 흡수된 것으로 보인다 |
-| 약관 탭 (이용약관/개인정보 처리방침) | settings/presentation/terms_screen.dart | `_TermsScreenState._tab` | 부모(MNU-08-00MS)에 흡수. 다만 화면명이 두 문서를 병기하고 있어 TB 부여 여지가 있다 |
+| 퀘스트 분류 탭 (전체/진행중/완료됨) | mypage/presentation/quest_list_screen.dart | `QuestListScreen` 내 `PageController` | 부모(ACT-04-00MS)에 흡수된 것으로 보인다 |
+| 약관 탭 (이용약관/개인정보 처리방침) | settings/presentation/terms_screen.dart | `_TermsScreenState._tab` | 부모(MNU-07-00MS)에 흡수. 다만 화면명이 두 문서를 병기하고 있어 TB 부여 여지가 있다 |
 | 상점 카테고리 탭 | shop/presentation/shop_screen.dart | `_ShopScreenState._pageController` / `ShopCategory` | 부모(SHP-01-00MS)에 흡수 |
 | 검색 필터 드롭다운 (지역/정렬) | community/presentation/group_search_screen.dart | `_FilterDropdown` | 부모(GRP-02-00MS)에 흡수. 현재 값이 쿼리에 반영되지 않는다 |
 
@@ -406,12 +428,14 @@ core/router/app_router.dart
 | 구분 | 건수 |
 |---|---|
 | 라우트 (스텁 화면) | 3 |
-| 다이얼로그 | 2 |
+| 다이얼로그 | 0 |
 | 탭 묶음 | 4 |
 | 빈 상태·오류 상태 | 6 |
 | 개발용 버튼 묶음 | 1 |
 | 전체 오버레이 | 1 |
-| **합계** | **17** |
+| **합계** | **15** |
+
+최초 작성 시 17건이었고, 본 개정에서 다이얼로그 2건에 ID를 부여해 15건이 되었다.
 
 이 밖에 공용 위젯(core/widgets/의 `AppDialog`, `AppSnackBar`, `AppButton`, `AppCard`, `AppSection`, `AppStat`)은 화면이 아니라 부품이므로 대상에서 제외했다. `AppSnackBar`를 통해 나가는 개별 문구는 20건 이상이며, 대부분 '...하지 못했어요' 형태의 실패 안내다.
 
@@ -525,7 +549,7 @@ core/router/app_router.dart
 grep -rn "Screen ID" lib/
 ```
 
-부여가 끝나면 이 명령의 결과 건수가 본 문서 4절의 행 수 중 구현 상태가 미구현이 아닌 것의 수(66건)와 일치해야 한다.
+부여가 끝나면 이 명령의 결과 건수가 본 문서 4절의 행 수 중 구현 상태가 미구현이 아닌 것의 수(68건)와 일치해야 한다.
 
 ### 9-2. 본 문서의 갱신 시점
 
@@ -540,8 +564,8 @@ grep -rn "Screen ID" lib/
 본 문서 작성 중 확인된, 코드 구조와 ID 목록이 어긋나는 지점이다. 코드는 수정하지 않았고 ID 목록도 그대로 두었다.
 
 1. **HOM-01-01CD** — `sharedGroupProvider`에 값을 쓰는 코드만 있고 읽는 코드가 없다. 팝업을 구현할지, provider를 제거할지 결정이 필요하다.
-2. **ACT-01/02/03의 유형** — 기록·뱃지·그래프는 별개 화면이 아니라 `MyActivityScreen` 하나의 `PageView` 페이지다. 세 개를 MS로 두면 SB의 화면 수와 코드의 화면 수가 어긋난다.
-3. **SHP-02-01TB** — 쿠폰함의 '사용완료·만료'는 탭이 아니라 같은 리스트의 두 번째 섹션이다.
-4. **MNU-03-00MS** — 지역 변경은 화면이 아니라 프로필 화면 안의 다이얼로그다.
-5. **AUT-03-01BS / MNU-02-04BS** — 두 ID 모두 이름에 키·몸무게가 들어 있으나, 실제로 휠 바텀시트를 쓰는 것은 나이뿐이다. 키·몸무게는 텍스트 입력 다이얼로그다.
-6. **HOM-02-00MS, NWS-01-00MS** — 구현은 완성이나 앱 안에서 도달할 수 없다. SB에 수록하되 진입 경로 연결이 선행되어야 한다.
+2. **SHP-02-01TB** — 쿠폰함의 '사용완료·만료'는 탭이 아니라 같은 리스트의 두 번째 섹션이다. 유형을 바꿀지, 화면을 탭으로 바꿀지 결정이 필요하다.
+3. **AUT-03-01BS / MNU-02-04BS** — 두 ID 모두 이름에 키·몸무게가 들어 있으나, 실제로 휠 바텀시트를 쓰는 것은 나이뿐이다. 키·몸무게는 텍스트 입력 다이얼로그이므로 하나의 BS로 묶을 수 없다.
+4. **HOM-02-00MS, NWS-01-00MS** — 구현은 완성이나 앱 안에서 도달할 수 없다. SB에 수록하되 진입 경로 연결이 선행되어야 한다.
+
+최초 작성 시 지적한 6건 중 2건(ACT의 유형, MNU-03 지역 변경)은 1-1절의 개정으로 해소되었다.
