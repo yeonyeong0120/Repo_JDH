@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#0B5238}
+@keyframes halo{0%,100%{opacity:.5;transform:scale(.7)}50%{opacity:0;transform:scale(1.5)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes dash{to{stroke-dashoffset:-28}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="도착지 설정" style="width:390px;height:844px;background:#F3F8F4;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2);user-select:none">
+
+  <div onPointerDown="{{ down }}" onPointerMove="{{ move }}" onPointerUp="{{ up }}" onPointerCancel="{{ up }}" style="position:absolute;inset:0;cursor:{{ mapCursor }};touch-action:none">
+    <div style="position:absolute;inset:0;transform:translate({{ tx }},{{ ty }})">
+      <svg viewBox="-300 -300 990 1444" width="990" height="1444" style="position:absolute;left:-300px;top:-300px"><rect x="-300" y="-300" width="990" height="1444" fill="#E9EFE9"></rect><rect x="-20" y="150" width="200" height="160" rx="26" fill="#DCE9DC"></rect><rect x="230" y="430" width="220" height="200" rx="30" fill="#DCE9DC"></rect><rect x="40" y="600" width="150" height="120" rx="22" fill="#DCE9DC"></rect><rect x="250" y="120" width="180" height="110" rx="24" fill="#DCE9DC"></rect><rect x="-220" y="-60" width="170" height="150" rx="24" fill="#DCE9DC"></rect><rect x="430" y="820" width="190" height="160" rx="26" fill="#DCE9DC"></rect><rect x="-160" y="760" width="160" height="130" rx="22" fill="#DCE9DC"></rect><rect x="420" y="-180" width="180" height="150" rx="24" fill="#DCE9DC"></rect><path d="M-300 360 H690" stroke="#F6F8F6" stroke-width="26"></path><path d="M-300 560 H690" stroke="#F6F8F6" stroke-width="18"></path><path d="M-300 200 H690" stroke="#F6F8F6" stroke-width="16"></path><path d="M-300 780 H690" stroke="#F6F8F6" stroke-width="20"></path><path d="M-300 -20 H690" stroke="#F6F8F6" stroke-width="16"></path><path d="M120 -300 V1144" stroke="#F6F8F6" stroke-width="22"></path><path d="M290 -300 V1144" stroke="#F6F8F6" stroke-width="16"></path><path d="M-60 -300 V1144" stroke="#F6F8F6" stroke-width="14"></path><path d="M470 -300 V1144" stroke="#F6F8F6" stroke-width="18"></path><path d="{{ routeD }}" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" opacity="{{ routeOp }}" style="transition:opacity .28s ease"></path><path d="{{ routeD }}" fill="none" stroke="#1D9E75" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 11" opacity="{{ routeOp }}" style="transition:opacity .28s ease;animation:dash 1.4s linear infinite"></path></svg>
+
+      <div style="position:absolute;left:96px;top:366px;width:44px;height:44px;border-radius:50%;background:rgba(23,133,90,.28);animation:halo 2.6s ease-out infinite"></div>
+      <div style="position:absolute;left:106px;top:376px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(36,48,43,.3);display:flex;align-items:center;justify-content:center"><span style="width:13px;height:13px;border-radius:50%;background:#12784F"></span></div>
+
+      <div style="position:absolute;left:262px;top:206px;display:flex;flex-direction:column;align-items:center">
+        <div style="width:34px;height:34px;border-radius:50%;background:#EBF4EF;border:2px solid #fff;box-shadow:0 3px 10px rgba(36,48,43,.18);display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#0B4A32;font-variation-settings:'FILL' 1">recycling</span></div>
+        <div style="width:10px;height:7px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0);margin-top:-1px"></div>
+      </div>
+      <div style="position:absolute;left:44px;top:212px;display:flex;flex-direction:column;align-items:center">
+        <div style="width:34px;height:34px;border-radius:50%;background:#EBF4EF;border:2px solid #fff;box-shadow:0 3px 10px rgba(36,48,43,.18);display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#0B4A32;font-variation-settings:'FILL' 1">recycling</span></div>
+        <div style="width:10px;height:7px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0);margin-top:-1px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:50%;top:330px;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:rgba(36,48,43,.26);pointer-events:none"></div>
+
+  <div style="position:absolute;left:50%;top:330px;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;pointer-events:none">
+    <sc-if value="{{ showEta }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#24302B;color:#fff;border-radius:999px;padding:7px 13px;font:700 14px Pretendard;white-space:nowrap;box-shadow:0 4px 12px rgba(36,48,43,.26);animation:fadeIn .24s ease">약 {{ mins }}분 · {{ distKm }}km</div>
+      <div style="width:9px;height:7px;background:#24302B;clip-path:polygon(50% 100%,0 0,100% 0);margin-bottom:6px"></div>
+    </sc-if>
+    <div style="width:46px;height:46px;border-radius:50%;background:#fff;box-shadow:0 {{ pinLift }} rgba(36,48,43,.28);display:flex;align-items:center;justify-content:center;transform:translateY({{ pinRise }});transition:transform .18s ease,box-shadow .18s ease"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#12784F;font-variation-settings:'FILL' 1">flag</span></div>
+    <div style="width:13px;height:10px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0);margin-top:-1px;transform:translateY({{ pinRise }});transition:transform .18s ease"></div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+
+  <div style="position:absolute;left:16px;right:16px;top:60px;display:flex;gap:10px;align-items:center;justify-content:space-between;height:52px">
+    <button style="width:44px;height:44px;flex:none;border:1px solid rgba(36,48,43,.06);border-radius:14px;background:rgba(255,255,255,.86);box-shadow:0 2px 10px rgba(36,48,43,.1);display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#fff"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B;font-variation-settings:'wght' 500">chevron_left</span></button>
+    <button onClick="{{ recenter }}" style="width:44px;height:44px;flex:none;border:1px solid rgba(36,48,43,.06);border-radius:14px;background:rgba(255,255,255,.86);box-shadow:0 2px 10px rgba(36,48,43,.1);display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#fff"><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#414B46">my_location</span></button>
+  </div>
+
+  <sc-if value="{{ showHint }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;left:16px;right:16px;top:120px;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:7px;background:rgba(36,48,43,.92);color:#fff;border-radius:999px;padding:9px 15px;box-shadow:0 4px 14px rgba(36,48,43,.24);animation:fadeIn .3s ease">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px">drag_pan</span>
+        <span style="font:600 13.5px/1.4 Pretendard;white-space:nowrap">지도를 움직여 도착지를 맞춰주세요</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:absolute;left:16px;right:16px;bottom:24px;background:#fff;border-radius:26px;padding:18px 20px 20px;box-shadow:0 -2px 28px rgba(36,48,43,.16)">
+    <div style="display:flex;align-items:flex-start;gap:11px;min-height:44px">
+      <span style="width:38px;height:38px;flex:none;border-radius:13px;background:#EBF4EF;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#12784F;font-variation-settings:'FILL' 1">flag</span></span>
+      <span style="flex:1;min-width:0">
+        <span style="display:block;font:700 12px/1.4 Pretendard;letter-spacing:.6px;color:#0B4A32">도착지</span>
+        <span style="display:block;font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ destTitle }}</span>
+        <span style="display:block;font:500 13.5px/1.45 Pretendard;color:#5C6862;margin-top:2px">{{ destSub }}</span>
+      </span>
+    </div>
+
+    <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:7px;margin-top:14px;padding:12px 13px;background:#F3F8F4;border-radius:14px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#0B4A32;font-variation-settings:'FILL' 1">recycling</span><span style="font:500 14px/1.45 Pretendard;color:#414B46">정화 거점 <span style="font-weight:700;color:#24302B;font-variant-numeric:tabular-nums">{{ spots }}</span>곳을 지나요</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:{{ zoneFg }};font-variation-settings:'FILL' 1">{{ zoneIcon }}</span><span style="font:500 14px/1.45 Pretendard;color:{{ zoneText }}">{{ zoneLabel }}</span></div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ blocked }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;background:#FCEDEC;border-radius:14px;padding:11px 12px;margin-top:14px">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#C4342E;font-variation-settings:'FILL' 1">error</span>
+        <span style="font:600 13.5px/1.5 Pretendard;color:#A93028">{{ blockedMsg }}</span>
+      </div>
+    </sc-if>
+
+    <button onClick="{{ start }}" style="width:100%;height:58px;border:0;border-radius:18px;background:{{ startBg }};color:{{ startFg }};font:600 18px Pretendard;cursor:{{ startCursor }};margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:{{ startShadow }};transition:background .24s ease,color .24s ease">
+      <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+        <span style="width:20px;height:20px;border-radius:50%;border:3px solid rgba(255,255,255,.45);border-top-color:#fff;animation:spin .8s linear infinite"></span>
+      </sc-if>
+      <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}">
+        <span style="font-family:'Material Symbols Rounded';font-size:23px;font-variation-settings:'FILL' 1">flag</span>
+      </sc-if>
+      {{ startLabel }}
+    </button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  // 지도 좌표계. 중앙 마커가 가리키는 지점 = TARGET - offset
+  ORIGIN = { x: 118, y: 388 };
+  TARGET = { x: 195, y: 330 };
+
+  state = { ox: 0, oy: 0, phase: 'ready', dragging: false, moved: false, alt: 0 };
+
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  dest() {
+    return { x: this.TARGET.x - this.state.ox, y: this.TARGET.y - this.state.oy };
+  }
+
+  settle() {
+    clearTimeout(this._t);
+    this.setState({ phase: 'loading' });
+    this._t = setTimeout(() => {
+      const d = this.dest();
+      const outside = d.y < -40;
+      const far = Math.hypot(d.x - this.ORIGIN.x, d.y - this.ORIGIN.y) > 520;
+      this.setState({ phase: outside ? 'blockedCity' : far ? 'blockedFar' : 'ready' });
+    }, 900);
+  }
+
+  renderVals() {
+    const st = this.state;
+    const o = this.ORIGIN;
+    const d = this.dest();
+    const dist = Math.hypot(d.x - o.x, d.y - o.y);
+    const km = (dist / 96 + st.alt * 0.2).toFixed(1);
+    const mins = Math.max(3, Math.round(dist / 96 * 14));
+    const ready = st.phase === 'ready' && !st.dragging;
+    const loading = st.phase === 'loading';
+    const blocked = st.phase === 'blockedCity' || st.phase === 'blockedFar';
+
+    return {
+      tx: `${st.ox}px`, ty: `${st.oy}px`,
+      mapCursor: st.dragging ? 'grabbing' : 'grab',
+      routeD: `M${o.x} ${o.y} Q${((o.x + d.x) / 2 - 44 + st.alt * 84).toFixed(0)} ${((o.y + d.y) / 2 - 22).toFixed(0)} ${d.x.toFixed(0)} ${d.y.toFixed(0)}`,
+      routeOp: ready ? 1 : 0,
+
+      showEta: ready,
+      showHint: !st.moved && !st.dragging,
+      zoneIcon: d.x > 300 ? 'warning' : 'check_circle',
+      zoneFg: d.x > 300 ? '#8A6A08' : '#0B4A32',
+      zoneText: d.x > 300 ? '#8A6A08' : '#414B46',
+      zoneLabel: d.x > 300 ? '위험 구간 약 120m를 지나요' : '위험 구간을 지나지 않아요',
+      pinRise: st.dragging ? '-8px' : '0px',
+      pinLift: st.dragging ? '10px 20px' : '4px 14px',
+
+      distKm: km, mins, spots: 2 + st.alt,
+      ready, loading, notLoading: !loading, blocked,
+      destTitle: blocked ? '설정할 수 없는 위치예요' : loading ? '경로를 계산하고 있어요' : '인천 남동구 장수동 산 79',
+      destSub: blocked ? '지도를 움직여 다시 맞춰주세요'
+        : loading ? '쓰레기가 많은 곳을 지나도록 골라요'
+        : '인천대공원 순환길 근처',
+      blockedMsg: st.phase === 'blockedCity'
+        ? '인천시 안에서만 플로깅할 수 있어요'
+        : '목적지가 너무 멀어요. 300km 이내로 맞춰주세요',
+
+
+      startLabel: st.dragging ? '도착지를 맞추는 중' : loading ? '경로 계산 중' : blocked ? '도착지를 다시 맞춰주세요' : '이 위치로 도착지 설정',
+      startBg: ready ? '#12784F' : '#E0E8E3',
+      startFg: ready ? '#fff' : '#7D8783',
+      startCursor: ready ? 'pointer' : 'not-allowed',
+      startShadow: ready ? '0 3px 10px rgba(36,48,43,.22)' : 'none',
+      start: () => { if (ready) window.location.href = 'Plogging Activity Redesign.dc.html?first=1'; },
+
+      down: e => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        this._p = { x: e.clientX, y: e.clientY, ox: st.ox, oy: st.oy };
+        this.setState({ dragging: true, moved: true });
+      },
+      move: e => {
+        if (!this._p) return;
+        this.setState({ ox: this._p.ox + (e.clientX - this._p.x), oy: this._p.oy + (e.clientY - this._p.y) });
+      },
+      up: () => {
+        if (!this._p) return;
+        this._p = null;
+        this.setState({ dragging: false });
+        this.settle();
+      },
+      recenter: () => {
+        this.setState({ ox: this.TARGET.x - this.ORIGIN.x - 80, oy: this.TARGET.y - this.ORIGIN.y + 110, moved: true });
+        this.settle();
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

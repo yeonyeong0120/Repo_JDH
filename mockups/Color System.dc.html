@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;justify-content:center;min-height:100vh;padding:32px 0}
+a{color:#0B5E3F}a:hover{color:#0B5238}
+::-webkit-scrollbar{width:0;height:0}
+*{scrollbar-width:none}
+</style></helmet>
+
+<div style="width:760px;background:#F4F8F5;border-radius:24px;padding:34px 36px 40px;box-shadow:0 20px 50px rgba(36,48,43,.16)">
+
+  <div style="font:800 28px/1.3 Pretendard;letter-spacing:-.8px;color:#24302B">플로고 컬러 시스템 v4</div>
+  <div style="font:400 16px/1.6 Pretendard;color:#5C6862;margin-top:8px;max-width:560px">60 : 30 : 10 가이드로 다시 짰습니다. 지금 문제는 <b style="font-weight:700;color:#24302B">초록이 배경·면·버튼에 모두 쓰여</b> 포인트 컬러가 포인트로 안 보인다는 것이었어요.</div>
+
+  <div style="display:flex;gap:6px;margin-top:20px">
+    <sc-for list="{{ variants }}" as="v" hint-placeholder-count="2">
+      <button onClick="{{ v.pick }}" style="flex:1;height:44px;border:1.5px solid {{ v.border }};border-radius:14px;background:{{ v.bg }};color:{{ v.fg }};font:{{ v.weight }} 15px Pretendard;cursor:pointer;padding:0">{{ v.label }}</button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;gap:12px;margin-top:20px">
+    <sc-for list="{{ ratio }}" as="r" hint-placeholder-count="3">
+      <div style="flex:{{ r.flex }};background:{{ r.bg }};border:{{ r.border }};border-radius:16px;padding:16px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between">
+        <span style="font:700 13px Pretendard;letter-spacing:.4px;color:{{ r.fg }}">{{ r.pct }}</span>
+        <span>
+          <span style="display:block;font:800 17px Pretendard;color:{{ r.fg }}">{{ r.name }}</span>
+          <span style="display:block;font:500 13px Pretendard;color:{{ r.subFg }};margin-top:2px">{{ r.role }}</span>
+        </span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:22px;margin-top:32px">
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:9px">
+          <span style="font:800 19px Pretendard;letter-spacing:-.3px;color:#24302B">{{ g.title }}</span>
+          <span style="font:500 14px Pretendard;color:#5C6862">{{ g.note }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px">
+          <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="4">
+            <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(36,48,43,.05)">
+              <div style="height:56px;background:{{ c.hex }};border-bottom:{{ c.line }}"></div>
+              <div style="padding:10px 12px 12px">
+                <div style="font:700 14px Pretendard;color:#24302B">{{ c.name }}</div>
+                <div style="font:500 12px ui-monospace,Menlo,monospace;color:#5C6862;margin-top:3px">{{ c.hex }}</div>
+                <div style="font:400 12px/1.45 Pretendard;color:#5C6862;margin-top:5px">{{ c.use }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="background:#fff;border-radius:18px;padding:20px;margin-top:30px;box-shadow:0 2px 12px rgba(36,48,43,.06)">
+    <div style="font:800 19px Pretendard;letter-spacing:-.3px;color:#24302B">지금과 무엇이 달라지나</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+      <sc-for list="{{ changes }}" as="c" hint-placeholder-count="4">
+        <div style="display:flex;align-items:flex-start;gap:11px">
+          <span style="width:26px;height:26px;flex:none;border-radius:9px;background:{{ c.tint }};display:flex;align-items:center;justify-content:center;margin-top:1px"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:{{ c.color }};font-variation-settings:'FILL' 1">{{ c.icon }}</span></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font:700 15px Pretendard;color:#24302B">{{ c.title }}</span>
+            <span style="display:block;font:400 14px/1.55 Pretendard;color:#5C6862;margin-top:2px">{{ c.desc }}</span>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="font:800 19px Pretendard;letter-spacing:-.3px;color:#24302B;margin-top:30px">적용 미리보기</div>
+  <div style="font:500 14px Pretendard;color:#5C6862;margin-top:4px">같은 화면, 왼쪽이 지금 / 오른쪽이 새 비율</div>
+  <div style="display:flex;gap:16px;margin-top:14px">
+
+    <div style="flex:1;background:#F4F8F5;border-radius:18px;padding:16px;border:1px solid #E1E8E3">
+      <div style="font:700 12px Pretendard;color:#5C6862;letter-spacing:.4px;margin-bottom:10px">지금 — 초록이 60%</div>
+      <div style="background:#BFE9D2;border-radius:14px;padding:14px">
+        <div style="font:800 18px Pretendard;color:#24302B">메뉴</div>
+        <div style="background:#DEF5E6;border-radius:12px;padding:12px;margin-top:12px">
+          <div style="font:600 12px Pretendard;color:#3F7A61">사용 가능한 포인트</div>
+          <div style="font:800 22px Pretendard;color:#0B4A32;margin-top:2px">1,280 P</div>
+        </div>
+        <div style="height:38px;border-radius:11px;background:#17855A;display:flex;align-items:center;justify-content:center;font:600 14px Pretendard;color:#fff;margin-top:10px">포인트 상점</div>
+      </div>
+    </div>
+
+    <div style="flex:1;background:#FAFBFA;border-radius:18px;padding:16px;border:1px solid #E1E8E3">
+      <div style="font:700 12px Pretendard;color:#5C6862;letter-spacing:.4px;margin-bottom:10px">{{ prevLabel }}</div>
+      <div style="background:{{ pvBg }};border-radius:14px;padding:14px">
+        <div style="font:800 18px Pretendard;color:{{ pvText }}">메뉴</div>
+        <div style="background:{{ pvCard }};border-radius:12px;padding:12px;margin-top:12px;box-shadow:0 1px 6px rgba(27,36,32,.06)">
+          <div style="font:600 12px Pretendard;color:{{ pvSub }}">사용 가능한 포인트</div>
+          <div style="display:flex;align-items:baseline;gap:3px;margin-top:2px"><span style="font:800 22px Pretendard;color:{{ pvNum }}">1,280</span><span style="font:700 14px Pretendard;color:{{ pvPoint }}">P</span></div>
+        </div>
+        <div style="height:38px;border-radius:11px;background:{{ pvPoint }};display:flex;align-items:center;justify-content:center;font:600 14px Pretendard;color:#fff;margin-top:10px">포인트 상점</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:760}}">
+class Component extends DCLogic {
+  state = { v: 'M' };
+
+  SETS = {
+    A: {
+      label: '뉴트럴 (초록 최소)',
+      bg: '#F1F4F2', surfaceAlt: '#F7F9F8', border: '#E1E8E3',
+      tint: '#DCE7E1', tintSoft: '#EAF0EC',
+      primary: '#12784F', deep: '#0B4A32', soft: '#D6EFE0',
+      note60: '화면 대부분을 채운다. 초록기를 거의 뺀 뉴트럴',
+      note30: '면으로 묶고 나눌 때. 채도를 낮춘 세이지',
+      useTint: '헤더 · 섹션 면 (작게)',
+      changes: [
+        ['format_color_reset', '민트 헤더를 걷어냅니다', '홈·그룹·메뉴의 #BFE9D2 큰 면 → 배경과 이어지는 뉴트럴. 초록 총량이 확 줄어요.'],
+        ['contrast', '배경에서 초록기를 뺍니다', '#F4F8F5 → #F1F4F2. 흰 카드가 더 또렷하게 떠 보입니다.'],
+        ['ads_click', '진한 초록은 버튼과 숫자에만', '시작 버튼, 주 CTA, 포인트·수거량 같은 핵심 수치. 그 외에는 쓰지 않습니다.'],
+      ],
+    },
+    M: {
+      label: '중간 (배경만 옅은 초록)',
+      bg: '#F4F7F5', surfaceAlt: '#F7FAF8', border: '#E0E8E3',
+      tint: '#DCEDE3', tintSoft: '#EBF4EF',
+      primary: '#12784F', deep: '#0B4A32', soft: '#D6EFE0',
+      note60: '배경에 초록기를 아주 살짝만 남긴다',
+      note30: '헤더는 없애되, 섹션 면·선택 상태에는 초록을 쓴다',
+      useTint: '섹션 면 · 강조 (중간 크기)',
+      changes: [
+        ['crop_free', '큰 민트 헤더만 없앱니다', '#BFE9D2 통면은 빼되, 카드·칩 같은 작은 면에는 초록을 남깁니다.'],
+        ['contrast', '배경은 아주 옅은 초록', '#F4F8F5 → #F4F7F5. 초록기를 절반만 덜어내 브랜드 인상은 남깁니다.'],
+        ['ads_click', '진한 초록은 버튼과 숫자에만', '주 CTA와 핵심 수치. 면에는 옅은 초록만 씁니다.'],
+      ],
+    },
+    B: {
+      label: '초록 유지 (지금과 가까움)',
+      bg: '#F2F8F4', surfaceAlt: '#F4F9F6', border: '#DDE8E1',
+      tint: '#CFEBDA', tintSoft: '#E4F4EA',
+      primary: '#12784F', deep: '#0B4A32', soft: '#D6EFE0',
+      note60: '지금처럼 옅은 초록 배경. 브랜드 인상은 유지',
+      note30: '헤더·섹션 면을 초록으로 계속 쓴다',
+      useTint: '헤더 · 섹션 면 (크게)',
+      changes: [
+        ['tune', '민트 헤더는 남기되 톤을 낮춥니다', '#BFE9D2 → #CFEBDA. 채도를 살짝 내려 아래 카드와 덜 싸우게.'],
+        ['ads_click', '버튼 초록만 진하게 분리', '면은 옅은 초록, 주 버튼은 #12784F. 같은 초록이라도 명도 차로 위계를 만듭니다.'],
+        ['layers', '카드는 흰색으로 고정', '초록 면 위에 흰 카드를 올려 30%와 60%를 눈으로 구분되게.'],
+      ],
+    },
+  };
+
+  renderVals() {
+    const key = this.state.v ?? 'A';
+    const c = this.SETS[key];
+    return {
+      variants: [['A', '뉴트럴'], ['M', '중간'], ['B', '초록 유지']].map(([k, label]) => ({
+        label,
+        bg: key === k ? '#12784F' : '#fff',
+        fg: key === k ? '#fff' : '#414B46',
+        border: key === k ? '#12784F' : '#E1E8E3',
+        weight: key === k ? 700 : 500,
+        pick: () => this.setState({ v: k }),
+      })),
+      ratio: [
+        { pct: '60%', name: '메인', role: '배경 · 카드 면', flex: 6, bg: c.bg, border: `1px solid ${c.border}`, fg: '#24302B', subFg: '#5C6862' },
+        { pct: '30%', name: '세컨더리', role: '구분 면 · 보조 정보', flex: 3, bg: c.tint, border: '0', fg: '#24302B', subFg: '#4A544F' },
+        { pct: '10%', name: '포인트', role: '주 버튼 · 핵심 수치', flex: 1, bg: c.primary, border: '0', fg: '#fff', subFg: 'rgba(255,255,255,.78)' },
+      ],
+      groups: [
+        {
+          title: '메인 60%', note: c.note60,
+          items: [
+            { name: 'bg', hex: c.bg, use: '앱 배경', line: '1px solid #E8EDEA' },
+            { name: 'surface', hex: '#FFFFFF', use: '카드 면', line: '1px solid #E8EDEA' },
+            { name: 'surfaceAlt', hex: c.surfaceAlt, use: '카드 안 옅은 면', line: '1px solid #E8EDEA' },
+            { name: 'border', hex: c.border, use: '구분선 · 테두리', line: '0' },
+          ],
+        },
+        {
+          title: '세컨더리 30%', note: c.note30,
+          items: [
+            { name: 'tint', hex: c.tint, use: c.useTint, line: '0' },
+            { name: 'tintSoft', hex: c.tintSoft, use: '선택 · 강조 면', line: '0' },
+            { name: 'textPrimary', hex: '#1B2420', use: '본문 · 제목', line: '0' },
+            { name: 'textSecondary', hex: '#5C6862', use: '보조 글자 (5.5:1)', line: '0' },
+          ],
+        },
+        {
+          title: '포인트 10%', note: '주 버튼과 핵심 수치에만. 여기서만 진한 초록',
+          items: [
+            { name: 'primary', hex: c.primary, use: '주 버튼 · 활성', line: '0' },
+            { name: 'primaryDeep', hex: c.deep, use: '포인트 위 글자', line: '0' },
+            { name: 'primarySoft', hex: c.soft, use: '포인트 배경 (극소량)', line: '0' },
+            { name: 'danger', hex: '#C4342E', use: '경고 · 종료', line: '0' },
+          ],
+        },
+      ],
+      changes: [
+        ...c.changes.map(([icon, title, desc]) => ({ icon, title, desc, color: c.primary, tint: c.soft })),
+        { icon: 'palette', color: '#5F51A0', tint: '#5F51A01F', title: '카테고리 색은 그대로', desc: '플라스틱·캔·종이·유리·일반과 지표 색(걸음 파랑·거리 보라·시간 노랑)은 데이터 전용이라 유지합니다.' },
+      ],
+      prevLabel: key === 'A' ? '뉴트럴 — 초록은 10%'
+        : key === 'M' ? '중간 — 배경만 옅은 초록, 헤더 없음'
+        : '초록 유지 — 면은 옅게, 버튼만 진하게',
+      pvBg: key === 'B' ? c.tint : c.bg,
+      pvCard: '#fff',
+      pvText: '#1B2420', pvSub: '#5C6862', pvNum: '#1B2420',
+      pvPoint: c.primary,
+    };
+  }
+}
+</script>
+</body>
+</html>

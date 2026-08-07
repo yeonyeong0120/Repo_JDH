@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0F6B47}a:hover{color:#0B4A32}
+::-webkit-scrollbar{width:0;height:0}
+*{scrollbar-width:none}
+input::placeholder{color:#A8B2AC}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes popIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="로그인·회원가입" style="width:390px;height:844px;background:#FBFCFB;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2)">
+
+  <div style="position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font:600 13px Pretendard;color:#1B2420;z-index:3"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+
+  <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 32px 34px">
+        <div style="font:500 17px/1.5 Pretendard;color:#5C6862;animation:rise .8s cubic-bezier(.22,.7,.28,1) .12s both">걷는 만큼 깨끗해지는 동네</div>
+        <div style="font:800 40px/1.15 Pretendard;letter-spacing:-1.4px;color:#1B2420;margin-top:6px;animation:rise .9s cubic-bezier(.22,.7,.28,1) .22s both">플로고</div>
+      </div>
+
+      <div style="flex:none;background:#fff;border-radius:32px 32px 0 0;padding:30px 28px 32px;box-shadow:0 -8px 30px rgba(27,36,32,.07);animation:rise .9s cubic-bezier(.22,.7,.28,1) .3s both">
+        <div style="font:700 12px Pretendard;letter-spacing:1px;color:#8B968F">이메일</div>
+        <div style="border-bottom:1.5px solid #E4EBE7;padding:9px 0 11px">
+          <input placeholder="name@example.com" style="width:100%;box-sizing:border-box;border:0;outline:none;background:none;font:500 18px Pretendard;color:#1B2420" />
+        </div>
+
+        <div style="font:700 12px Pretendard;letter-spacing:1px;color:#8B968F;margin-top:22px">비밀번호</div>
+        <div style="display:flex;align-items:center;gap:8px;border-bottom:1.5px solid #E4EBE7;padding:9px 0 11px">
+          <input type="{{ pwType }}" placeholder="••••••••" style="flex:1;min-width:0;border:0;outline:none;background:none;font:500 18px Pretendard;color:#1B2420" />
+          <button onClick="{{ togglePw }}" style="width:30px;height:30px;flex:none;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#8B968F">{{ pwIcon }}</span></button>
+        </div>
+
+        <div style="display:flex;align-items:center;margin-top:16px">
+          <span style="flex:1"></span>
+          <button onClick="{{ openReset }}" style="border:0;background:none;padding:6px 0;font:500 14px Pretendard;color:#5C6862;cursor:pointer;text-decoration:underline;text-decoration-color:#C9D3CD;text-underline-offset:3px">비밀번호를 잊으셨나요?</button>
+        </div>
+
+        <button onClick="{{ doLogin }}" style="width:100%;height:58px;border:0;border-radius:18px;background:#0F6B47;color:#fff;font:700 17px Pretendard;cursor:pointer;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px" style-hover="background:#0B5238">로그인<span style="font-family:'Material Symbols Rounded';font-size:20px">arrow_forward</span></button>
+
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px">
+          <span style="font:400 15px Pretendard;color:#5C6862">아직 계정이 없나요?</span>
+          <button onClick="{{ goSignup }}" style="border:0;background:none;padding:4px 0;font:700 15px Pretendard;color:#0F6B47;cursor:pointer">가입하기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+      <div style="flex:none;padding:60px 28px 0">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button onClick="{{ back }}" style="width:40px;height:40px;flex:none;border:0;border-radius:14px;background:#F0F4F1;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#1B2420">arrow_back</span></button>
+          <div style="flex:1;display:flex;gap:5px">
+            <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+              <span style="flex:1;height:4px;border-radius:2px;background:{{ s.bg }};transition:background .3s"></span>
+            </sc-for>
+          </div>
+          <span style="font:700 13px Pretendard;color:#8B968F;font-variant-numeric:tabular-nums">{{ stepLabel }}</span>
+        </div>
+
+        <div style="font:800 28px/1.3 Pretendard;letter-spacing:-.9px;color:#1B2420;margin-top:30px">{{ title }}</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:9px">{{ subtitle }}</div>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:26px 28px 20px">
+
+        <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ true }}">
+          <div style="font:700 12px Pretendard;letter-spacing:1px;color:#8B968F">이메일</div>
+          <div style="border-bottom:1.5px solid #E4EBE7;padding:9px 0 11px">
+            <input placeholder="name@example.com" style="width:100%;box-sizing:border-box;border:0;outline:none;background:none;font:500 18px Pretendard;color:#1B2420" />
+          </div>
+          <div style="font:700 12px Pretendard;letter-spacing:1px;color:#8B968F;margin-top:24px">비밀번호</div>
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:1.5px solid #E4EBE7;padding:9px 0 11px">
+            <input type="{{ pwType }}" placeholder="8자 이상" style="flex:1;min-width:0;border:0;outline:none;background:none;font:500 18px Pretendard;color:#1B2420" />
+            <button onClick="{{ togglePw }}" style="width:30px;height:30px;flex:none;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#8B968F">{{ pwIcon }}</span></button>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;background:#F0F4F1;border-radius:14px;padding:13px 14px;margin-top:24px">
+            <span style="font-family:'Material Symbols Rounded';font-size:18px;color:#0F6B47;font-variation-settings:'FILL' 1;margin-top:1px">shield</span>
+            <span style="flex:1;font:400 14px/1.55 Pretendard;color:#414B46">이메일은 비밀번호를 다시 만들 때만 써요. 그룹에는 닉네임만 보입니다.</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+          <div style="font:700 12px Pretendard;letter-spacing:1px;color:#8B968F">성별</div>
+          <div style="display:flex;gap:9px;margin-top:10px">
+            <sc-for list="{{ genders }}" as="g" hint-placeholder-count="2">
+              <button onClick="{{ g.pick }}" style="flex:1;height:56px;border:1.5px solid {{ g.border }};border-radius:16px;background:{{ g.bg }};color:{{ g.fg }};font:{{ g.weight }} 16px Pretendard;cursor:pointer;transition:border-color .2s,background .2s">{{ g.label }}</button>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:2px;margin-top:26px">
+            <sc-for list="{{ numFields }}" as="f" hint-placeholder-count="3">
+              <button onClick="{{ f.open }}" style="width:100%;display:flex;align-items:baseline;gap:10px;height:60px;border:0;border-bottom:1.5px solid #E4EBE7;background:none;padding:0;cursor:pointer">
+                <span style="flex:1;text-align:left;font:700 12px Pretendard;letter-spacing:1px;color:#8B968F">{{ f.label }}</span>
+                <span style="font:{{ f.weight }} 19px Pretendard;color:{{ f.color }};font-variant-numeric:tabular-nums">{{ f.value }}</span>
+                <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#C9D3CD;align-self:center">unfold_more</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:9px;background:#F0F4F1;border-radius:14px;padding:14px;margin-top:22px">
+            <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#0F6B47;font-variation-settings:'FILL' 1">my_location</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:700 12px Pretendard;letter-spacing:1px;color:#8B968F">지역</span>
+              <span style="display:block;font:600 16px Pretendard;color:#1B2420;margin-top:2px">{{ region }}</span>
+            </span>
+            <span style="font:500 13px Pretendard;color:#8B968F">자동</span>
+          </div>
+          <div style="font:400 13px/1.6 Pretendard;color:#8B968F;margin-top:10px">지금 건너뛰어도 괜찮아요. 메뉴에서 언제든 채울 수 있어요.</div>
+        </sc-if>
+
+        <sc-if value="{{ isNickname }}" hint-placeholder-val="{{ false }}">
+          <div style="font:700 12px Pretendard;letter-spacing:1px;color:#8B968F">닉네임</div>
+          <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid {{ nickBorder }};padding:9px 0 11px;transition:border-color .2s">
+            <input value="{{ nickname }}" onInput="{{ onNickname }}" placeholder="2~10자" style="flex:1;min-width:0;border:0;outline:none;background:none;font:800 26px Pretendard;letter-spacing:-.6px;color:#1B2420" />
+            <span style="font:600 14px Pretendard;color:#A8B2AC;font-variant-numeric:tabular-nums">{{ nickCount }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:11px">
+            <span style="font-family:'Material Symbols Rounded';font-size:17px;color:{{ nickHintColor }};font-variation-settings:'FILL' 1">{{ nickHintIcon }}</span>
+            <span style="font:500 14px Pretendard;color:{{ nickHintColor }}">{{ nickHint }}</span>
+          </div>
+
+          <div style="background:#F0F4F1;border-radius:18px;padding:18px;margin-top:26px">
+            <div style="font:700 12px Pretendard;letter-spacing:1px;color:#8B968F">그룹 피드에서는 이렇게 보여요</div>
+            <div style="display:flex;align-items:center;gap:11px;background:#fff;border-radius:14px;padding:13px;margin-top:11px">
+              <span style="width:36px;height:36px;flex:none;border-radius:50%;background:#E8F1EC;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#4E9B78;font-variation-settings:'FILL' 1">person</span></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:700 15px Pretendard;color:#1B2420">{{ nickPreview }}</span>
+                <span style="display:block;font:500 13px Pretendard;color:#8B968F;margin-top:1px">오전 7:30 · 소래습지 한 바퀴</span>
+              </span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="flex:none;padding:0 28px 30px">
+        <button onClick="{{ next }}" style="width:100%;height:58px;border:0;border-radius:18px;background:{{ ctaBg }};color:{{ ctaFg }};font:700 17px Pretendard;cursor:{{ ctaCursor }};display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s">{{ ctaLabel }}<span style="font-family:'Material Symbols Rounded';font-size:20px">{{ ctaIcon }}</span></button>
+        <sc-if value="{{ canSkip }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ skip }}" style="width:100%;height:46px;border:0;background:none;font:500 15px Pretendard;color:#8B968F;cursor:pointer;margin-top:4px">건너뛰기</button>
+        </sc-if>
+        <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px">
+            <span style="font:400 15px Pretendard;color:#5C6862">이미 계정이 있나요?</span>
+            <button onClick="{{ goLogin }}" style="border:0;background:none;padding:4px 0;font:700 15px Pretendard;color:#0F6B47;cursor:pointer">로그인</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closePicker }}" style="position:absolute;inset:0;z-index:12;background:rgba(27,36,32,.42);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:28px 28px 0 0;padding:16px 24px 30px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E4EBE7;margin:0 auto 16px"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="flex:1;font:800 20px/1.4 Pretendard;letter-spacing:-.5px;color:#1B2420">{{ pkTitle }}</span>
+          <button onClick="{{ closePicker }}" style="width:34px;height:34px;flex:none;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#A8B2AC">close</span></button>
+        </div>
+        <div style="height:212px;overflow-y:auto;margin-top:12px">
+          <sc-for list="{{ pkItems }}" as="p" hint-placeholder-count="14">
+            <button onClick="{{ p.pick }}" style="width:100%;height:48px;border:0;border-radius:13px;background:{{ p.bg }};color:{{ p.fg }};font:{{ p.weight }} 17px Pretendard;cursor:pointer;font-variant-numeric:tabular-nums">{{ p.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ resetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeReset }}" style="position:absolute;inset:0;z-index:12;background:rgba(27,36,32,.45);display:flex;align-items:center;justify-content:center;padding:28px;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px;padding:26px 24px 22px;animation:popIn .24s cubic-bezier(.22,1.05,.36,1)">
+        <div style="font:800 21px/1.4 Pretendard;letter-spacing:-.5px;color:#1B2420">비밀번호를 다시 만들까요?</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:8px">가입한 이메일로 재설정 링크를 보내드려요.</div>
+        <div style="font:700 12px Pretendard;letter-spacing:1px;color:#8B968F;margin-top:20px">이메일</div>
+        <div style="border-bottom:1.5px solid #E4EBE7;padding:8px 0 10px">
+          <input placeholder="name@example.com" style="width:100%;box-sizing:border-box;border:0;outline:none;background:none;font:500 17px Pretendard;color:#1B2420" />
+        </div>
+        <div style="display:flex;gap:9px;margin-top:22px">
+          <button onClick="{{ closeReset }}" style="flex:1;height:52px;border:1.5px solid #E4EBE7;border-radius:16px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer">취소</button>
+          <button onClick="{{ sendReset }}" style="flex:1;height:52px;border:0;border-radius:16px;background:#0F6B47;color:#fff;font:600 16px Pretendard;cursor:pointer">보내기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:24px;right:24px;bottom:96px;z-index:14;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:8px;background:#1B2420;border-radius:999px;padding:12px 18px;box-shadow:0 6px 20px rgba(27,36,32,.3);animation:popIn .2s ease">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#7FDCAE;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font:600 14px Pretendard;color:#fff">{{ toastText }}</span>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;step&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;login&quot;,&quot;account&quot;,&quot;profile&quot;,&quot;nickname&quot;],&quot;default&quot;:&quot;login&quot;,&quot;tsType&quot;:&quot;'login'|'account'|'profile'|'nickname'&quot;}}">
+class Component extends DCLogic {
+  // 목업을 실제 앱처럼 눌러볼 수 있게 상단 뒤로가기를 이전 화면으로 연결한다.
+  _wireBack() {
+    setTimeout(() => {
+      const root = document.querySelector('[data-screen-label]');
+      if (!root) return;
+      root.querySelectorAll('button').forEach(b => {
+        if (b.dataset.backWired) return;
+        const t = (b.textContent || '').trim();
+        if (t !== 'chevron_left' && t !== 'arrow_back') return;
+        // 화면 안에서 이미 다른 곳으로 돌아가는 버튼은 건드리지 않는다
+        if (root.querySelectorAll('[data-screen-label]').length > 1) return;
+        b.dataset.backWired = '1';
+        b.addEventListener('click', () => {
+          setTimeout(() => {
+            // 화면 안 하위 페이지가 닫힌 게 아니라면 이전 목업으로 이동
+            if (!document.querySelector('[data-sub-open]')) {
+              window.location.href = "Home.dc.html";
+            }
+          }, 30);
+        }, true);
+      });
+    }, 80);
+  }
+
+  componentDidMount() { this._wireBack(); }
+
+  state = {
+    step: null, showPw: false,
+    gender: null, age: null, height: null, weight: null,
+    picker: null, reset: false, toast: null, nickname: '',
+  };
+
+  ORDER = ['account', 'profile', 'nickname'];
+
+  toast(text) {
+    this.setState({ toast: text });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: null }), 1900);
+  }
+
+  renderVals() {
+    const st = this.state;
+    // 화면 안에서 이동한 단계(state)가 우선 — 트윅(props)은 초기값으로만 쓴다
+    const step = st.step ?? this.props.step ?? 'login';
+    const idx = this.ORDER.indexOf(step);
+    const nick = st.nickname;
+    // nickname_setup_screen.dart 의 중복 검사 — 이미 쓰는 닉네임이면 막는다
+    const TAKEN = ['김영수', '플로고', '만수동', '줍깅왕'];
+    const taken = nick.length >= 2 && TAKEN.includes(nick);
+    const nickOk = nick.length >= 2 && nick.length <= 10 && !taken;
+
+    const RANGES = {
+      age: { title: '나이', unit: '세', from: 10, to: 90 },
+      height: { title: '키', unit: 'cm', from: 130, to: 200 },
+      weight: { title: '몸무게', unit: 'kg', from: 30, to: 130 },
+    };
+    const pk = RANGES[st.picker];
+
+    const COPY = {
+      account: { title: '이메일로 시작해요', sub: '비밀번호는 8자 이상으로 만들어주세요.', cta: '다음', icon: 'arrow_forward' },
+      profile: { title: '더 정확한 측정에 필요해요', sub: '걸음수와 칼로리를 계산하는 데 쓰여요.', cta: '다음', icon: 'arrow_forward' },
+      nickname: { title: '어떻게 불러드릴까요?', sub: '그룹 피드와 활동 기록에 표시되는 이름이에요.', cta: '플로고 시작하기', icon: 'check' },
+    };
+    const c = COPY[step] ?? COPY.account;
+
+    return {
+      isLogin: step === 'login',
+      isSignup: idx >= 0,
+      isAccount: step === 'account',
+      isProfile: step === 'profile',
+      isNickname: step === 'nickname',
+      goSignup: () => this.setState({ step: 'account' }),
+      goLogin: () => this.setState({ step: 'login' }),
+      back: () => this.setState({ step: idx <= 0 ? 'login' : this.ORDER[idx - 1] }),
+
+      steps: this.ORDER.map((_, i) => ({ bg: i <= idx ? '#0F6B47' : '#E4EBE7' })),
+      stepLabel: `${Math.max(idx, 0) + 1} / 3`,
+      title: c.title,
+      subtitle: c.sub,
+      ctaLabel: c.cta,
+      ctaIcon: c.icon,
+      ctaBg: step === 'nickname' && !nickOk ? '#E4EBE7' : '#0F6B47',
+      ctaFg: step === 'nickname' && !nickOk ? '#A8B2AC' : '#fff',
+      ctaCursor: step === 'nickname' && !nickOk ? 'not-allowed' : 'pointer',
+      canSkip: step === 'profile',
+      skip: () => this.setState({ step: 'nickname' }),
+      next: () => {
+        if (step === 'nickname') { if (nickOk) window.location.href = 'Home.dc.html'; return; }
+        this.setState({ step: this.ORDER[idx + 1] });
+      },
+
+      pwType: st.showPw ? 'text' : 'password',
+      pwIcon: st.showPw ? 'visibility' : 'visibility_off',
+      togglePw: () => this.setState(s => ({ showPw: !s.showPw })),
+      doLogin: () => { window.location.href = 'Home.dc.html'; },
+
+      genders: ['남성', '여성'].map(label => {
+        const on = st.gender === label;
+        return {
+          label,
+          bg: on ? '#E8F1EC' : '#fff',
+          fg: on ? '#0B4A32' : '#414B46',
+          border: on ? '#0F6B47' : '#E4EBE7',
+          weight: on ? 700 : 500,
+          pick: () => this.setState({ gender: label }),
+        };
+      }),
+      numFields: Object.entries(RANGES).map(([key, r]) => {
+        const v = st[key];
+        return {
+          label: r.title,
+          value: v ? `${v}${r.unit}` : '선택',
+          color: v ? '#1B2420' : '#A8B2AC',
+          weight: v ? 700 : 500,
+          open: () => this.setState({ picker: key }),
+        };
+      }),
+      region: '인천 남동구 만수동',
+
+      pickerOpen: !!pk,
+      closePicker: () => this.setState({ picker: null }),
+      pkTitle: pk ? `${pk.title}를 골라주세요` : '',
+      pkItems: pk
+        ? Array.from({ length: pk.to - pk.from + 1 }, (_, i) => pk.from + i).map(v => {
+            const on = st[st.picker] === v;
+            return {
+              label: `${v}${pk.unit}`,
+              bg: on ? '#0F6B47' : 'transparent',
+              fg: on ? '#fff' : '#414B46',
+              weight: on ? 700 : 500,
+              pick: () => this.setState({ [st.picker]: v, picker: null }),
+            };
+          })
+        : [],
+
+      resetOpen: st.reset,
+      openReset: () => this.setState({ reset: true }),
+      closeReset: () => this.setState({ reset: false }),
+      sendReset: () => { this.setState({ reset: false }); this.toast('재설정 링크를 보냈어요'); },
+
+      nickname: nick,
+      nickPreview: nick.length ? nick : '닉네임',
+      onNickname: e => this.setState({ nickname: e.target.value.slice(0, 10) }),
+      nickCount: `${nick.length}/10`,
+      nickBorder: nick.length === 0 ? '#E4EBE7' : nickOk ? '#0F6B47' : '#C4342E',
+      nickHint: nick.length === 0 ? '한글·영문·숫자를 쓸 수 있어요'
+        : taken ? '이미 사용 중인 닉네임이에요'
+        : nickOk ? '쓸 수 있는 닉네임이에요' : '두 글자 이상 입력해주세요',
+      nickHintIcon: nick.length === 0 ? 'info' : nickOk ? 'check_circle' : 'error',
+      nickHintColor: nick.length === 0 ? '#8B968F' : nickOk ? '#0B4A32' : '#C4342E',
+
+      toastOpen: !!st.toast,
+      toastText: st.toast ?? '',
+      stop: e => e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>

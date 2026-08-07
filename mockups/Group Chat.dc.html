@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#0B5238}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.22)}100%{transform:scale(1)}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="그룹 채팅방" style="width:390px;height:844px;background:#F3F8F4;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2)">
+
+  <div style="position:absolute;left:0;right:0;top:0;background:rgba(255,255,255,.96);border-bottom:1px solid #EFF5F1;padding:0 8px 10px;z-index:3">
+    <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 18px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+      <button style="width:44px;height:44px;flex:none;border:0;background:none;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+      <span style="width:38px;height:38px;flex:none;border-radius:13px;background:#EBF4EF;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#12784F;font-variation-settings:'FILL' 1">diversity_1</span></span>
+      <div style="flex:1;min-width:0">
+        <div style="font:700 17px/1.35 Pretendard;letter-spacing:-.2px;color:#24302B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">만수동 줍깅크루</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:1px"><span style="width:6px;height:6px;border-radius:50%;background:#34AE77"></span><span style="font:500 13px/1.4 Pretendard;color:#5C6862">멤버 14명 · 오늘 3명 활동</span></div>
+      </div>
+      <button onClick="{{ openInfo }}" style="width:44px;height:44px;flex:none;border:0;background:none;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#414B46">info</span></button>
+      <button onClick="{{ openDrawer }}" style="width:44px;height:44px;flex:none;border:0;background:none;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#414B46">menu</span></button>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;top:116px;bottom:80px;overflow-y:auto;padding:16px 16px 16px;scrollbar-width:none;display:flex;flex-direction:column;gap:14px;justify-content:flex-start">
+    <div style="flex:none;display:flex;justify-content:center"><span style="background:rgba(36,48,43,.07);color:#5C6862;border-radius:999px;padding:6px 13px;font:600 12.5px Pretendard">오늘</span></div>
+
+    <div style="flex:none;background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(36,48,43,.07);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px 10px">
+        <span style="width:36px;height:36px;flex:none;border-radius:50%;background:#DCEDE3;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#5C6862;font-variation-settings:'FILL' 1">person</span></span>
+        <span style="flex:1;min-width:0"><span style="display:block;font:700 15px/1.4 Pretendard;color:#24302B">김영자</span><span style="display:block;font:500 13px/1.4 Pretendard;color:#5C6862">오전 7:30 · 소래습지 한 바퀴</span></span>
+        <button onClick="{{ openPostReport }}" style="width:34px;height:34px;border:0;background:none;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:#9FA9A4">flag</span></button>
+      </div>
+      <div style="aspect-ratio:16/9;background:#DCE9DC;display:flex;align-items:center;justify-content:center;margin:0 12px;border-radius:14px"><span style="font-family:'Material Symbols Rounded';font-size:34px;color:#7D8783">photo_camera</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:12px 14px 13px">
+        <div style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="display:flex;align-items:baseline;gap:3px;font:500 13px/1.4 Pretendard;color:#5C6862">거리<span style="font:700 15px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">2.4</span>km</span>
+          <span style="width:3px;height:3px;border-radius:50%;background:#C3CCC7"></span>
+          <span style="display:flex;align-items:baseline;gap:3px;font:500 13px/1.4 Pretendard;color:#5C6862">수거<span style="font:700 15px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">18</span>개</span>
+          <span style="width:3px;height:3px;border-radius:50%;background:#C3CCC7"></span>
+          <span style="display:flex;align-items:baseline;gap:3px;font:500 13px/1.4 Pretendard;color:#5C6862">시간<span style="font:700 15px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">42</span>분</span>
+        </div>
+        <button onClick="{{ toggleLike }}" style="flex:none;height:36px;border:0;border-radius:18px;background:none;display:flex;align-items:center;gap:5px;padding:0 6px;cursor:pointer">
+          <span style="font-family:'Material Symbols Rounded';font-size:18px;color:{{ likeFg }};font-variation-settings:'FILL' {{ likeFill }};animation:{{ likeAnim }}">favorite</span>
+          <span style="font:700 13px Pretendard;color:{{ likeFg }};font-variant-numeric:tabular-nums">{{ likes }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="flex:none;display:flex;align-items:flex-start;gap:8px;justify-content:flex-start">
+      <span style="width:34px;height:34px;flex:none;border-radius:50%;background:#DCEDE3;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:#5C6862;font-variation-settings:'FILL' 1">person</span></span>
+      <span style="display:inline-flex;flex-direction:column;align-items:stretch;max-width:214px;min-width:0">
+        <span style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <span style="font:600 13px/1.4 Pretendard;color:#414B46">박정호</span>
+          <button onClick="{{ openMsgReport }}" style="width:22px;height:22px;flex:none;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:16px;color:#9FA9A4">flag</span></button>
+        </span>
+        <span style="background:#fff;border-radius:6px 18px 18px 18px;padding:11px 14px;font:400 15px/1.5 Pretendard;color:#24302B;box-shadow:0 2px 8px rgba(36,48,43,.06)">소래습지 쪽 캔이 많았어요. 다음엔 봉투 더 챙겨가요!</span>
+      </span>
+      <span style="flex:none;font:400 12px/1.4 Pretendard;color:#9FA9A4;white-space:nowrap;align-self:flex-end">8:02</span>
+    </div>
+
+    <div style="flex:none;display:flex;align-items:flex-end;justify-content:flex-end;gap:6px">
+      <span style="font:400 12px/1.4 Pretendard;color:#9FA9A4;white-space:nowrap">8:05</span>
+      <span style="display:inline-block;max-width:212px;background:#DCEDE3;border-radius:18px 18px 6px 18px;padding:11px 14px;font:400 15px/1.5 Pretendard;color:#153A2B">저도 봉투 두 장 챙겨갈게요</span>
+    </div>
+
+    <div style="flex:none;background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(36,48,43,.07);overflow:hidden;border:1.5px solid #EBF4EF">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px 10px">
+        <span style="width:36px;height:36px;flex:none;border-radius:50%;background:#12784F;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#fff;font-variation-settings:'FILL' 1">person</span></span>
+        <span style="flex:1;min-width:0"><span style="display:block;font:700 15px/1.4 Pretendard;color:#24302B">나</span><span style="display:block;font:500 13px/1.4 Pretendard;color:#5C6862">오전 9:12 · 인천대공원 순환길</span></span>
+        <span style="flex:none;background:#EBF4EF;color:#0B4A32;border-radius:999px;padding:4px 9px;font:700 12px Pretendard">내 기록</span>
+      </div>
+      <div style="aspect-ratio:16/9;background:#DCE9DC;display:flex;align-items:center;justify-content:center;margin:0 12px;border-radius:14px"><span style="font-family:'Material Symbols Rounded';font-size:34px;color:#7D8783">photo_camera</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:12px 14px 13px">
+        <div style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="display:flex;align-items:baseline;gap:3px;font:500 13px/1.4 Pretendard;color:#5C6862">거리<span style="font:700 15px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">1.8</span>km</span>
+          <span style="width:3px;height:3px;border-radius:50%;background:#C3CCC7"></span>
+          <span style="display:flex;align-items:baseline;gap:3px;font:500 13px/1.4 Pretendard;color:#5C6862">수거<span style="font:700 15px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">10</span>개</span>
+          <span style="width:3px;height:3px;border-radius:50%;background:#C3CCC7"></span>
+          <span style="display:flex;align-items:baseline;gap:3px;font:500 13px/1.4 Pretendard;color:#5C6862">시간<span style="font:700 15px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">33</span>분</span>
+        </div>
+        <span style="flex:none;height:36px;display:flex;align-items:center;gap:5px;padding:0 4px"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#9FA9A4;font-variation-settings:'FILL' 1">favorite</span><span style="font:700 13px Pretendard;color:#7D8783;font-variant-numeric:tabular-nums">5</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);border-top:1px solid #EFF5F1;padding:10px 12px 18px;display:flex;align-items:center;gap:8px;z-index:3">
+    <div style="flex:1;height:48px;background:#F3F8F4;border-radius:24px;display:flex;align-items:center;padding:0 16px"><span style="font:400 15px/1.4 Pretendard;color:#5C6862">메시지를 입력하세요</span></div>
+    <button style="width:48px;height:48px;flex:none;border:0;border-radius:50%;background:#B4E5C9;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:25px;color:#0B4A32;font-variation-settings:'wght' 600">arrow_upward</span></button>
+  </div>
+
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeConfirm }}" style="position:absolute;inset:0;z-index:14;background:rgba(36,48,43,.5);display:flex;align-items:center;justify-content:center;padding:28px;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:24px;padding:24px 22px 20px;animation:popIn .26s cubic-bezier(.22,1.05,.36,1)">
+        <div style="width:46px;height:46px;border-radius:16px;background:{{ cfTint }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:{{ cfColor }};font-variation-settings:'FILL' 1">{{ cfIcon }}</span></div>
+        <div style="font:800 20px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:14px">{{ cfTitle }}</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:7px">{{ cfDesc }}</div>
+        <div style="display:flex;gap:8px;margin-top:20px">
+          <button onClick="{{ closeConfirm }}" style="flex:1;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer">취소</button>
+          <button onClick="{{ applyConfirm }}" style="flex:1;height:52px;border:0;border-radius:16px;background:{{ cfColor }};color:#fff;font:600 16px Pretendard;cursor:pointer">{{ cfCta }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:24px;right:24px;bottom:120px;z-index:15;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:8px;background:#24302B;border-radius:999px;padding:11px 18px;box-shadow:0 6px 20px rgba(16,21,18,.34);animation:popIn .2s ease">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#7FDCAE;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font:600 14px Pretendard;color:#fff">{{ toastText }}</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ manageOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAll }}" style="position:absolute;inset:0;z-index:12;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:22px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E0E8E3;margin:0 auto 18px"></div>
+        <div style="font:800 20px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B">{{ manageName }} 님</div>
+        <div style="font:400 14px/1.6 Pretendard;color:#5C6862;margin-top:6px">그룹장은 멤버를 내보내거나 그룹장 자리를 넘길 수 있어요.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:18px">
+          <button onClick="{{ askTransfer }}" style="width:100%;height:54px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0 16px" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#5C6862">workspace_premium</span>그룹장 넘기기</button>
+          <button onClick="{{ askKick }}" style="width:100%;height:54px;border:0;border-radius:16px;background:#FCEDEC;color:#A93028;font:600 16px Pretendard;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0 16px" style-hover="background:#FBE3E1"><span style="font-family:'Material Symbols Rounded';font-size:20px">person_remove</span>그룹에서 내보내기</button>
+          <button onClick="{{ closeAll }}" style="width:100%;height:54px;border:0;border-radius:16px;background:#F3F8F4;color:#414B46;font:600 16px Pretendard;cursor:pointer;margin-top:4px">취소</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ editOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAll }}" style="position:absolute;inset:0;z-index:12;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:22px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E0E8E3;margin:0 auto 18px"></div>
+        <div style="font:800 20px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B">그룹 정보 수정</div>
+        <div style="font:600 13px/1.4 Pretendard;color:#5C6862;margin-top:16px;margin-bottom:6px">그룹 이름</div>
+        <div style="height:52px;background:#F3F8F4;border:1.5px solid #E0E8E3;border-radius:14px;padding:0 14px;display:flex;align-items:center;font:500 16px Pretendard;color:#24302B">만수동 줍깅크루</div>
+        <div style="font:600 13px/1.4 Pretendard;color:#5C6862;margin-top:14px;margin-bottom:6px">그룹 소개</div>
+        <div style="min-height:88px;background:#F3F8F4;border:1.5px solid #E0E8E3;border-radius:14px;padding:12px 14px;font:400 15px/1.6 Pretendard;color:#414B46">매주 화·목 아침 7시에 만수동 일대를 함께 걸어요. 처음 오시는 분도 편하게 오세요.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#F3F8F4;border-radius:14px;padding:13px 14px;margin-top:14px">
+          <span style="font:500 15px/1.45 Pretendard;color:#24302B">누구나 가입할 수 있어요</span>
+          <span style="width:48px;height:28px;border-radius:14px;background:#12784F;display:flex;align-items:center;justify-content:flex-end;padding:0 3px"><span style="width:22px;height:22px;border-radius:50%;background:#fff"></span></span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <button onClick="{{ closeAll }}" style="flex:1;height:54px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 17px Pretendard;cursor:pointer">취소</button>
+          <button onClick="{{ closeAll }}" style="flex:1;height:54px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer">저장</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ reportOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:12;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:22px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E0E8E3;margin:0 auto 18px"></div>
+        <div style="font:800 20px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B">{{ reportTitle }}</div>
+        <div style="font:400 14px/1.6 Pretendard;color:#5C6862;margin-top:6px">신고 내용은 그룹장과 운영진만 볼 수 있어요. 같은 멤버를 3번 이상 신고하면 자동으로 확인해요.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+          <sc-for list="{{ reasons }}" as="r" hint-placeholder-count="5">
+            <button onClick="{{ r.pick }}" style="width:100%;min-height:52px;border:1.5px solid {{ r.border }};border-radius:16px;background:{{ r.bg }};display:flex;align-items:center;gap:10px;padding:0 14px;cursor:pointer;text-align:left" style-hover="background:#F3F8F4">
+              <span style="width:20px;height:20px;flex:none;border-radius:50%;border:2px solid {{ r.dotBorder }};background:{{ r.dot }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:14px;color:#fff;font-variation-settings:'FILL' 1">{{ r.check }}</span></span>
+              <span style="flex:1;font:{{ r.weight }} 15px/1.45 Pretendard;color:#24302B">{{ r.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ showOther }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:10px">
+            <div style="font:600 13px/1.4 Pretendard;color:#5C6862;margin-bottom:6px">어떤 점이 문제였나요? <span style="font-weight:500;color:#7D8783">(선택)</span></div>
+            <div style="min-height:74px;background:#F3F8F4;border:1.5px solid #E0E8E3;border-radius:14px;padding:12px 14px;font:400 15px/1.55 Pretendard;color:#9FA9A4">예: 같은 사진을 반복해서 올려요</div>
+          </div>
+        </sc-if>
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <button onClick="{{ closeAll }}" style="flex:1;height:54px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 17px Pretendard;cursor:pointer">취소</button>
+          <button onClick="{{ submitReport }}" style="flex:1;height:54px;border:0;border-radius:16px;background:{{ submitBg }};color:{{ submitFg }};font:600 17px Pretendard;cursor:{{ submitCursor }}">신고하기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:16px;right:16px;bottom:96px;z-index:13;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(36,48,43,.94);color:#fff;border-radius:16px;padding:12px 16px;box-shadow:0 6px 18px rgba(36,48,43,.28);animation:fadeIn .24s ease">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#9CDDB6;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font:600 14px/1.45 Pretendard">신고를 접수했어요. 검토 후 알려드릴게요</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAll }}" style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;justify-content:flex-end;animation:fadeIn .22s ease">
+      <div onClick="{{ stop }}" style="width:296px;height:100%;box-sizing:border-box;background:#fff;padding:52px 0 24px;display:flex;flex-direction:column;animation:slideIn .28s cubic-bezier(.32,.72,0,1)">
+        <div style="padding:0 20px 16px;border-bottom:1px solid #EFF5F1">
+          <div style="font:800 19px/1.4 Pretendard;letter-spacing:-.3px;color:#24302B">멤버 14명</div>
+          <div style="font:500 13px/1.45 Pretendard;color:#5C6862;margin-top:2px">인천 남동구 만수동</div>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 12px;scrollbar-width:none">
+          <sc-for list="{{ members }}" as="m" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 8px">
+              <span style="width:40px;height:40px;flex:none;border-radius:50%;background:#DCEDE3;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#5C6862;font-variation-settings:'FILL' 1">person</span></span>
+              <span style="flex:1;min-width:0"><span style="display:flex;align-items:center;gap:5px"><span style="font:600 15px/1.4 Pretendard;color:#24302B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.name }}</span><sc-if value="{{ m.isLeader }}" hint-placeholder-val="{{ false }}"><span style="flex:none;background:#EBF4EF;color:#0B4A32;border-radius:999px;padding:2px 7px;font:700 11px Pretendard">그룹장</span></sc-if></span><span style="display:block;font:500 13px/1.4 Pretendard;color:{{ m.color }};margin-top:1px">{{ m.status }}</span></span>
+              <sc-if value="{{ m.manageable }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ m.manage }}" style="width:34px;height:34px;flex:none;border:0;border-radius:11px;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#9FA9A4">more_vert</span></button>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:14px 20px 0;border-top:1px solid #EFF5F1">
+          <button onClick="{{ openLeave }}" style="width:100%;height:52px;border:0;border-radius:16px;background:#C4342E;color:#fff;font:600 16px Pretendard;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 3px 10px rgba(196,52,46,.24)"><span style="font-family:'Material Symbols Rounded';font-size:20px">logout</span>{{ leaveLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ infoOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAll }}" style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .22s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:22px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E0E8E3;margin:0 auto 18px"></div>
+        <div style="display:flex;align-items:center;gap:13px">
+          <span style="width:56px;height:56px;flex:none;border-radius:18px;background:#EBF4EF;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:28px;color:#12784F;font-variation-settings:'FILL' 1">diversity_1</span></span>
+          <span style="flex:1;min-width:0"><span style="display:block;font:800 20px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B">만수동 줍깅크루</span><span style="display:block;font:500 13.5px/1.45 Pretendard;color:#5C6862;margin-top:2px">인천 남동구 만수동 · 멤버 14명</span></span>
+        </div>
+        <div style="font:400 15px/1.65 Pretendard;color:#414B46;margin-top:16px">매주 화·목 아침 7시에 만수동 일대를 함께 걸어요. 처음 오시는 분도 편하게 오세요.</div>
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <div style="flex:1;background:#F3F8F4;border-radius:14px;padding:12px 8px;text-align:center"><div style="font:700 18px/1.2 Pretendard;color:#24302B;font-variant-numeric:tabular-nums">128</div><div style="font:500 13px/1.4 Pretendard;color:#5C6862;margin-top:2px">함께 주운 개수</div></div>
+          <div style="flex:1;background:#F3F8F4;border-radius:14px;padding:12px 8px;text-align:center"><div style="font:700 18px/1.2 Pretendard;color:#24302B;font-variant-numeric:tabular-nums">36</div><div style="font:500 13px/1.4 Pretendard;color:#5C6862;margin-top:2px">함께 걸은 km</div></div>
+          <div style="flex:1;background:#F3F8F4;border-radius:14px;padding:12px 8px;text-align:center"><div style="font:700 18px/1.2 Pretendard;color:#24302B;font-variant-numeric:tabular-nums">9</div><div style="font:500 13px/1.4 Pretendard;color:#5C6862;margin-top:2px">함께한 날</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <sc-if value="{{ isLeader }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ openEdit }}" style="flex:1;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:19px">edit</span>정보 수정</button>
+          </sc-if>
+          <button onClick="{{ closeAll }}" style="flex:1;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer">닫기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;isLeader&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  // 목업을 실제 앱처럼 눌러볼 수 있게 상단 뒤로가기를 이전 화면으로 연결한다.
+  _wireBack() {
+    setTimeout(() => {
+      const root = document.querySelector('[data-screen-label]');
+      if (!root) return;
+      root.querySelectorAll('button').forEach(b => {
+        if (b.dataset.backWired) return;
+        const t = (b.textContent || '').trim();
+        if (t !== 'chevron_left' && t !== 'arrow_back') return;
+        // 화면 안에서 이미 다른 곳으로 돌아가는 버튼은 건드리지 않는다
+        if (root.querySelectorAll('[data-screen-label]').length > 1) return;
+        b.dataset.backWired = '1';
+        b.addEventListener('click', () => {
+          setTimeout(() => {
+            // 화면 안 하위 페이지가 닫힌 게 아니라면 이전 목업으로 이동
+            if (!document.querySelector('[data-sub-open]')) {
+              window.location.href = "Group Home.dc.html";
+            }
+          }, 30);
+        }, true);
+      });
+    }, 80);
+  }
+
+  componentDidMount() { this._wireBack(); }
+
+  state = { liked: false, likes: 7, drawerOpen: false, infoOpen: false, bump: 0,
+    actionsOpen: false, reportOpen: false, target: null, reason: null, toastOpen: false };
+
+  REASONS = ['부적절한 사진이에요', '욕설·비방이 있어요', '광고·스팸이에요', '활동과 관계없는 내용이에요', '다른 사유'];
+
+  MEMBERS = [
+    ['김영자', '오늘 활동 중', true], ['박정호', '오늘 활동 중', true],
+    ['나', '오늘 활동 중', true], ['이순남', '어제 활동', false],
+    ['최민수', '3일 전 활동', false], ['한지우', '이번 주 활동 없음', false],
+    ['오세라', '이번 주 활동 없음', false],
+  ];
+
+  confirmVals(isLeader) {
+    const k = this.state.confirm;
+    const who = this.state.manageName || '';
+    const C = {
+      leave: {
+        icon: 'logout', color: '#C4342E', tint: '#FBEBEA',
+        title: '그룹에서 탈퇴할까요?',
+        desc: '탈퇴하면 이 그룹의 피드와 채팅을 볼 수 없어요. 내 활동 기록은 그대로 남습니다.',
+        cta: '탈퇴하기', toast: '그룹에서 탈퇴했어요',
+      },
+      disband: {
+        icon: 'group_remove', color: '#C4342E', tint: '#FBEBEA',
+        title: '그룹을 해산할까요?',
+        desc: '그룹장이 나가면 그룹이 사라지고 멤버 전원이 내보내집니다. 되돌릴 수 없어요.',
+        cta: '해산하기', toast: '그룹을 해산했어요',
+      },
+      transfer: {
+        icon: 'workspace_premium', color: '#12784F', tint: '#DCEDE3',
+        title: `${who} 님에게 그룹장을 넘길까요?`,
+        desc: '넘기면 나는 일반 멤버가 되고, 멤버 관리 권한도 함께 넘어갑니다.',
+        cta: '넘기기', toast: `${who} 님이 그룹장이 되었어요`,
+      },
+      kick: {
+        icon: 'person_remove', color: '#C4342E', tint: '#FBEBEA',
+        title: `${who} 님을 내보낼까요?`,
+        desc: '내보낸 멤버는 다시 가입할 수 있어요. 남긴 기록과 메시지는 그대로 남습니다.',
+        cta: '내보내기', toast: `${who} 님을 내보냈어요`,
+      },
+    };
+    const c = C[k];
+    return {
+      confirmOpen: !!c,
+      cfIcon: c?.icon ?? '', cfColor: c?.color ?? '#12784F', cfTint: c?.tint ?? '#DCEDE3',
+      cfTitle: c?.title ?? '', cfDesc: c?.desc ?? '', cfCta: c?.cta ?? '',
+      closeConfirm: () => this.setState({ confirm: null }),
+      applyConfirm: () => {
+        this.setState({ confirm: null, manageOpen: false, toast: c?.toast ?? '' });
+        clearTimeout(this._toast);
+        this._toast = setTimeout(() => this.setState({ toast: null }), 1900);
+      },
+      toastOpen: !!this.state.toast,
+      toastText: this.state.toast ?? '',
+    };
+  }
+
+  renderVals() {
+    const liked = this.state.liked;
+    const isLeader = this.props.isLeader ?? false;
+    return {
+      likes: this.state.likes,
+      likeFill: liked ? 1 : 0,
+      likeFg: liked ? '#C4342E' : '#5C6862',
+      likeBg: liked ? '#FCEDEC' : '#fff',
+      likeBorder: liked ? '#F1C9C5' : '#E0E8E3',
+      likeAnim: this.state.bump ? 'pop .34s ease' : 'none',
+      toggleLike: () => this.setState(s => ({
+        liked: !s.liked, likes: s.likes + (s.liked ? -1 : 1), bump: s.bump + 1,
+      })),
+      isLeader,
+      leaveLabel: isLeader ? '그룹 해산하기' : '탈퇴하기',
+      showOther: this.state.reason === '다른 사유',
+      members: this.MEMBERS
+        .map(([name, status, active]) => ({
+          name, status, color: active ? '#0B4A32' : '#5C6862',
+          isLeader: isLeader ? name === '나' : name === '김영자',
+          manageable: isLeader && name !== '나',
+          manage: () => this.setState({ manageOpen: true, manageName: name, drawerOpen: true }),
+        }))
+        .sort((a, b) => (b.isLeader ? 1 : 0) - (a.isLeader ? 1 : 0)),
+      openLeave: () => this.setState({ confirm: isLeader ? 'disband' : 'leave' }),
+      askTransfer: () => this.setState({ confirm: 'transfer' }),
+      askKick: () => this.setState({ confirm: 'kick' }),
+      ...this.confirmVals(isLeader),
+      manageOpen: !!this.state.manageOpen,
+      manageName: this.state.manageName || '',
+      editOpen: !!this.state.editOpen,
+      openEdit: () => this.setState({ editOpen: true, infoOpen: false }),
+      drawerOpen: this.state.drawerOpen,
+      infoOpen: this.state.infoOpen,
+      openDrawer: () => this.setState({ drawerOpen: true }),
+      openInfo: () => this.setState({ infoOpen: true }),
+      closeAll: () => this.setState({ drawerOpen: false, infoOpen: false, reportOpen: false, reason: null, manageOpen: false, editOpen: false }),
+
+      stop: e => e.stopPropagation(),
+      reportOpen: this.state.reportOpen,
+      reportTitle: this.state.target === 'post' ? '이 활동 기록을 신고할까요?' : '이 메시지를 신고할까요?',
+      openMsgReport: () => this.setState({ reportOpen: true, target: 'msg', reason: null }),
+      openPostReport: () => this.setState({ reportOpen: true, target: 'post', reason: null }),
+      reasons: this.REASONS.map(label => {
+        const on = this.state.reason === label;
+        return {
+          label, weight: on ? 600 : 500,
+          border: on ? '#12784F' : '#E0E8E3',
+          bg: on ? '#EBF4EF' : '#fff',
+          dot: on ? '#12784F' : '#fff',
+          dotBorder: on ? '#12784F' : '#CBD3CE',
+          check: on ? 'check' : '',
+          pick: () => this.setState({ reason: label }),
+        };
+      }),
+      submitBg: this.state.reason ? '#C4342E' : '#E0E8E3',
+      submitFg: this.state.reason ? '#fff' : '#7D8783',
+      submitCursor: this.state.reason ? 'pointer' : 'not-allowed',
+      submitReport: () => {
+        if (!this.state.reason) return;
+        this.setState({ reportOpen: false, reason: null, toastOpen: true });
+        clearTimeout(this._toast);
+        this._toast = setTimeout(() => this.setState({ toastOpen: false }), 2600);
+      },
+      toastOpen: this.state.toastOpen,
+    };
+  }
+}
+</script>
+</body>
+</html>

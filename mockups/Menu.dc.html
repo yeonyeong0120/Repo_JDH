@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#0B5238}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes dropIn{from{transform:translateY(-6px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pageIn{from{transform:translateX(22px);opacity:0}to{transform:translateX(0);opacity:1}}
+::-webkit-scrollbar{width:0;height:0}
+*{scrollbar-width:none}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="메뉴" style="width:390px;height:844px;background:#F3F8F4;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2)">
+
+  <div style="position:absolute;left:0;right:0;top:0;bottom:76px;overflow-y:auto;padding:8px 20px 28px">
+
+    <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 4px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:0 2px">
+      <span style="font:800 26px/1.3 Pretendard;letter-spacing:-.7px;color:#24302B">메뉴</span>
+      <button onClick="{{ toggleNoti }}" style="width:44px;height:44px;border:0;border-radius:50%;background:{{ bellBg }};display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .2s"><span style="font-family:'Material Symbols Rounded';font-size:22px;color:{{ bellColor }};font-variation-settings:'FILL' {{ bellFill }}">{{ bellIcon }}</span></button>
+    </div>
+
+    <div onClick="{{ openProfile }}" style="background:#fff;border-radius:24px;padding:20px;margin-top:16px;cursor:pointer;box-shadow:0 2px 14px rgba(36,48,43,.07)">
+      <div style="display:flex;align-items:center;gap:15px">
+        <div style="width:58px;height:58px;flex:none;border-radius:20px;background:#DCEDE3;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:28px;color:#3F9C74;font-variation-settings:'FILL' 1">person</span></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="font:800 21px/1.3 Pretendard;letter-spacing:-.5px;color:#24302B">{{ nickname }}</span>
+            <span style="background:#DCEDE3;border-radius:8px;padding:2px 8px;font:800 12px Pretendard;color:#0B4A32">Lv.{{ level }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:8px">
+            <div style="flex:1;height:6px;border-radius:3px;background:#E7EFE9;overflow:hidden"><div style="width:{{ levelPct }}%;height:100%;border-radius:3px;background:#12784F"></div></div>
+            <span style="font:600 12px Pretendard;color:#5C6862;white-space:nowrap">{{ remainXp }} XP</span>
+          </div>
+        </div>
+        <span style="font-family:'Material Symbols Rounded';font-size:21px;color:#C3CCC7">chevron_right</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px">
+        <sc-for list="{{ stats }}" as="st" hint-placeholder-count="3">
+          <div style="background:#F3F8F4;border-radius:14px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <span style="display:flex;align-items:baseline;gap:1px"><span style="font:800 18px Pretendard;letter-spacing:-.4px;color:#24302B;font-variant-numeric:tabular-nums">{{ st.value }}</span><span style="font:500 12px Pretendard;color:#5C6862">{{ st.unit }}</span></span>
+            <span style="font:500 12px Pretendard;color:#5C6862">{{ st.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div onClick="{{ openShop }}" style="background:#DCEDE3;border-radius:22px;padding:18px;margin-top:18px;cursor:pointer;display:flex;align-items:center;gap:12px">
+      <span style="flex:1;min-width:0">
+        <span style="display:block;font:600 13px Pretendard;color:#3F7A61">사용 가능한 포인트</span>
+        <span style="display:flex;align-items:baseline;gap:3px;margin-top:3px"><span style="font:800 30px/1.1 Pretendard;letter-spacing:-.8px;color:#0B4A32;font-variant-numeric:tabular-nums">{{ points }}</span><span style="font:700 16px Pretendard;color:#12784F">P</span></span>
+      </span>
+      <span style="display:flex;align-items:center;gap:3px;font:600 14px Pretendard;color:#0B4A32;white-space:nowrap">상점 가기<span style="font-family:'Material Symbols Rounded';font-size:19px">chevron_right</span></span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <sc-for list="{{ shortcuts }}" as="s" hint-placeholder-count="2">
+        <button onClick="{{ s.open }}" style="border:0;background:#fff;border-radius:20px;padding:16px;cursor:pointer;text-align:left;box-shadow:0 2px 12px rgba(36,48,43,.06)" style-hover="background:#FAFCFB">
+          <span style="width:36px;height:36px;border-radius:13px;background:{{ s.tint }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ s.color }};font-variation-settings:'FILL' 1">{{ s.icon }}</span></span>
+          <span style="display:block;font:700 16px Pretendard;color:#24302B;margin-top:12px">{{ s.label }}</span>
+          <span style="display:block;font:500 13px Pretendard;color:#5C6862;margin-top:2px">{{ s.sub }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="font:700 13px Pretendard;color:#5C6862;letter-spacing:.4px;margin:26px 2px 10px">이용 안내</div>
+    <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(36,48,43,.06);overflow:hidden">
+      <sc-for list="{{ menus }}" as="m" hint-placeholder-count="4">
+        <button onClick="{{ m.open }}" style="width:100%;border:0;border-top:{{ m.divider }};background:none;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer" style-hover="background:#F8FAF9">
+          <span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9FA9A4">{{ m.icon }}</span>
+          <span style="flex:1;text-align:left;font:500 16px Pretendard;color:#24302B">{{ m.label }}</span>
+          <sc-if value="{{ m.isNew }}" hint-placeholder-val="{{ false }}">
+            <span style="width:6px;height:6px;border-radius:50%;background:#C4342E"></span>
+          </sc-if>
+          <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#C3CCC7">chevron_right</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:26px">
+      <button onClick="{{ openLogout }}" style="border:0;background:none;padding:8px 4px;font:500 14px Pretendard;color:#5C6862;cursor:pointer">로그아웃</button>
+      <span style="width:1px;height:12px;background:#D5DDD8"></span>
+      <button onClick="{{ openWithdraw }}" style="border:0;background:none;padding:8px 4px;font:500 14px Pretendard;color:#5C6862;cursor:pointer">회원 탈퇴</button>
+    </div>
+    <div style="text-align:center;font:400 12px Pretendard;color:#5C6862;margin-top:2px">플로고 v1.0.0</div>
+  </div>
+
+  <sc-if value="{{ subOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:10;background:#F3F8F4;display:flex;flex-direction:column;animation:pageIn .26s cubic-bezier(.32,.72,0,1)">
+      <div style="background:#F3F8F4;padding:8px 8px 0">
+        <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 12px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+        <div style="display:flex;align-items:center;gap:2px;margin-top:6px;padding-bottom:10px">
+          <button onClick="{{ closeSub }}" style="width:44px;height:44px;flex:none;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+          <span style="flex:1;font:800 20px/1.4 Pretendard;letter-spacing:-.3px;color:#24302B">{{ subTitle }}</span>
+          <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ saveProfile }}" style="height:44px;border:0;background:none;padding:0 14px;font:700 16px Pretendard;color:#12784F;cursor:pointer">저장</button>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 20px 28px">
+
+          <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center">
+            <div style="position:relative;width:96px;height:96px">
+              <div style="width:96px;height:96px;border-radius:32px;background:#DCEDE3;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:46px;color:#3F9C74;font-variation-settings:'FILL' 1">person</span></div>
+              <span style="position:absolute;right:-4px;bottom:-4px;width:34px;height:34px;border-radius:50%;background:#12784F;border:3px solid #F3F8F4;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:17px;color:#fff">photo_camera</span></span>
+            </div>
+          </div>
+
+          <div style="font:700 14px Pretendard;color:#5C6862;margin:24px 2px 8px">닉네임</div>
+          <div style="background:#fff;border:1.5px solid #E0E8E3;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:10px">
+            <span style="flex:1;font:600 17px Pretendard;color:#24302B">{{ nickname }}</span>
+            <span style="font:500 13px Pretendard;color:#9FA9A4">3 / 10</span>
+          </div>
+
+          <div style="display:flex;align-items:baseline;gap:8px;margin:24px 2px 8px">
+            <span style="font:700 14px Pretendard;color:#5C6862">기본 정보</span>
+            <span style="font:400 13px Pretendard;color:#9FA9A4">칼로리 계산에 사용해요</span>
+          </div>
+          <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(36,48,43,.06);overflow:hidden">
+            <sc-for list="{{ profileFields }}" as="f" hint-placeholder-count="5">
+              <button onClick="{{ f.edit }}" style="width:100%;border:0;border-top:{{ f.divider }};background:none;padding:15px 16px;display:flex;align-items:center;gap:11px;cursor:pointer" style-hover="background:#F8FAF9">
+                <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#9FA9A4">{{ f.icon }}</span>
+                <span style="flex:1;text-align:left;font:500 15px Pretendard;color:#5C6862">{{ f.label }}</span>
+                <span style="font:600 16px Pretendard;color:#24302B">{{ f.value }}</span>
+                <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#C3CCC7">chevron_right</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="font:700 14px Pretendard;color:#5C6862;margin:24px 2px 8px">계정</div>
+          <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 12px rgba(36,48,43,.06)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:32px;height:32px;flex:none;border-radius:11px;background:#EFF5F1;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#414B46;font-variation-settings:'FILL' 1">mail</span></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:500 13px Pretendard;color:#5C6862">접속 중인 계정</span>
+                <span style="display:block;font:600 15px Pretendard;color:#24302B;margin-top:1px">{{ accountEmail }}</span>
+              </span>
+              <span style="background:#EFF5F1;border-radius:8px;padding:4px 9px;font:700 12px Pretendard;color:#414B46;white-space:nowrap">{{ accountProvider }}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid #EFF5F1">
+              <span style="width:32px;height:32px;flex:none;border-radius:11px;background:#EFF5F1;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#414B46;font-variation-settings:'FILL' 1">calendar_today</span></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:500 13px Pretendard;color:#5C6862">가입일</span>
+                <span style="display:block;font:600 15px Pretendard;color:#24302B;margin-top:1px">{{ joinedAt }}</span>
+              </span>
+              <span style="font:500 13px Pretendard;color:#5C6862;white-space:nowrap">+{{ joinedDays }}일</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isNotice }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ notices }}" as="n" hint-placeholder-count="3">
+              <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 12px rgba(36,48,43,.06);cursor:pointer">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <sc-if value="{{ n.isNew }}" hint-placeholder-val="{{ false }}">
+                    <span style="background:#DCEDE3;border-radius:999px;padding:3px 8px;font:700 12px Pretendard;color:#0B4A32">NEW</span>
+                  </sc-if>
+                  <span style="font:500 12px Pretendard;color:#5C6862">{{ n.date }}</span>
+                </div>
+                <div style="font:700 17px/1.45 Pretendard;letter-spacing:-.2px;color:#24302B;margin-top:8px">{{ n.title }}</div>
+                <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:5px">{{ n.body }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isFaq }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(36,48,43,.06);overflow:hidden">
+            <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="8">
+              <div style="border-top:{{ f.divider }}">
+                <button onClick="{{ f.toggle }}" style="width:100%;border:0;background:none;padding:16px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;text-align:left">
+                  <span style="font:800 15px Pretendard;color:#12784F;flex:none;line-height:1.5">Q</span>
+                  <span style="flex:1;font:{{ f.weight }} 16px/1.5 Pretendard;color:#24302B">{{ f.q }}</span>
+                  <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#9FA9A4;transform:rotate({{ f.rotate }});transition:transform .22s cubic-bezier(.32,.72,0,1)">expand_more</span>
+                </button>
+                <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:0 16px 16px 41px;font:400 15px/1.65 Pretendard;color:#5C6862">{{ f.a }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#fff;border-radius:18px;padding:20px;margin-top:14px;box-shadow:0 2px 12px rgba(36,48,43,.06);text-align:center">
+            <div style="font:700 16px Pretendard;color:#24302B">찾는 답변이 없으신가요?</div>
+            <div style="font:400 14px/1.5 Pretendard;color:#5C6862;margin-top:5px">이용 중 불편한 점이나 신고할 내용을 알려주세요</div>
+            <button onClick="{{ openInquiry }}" style="width:100%;height:48px;border:0;border-radius:15px;background:#12784F;color:#fff;font:600 15px Pretendard;cursor:pointer;margin-top:14px">문의 및 신고하기</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDoc }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border-radius:18px;padding:20px;box-shadow:0 2px 12px rgba(36,48,43,.06)">
+            <sc-for list="{{ docSections }}" as="d" hint-placeholder-count="4">
+              <div style="margin-bottom:20px">
+                <div style="font:700 16px/1.45 Pretendard;color:#24302B">{{ d.title }}</div>
+                <div style="font:400 15px/1.7 Pretendard;color:#5C6862;margin-top:6px">{{ d.body }}</div>
+              </div>
+            </sc-for>
+            <div style="font:400 13px Pretendard;color:#9FA9A4;padding-top:6px;border-top:1px solid #EFF5F1">{{ docFooter }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isPoints }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border-radius:22px;padding:20px;box-shadow:0 2px 14px rgba(36,48,43,.07)">
+            <div style="display:flex;align-items:flex-end;gap:12px">
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="width:8px;height:8px;border-radius:3px;background:#12784F"></span>
+                  <span style="font:500 13px Pretendard;color:#5C6862">이번 달 적립</span>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:2px;margin-top:4px">
+                  <span style="font:800 26px/1.15 Pretendard;letter-spacing:-.7px;color:#0B4A32;font-variant-numeric:tabular-nums">+{{ monthEarnedNum }}</span>
+                  <span style="font:700 14px Pretendard;color:#12784F">P</span>
+                </div>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="width:8px;height:8px;border-radius:3px;background:#C3CCC7"></span>
+                  <span style="font:500 13px Pretendard;color:#5C6862">이번 달 사용</span>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:2px;margin-top:4px">
+                  <span style="font:800 26px/1.15 Pretendard;letter-spacing:-.7px;color:#414B46;font-variant-numeric:tabular-nums">-{{ monthSpentNum }}</span>
+                  <span style="font:700 14px Pretendard;color:#7D8783">P</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-top:18px">
+            <sc-for list="{{ ledgerTabs }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.pick }}" style="height:38px;border:1.5px solid {{ t.border }};border-radius:19px;background:{{ t.bg }};color:{{ t.chipFg }};font:600 14px Pretendard;padding:0 16px;cursor:pointer">{{ t.label }}</button>
+            </sc-for>
+          </div>
+
+          <sc-for list="{{ ledger }}" as="grp" hint-placeholder-count="3">
+            <div style="margin-top:14px">
+              <div style="font:600 13px Pretendard;color:#7D8783;padding:0 2px 8px">{{ grp.day }}</div>
+              <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(36,48,43,.06);overflow:hidden">
+                <sc-for list="{{ grp.rows }}" as="r" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:{{ r.divider }}">
+                    <div style="width:38px;height:38px;flex:none;border-radius:12px;background:{{ r.tint }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ r.color }};font-variation-settings:'FILL' 1">{{ r.icon }}</span></div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font:600 15px/1.4 Pretendard;color:#24302B">{{ r.title }}</div>
+                      <div style="font:500 13px/1.4 Pretendard;color:#7D8783;margin-top:2px">{{ r.sub }}</div>
+                    </div>
+                    <div style="font:700 16px Pretendard;color:{{ r.amountColor }};font-variant-numeric:tabular-nums;white-space:nowrap">{{ r.amount }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <div style="font:400 13px/1.6 Pretendard;color:#9FA9A4;text-align:center;margin-top:20px">최근 3개월 내역만 보여드려요</div>
+        </sc-if>
+
+        <sc-if value="{{ isShop }}" hint-placeholder-val="{{ false }}">
+
+          <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid #E0E8E3;border-radius:16px;padding:0 14px;height:48px;margin-bottom:16px">
+            <span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9FA9A4">search</span>
+            <input value="{{ shopQuery }}" onInput="{{ onShopQuery }}" placeholder="상품이나 브랜드를 검색하세요" style="flex:1;min-width:0;border:0;outline:none;background:none;font:500 15px Pretendard;color:#24302B" />
+            <sc-if value="{{ hasShopQuery }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ clearShopQuery }}" style="width:24px;height:24px;flex:none;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:#9FA9A4">cancel</span></button>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;gap:17px;overflow-x:auto;border-bottom:1.5px solid #E0E8E3;padding:0 2px">
+            <sc-for list="{{ shopCats }}" as="c" hint-placeholder-count="5">
+              <button onClick="{{ c.pick }}" style="flex:none;border:0;background:none;padding:2px 0 11px;cursor:pointer;position:relative;display:flex;align-items:center;gap:5px;white-space:nowrap">
+                <span style="font-family:'Material Symbols Rounded';font-size:17px;color:{{ c.fg }};font-variation-settings:'FILL' {{ c.fill }}">{{ c.icon }}</span>
+                <span style="font:{{ c.weight }} 14px Pretendard;color:{{ c.fg }}">{{ c.label }}</span>
+                <span style="position:absolute;left:-2px;right:-2px;bottom:-1.5px;height:2.5px;border-radius:2px;background:{{ c.bar }}"></span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:0 2px;position:relative;z-index:3">
+            <button onClick="{{ toggleSort }}" style="border:0;background:none;padding:4px 0;display:flex;align-items:center;gap:2px;cursor:pointer">
+              <span style="font:700 14px Pretendard;color:{{ sortFg }}">{{ sortLabel }}</span>
+              <span style="font-family:'Material Symbols Rounded';font-size:19px;color:{{ sortFg }};transform:rotate({{ sortRotate }});transition:transform .22s cubic-bezier(.32,.72,0,1)">expand_more</span>
+            </button>
+            <span style="flex:1"></span>
+            <span style="display:flex;align-items:center;gap:5px;background:#DCEDE3;border-radius:999px;padding:6px 12px">
+              <span style="font-family:'Material Symbols Rounded';font-size:15px;color:#0B4A32;font-variation-settings:'FILL' 1">eco</span>
+              <span style="font:800 14px Pretendard;color:#0B4A32;font-variant-numeric:tabular-nums">{{ points }} P</span>
+            </span>
+            <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:36px;left:0;width:152px;background:#fff;border-radius:16px;box-shadow:0 8px 28px rgba(36,48,43,.16);padding:8px 0;animation:dropIn .18s cubic-bezier(.32,.72,0,1);transform-origin:top left">
+                <sc-for list="{{ shopSorts }}" as="o" hint-placeholder-count="2">
+                  <button onClick="{{ o.pick }}" style="width:100%;height:46px;border:0;background:none;display:flex;align-items:center;padding:0 18px;cursor:pointer" style-hover="background:#F3F8F4"><span style="flex:1;text-align:left;font:{{ o.weight }} 15px Pretendard;color:{{ o.fg }};white-space:nowrap">{{ o.label }}</span></button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ shopEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:56px 0">
+              <span style="font-family:'Material Symbols Rounded';font-size:36px;color:#C3CCC7">search_off</span>
+              <span style="font:600 16px Pretendard;color:#5C6862">검색 결과가 없어요</span>
+              <span style="font:400 14px Pretendard;color:#9FA9A4">다른 이름으로 찾아보세요</span>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+            <sc-for list="{{ shopItems }}" as="it" hint-placeholder-count="4">
+              <div onClick="{{ it.open }}" style="background:#fff;border-radius:18px;padding:14px;box-shadow:0 2px 12px rgba(36,48,43,.06);display:flex;align-items:center;gap:14px;cursor:pointer">
+                <div style="width:66px;height:66px;flex:none;border-radius:14px;background:#EFF5F1;display:flex;align-items:center;justify-content:center;text-align:center;opacity:{{ it.opacity }}"><span style="font:600 11px/1.4 Pretendard;color:#9FA9A4">상품<br>이미지</span></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font:500 12px Pretendard;color:#5C6862">{{ it.brand }}</div>
+                  <div style="font:600 16px/1.4 Pretendard;color:#24302B;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.name }}</div>
+                  <div style="display:flex;align-items:baseline;gap:2px;margin-top:6px"><span style="font:800 17px Pretendard;color:{{ it.priceColor }};font-variant-numeric:tabular-nums">{{ it.price }}</span><span style="font:700 12px Pretendard;color:{{ it.priceColor }}">P</span></div>
+                </div>
+                <span style="font-family:'Material Symbols Rounded';font-size:22px;color:#C3CCC7">chevron_right</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isCoupon }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:24px;border-bottom:1.5px solid #E0E8E3;padding:0 2px">
+            <sc-for list="{{ couponTabs }}" as="t" hint-placeholder-count="2">
+              <button onClick="{{ t.pick }}" style="border:0;background:none;padding:0 0 11px;cursor:pointer;position:relative;font:{{ t.weight }} 16px Pretendard;color:{{ t.fg }}">{{ t.label }}<span style="position:absolute;left:-2px;right:-2px;bottom:-1.5px;height:2.5px;border-radius:2px;background:{{ t.bar }}"></span></button>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+            <sc-for list="{{ coupons }}" as="c" hint-placeholder-count="2">
+              <div onClick="{{ c.open }}" style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(36,48,43,.06);display:flex;overflow:hidden;opacity:{{ c.opacity }};cursor:pointer">
+                <div style="width:88px;flex:none;background:#E4EDE7;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 11px/1.4 Pretendard;color:#9FA9A4">상품<br>이미지</span></div>
+                <div style="flex:1;min-width:0;padding:14px">
+                  <div style="font:500 12px Pretendard;color:#5C6862">{{ c.brand }}</div>
+                  <div style="font:700 16px/1.4 Pretendard;color:#24302B;margin-top:2px">{{ c.name }}</div>
+                  <div style="display:flex;align-items:center;gap:6px;margin-top:9px">
+                    <span style="background:{{ c.tagBg }};border-radius:999px;padding:3px 8px;font:700 12px Pretendard;color:{{ c.tagFg }}">{{ c.tag }}</span>
+                    <span style="font:500 12px Pretendard;color:#5C6862">{{ c.until }}</span>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ couponEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:60px 0">
+              <span style="font-family:'Material Symbols Rounded';font-size:38px;color:#C3CCC7">confirmation_number</span>
+              <span style="font:600 16px Pretendard;color:#5C6862">아직 쿠폰이 없어요</span>
+              <span style="font:400 14px Pretendard;color:#9FA9A4">포인트로 상품을 교환해보세요</span>
+            </div>
+          </sc-if>
+        </sc-if>
+
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ couponOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:13;background:#F3F8F4;display:flex;flex-direction:column;animation:pageIn .26s cubic-bezier(.32,.72,0,1)">
+      <div style="background:#F3F8F4;padding:8px 8px 0">
+        <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 12px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+        <div style="display:flex;align-items:center;gap:2px;margin-top:6px;padding-bottom:10px">
+          <button onClick="{{ closeCoupon }}" style="width:44px;height:44px;flex:none;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+          <span style="flex:1;font:800 20px/1.4 Pretendard;letter-spacing:-.3px;color:#24302B">{{ cpTitle }}</span>
+        </div>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 20px 28px">
+        <div style="background:#fff;border-radius:22px;box-shadow:0 2px 14px rgba(36,48,43,.07);overflow:hidden">
+          <div style="padding:22px 20px 18px;text-align:center">
+            <div style="width:112px;height:112px;margin:0 auto;border-radius:20px;background:#EFF5F1;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 11px/1.4 Pretendard;color:#9FA9A4">상품<br>이미지</span></div>
+            <div style="font:500 13px Pretendard;color:#5C6862;margin-top:16px">{{ cpBrand }}</div>
+            <div style="font:800 21px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:2px">{{ cpName }}</div>
+            <div style="display:inline-flex;align-items:center;gap:5px;background:{{ cpTagBg }};border-radius:999px;padding:5px 12px;margin-top:10px">
+              <span style="font:700 13px Pretendard;color:{{ cpTagFg }}">{{ cpTag }}</span>
+            </div>
+          </div>
+          <div style="border-top:1.5px dashed #E0E8E3;padding:20px;text-align:center">
+            <div style="width:100%;box-sizing:border-box;height:112px;border-radius:14px;background:#fff;border:1.5px solid #E0E8E3;display:flex;align-items:center;justify-content:center;gap:2px;padding:0 12px;position:relative;overflow:hidden">
+              <sc-for list="{{ cpBars }}" as="b" hint-placeholder-count="24">
+                <span style="width:{{ b.w }};height:80px;background:#24302B;opacity:{{ cpBarOp }}"></span>
+              </sc-for>
+              <sc-if value="{{ cpUsed }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;inset:0;background:rgba(255,255,255,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+                  <span style="font-family:'Material Symbols Rounded';font-size:30px;color:#9FA9A4;font-variation-settings:'FILL' 1">check_circle</span>
+                  <span style="font:600 16px Pretendard;color:#5C6862">이미 사용한 쿠폰이에요</span>
+                </span>
+              </sc-if>
+            </div>
+            <div style="font:700 17px Pretendard;letter-spacing:2px;color:{{ cpCodeColor }};font-variant-numeric:tabular-nums;margin-top:12px">{{ cpCode }}</div>
+            <div style="font:400 13px Pretendard;color:#5C6862;margin-top:5px">{{ cpCodeHint }}</div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border-radius:18px;padding:18px;margin-top:12px;box-shadow:0 2px 12px rgba(36,48,43,.06)">
+          <div style="font:700 15px Pretendard;color:#24302B">사용 안내</div>
+          <div style="display:flex;flex-direction:column;gap:9px;margin-top:12px">
+            <sc-for list="{{ cpInfo }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex;align-items:baseline;gap:10px">
+                <span style="width:64px;flex:none;font:500 13px Pretendard;color:#5C6862">{{ r.label }}</span>
+                <span style="flex:1;font:600 14px/1.5 Pretendard;color:#24302B">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button onClick="{{ cpShare }}" style="flex:1;height:56px;border:1.5px solid #E0E8E3;border-radius:18px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:20px">ios_share</span>공유</button>
+          <button onClick="{{ cpSave }}" style="flex:1;height:56px;border:1.5px solid #E0E8E3;border-radius:18px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:20px">download</span>저장</button>
+        </div>
+        <button onClick="{{ cpToggleUse }}" style="width:100%;height:56px;border:{{ cpBtnBorder }};border-radius:18px;background:{{ cpBtnBg }};color:{{ cpBtnFg }};font:600 17px Pretendard;cursor:pointer;margin-top:10px">{{ cpBtnLabel }}</button>
+        <div style="text-align:center;font:400 13px Pretendard;color:#9FA9A4;margin-top:8px">{{ cpBtnHint }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ itemOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeItem }}" style="position:absolute;inset:0;z-index:13;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:22px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:76px;height:76px;flex:none;border-radius:18px;background:#EFF5F1;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 11px/1.4 Pretendard;color:#9FA9A4">상품<br>이미지</span></div>
+          <div style="flex:1;min-width:0">
+            <div style="font:500 13px Pretendard;color:#5C6862">{{ itBrand }}</div>
+            <div style="font:800 19px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:2px">{{ itName }}</div>
+            <div style="display:flex;align-items:baseline;gap:2px;margin-top:6px"><span style="font:800 20px Pretendard;color:#0B4A32;font-variant-numeric:tabular-nums">{{ itPrice }}</span><span style="font:700 14px Pretendard;color:#12784F">P</span></div>
+          </div>
+        </div>
+
+        <div style="background:#F3F8F4;border-radius:16px;padding:14px;margin-top:16px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="flex:1;font:500 14px Pretendard;color:#5C6862">보유 포인트</span>
+            <span style="font:700 15px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ points }} P</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:9px;padding-top:9px;border-top:1px solid #E0E8E3">
+            <span style="flex:1;font:600 14px Pretendard;color:#24302B">교환 후 남는 포인트</span>
+            <span style="font:800 16px Pretendard;color:{{ itRestColor }};font-variant-numeric:tabular-nums">{{ itRest }} P</span>
+          </div>
+        </div>
+
+        <div style="font:400 13px/1.6 Pretendard;color:#5C6862;margin-top:12px">교환하면 내 쿠폰함에 담기고, 유효 기간은 30일이에요.</div>
+
+        <button onClick="{{ itExchange }}" style="width:100%;height:56px;border:0;border-radius:18px;background:{{ itCtaBg }};color:{{ itCtaFg }};font:600 17px Pretendard;cursor:{{ itCtaCursor }};margin-top:16px">{{ itCta }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ savePreviewOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSavePreview }}" style="position:absolute;inset:0;z-index:15;background:rgba(36,48,43,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;gap:16px;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 12px 34px rgba(16,21,18,.34)">
+        <div style="background:#12784F;padding:14px 18px;display:flex;align-items:center;gap:8px">
+          <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#fff;font-variation-settings:'FILL' 1">eco</span>
+          <span style="flex:1;font:700 15px Pretendard;color:#fff">플로고 에코포인트 쿠폰</span>
+        </div>
+        <div style="padding:18px;display:flex;align-items:center;gap:14px">
+          <div style="width:68px;height:68px;flex:none;border-radius:16px;background:#EFF5F1;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 11px/1.4 Pretendard;color:#9FA9A4">상품<br>이미지</span></div>
+          <div style="flex:1;min-width:0">
+            <div style="font:500 12px Pretendard;color:#5C6862">{{ cpBrand }}</div>
+            <div style="font:800 18px/1.35 Pretendard;letter-spacing:-.3px;color:#24302B;margin-top:2px">{{ cpName }}</div>
+            <div style="font:600 13px Pretendard;color:#0B4A32;margin-top:5px">{{ cpUntilShort }}</div>
+          </div>
+        </div>
+        <div style="border-top:1.5px dashed #E0E8E3;padding:16px 18px 20px;text-align:center">
+          <div style="width:100%;height:92px;display:flex;align-items:center;justify-content:center;gap:2px">
+            <sc-for list="{{ cpBars }}" as="b" hint-placeholder-count="24">
+              <span style="width:{{ b.w }};height:70px;background:#24302B"></span>
+            </sc-for>
+          </div>
+          <div style="font:700 16px Pretendard;letter-spacing:2px;color:#24302B;font-variant-numeric:tabular-nums;margin-top:10px">{{ cpCode }}</div>
+        </div>
+      </div>
+      <div style="font:500 14px Pretendard;color:rgba(255,255,255,.9);text-align:center">{{ savePreviewLabel }}</div>
+      <button onClick="{{ closeSavePreview }}" style="height:48px;border:0;border-radius:24px;background:#fff;color:#24302B;font:600 15px Pretendard;padding:0 26px;cursor:pointer">{{ savePreviewCta }}</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ editOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeEdit }}" style="position:absolute;inset:0;z-index:14;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:14px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="display:flex;align-items:center;gap:10px;padding-top:8px">
+          <span style="flex:1;font:800 21px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B">{{ edTitle }}</span>
+          <button onClick="{{ closeEdit }}" style="width:34px;height:34px;flex:none;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#9FA9A4">close</span></button>
+        </div>
+        <sc-if value="{{ edHasHint }}" hint-placeholder-val="{{ false }}">
+          <div style="font:400 14px/1.55 Pretendard;color:#5C6862;margin-top:6px">{{ edHint }}</div>
+        </sc-if>
+
+        <sc-if value="{{ edIsOption }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:8px;margin-top:18px">
+            <sc-for list="{{ edOptions }}" as="o" hint-placeholder-count="2">
+              <button onClick="{{ o.pick }}" style="flex:1;height:56px;border:1.5px solid {{ o.border }};border-radius:16px;background:{{ o.bg }};color:{{ o.fg }};font:{{ o.weight }} 16px Pretendard;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">{{ o.label }}<sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><span style="font-family:'Material Symbols Rounded';font-size:19px;font-variation-settings:'wght' 600">check</span></sc-if></button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ edIsNumber }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-top:22px">
+            <button onClick="{{ edMinus }}" style="width:56px;height:56px;border:1.5px solid #E0E8E3;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:26px;color:#414B46">remove</span></button>
+            <div style="min-width:132px;display:flex;align-items:baseline;justify-content:center;gap:3px">
+              <span style="font:800 42px/1.1 Pretendard;letter-spacing:-1.4px;color:#24302B;font-variant-numeric:tabular-nums">{{ edValue }}</span>
+              <span style="font:700 18px Pretendard;color:#5C6862">{{ edUnit }}</span>
+            </div>
+            <button onClick="{{ edPlus }}" style="width:56px;height:56px;border:1.5px solid #E0E8E3;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:26px;color:#414B46">add</span></button>
+          </div>
+          <div style="display:flex;gap:6px;justify-content:center;margin-top:16px">
+            <sc-for list="{{ edSteps }}" as="q" hint-placeholder-count="4">
+              <button onClick="{{ q.pick }}" style="height:36px;border:1.5px solid #E0E8E3;border-radius:18px;background:#fff;color:#414B46;font:600 14px Pretendard;padding:0 14px;cursor:pointer" style-hover="background:#F3F8F4">{{ q.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ edIsRegion }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#F3F8F4;border-radius:16px;padding:16px;margin-top:16px;display:flex;align-items:center;gap:12px">
+            <span style="width:40px;height:40px;flex:none;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#12784F;font-variation-settings:'FILL' 1">my_location</span></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:500 12px Pretendard;color:#5C6862">현재 위치</span>
+              <span style="display:block;font:700 17px Pretendard;color:#24302B;margin-top:2px">{{ edRegionNow }}</span>
+            </span>
+          </div>
+          <button onClick="{{ edLocate }}" style="width:100%;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 15px Pretendard;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:7px" style-hover="background:#F3F8F4"><span style="font-family:'Material Symbols Rounded';font-size:19px">refresh</span>{{ edLocateLabel }}</button>
+        </sc-if>
+
+        <sc-if value="{{ edNeedsConfirm }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ applyEdit }}" style="width:100%;height:54px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer;margin-top:22px">확인</button>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:absolute;left:-1px;right:-1px;bottom:0;height:76px;box-sizing:border-box;background:#fff;border:1px solid #E0E8E3;border-radius:20px 20px 0 0">
+    <div style="position:absolute;left:0;right:0;bottom:12px;height:63px;display:flex;align-items:flex-end;justify-content:center">
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:#D9D9D9">home</span><span style="font:700 13px Pretendard;color:#D9D9D9">홈</span></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:#D9D9D9">diversity_1</span><span style="font:700 13px Pretendard;color:#D9D9D9">그룹</span></div>
+      <div style="width:86px"></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:#D9D9D9">person</span><span style="font:700 13px Pretendard;color:#D9D9D9">내 활동</span></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:#8E8E93">more_horiz</span><span style="font:700 13px Pretendard;color:#8E8E93">메뉴</span></div>
+    </div>
+    <div style="position:absolute;left:50%;top:-13px;transform:translateX(-50%);width:88px;height:88px;border-radius:50%;background:#fff;border:1px solid #E0E8E3;display:flex;align-items:center;justify-content:center;box-sizing:border-box">
+      <div style="width:75px;height:75px;border-radius:50%;background:#12784F;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:33px;color:#fff;font-variation-settings:'FILL' 1,'wght' 500">directions_run</span><span style="font:700 14px Pretendard;color:#fff">시작</span></div>
+    </div>
+    <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:86px;height:3px;background:#fff;border-radius:0 0 3px 3px"></div>
+  </div>
+
+  <sc-if value="{{ inquiryOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeInquiry }}" style="position:absolute;inset:0;z-index:14;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:14px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E0E8E3;margin:0 auto 18px"></div>
+        <div style="font:800 21px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B">무엇을 도와드릴까요?</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:6px">보내주신 내용은 운영팀만 확인해요.</div>
+        <div style="display:flex;gap:7px;margin-top:16px">
+          <sc-for list="{{ inquiryKinds }}" as="k" hint-placeholder-count="3">
+            <button onClick="{{ k.pick }}" style="flex:1;height:44px;border:1.5px solid {{ k.border }};border-radius:14px;background:{{ k.bg }};color:{{ k.fg }};font:{{ k.weight }} 15px Pretendard;cursor:pointer">{{ k.label }}</button>
+          </sc-for>
+        </div>
+        <textarea placeholder="{{ inquiryHint }}" style="width:100%;box-sizing:border-box;height:120px;resize:none;border:1.5px solid #E0E8E3;border-radius:16px;background:#F3F8F4;padding:14px;margin-top:12px;font:400 15px/1.6 Pretendard;color:#24302B;outline:none"></textarea>
+        <div style="font:400 13px/1.5 Pretendard;color:#9FA9A4;margin-top:8px">답변은 가입한 이메일로 보내드려요 · 보통 2~3일 걸려요</div>
+        <button onClick="{{ sendInquiry }}" style="width:100%;height:54px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer;margin-top:16px">보내기</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:24px;right:24px;bottom:110px;z-index:16;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:8px;background:#24302B;border-radius:999px;padding:11px 18px;box-shadow:0 6px 20px rgba(16,21,18,.34);animation:popIn .2s ease">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#7FDCAE;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font:600 14px Pretendard;color:#fff">{{ toastText }}</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeConfirm }}" style="position:absolute;inset:0;z-index:12;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:26px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:48px;height:48px;border-radius:16px;background:{{ cfTint }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:25px;color:{{ cfColor }};font-variation-settings:'FILL' 1">{{ cfIcon }}</span></div>
+        <div style="font:800 21px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:14px">{{ cfTitle }}</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:7px">{{ cfDesc }}</div>
+        <div style="display:flex;gap:8px;margin-top:22px">
+          <button onClick="{{ closeConfirm }}" style="flex:1;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer">취소</button>
+          <button onClick="{{ applyConfirm }}" style="flex:1;height:52px;border:0;border-radius:16px;background:{{ cfColor }};color:#fff;font:600 17px Pretendard;cursor:pointer">{{ cfCta }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  // 목업을 실제 앱처럼 눌러볼 수 있게 하단 내비를 연결한다.
+  _wireNav() {
+    const DEST = {"홈":"Home.dc.html","그룹":"Group Home.dc.html","내 활동":"My Activity.dc.html","메뉴":"Menu.dc.html","시작":"Destination Setup.dc.html"};
+    const here = "메뉴";
+    setTimeout(() => {
+      document.querySelectorAll('[data-screen-label] div').forEach(el => {
+        const t = (el.textContent || '').trim();
+        const hit = Object.keys(DEST).find(k => t === k || t.endsWith(k));
+        if (!hit || hit === here) return;
+        if (getComputedStyle(el).cursor !== 'pointer') return;
+        if (el.dataset.navWired) return;
+        el.dataset.navWired = '1';
+        el.addEventListener('click', () => { window.location.href = DEST[hit]; });
+      });
+    }, 60);
+  }
+
+  componentDidMount() { this._wireNav(); }
+
+  state = { noti: true, confirm: null };
+
+  MENUS = [
+    { key: 'notice', label: '공지 사항', icon: 'campaign', isNew: true },
+    { key: 'faq', label: '자주 묻는 질문', icon: 'help' },
+    { key: 'terms', label: '이용 약관 및 정책', icon: 'description' },
+    { key: 'license', label: '오픈소스 및 출처', icon: 'copyright' },
+  ];
+
+  // notice_screen.dart 의 _notices
+  NOTICES = [
+    { date: '2026.02.01', isNew: true, title: '플로고 정식 오픈 안내', body: '오랜 준비 끝에 정식 서비스를 시작합니다. 걷고 줍는 모든 순간이 기록되고 포인트로 돌아옵니다.' },
+    { date: '2026.01.28', isNew: false, title: '뱃지 시스템 업데이트', body: '씨앗·새싹·나무·숲 네 등급으로 뱃지를 정리했어요. 내 활동 > 뱃지에서 확인해 주세요.' },
+    { date: '2026.01.15', isNew: false, title: '개인정보 처리방침 개정 안내', body: '위치 정보 보관 기간을 명확히 하고, 활동 종료 후 수집을 중단하도록 개정했습니다.' },
+  ];
+
+  // faq_screen.dart 의 _faqs
+  FAQS = [
+    ['플로깅이 뭔가요?', '조깅(walking)을 하면서 쓰레기를 줍는(plocka upp) 활동이에요. 가볍게 걸으면서 눈에 띄는 쓰레기를 주우면 됩니다. 무리하지 않고 산책하듯 즐기시면 돼요.'],
+    ['활동 기록은 어떻게 저장되나요?', '플로깅을 시작하면 시간과 이동 거리가 자동으로 기록되고, 종료 후 정산 화면을 거치면 저장됩니다. 기록은 내 활동 > 기록 탭에서 확인할 수 있어요.'],
+    ['쓰레기 인증은 어떻게 하나요?', '활동 중 카메라 버튼을 눌러 주운 쓰레기를 촬영하면, AI가 종류를 분류해 자동으로 개수를 세어줍니다. 인증한 만큼 수거량 퀘스트가 올라가요.'],
+    ['에코 포인트는 어떻게 모으나요?', '활동을 마칠 때마다 포인트가 적립되고, 퀘스트를 달성하면 추가로 받습니다. 모은 포인트는 메뉴 > 에코포인트 상점에서 상품으로 교환할 수 있어요.'],
+    ['뱃지는 어떻게 얻나요?', '퀘스트를 달성하면 그에 해당하는 뱃지를 받습니다. 내 활동 > 뱃지 탭에서 각 뱃지를 눌러 획득 조건을 확인할 수 있어요.'],
+    ['그룹은 여러 개 가입할 수 있나요?', '한 번에 하나의 그룹에만 속할 수 있어요. 다른 그룹에 가입하려면 기존 그룹에서 먼저 탈퇴해주세요. 탈퇴는 그룹 채팅방 메뉴에서 할 수 있습니다.'],
+    ['위치 권한은 왜 필요한가요?', '이동 거리를 계산하고 주변 정화 거점을 안내하기 위해 사용해요. 활동 중에만 위치를 사용하며, 활동을 종료하면 수집하지 않습니다.'],
+    ['활동 중 화면을 꺼도 되나요?', '화면을 끄면 위치 수집이 중단될 수 있어 거리가 정확하지 않을 수 있어요. 가능하면 앱을 켜둔 상태로 활동해주세요.'],
+  ];
+
+  TERMS = [
+    { title: '제1조 (목적)', body: '이 약관은 플로고(이하 "서비스")의 이용 조건과 절차, 이용자와 서비스의 권리·의무를 정하는 것을 목적으로 합니다.' },
+    { title: '제2조 (위치 정보의 이용)', body: '서비스는 이동 거리 계산과 정화 거점 안내를 위해 활동 중에만 위치 정보를 수집합니다. 활동을 종료하면 수집을 중단하며, 저장된 경로는 이용자가 활동 기록을 삭제하면 함께 삭제됩니다.' },
+    { title: '제3조 (포인트)', body: '포인트는 활동 완료와 퀘스트 달성으로 적립되며 현금으로 환급되지 않습니다. 부정한 방법으로 적립한 포인트는 회수될 수 있습니다.' },
+    { title: '제4조 (게시물)', body: '그룹 피드에 올린 인증샷과 메시지의 책임은 작성자에게 있습니다. 신고가 누적된 게시물은 운영진이 확인 후 삭제할 수 있습니다.' },
+    { title: '제5조 (회원 탈퇴)', body: '이용자는 언제든 탈퇴할 수 있으며, 탈퇴 시 활동 기록·뱃지·포인트가 모두 삭제되고 복구되지 않습니다.' },
+  ];
+
+  LICENSES = [
+    { title: 'Flutter', body: 'BSD 3-Clause License · Copyright 2014 The Flutter Authors' },
+    { title: 'flutter_naver_map', body: 'BSD 3-Clause License · 지도 표시와 경로 그리기에 사용' },
+    { title: 'cloud_firestore / firebase_auth', body: 'Apache License 2.0 · Copyright Google LLC' },
+    { title: 'material_symbols_icons', body: 'Apache License 2.0 · 아이콘 세트' },
+    { title: 'Pretendard', body: 'SIL Open Font License 1.1 · Copyright 길형진(orioncactus)' },
+    { title: '공공데이터', body: '인천광역시 CCTV·정화 거점 데이터 · 공공누리 제1유형' },
+  ];
+
+  COUPONS = [
+    { id: 'c1', brand: '스타벅스', name: '아이스 아메리카노 T', until: '2026.09.04까지', used: false, code: '9482 1073 5561', got: '2026.08.05', price: 4500 },
+    { id: 'c2', brand: 'GS25', name: '5,000원 금액권', until: '2026.08.31까지', used: false, code: '3310 7745 2098', got: '2026.07.28', price: 5000 },
+    { id: 'c3', brand: 'CU', name: '3,000원 금액권', until: '2026.07.20 사용', used: true, code: '8021 4467 1930', got: '2026.07.02', price: 3000 },
+  ];
+
+  // shop_item.dart 의 ShopCategory
+  SHOP_CATS = [
+    { key: 'eco', label: '에코 아이템', short: '에코', icon: 'eco' },
+    { key: 'cafe', label: '카페/디저트', short: '카페', icon: 'local_cafe' },
+    { key: 'food', label: '외식/푸드', short: '외식', icon: 'restaurant' },
+    { key: 'convenience', label: '편의점/마트', short: '편의점', icon: 'storefront' },
+    { key: 'culture', label: '문화/상품권', short: '문화', icon: 'card_giftcard' },
+  ];
+
+  SHOP_ITEMS = [
+    { cat: 'eco', brand: '인천 에코', name: '지구 지킴이 에코백', price: 1200 },
+    { cat: 'eco', brand: '인천 에코', name: '접이식 집게 세트', price: 2500 },
+    { cat: 'eco', brand: '인천 에코', name: '스테인리스 텀블러', price: 3000 },
+    { cat: 'eco', brand: '인천 에코', name: '대나무 칫솔 3P', price: 800 },
+    { cat: 'cafe', brand: '스타벅스', name: '아이스 아메리카노 T', price: 4500 },
+    { cat: 'cafe', brand: '투썸플레이스', name: '조각 케이크 교환권', price: 6000 },
+    { cat: 'food', brand: 'BBQ', name: '황금올리브 치킨', price: 20000 },
+    { cat: 'convenience', brand: 'GS25', name: '5,000원 금액권', price: 5000 },
+    { cat: 'convenience', brand: 'CU', name: '3,000원 금액권', price: 3000 },
+    { cat: 'culture', brand: 'CGV', name: '영화 관람권 1매', price: 12000 },
+  ];
+
+  // 정산 화면과 같은 값(+330P). 월 합계는 이 목록에서 계산한다.
+  LEDGER = [
+    { day: '오늘', rows: [
+      { kind: 'earn', icon: 'directions_walk', title: '플로깅 활동 완료', sub: '2.4km · 10개 수거', amount: 330 },
+    ] },
+    { day: '8월 4일', rows: [
+      { kind: 'earn', icon: 'workspace_premium', title: '퀘스트 달성 · 일주일 개근', sub: '뱃지와 함께 지급', amount: 1500 },
+      { kind: 'earn', icon: 'directions_walk', title: '플로깅 활동 완료', sub: '1.8km · 7개 수거', amount: 330 },
+    ] },
+    { day: '8월 1일', rows: [
+      { kind: 'spend', icon: 'local_cafe', title: '아이스 아메리카노 T 교환', sub: '스타벅스 · 쿠폰함에 담김', amount: -4500 },
+      { kind: 'earn', icon: 'directions_walk', title: '플로깅 활동 완료', sub: '3.1km · 14개 수거', amount: 330 },
+    ] },
+  ];
+
+  // LevelSystem 과 동일: 레벨 n→n+1 필요 XP = 100 + (n-1)*50
+  levelOf(totalXp) {
+    let level = 1, remaining = Math.max(0, totalXp);
+    const need = n => 100 + (n - 1) * 50;
+    while (remaining >= need(level)) { remaining -= need(level); level++; }
+    const n = need(level);
+    return { level, currentXp: remaining, neededXp: n, remainingXp: n - remaining };
+  }
+
+  // 편집 대상별 설정 — 중장년 기준으로 키패드 대신 선택·증감
+  EDIT = {
+    gender: { title: '성별', type: 'option', options: ['남성', '여성'] },
+    age: { title: '나이', type: 'number', unit: '세', min: 14, max: 100, step: 1, hint: '칼로리 계산에 사용해요' },
+    height: { title: '키', type: 'number', unit: 'cm', min: 120, max: 220, step: 1, hint: '칼로리 계산에 사용해요' },
+    weight: { title: '몸무게', type: 'number', unit: 'kg', min: 30, max: 150, step: 1, hint: '칼로리 계산에 사용해요' },
+    region: { title: '지역', type: 'region', hint: '현재 위치를 기준으로 자동 설정돼요.' },
+  };
+
+  REGIONS = {
+    '인천 남동구': ['만수동', '구월동', '논현동', '장수동', '간석동'],
+    '인천 연수구': ['송도동', '연수동', '청학동', '동춘동'],
+    '인천 미추홀구': ['주안동', '용현동', '학익동', '숭의동'],
+    '인천 부평구': ['부평동', '십정동', '갈산동', '삼산동'],
+  };
+
+  openEdit(key) {
+    const p = this.profile();
+    const draft = key === 'region' ? { city: p.city, dong: p.dong }
+      : key === 'gender' ? { gender: p.gender }
+      : { n: p[key] };
+    this.setState({ edit: key, draft });
+  }
+
+  profile() {
+    return { gender: '남성', age: 58, height: 172, weight: 68, city: '인천 남동구', dong: '만수동', ...(this.state.profile ?? {}) };
+  }
+
+  editVals() {
+    const key = this.state.edit;
+    const cfg = this.EDIT[key];
+    const d = this.state.draft ?? {};
+    const setDraft = patch => this.setState({ draft: { ...d, ...patch } });
+    const clamp = n => Math.max(cfg.min, Math.min(cfg.max, n));
+
+    return {
+      editOpen: !!key,
+      closeEdit: () => this.setState({ edit: null }),
+      stop: e => e.stopPropagation(),
+      edTitle: cfg?.title ?? '',
+      edHint: cfg?.hint ?? '',
+      edHasHint: !!cfg?.hint,
+      edIsOption: cfg?.type === 'option',
+      edIsNumber: cfg?.type === 'number',
+      edIsRegion: cfg?.type === 'region',
+
+      // 선택형은 확인 없이 바로 적용 (덩어리 줄이기)
+      edNeedsConfirm: cfg?.type === 'number',
+      edOptions: (cfg?.options ?? []).map(label => {
+        const on = d.gender === label;
+        return {
+          label, on,
+          bg: on ? '#DCEDE3' : '#fff',
+          fg: on ? '#0B4A32' : '#414B46',
+          border: on ? '#12784F' : '#E0E8E3',
+          weight: on ? 700 : 500,
+          pick: () => this.setState({ profile: { ...this.profile(), gender: label }, edit: null }),
+        };
+      }),
+
+      edValue: d.n ?? '',
+      edUnit: cfg?.unit ?? '',
+      edMinus: () => setDraft({ n: clamp((d.n ?? 0) - cfg.step) }),
+      edPlus: () => setDraft({ n: clamp((d.n ?? 0) + cfg.step) }),
+      edSteps: (cfg?.type === 'number' ? [-10, -5, 5, 10] : []).map(v => ({
+        label: v > 0 ? `+${v}` : `${v}`,
+        pick: () => setDraft({ n: clamp((d.n ?? 0) + v) }),
+      })),
+
+      // 지역은 GPS 로만 정한다 — 목록 선택 없음
+      edRegionNow: this.state.locating ? '위치 확인 중…' : `${d.city ?? ''} ${d.dong ?? ''}`.trim(),
+      edLocateLabel: this.state.locating ? '확인 중…' : '현재 위치로 다시 확인',
+      edLocate: () => {
+        this.setState({ locating: true });
+        setTimeout(() => this.setState({ locating: false }), 900);
+      },
+
+      applyEdit: () => {
+        const cur = this.profile();
+        const next = key === 'region' ? { city: d.city, dong: d.dong }
+          : key === 'gender' ? { gender: d.gender }
+          : { [key]: d.n };
+        this.setState({ profile: { ...cur, ...next }, edit: null });
+      },
+    };
+  }
+
+  OWNED = 1280;
+
+  shopVals() {
+    const cat = this.state.shopCat ?? 'eco';
+    const sort = this.state.shopSort ?? 'low';
+    // 검색어가 있으면 카테고리를 넘어 전체에서 찾는다
+    const q = (this.state.shopQuery ?? '').trim();
+    const matched = q
+      ? this.SHOP_ITEMS.filter(x => (x.name + x.brand).toLowerCase().includes(q.toLowerCase()))
+      : this.SHOP_ITEMS.filter(x => x.cat === cat);
+    const lt = this.state.ledgerTab ?? 0;
+    const it = this.SHOP_ITEMS.find(x => x.name === this.state.item);
+
+    const rows = this.LEDGER.map(g => ({
+      day: g.day,
+      rows: g.rows.filter(r => lt === 0 || (lt === 1 ? r.kind === 'earn' : r.kind === 'spend')),
+    })).filter(g => g.rows.length > 0);
+
+    const all = this.LEDGER.flatMap(g => g.rows);
+    const earned = all.filter(r => r.amount > 0).reduce((a, r) => a + r.amount, 0);
+    const spent = -all.filter(r => r.amount < 0).reduce((a, r) => a + r.amount, 0);
+
+    return {
+      points: this.OWNED.toLocaleString('ko-KR'),
+      monthEarnedNum: earned.toLocaleString('ko-KR'),
+      monthSpentNum: spent.toLocaleString('ko-KR'),
+      earnedPct: `${Math.round(earned / Math.max(earned + spent, 1) * 100)}%`,
+      monthEarned: `${earned.toLocaleString('ko-KR')} P`,
+      monthSpent: `${spent.toLocaleString('ko-KR')} P`,
+
+      ledgerTabs: ['전체', '적립', '사용'].map((label, i) => {
+        const on = lt === i;
+        return {
+          label,
+          bg: on ? '#12784F' : '#fff',
+          chipFg: on ? '#fff' : '#414B46',
+          border: on ? '#12784F' : '#E0E8E3',
+          pick: () => this.setState({ ledgerTab: i }),
+        };
+      }),
+      ledger: rows.map(g => ({
+        day: g.day,
+        rows: g.rows.map((r, i) => ({
+          title: r.title, sub: r.sub, icon: r.icon,
+          divider: i === 0 ? '0' : '1px solid #EFF5F1',
+          color: r.amount > 0 ? '#0B4A32' : '#5C6862',
+          tint: r.amount > 0 ? '#DCEDE3' : '#EFF5F1',
+          amount: `${r.amount > 0 ? '+' : '-'}${Math.abs(r.amount).toLocaleString('ko-KR')} P`,
+          amountColor: r.amount > 0 ? '#0B4A32' : '#414B46',
+        })),
+      })),
+
+      goPoints: () => this.setState({ sub: 'points' }),
+      goCoupon: () => this.setState({ sub: 'coupon' }),
+      sortOpen: !!this.state.sortOpen,
+      sortRotate: this.state.sortOpen ? '180deg' : '0deg',
+      sortFg: this.state.sortOpen ? '#0B4A32' : '#414B46',
+      sortLabel: sort === 'high' ? '높은 포인트순' : '낮은 포인트순',
+      toggleSort: () => this.setState(s => ({ sortOpen: !s.sortOpen })),
+      shopSorts: [['low', '낮은 포인트순'], ['high', '높은 포인트순']].map(([k, label]) => {
+        const on = sort === k;
+        return {
+          label,
+          fg: on ? '#0B4A32' : '#5C6862',
+          weight: on ? 700 : 500,
+          fg: on ? '#0B4A32' : '#5C6862',
+          pick: () => this.setState({ shopSort: k, sortOpen: false }),
+        };
+      }),
+      shopCats: this.SHOP_CATS.map(c => {
+        const on = cat === c.key;
+        return {
+          label: c.label, icon: c.icon,
+          fg: on ? '#0B4A32' : '#5C6862',
+          bar: on ? '#12784F' : 'transparent',
+          fill: on ? 1 : 0,
+          weight: on ? 700 : 500,
+          pick: () => this.setState({ shopCat: c.key }),
+        };
+      }),
+      shopQuery: q,
+      hasShopQuery: q.length > 0,
+      onShopQuery: e => this.setState({ shopQuery: e.target.value }),
+      clearShopQuery: () => this.setState({ shopQuery: '' }),
+      shopEmpty: matched.length === 0,
+      shopCount: matched.length,
+      // 교환 가능한 것부터
+      shopItems: matched
+        .sort((a, b) => sort === 'low' ? a.price - b.price
+          : sort === 'high' ? b.price - a.price
+          : (a.price > this.OWNED ? 1 : 0) - (b.price > this.OWNED ? 1 : 0) || a.price - b.price)
+        .map(x => {
+          const short = x.price > this.OWNED;
+          return {
+            brand: x.brand, name: x.name,
+            price: x.price.toLocaleString('ko-KR'),
+            priceColor: short ? '#9FA9A4' : '#0B4A32',
+            opacity: short ? 0.62 : 1,
+            short, ok: !short,
+            shortLine: `${(x.price - this.OWNED).toLocaleString('ko-KR')}P 부족`,
+            open: () => this.setState({ item: x.name }),
+          };
+        }),
+
+      itemOpen: !!it,
+      closeItem: () => this.setState({ item: null }),
+      itBrand: it?.brand ?? '',
+      itName: it?.name ?? '',
+      itPrice: (it?.price ?? 0).toLocaleString('ko-KR'),
+      itRest: (this.OWNED - (it?.price ?? 0)).toLocaleString('ko-KR'),
+      itRestColor: (it?.price ?? 0) > this.OWNED ? '#B4382F' : '#0B4A32',
+      itCta: (it?.price ?? 0) > this.OWNED ? '포인트가 부족해요' : '교환하기',
+      itCtaBg: (it?.price ?? 0) > this.OWNED ? '#E0E8E3' : '#12784F',
+      itCtaFg: (it?.price ?? 0) > this.OWNED ? '#9FA9A4' : '#fff',
+      itCtaCursor: (it?.price ?? 0) > this.OWNED ? 'not-allowed' : 'pointer',
+      itExchange: () => { if ((it?.price ?? 0) <= this.OWNED) this.setState({ item: null, sub: 'coupon' }); },
+    };
+  }
+
+  toast(text) {
+    this.setState({ toast: text });
+    clearTimeout(this._toast);
+    this._toast = setTimeout(() => this.setState({ toast: null }), 1900);
+  }
+
+  usedSet() {
+    return this.state.usedIds ?? this.COUPONS.filter(x => x.used).map(x => x.id);
+  }
+
+  couponVals() {
+    const c = this.COUPONS.find(x => x.id === this.state.coupon);
+    const used = this.usedSet().includes(c?.id);
+    return {
+      couponOpen: !!c,
+      closeCoupon: () => this.setState({ coupon: null }),
+      cpTitle: '쿠폰',
+      cpBrand: c?.brand ?? '',
+      cpName: c?.name ?? '',
+      cpTag: used ? '사용 완료' : '사용 가능',
+      cpTagBg: used ? '#EFF5F1' : '#DCEDE3',
+      cpTagFg: used ? '#5C6862' : '#0B4A32',
+      cpUsable: !used,
+      cpUsed: !!used,
+      cpCode: c?.code ?? '',
+      cpBars: Array.from({ length: 28 }, (_, i) => ({ w: `${(i * 7 % 3) + 2}px` })),
+      cpInfo: [
+        { label: '유효 기간', value: c?.until ?? '' },
+        { label: '사용처', value: `${c?.brand ?? ''} 전 매장` },
+      ],
+      cpBarOp: used ? 0.25 : 1,
+      cpCodeColor: used ? '#9FA9A4' : '#24302B',
+      cpCodeHint: used ? '사용이 끝난 쿠폰이에요' : '매장에서 바코드를 보여주세요',
+      cpUntilShort: c?.until ?? '',
+      // 실수로 눌러도 되돌릴 수 있게
+      cpBtnLabel: used ? '사용 완료 취소' : '사용 완료 처리',
+      cpBtnBg: used ? '#fff' : '#12784F',
+      cpBtnFg: used ? '#414B46' : '#fff',
+      cpBtnBorder: used ? '1.5px solid #E0E8E3' : '0',
+      cpBtnHint: used ? '잘못 눌렀다면 다시 사용 가능으로 되돌릴 수 있어요' : '매장에서 쓴 뒤에 눌러주세요. 되돌릴 수도 있어요',
+      cpToggleUse: () => this.setState(s => {
+        const ids = s.usedIds ?? (this.COUPONS.filter(x => x.used).map(x => x.id));
+        return { usedIds: ids.includes(c.id) ? ids.filter(x => x !== c.id) : [...ids, c.id] };
+      }),
+      // 상품 이미지 + 바코드 + 유효 기간을 한 장으로 (RepaintBoundary → PNG)
+      cpShare: () => this.setState({ savePreview: 'share' }),
+      cpSave: () => this.setState({ savePreview: 'save' }),
+      savePreviewOpen: !!this.state.savePreview,
+      closeSavePreview: () => this.setState({ savePreview: null }),
+      savePreviewLabel: this.state.savePreview === 'share'
+        ? '이 이미지가 공유됩니다'
+        : '이 이미지가 사진첩에 저장됩니다',
+      savePreviewCta: this.state.savePreview === 'share' ? '공유하기' : '저장하기',
+    };
+  }
+
+  subVals() {
+    const sub = this.state.sub;
+    const isDoc = sub === 'terms' || sub === 'license';
+    const ct = this.state.couponTab ?? 0;
+    const list = this.COUPONS.filter(c => (ct === 1) === this.usedSet().includes(c.id));
+    const p = this.profile();
+    return {
+      subOpen: !!sub,
+      closeSub: () => this.setState({ sub: null }),
+      subTitle: { profile: '프로필', notice: '공지 사항', faq: '자주 묻는 질문', terms: '이용 약관 및 정책', license: '오픈소스 및 출처', coupon: '내 쿠폰함', points: '포인트 내역', shop: '에코포인트 상점' }[sub] ?? '',
+      isProfile: sub === 'profile',
+      isNotice: sub === 'notice',
+      isFaq: sub === 'faq',
+      isDoc,
+      isCoupon: sub === 'coupon',
+
+      // 회원가입에서 받는 값 — 성별·나이·키·몸무게·지역
+      profileFields: [
+        { key: 'gender', label: '성별', value: p.gender, icon: 'wc' },
+        { key: 'age', label: '나이', value: `${p.age}세`, icon: 'cake' },
+        { key: 'height', label: '키', value: `${p.height}cm`, icon: 'straighten' },
+        { key: 'weight', label: '몸무게', value: `${p.weight}kg`, icon: 'monitor_weight' },
+        { key: 'region', label: '지역', value: `${p.city} ${p.dong}`, icon: 'location_on' },
+      ].map((f, i) => ({
+        ...f,
+        divider: i === 0 ? '0' : '1px solid #EFF5F1',
+        edit: () => this.openEdit(f.key),
+      })),
+      ...this.editVals(),
+      accountEmail: 'kim****@gmail.com',
+      accountProvider: 'Google',
+      joinedAt: '2026년 3월 2일',
+      joinedDays: 157,
+
+      notices: this.NOTICES,
+      faqs: this.FAQS.map(([q, a], i) => {
+        const open = this.state.faqOpen === i;
+        return {
+          q, a, open,
+          weight: open ? 700 : 500,
+          rotate: open ? '180deg' : '0deg',
+          divider: i === 0 ? '0' : '1px solid #EFF5F1',
+          toggle: () => this.setState({ faqOpen: open ? null : i }),
+        };
+      }),
+      docSections: sub === 'license' ? this.LICENSES : this.TERMS,
+      docFooter: sub === 'license'
+        ? '각 라이선스 전문은 앱 저장소에서 확인할 수 있습니다.'
+        : '시행일 2026년 1월 15일',
+
+      couponTabs: ['사용 가능', '사용 완료'].map((label, i) => {
+        const sel = ct === i;
+        return {
+          label,
+          fg: sel ? '#0B4A32' : '#5C6862',
+          bar: sel ? '#12784F' : 'transparent',
+          weight: sel ? 700 : 500,
+          pick: () => this.setState({ couponTab: i }),
+        };
+      }),
+      coupons: list.map(c => {
+        const u = this.usedSet().includes(c.id);
+        return {
+          brand: c.brand, name: c.name, until: c.until,
+          opacity: u ? 0.6 : 1,
+          tag: u ? '사용 완료' : '사용 가능',
+          tagBg: u ? '#EFF5F1' : '#DCEDE3',
+          tagFg: u ? '#5C6862' : '#0B4A32',
+          open: () => this.setState({ coupon: c.id }),
+        };
+      }),
+      couponEmpty: list.length === 0,
+      isPoints: sub === 'points',
+      isShop: sub === 'shop',
+      ...this.shopVals(),
+      ...this.couponVals(),
+    };
+  }
+
+  componentDidUpdate() { this._wireNav(); }
+
+  renderVals() {
+    const on = this.state.noti;
+    const c = this.state.confirm;
+    // 레벨 이름은 앱에 없다(LevelSystem 은 숫자 XP 사다리). 뱃지 등급(씨앗·새싹·나무·숲)과
+    // 헷갈리지 않도록 숫자만 쓰고, 힌트는 remainingXp 를 그대로 보여준다.
+    const lv = this.levelOf(620);
+    const p = this.profile();
+    return {
+      nickname: '김영수',
+      level: lv.level,
+      points: (1280).toLocaleString('ko-KR'),
+      levelPct: Math.round((lv.currentXp / lv.neededXp) * 100),
+      levelHint: `다음 레벨까지 ${lv.remainingXp} XP`,
+      remainXp: lv.remainingXp,
+      ringDash: `${(2 * Math.PI * 36 * (lv.currentXp / lv.neededXp)).toFixed(1)} ${(2 * Math.PI * 36).toFixed(1)}`,
+      // ActivityMetrics 로 낼 수 있는 값만 (활동 수 · 누적 수거 · 뱃지)
+      stats: [
+        { value: '58', unit: '회', label: '활동', divider: '0' },
+        { value: '71.4', unit: 'kg', label: '수거', divider: '1px solid #EFF5F1' },
+        { value: '12', unit: '개', label: '뱃지', divider: '1px solid #EFF5F1' },
+      ],
+      openProfile: () => this.setState({ sub: 'profile' }),
+
+      bellIcon: on ? 'notifications' : 'notifications_off',
+      bellBg: on ? '#DCEDE3' : '#E7EDE9',
+      bellColor: on ? '#0B4A32' : '#7D8783',
+      bellFill: on ? 1 : 0,
+      toggleNoti: () => this.setState(s => ({ noti: !s.noti })),
+
+      openShop: () => this.setState({ sub: 'shop' }),
+      shopTeaser: '아메리카노 교환까지 3,220P',
+
+      shortcuts: [
+        { label: '내 쿠폰함', sub: '사용 가능 2장', icon: 'confirmation_number', color: '#0B4A32', tint: '#DCEDE3' },
+        // 포인트 내역은 사용자가 요청한 신규 화면. 단, users/{uid}.points 는 스칼라 하나뿐이라
+        // 월 합계를 낼 수 없다 → 적립·사용 이벤트 컬렉션이 새로 필요하다.
+        { label: '포인트 내역', sub: '적립·사용 기록', icon: 'receipt_long', color: '#0B4A32', tint: '#DCEDE3' },
+      ].map((s, i) => ({ ...s, open: () => this.setState({ sub: i === 0 ? 'coupon' : 'points' }) })),
+
+      menus: this.MENUS.map((m, i) => ({
+        label: m.label, icon: m.icon, isNew: !!m.isNew,
+        divider: i === 0 ? '0' : '1px solid #EFF5F1',
+        open: () => this.setState({ sub: m.key }),
+      })),
+      ...this.subVals(),
+
+      confirmOpen: !!c,
+      cfIcon: c === 'logout' ? 'logout' : 'person_remove',
+      cfColor: c === 'logout' ? '#12784F' : '#C4342E',
+      cfTint: c === 'logout' ? '#DCEDE3' : '#FCEDEC',
+      cfTitle: c === 'logout' ? '로그아웃할까요?' : '정말 탈퇴하시겠어요?',
+      cfDesc: c === 'logout'
+        ? '다시 로그인하면 활동 기록은 그대로 남아 있어요.'
+        : '활동 기록·뱃지·포인트가 모두 사라지고 되돌릴 수 없어요.',
+      cfCta: c === 'logout' ? '로그아웃' : '탈퇴하기',
+      openLogout: () => this.setState({ confirm: 'logout' }),
+      openWithdraw: () => this.setState({ confirm: 'withdraw' }),
+      closeConfirm: () => this.setState({ confirm: null }),
+      applyConfirm: () => {
+        this.setState({ confirm: null });
+        this.toast(c === 'logout' ? '로그아웃했어요' : '탈퇴 처리가 접수됐어요');
+      },
+      saveProfile: () => { this.setState({ sub: null }); this.toast('프로필을 저장했어요'); },
+
+      inquiryOpen: !!this.state.inquiry,
+      openInquiry: () => this.setState({ inquiry: '문의' }),
+      closeInquiry: () => this.setState({ inquiry: null }),
+      inquiryKinds: ['문의', '신고', '오류 제보'].map(label => {
+        const on = this.state.inquiry === label;
+        return {
+          label,
+          bg: on ? '#DCEDE3' : '#fff',
+          fg: on ? '#0B4A32' : '#414B46',
+          border: on ? '#12784F' : '#E0E8E3',
+          weight: on ? 700 : 500,
+          pick: () => this.setState({ inquiry: label }),
+        };
+      }),
+      inquiryHint: this.state.inquiry === '신고'
+        ? '어떤 멤버의 어떤 내용인지 알려주세요'
+        : this.state.inquiry === '오류 제보'
+          ? '어떤 화면에서 무엇이 안 되는지 알려주세요'
+          : '궁금한 점을 자유롭게 적어주세요',
+      sendInquiry: () => { this.setState({ inquiry: null }); this.toast('보내주셔서 고마워요'); },
+
+      toastOpen: !!this.state.toast,
+      toastText: this.state.toast ?? '',
+      stop: e => e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#0B5238}
+::-webkit-scrollbar{width:0}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pageIn{from{transform:translateX(14px);opacity:0}to{transform:translateX(0);opacity:1}}
+/* 물감이 위에서 주루륵 흘러내리는 등장 */
+@keyframes paintPour{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes dripFall{from{transform:translateY(-100%) scaleY(.35);opacity:0}18%{opacity:1}to{transform:translateY(0) scaleY(1);opacity:1}}
+@keyframes headerFocus{from{opacity:0;filter:blur(9px)}to{opacity:1;filter:blur(0)}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="홈" style="width:390px;height:844px;background:#F3F8F4;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2)">
+
+  <div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:96px">
+
+    <div style="position:relative;padding:8px 20px 24px;overflow:hidden">
+      <div style="position:absolute;left:0;right:0;top:0;bottom:0;background:#D2E9DC;border-radius:0 0 26px 26px;transform-origin:top center;animation:paintPour 1.9s cubic-bezier(.33,.72,.24,1) both"></div>
+      <div style="position:absolute;left:0;right:0;bottom:-1px;height:46px;pointer-events:none;overflow:hidden">
+        <sc-for list="{{ drips }}" as="d" hint-placeholder-count="6">
+          <span style="position:absolute;left:{{ d.left }};top:0;width:{{ d.w }};height:{{ d.h }};background:#D2E9DC;border-radius:0 0 {{ d.r }} {{ d.r }};transform-origin:top center;animation:dripFall {{ d.dur }} cubic-bezier(.32,.86,.32,1) {{ d.delay }} both"></span>
+        </sc-for>
+      </div>
+      <div style="position:relative;animation:headerFocus 1.7s cubic-bezier(.25,.6,.3,1) 1.1s both">
+      <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 4px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+        <span style="flex:1;font:600 13px/1.4 Pretendard;color:#0B4A32">{{ dateLabel }}</span>
+        <button onClick="{{ openShop }}" style="height:40px;border:0;border-radius:999px;background:#fff;padding:0 14px;display:flex;align-items:center;gap:2px;cursor:pointer"><span style="font:800 15px Pretendard;color:#0B4A32;font-variant-numeric:tabular-nums">{{ points }}</span><span style="font:700 12px Pretendard;letter-spacing:.5px;color:#0B4A32">P</span></button>
+        <button style="width:44px;height:44px;flex:none;border:0;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#0B4A32;font-variation-settings:'FILL' 1">person</span></button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;margin-top:16px">
+        <div style="flex:1;min-width:0">
+          <div style="font:800 23px/1.4 Pretendard;letter-spacing:-.5px;color:#24302B">{{ userName }} 님,<br>오늘도 한 바퀴 어떠세요?</div>
+          <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.62);border-radius:999px;padding:5px 11px;margin-top:10px">
+            <span style="font-family:'Material Symbols Rounded';font-size:17px;color:#0B4A32;font-variation-settings:'FILL' 1">local_fire_department</span>
+            <span style="font:600 14px/1.4 Pretendard;color:#0B4A32">{{ streakLine }}</span>
+          </div>
+        </div>
+        <div style="width:100px;height:100px;flex:none;border-radius:20px;background:#E6F2EB;display:flex;align-items:center;justify-content:center;text-align:center">
+          <span style="font:600 11px/1.4 Pretendard;color:#3F9C74">줍댕이<br>이미지</span>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div style="padding:16px 20px 0">
+
+      <div style="background:#fff;border-radius:20px;padding:14px 12px;box-shadow:0 2px 12px rgba(36,48,43,.06)">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
+          <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+            <div style="border-radius:14px;border:{{ d.border }};background:{{ d.bg }};padding:8px 0 9px;display:flex;flex-direction:column;align-items:center;gap:5px">
+              <span style="font:{{ d.weight }} 13px/1.3 Pretendard;color:{{ d.labelColor }}">{{ d.label }}</span>
+              <span style="font-family:'Material Symbols Rounded';font-size:27px;color:{{ d.iconColor }};font-variation-settings:'FILL' {{ d.fill }}">potted_plant</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:26px">
+        <div><span style="font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B">내가 만든 변화</span><span style="font:500 13px/1.4 Pretendard;color:#5C6862;margin-left:8px">가입 이후 누적</span></div>
+      </div>
+
+      <sc-if value="{{ firstDay }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;border-radius:20px;padding:18px;margin-top:12px;box-shadow:0 2px 12px rgba(36,48,43,.06);display:flex;align-items:center;gap:16px">
+        <div style="width:72px;height:72px;flex:none;border-radius:16px;background:#D2E9DC;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 11px/1.4 Pretendard;color:#3F9C74">나무<br>일러스트</span></div>
+        <div style="flex:1;min-width:0">
+          <div style="font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B">30분만 걸어도</div>
+          <div style="font:400 15px/1.55 Pretendard;color:#5C6862;margin-top:4px">평균 300g의 쓰레기를 줍고<br>탄소 198g을 줄일 수 있어요</div>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ hasImpact }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#fff;border-radius:20px;padding:18px;margin-top:12px;box-shadow:0 2px 12px rgba(36,48,43,.06)">
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="width:80px;height:80px;flex:none;border-radius:16px;background:#D2E9DC;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 11px/1.4 Pretendard;color:#3F9C74">나무<br>일러스트</span></div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:3px"><span style="font:800 32px/1.15 Pretendard;letter-spacing:-.9px;color:#0B4A32;font-variant-numeric:tabular-nums">{{ carbonKg }}</span><span style="font:600 15px Pretendard;color:#0B4A32">kg</span></div>
+            <div style="font:400 15px/1.55 Pretendard;color:#414B46;margin-top:4px">소나무 {{ pineTrees }}그루가<br>1년간 마실 탄소를 줄였어요</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px">
+          <div style="background:#F3F8F4;border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span style="display:flex;align-items:baseline;gap:2px"><span style="font:800 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ trashKg }}</span><span style="font:500 13px Pretendard;color:#5C6862">kg</span></span>
+            <span style="font:500 13px Pretendard;color:#5C6862">쓰레기</span>
+          </div>
+          <div style="background:#F3F8F4;border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span style="font:800 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ totalSteps }}</span>
+            <span style="font:500 13px Pretendard;color:#5C6862">걸음</span>
+          </div>
+          <div style="background:#F3F8F4;border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span style="font:800 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ level }}</span>
+            <span style="font:500 13px Pretendard;color:#5C6862">레벨</span>
+          </div>
+        </div>
+        <button onClick="{{ openEcoMath }}" style="width:100%;border:0;background:none;padding:12px 0 2px;display:flex;align-items:center;justify-content:flex-start;gap:5px;cursor:pointer">
+          <span style="font-family:'Material Symbols Rounded';font-size:17px;color:#7D8783">info</span>
+          <span style="font:500 13px Pretendard;color:#5C6862">어떻게 계산했나요?</span>
+        </button>
+      </div>
+      </sc-if>
+
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:26px">
+        <span style="font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B">오늘의 환경 뉴스</span>
+        <button onClick="{{ openNews }}" style="width:32px;height:32px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#9FA9A4">chevron_right</span></button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        <sc-for list="{{ news }}" as="n" hint-placeholder-count="2">
+          <div onClick="{{ n.open }}" style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 12px rgba(36,48,43,.06);cursor:pointer">
+            <div style="display:flex;align-items:flex-start;gap:14px">
+              <div style="width:44px;height:44px;flex:none;border-radius:14px;background:#EFF5F1;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 10px/1.3 Pretendard;color:#9FA9A4">뉴스<br>이미지</span></div>
+              <div style="flex:1;min-width:0">
+                <div style="font:700 16px/1.45 Pretendard;letter-spacing:-.2px;color:#24302B">{{ n.title }}</div>
+                <div style="font:400 15px/1.55 Pretendard;color:#5C6862;margin-top:4px">{{ n.line }}</div>
+                <div style="font:500 13px/1.4 Pretendard;color:#7D8783;margin-top:8px">{{ n.meta }}</div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:26px">
+        <div style="min-width:0"><span style="font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B">지금 우리 동네는</span><div style="font:500 13px/1.45 Pretendard;color:#5C6862;margin-top:3px">{{ regionLine }}</div></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+          <div onClick="{{ g.open }}" style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 12px rgba(36,48,43,.06);display:flex;align-items:center;gap:14px;cursor:pointer">
+            <div style="width:48px;height:48px;flex:none;border-radius:14px;background:#EFF5F1;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#9FA9A4;font-variation-settings:'FILL' 1">groups</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="font:700 16px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.name }}</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+                <sc-if value="{{ g.active }}" hint-placeholder-val="{{ true }}"><span style="width:6px;height:6px;border-radius:50%;background:#12784F"></span></sc-if>
+                <span style="font:{{ g.weight }} 13px/1.4 Pretendard;color:{{ g.color }}">{{ g.status }}</span>
+              </div>
+            </div>
+            <span style="font-family:'Material Symbols Rounded';font-size:23px;color:#9FA9A4">chevron_right</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:-1px;right:-1px;bottom:0;height:76px;box-sizing:border-box;background:#fff;border:1px solid #E0E8E3;border-radius:20px 20px 0 0">
+    <div style="position:absolute;left:0;right:0;bottom:12px;height:63px;display:flex;align-items:flex-end;justify-content:center">
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:#8E8E93">home</span><span style="font:700 13px Pretendard;color:#8E8E93">홈</span></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:#D9D9D9">diversity_1</span><span style="font:700 13px Pretendard;color:#D9D9D9">그룹</span></div>
+      <div style="width:86px"></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:#D9D9D9">person</span><span style="font:700 13px Pretendard;color:#D9D9D9">내 활동</span></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:#D9D9D9">more_horiz</span><span style="font:700 13px Pretendard;color:#D9D9D9">메뉴</span></div>
+    </div>
+    <div style="position:absolute;left:50%;top:-13px;transform:translateX(-50%);width:88px;height:88px;border-radius:50%;background:#fff;border:1px solid #E0E8E3;display:flex;align-items:center;justify-content:center;box-sizing:border-box">
+      <div style="width:75px;height:75px;border-radius:50%;background:#12784F;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:33px;color:#fff;font-variation-settings:'FILL' 1,'wght' 500">directions_run</span><span style="font:700 14px Pretendard;color:#fff">시작</span></div>
+    </div>
+    <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:86px;height:3px;background:#fff;border-radius:0 0 3px 3px"></div>
+  </div>
+
+  <sc-if value="{{ pointsOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:#F3F8F4;display:flex;flex-direction:column;z-index:2;animation:pageIn .26s cubic-bezier(.32,.72,0,1)">
+      <div style="padding:8px 8px 0">
+        <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 12px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+        <div style="display:flex;align-items:center;gap:2px;margin-top:6px">
+          <button onClick="{{ closePoints }}" style="width:44px;height:44px;flex:none;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+          <span style="flex:1;font:800 20px/1.4 Pretendard;letter-spacing:-.3px;color:#24302B">포인트 내역</span>
+        </div>
+        <div style="padding:6px 20px 18px">
+          <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 12px rgba(36,48,43,.06);display:flex;gap:14px">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:8px;height:8px;border-radius:50%;background:#12784F"></span>
+                <span style="font:500 13px Pretendard;color:#5C6862">이번 달 적립</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:1px;margin-top:5px">
+                <span style="font:800 26px/1.15 Pretendard;letter-spacing:-.7px;color:#0B4A32;font-variant-numeric:tabular-nums">+{{ monthEarnedNum }}</span>
+                <span style="font:700 14px Pretendard;color:#12784F">P</span>
+              </div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:8px;height:8px;border-radius:50%;background:#C3CCC7"></span>
+                <span style="font:500 13px Pretendard;color:#5C6862">이번 달 사용</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:1px;margin-top:5px">
+                <span style="font:800 26px/1.15 Pretendard;letter-spacing:-.7px;color:#414B46;font-variant-numeric:tabular-nums">-{{ monthSpentNum }}</span>
+                <span style="font:700 14px Pretendard;color:#7D8783">P</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;padding:0 20px 10px">
+          <sc-for list="{{ ledgerTabs }}" as="t" hint-placeholder-count="3">
+            <button onClick="{{ t.pick }}" style="height:38px;border:1.5px solid {{ t.border }};border-radius:19px;background:{{ t.bg }};color:{{ t.fg }};font:600 14px Pretendard;padding:0 16px;cursor:pointer">{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 20px 28px">
+        <sc-for list="{{ ledgerGroups }}" as="grp" hint-placeholder-count="3">
+          <div style="margin-top:14px">
+            <div style="font:600 13px Pretendard;color:#7D8783;padding:0 2px 8px">{{ grp.day }}</div>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(36,48,43,.06);overflow:hidden">
+              <sc-for list="{{ grp.rows }}" as="r" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:{{ r.divider }}">
+                  <div style="width:38px;height:38px;flex:none;border-radius:12px;background:{{ r.iconBg }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ r.iconFg }};font-variation-settings:'FILL' 1">{{ r.icon }}</span></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font:600 15px/1.4 Pretendard;color:#24302B">{{ r.title }}</div>
+                    <div style="font:500 13px/1.4 Pretendard;color:#7D8783;margin-top:2px">{{ r.sub }}</div>
+                  </div>
+                  <div style="font:700 16px Pretendard;color:{{ r.amountColor }};font-variant-numeric:tabular-nums;white-space:nowrap">{{ r.amount }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+        <div style="font:400 13px/1.6 Pretendard;color:#9FA9A4;text-align:center;margin-top:20px">최근 3개월 내역만 보여드려요</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ articleOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:#F3F8F4;display:flex;flex-direction:column;z-index:3;animation:pageIn .26s cubic-bezier(.32,.72,0,1)">
+      <div style="padding:8px 8px 10px">
+        <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 12px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+        <div style="display:flex;align-items:center;gap:2px;margin-top:6px">
+          <button onClick="{{ closeArticle }}" style="width:44px;height:44px;flex:none;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+          <span style="flex:1;font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B">환경뉴스</span>
+          <button style="width:44px;height:44px;flex:none;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#414B46">ios_share</span></button>
+        </div>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:20px 20px 32px">
+        <span style="display:inline-block;background:#D2E9DC;border-radius:999px;padding:5px 11px;font:700 12px Pretendard;letter-spacing:.3px;color:#0B4A32">{{ artCategory }}</span>
+        <div style="font:800 22px/1.45 Pretendard;letter-spacing:-.5px;color:#24302B;margin-top:12px">{{ artTitle }}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+          <span style="font:500 13px Pretendard;color:#5C6862">{{ artReporter }}</span>
+          <span style="width:3px;height:3px;border-radius:50%;background:#C3CCC7"></span>
+          <span style="font:500 13px Pretendard;color:#7D8783">{{ artDate }}</span>
+        </div>
+        <div style="height:170px;border-radius:18px;background:#EFF5F1;display:flex;align-items:center;justify-content:center;text-align:center;margin-top:16px"><span style="font:600 12px/1.4 Pretendard;color:#9FA9A4">기사<br>이미지</span></div>
+
+        <div style="background:#fff;border-radius:18px;padding:16px;margin-top:18px;box-shadow:0 2px 12px rgba(36,48,43,.06)">
+          <button onClick="{{ toggleSummary }}" style="width:100%;border:0;background:none;padding:0;display:flex;align-items:center;gap:8px;cursor:pointer">
+            <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#12784F;font-variation-settings:'FILL' 1">auto_awesome</span>
+            <span style="flex:1;text-align:left;font:700 15px Pretendard;color:#24302B">AI 세 줄 요약</span>
+            <span style="font-family:'Material Symbols Rounded';font-size:22px;color:#9FA9A4">{{ summaryChevron }}</span>
+          </button>
+          <div style="display:grid;grid-template-rows:{{ summaryRows }};transition:grid-template-rows .38s cubic-bezier(.32,.72,0,1)">
+            <div style="overflow:hidden;min-height:0;opacity:{{ summaryOp }};padding-top:{{ summaryPad }};transition:opacity .3s ease,padding-top .38s cubic-bezier(.32,.72,0,1)">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ artSummary }}" as="s" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:flex-start;gap:9px">
+                    <span style="width:20px;height:20px;flex:none;border-radius:50%;background:#D2E9DC;display:flex;align-items:center;justify-content:center;font:700 12px Pretendard;color:#0B4A32;margin-top:2px">{{ s.no }}</span>
+                    <span style="flex:1;font:400 15px/1.6 Pretendard;color:#414B46">{{ s.text }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:22px">
+          <sc-for list="{{ artBody }}" as="p" hint-placeholder-count="3">
+            <div style="font:400 16px/1.75 Pretendard;color:#24302B;margin-bottom:16px">{{ p.text }}</div>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 2px 12px rgba(36,48,43,.06);display:flex;align-items:center;gap:12px;cursor:pointer">
+          <div style="width:40px;height:40px;flex:none;border-radius:50%;background:#EFF5F1;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#5C6862">link</span></div>
+          <div style="flex:1;min-width:0">
+            <div style="font:700 15px/1.4 Pretendard;color:#24302B">{{ artSource }}</div>
+            <div style="font:500 13px/1.4 Pretendard;color:#12784F;margin-top:2px">원문 보기</div>
+          </div>
+          <span style="font-family:'Material Symbols Rounded';font-size:22px;color:#9FA9A4">chevron_right</span>
+        </div>
+
+        <sc-if value="{{ hasRelated }}" hint-placeholder-val="{{ true }}">
+          <div style="font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B;margin-top:28px">관련 뉴스</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+            <sc-for list="{{ related }}" as="r" hint-placeholder-count="2">
+              <div onClick="{{ r.open }}" style="background:#fff;border-radius:16px;padding:14px;box-shadow:0 2px 12px rgba(36,48,43,.06);display:flex;align-items:center;gap:12px;cursor:pointer">
+                <div style="width:44px;height:44px;flex:none;border-radius:12px;background:#EFF5F1;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 10px/1.3 Pretendard;color:#9FA9A4">뉴스<br>이미지</span></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font:600 15px/1.45 Pretendard;color:#24302B">{{ r.title }}</div>
+                  <div style="font:500 13px/1.4 Pretendard;color:#7D8783;margin-top:4px">{{ r.meta }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ newsOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:#F3F8F4;display:flex;flex-direction:column;animation:pageIn .26s cubic-bezier(.32,.72,0,1)">
+      <div style="padding:8px 8px 12px">
+        <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 12px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:6px">
+          <button onClick="{{ closeNews }}" style="width:44px;height:44px;flex:none;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+          <div style="flex:1;min-width:0">
+            <div style="font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B">오늘의 환경 뉴스</div>
+            <div style="font:500 13px/1.4 Pretendard;color:#5C6862;margin-top:1px">매일 아침 새로 담겨요</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding:12px 8px 2px">
+          <sc-for list="{{ newsTabs }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.pick }}" style="flex:none;height:38px;border:1.5px solid {{ t.border }};border-radius:19px;background:{{ t.bg }};color:{{ t.fg }};font:600 14px Pretendard;padding:0 14px;cursor:pointer">{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:16px 20px 28px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ newsAll }}" as="n" hint-placeholder-count="6">
+            <div onClick="{{ n.open }}" style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 12px rgba(36,48,43,.06);cursor:pointer">
+              <div style="display:flex;align-items:flex-start;gap:14px">
+                <div style="width:44px;height:44px;flex:none;border-radius:14px;background:#EFF5F1;display:flex;align-items:center;justify-content:center;text-align:center"><span style="font:600 10px/1.3 Pretendard;color:#9FA9A4">뉴스<br>이미지</span></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font:700 16px/1.45 Pretendard;letter-spacing:-.2px;color:#24302B">{{ n.title }}</div>
+                  <div style="font:400 15px/1.55 Pretendard;color:#5C6862;margin-top:4px">{{ n.line }}</div>
+                  <div style="font:500 13px/1.4 Pretendard;color:#7D8783;margin-top:8px">{{ n.meta }}</div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font:400 13px/1.6 Pretendard;color:#9FA9A4;text-align:center;margin-top:18px">네이버 뉴스 검색 결과를 요약해 보여드려요</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ groupOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeGroup }}" style="position:absolute;inset:0;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:14px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E0E8E3;margin:0 auto 18px"></div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:60px;height:60px;flex:none;border-radius:16px;background:#EFF5F1;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:27px;color:#9FA9A4;font-variation-settings:'FILL' 1">groups</span></div>
+          <div style="flex:1;min-width:0">
+            <div style="font:800 20px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B">{{ sheetName }}</div>
+            <div style="font:500 13px/1.45 Pretendard;color:#5C6862;margin-top:3px">{{ sheetRegion }}</div>
+          </div>
+        </div>
+        <div style="font:400 15px/1.6 Pretendard;color:#414B46;margin-top:14px">{{ sheetIntro }}</div>
+        <div style="display:flex;align-items:center;gap:10px;background:#F3F8F4;border-radius:16px;padding:12px 14px;margin-top:16px">
+          <div style="display:flex;flex:none">
+            <sc-for list="{{ sheetAvatars }}" as="a" hint-placeholder-count="5">
+              <div style="width:34px;height:34px;border-radius:50%;background:#D2E9DC;border:2px solid #F3F8F4;margin-left:{{ a.overlap }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:#3F9C74;font-variation-settings:'FILL' 1">person</span></div>
+            </sc-for>
+            <sc-if value="{{ sheetHasMore }}" hint-placeholder-val="{{ true }}">
+              <div style="width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid #F3F8F4;margin-left:-9px;display:flex;align-items:center;justify-content:center"><span style="font:700 12px Pretendard;color:#5C6862">{{ sheetMore }}</span></div>
+            </sc-if>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font:600 15px/1.4 Pretendard;color:#24302B">멤버 {{ sheetMembers }}명</div>
+            <div style="font:500 13px/1.4 Pretendard;color:{{ sheetTodayColor }};margin-top:1px">{{ sheetTodayLine }}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:12px;padding:0 2px">
+          <span style="font-family:'Material Symbols Rounded';font-size:17px;color:#9FA9A4">calendar_month</span>
+          <span style="font:500 13px Pretendard;color:#5C6862">{{ sheetCreated }} 개설</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <button onClick="{{ closeGroup }}" style="flex:1;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 17px Pretendard;cursor:pointer">닫기</button>
+          <button onClick="{{ askJoin }}" style="flex:1;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer">가입하기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ joinOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeJoin }}" style="position:absolute;inset:0;z-index:6;background:rgba(36,48,43,.5);display:flex;align-items:center;justify-content:center;padding:28px;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:24px;padding:24px 22px 20px">
+        <div style="width:46px;height:46px;border-radius:16px;background:#DCEDE3;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#12784F;font-variation-settings:'FILL' 1">handshake</span></div>
+        <div style="font:800 20px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:14px">{{ joinName }}에 가입할까요?</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:7px">가입하면 채팅방에 바로 들어가요. 한 번에 한 그룹만 가입할 수 있어요.</div>
+        <div style="display:flex;gap:8px;margin-top:20px">
+          <button onClick="{{ closeJoin }}" style="flex:1;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer">아니오</button>
+          <button onClick="{{ doJoin }}" style="flex:1;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 16px Pretendard;cursor:pointer">가입하기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:24px;right:24px;bottom:112px;z-index:8;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:8px;background:#24302B;border-radius:999px;padding:11px 18px;box-shadow:0 6px 20px rgba(16,21,18,.34)">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#7FDCAE;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font:600 14px Pretendard;color:#fff">{{ toastText }}</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ecoOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeEcoMath }}" style="position:absolute;inset:0;background:rgba(36,48,43,.45);display:flex;align-items:center;justify-content:center;padding:28px">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:24px;padding:24px 22px 20px">
+        <div style="font:800 20px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B">어떻게 계산했나요?</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:8px">주운 쓰레기의 무게로 탄소 감축량을 추정합니다.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="background:#D2E9DC;border-radius:999px;padding:4px 9px;font:700 12px Pretendard;color:#0B4A32;white-space:nowrap">쓰레기 1kg</span><span style="font:500 13px Pretendard;color:#24302B">탄소 0.66kg 감축</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="background:#D2E9DC;border-radius:999px;padding:4px 9px;font:700 12px Pretendard;color:#0B4A32;white-space:nowrap">소나무 1그루</span><span style="font:500 13px Pretendard;color:#24302B">1년에 탄소 6.6kg 흡수</span></div>
+        </div>
+        <div style="font:400 13px/1.6 Pretendard;color:#7D8783;margin-top:14px">실제 감축량은 쓰레기 종류와 재활용 방식에 따라 달라질 수 있어요.</div>
+        <button onClick="{{ closeEcoMath }}" style="width:100%;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer;margin-top:18px">알겠어요</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;userName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;김영수&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;points&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1280,&quot;min&quot;:0,&quot;max&quot;:99999,&quot;tsType&quot;:&quot;number&quot;},&quot;streakDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:4,&quot;min&quot;:0,&quot;max&quot;:365,&quot;tsType&quot;:&quot;number&quot;},&quot;firstDay&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;regionActive&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:7,&quot;min&quot;:0,&quot;max&quot;:99,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  // 목업을 실제 앱처럼 눌러볼 수 있게 하단 내비를 연결한다.
+  _wireNav() {
+    const DEST = {"홈":"Home.dc.html","그룹":"Group Home.dc.html","내 활동":"My Activity.dc.html","메뉴":"Menu.dc.html","시작":"Destination Setup.dc.html"};
+    const here = "홈";
+    setTimeout(() => {
+      document.querySelectorAll('[data-screen-label] div').forEach(el => {
+        const t = (el.textContent || '').trim();
+        const hit = Object.keys(DEST).find(k => t === k || t.endsWith(k));
+        if (!hit || hit === here) return;
+        if (getComputedStyle(el).cursor !== 'pointer') return;
+        if (el.dataset.navWired) return;
+        el.dataset.navWired = '1';
+        el.addEventListener('click', () => { window.location.href = DEST[hit]; });
+      });
+    }, 60);
+  }
+
+  componentDidMount() {
+    this._wireNav();
+  }
+
+  state = { ecoOpen: false, newsOpen: false, newsTab: '전체', group: null, pointsOpen: false, ledgerTab: '전체', article: null, summaryOpen: true };
+
+  // 활동 완료 +330 P 는 정산 화면(settlement_screen.dart _rewardCard)과 같은 값.
+  LEDGER = [
+    { day: '오늘', rows: [
+      { kind: 'earn', icon: 'directions_walk', title: '플로깅 활동 완료', sub: '2.4km · 10개 수거', amount: 330 },
+    ] },
+    { day: '8월 4일', rows: [
+      { kind: 'earn', icon: 'military_tech', title: '퀘스트 달성 · 일주일 연속', sub: '뱃지와 함께 지급', amount: 500 },
+      { kind: 'earn', icon: 'directions_walk', title: '플로깅 활동 완료', sub: '1.8km · 7개 수거', amount: 330 },
+    ] },
+    { day: '8월 1일', rows: [
+      { kind: 'spend', icon: 'local_cafe', title: '아이스 아메리카노 T 교환', sub: '스타벅스 · 쿠폰함에 담김', amount: -4500 },
+      { kind: 'earn', icon: 'directions_walk', title: '플로깅 활동 완료', sub: '3.1km · 14개 수거', amount: 330 },
+    ] },
+    { day: '7월 29일', rows: [
+      { kind: 'earn', icon: 'directions_walk', title: '플로깅 활동 완료', sub: '2.0km · 9개 수거', amount: 330 },
+    ] },
+  ];
+
+  WEEK = [
+    { label: '월', done: true }, { label: '화', done: true }, { label: '수', done: false },
+    { label: '목', done: true }, { label: '금', done: false, today: true },
+    { label: '토', done: false }, { label: '일', done: false },
+  ];
+
+  NEWS = [
+    { meta: '재활용 · 환경일보 · 8월 4일', title: '투명 페트병 분리배출, 이렇게만 하면 됩니다', line: '라벨을 떼고 압착해 뚜껑을 닫으면 재활용률이 크게 올라갑니다.' },
+    { meta: '정책 · 인천시 · 8월 2일', title: '인천시, 하천 정화 거점 40곳으로 확대', line: '남동구·연수구 중심으로 수거함과 집게 대여소를 늘립니다.' },
+  ];
+
+  GROUPS = [
+    { name: '만수동 줍깅크루', region: '인천 남동구 만수동', members: 14, today: 3, created: '2025.04',
+      intro: '매주 수요일 저녁, 만수천 산책로를 함께 걸어요. 처음이어도 편하게 오세요.' },
+    { name: '구월동 새벽줍기', region: '인천 남동구 구월동', members: 22, today: 0, created: '2024.11',
+      intro: '출근 전 30분, 구월동 일대를 가볍게 돌며 주웁니다. 조용히 걷는 걸 좋아하는 분들 모임이에요.' },
+  ];
+
+  NEWS_ALL = [
+    { cat: '재활용', source: '환경일보', reporter: '김세연 기자', date: '8월 4일',
+      title: '투명 페트병 분리배출, 이렇게만 하면 됩니다',
+      line: '라벨을 떼고 압착해 뚜껑을 닫으면 재활용률이 크게 올라갑니다.',
+      summary: ['라벨을 떼고 압착한 뒤 뚜껑을 닫아 배출하면 재활용 등급이 올라갑니다.',
+        '투명 페트병만 따로 모으는 전용 수거함이 아파트 단지 위주로 늘고 있습니다.',
+        '내용물을 비우고 물로 한 번 헹구는 것만으로도 선별 비용이 크게 줄어듭니다.'],
+      body: ['환경부가 발표한 자료에 따르면 투명 페트병 별도 배출 제도가 시행된 이후 고품질 재생 원료 확보량이 꾸준히 늘고 있다. 다만 라벨이 붙은 채로 배출되는 비율이 여전히 높아 선별장에서 추가 작업이 필요한 상황이다.',
+        '전문가들은 배출 단계에서의 간단한 처리만으로도 재활용 품질이 크게 달라진다고 설명한다. 내용물을 비우고 라벨을 제거한 뒤 압착해 뚜껑을 닫는 네 단계면 충분하다는 것이다.',
+        '지자체들도 전용 수거함 설치를 늘리고 있다. 인천시는 올해 아파트 단지와 주요 공원을 중심으로 투명 페트병 전용 수거함을 추가 설치할 계획이라고 밝혔다.'] },
+    { cat: '정책', source: '인천시', reporter: '인천시 환경국', date: '8월 2일',
+      title: '인천시, 하천 정화 거점 40곳으로 확대',
+      line: '남동구·연수구 중심으로 수거함과 집게 대여소를 늘립니다.',
+      summary: ['인천시가 하천 정화 거점을 기존 24곳에서 40곳으로 늘립니다.',
+        '거점마다 수거 봉투와 집게를 무료로 대여할 수 있습니다.',
+        '남동구·연수구 하천 산책로에 우선 설치될 예정입니다.'],
+      body: ['인천시는 시민 참여형 하천 정화 활동을 지원하기 위해 정화 거점을 대폭 확대한다고 밝혔다. 거점에는 수거 봉투와 집게가 상시 구비되며 별도 신청 없이 사용할 수 있다.',
+        '시는 특히 산책 인구가 많은 만수천, 승기천, 장수천 구간을 우선 대상으로 삼았다. 걷기와 정화 활동을 함께하는 시민이 늘고 있다는 판단에서다.',
+        '거점 위치는 시 환경국 누리집과 플로깅 앱에서 확인할 수 있다.'] },
+    { cat: '생활', source: '그린포스트', reporter: '이도현 기자', date: '8월 1일',
+      title: '장바구니 하나로 줄이는 연간 비닐 300장',
+      line: '한 사람이 1년에 쓰는 비닐봉지는 평균 320장으로 집계됐습니다.',
+      summary: ['국내 1인당 연간 비닐봉지 사용량은 평균 320장으로 조사됐습니다.',
+        '장바구니를 상시 휴대하면 대부분을 대체할 수 있습니다.',
+        '접이식 장바구니는 무게가 60g 안팎으로 부담이 적습니다.'],
+      body: ['한 소비자 단체 조사에서 국내 1인당 연간 비닐봉지 사용량이 평균 320장으로 나타났다. 이 가운데 상당수는 장바구니로 충분히 대체할 수 있는 용도였다.',
+        '조사를 진행한 관계자는 습관의 문제라고 지적했다. 접이식 장바구니는 무게가 60g 안팎으로 가방에 상시 넣어둘 수 있다는 것이다.',
+        '지자체들도 장바구니 보급 사업을 이어가고 있다.'] },
+    { cat: '정책', source: '연합뉴스', reporter: '박준영 기자', date: '7월 30일',
+      title: '일회용컵 보증금제, 내년부터 전국 확대',
+      line: '보증금 300원이 붙고 반납하면 전액 돌려받는 방식입니다.',
+      summary: ['일회용컵 보증금제가 내년부터 전국으로 확대됩니다.',
+        '컵 한 개당 300원의 보증금이 붙고 반납 시 전액 환급됩니다.',
+        '반납은 브랜드와 무관하게 참여 매장에서 가능합니다.'],
+      body: ['정부는 일회용컵 보증금제를 내년부터 전국으로 확대 시행한다고 밝혔다. 컵 한 개당 300원의 보증금이 부과되고 반납하면 전액 돌려받는 구조다.',
+        '반납은 브랜드에 상관없이 참여 매장 어디에서나 가능하도록 설계됐다. 시범 지역에서는 회수율이 절반을 넘었다.',
+        '업계는 회수 인프라 확충이 관건이라고 보고 있다.'] },
+    { cat: '해양', source: '해양환경공단', reporter: '해양환경공단', date: '7월 28일',
+      title: '서해안 해양쓰레기 절반은 어업용 폐기물',
+      line: '폐어망·부표가 전체 수거량의 48%를 차지했습니다.',
+      summary: ['서해안 수거 해양쓰레기의 48%가 어업용 폐기물이었습니다.',
+        '폐어망과 부표가 대부분을 차지했습니다.',
+        '어구 보증금제 도입이 대안으로 논의되고 있습니다.'],
+      body: ['해양환경공단이 지난해 서해안에서 수거한 해양쓰레기를 분석한 결과 어업용 폐기물이 전체의 48%를 차지했다. 폐어망과 부표가 대부분이었다.',
+        '어업용 폐기물은 부피가 크고 분해되지 않아 해양 생태계에 미치는 영향이 크다. 해양 생물이 걸려 폐사하는 사례도 지속적으로 보고된다.',
+        '공단은 어구 보증금제 도입과 수매 사업 확대를 대안으로 제시했다.'] },
+    { cat: '생활', source: '시민일보', reporter: '최윤아 기자', date: '7월 26일',
+      title: '걷기와 자전거로 줄인 탄소, 앱으로 적립',
+      line: '지자체 탄소중립 포인트 참여자가 지난해보다 2배 늘었습니다.',
+      summary: ['탄소중립 포인트 참여자가 지난해보다 두 배 늘었습니다.',
+        '걷기·자전거 이동 거리를 앱으로 기록하면 포인트가 적립됩니다.',
+        '적립 포인트는 지역 가맹점에서 사용할 수 있습니다.'],
+      body: ['탄소중립 실천 포인트 참여자가 지난해보다 두 배 이상 늘어났다. 걷기와 자전거 이동을 앱으로 기록하면 포인트가 적립되는 방식이 호응을 얻고 있다.',
+        '적립된 포인트는 지역 가맹점에서 현금처럼 사용할 수 있다. 참여자 대부분은 기록이 남는다는 점을 계속하는 이유로 꼽았다.',
+        '지자체들은 올해 적립 한도를 늘리는 방안을 검토하고 있다.'] },
+  ];
+
+  newsCard(n) {
+    return {
+      title: n.title, line: n.line,
+      meta: `${n.cat} · ${n.source} · ${n.date}`,
+      open: () => this.setState({ article: n, summaryOpen: true }),
+    };
+  }
+
+  componentDidUpdate() { this._wireNav(); }
+
+  renderVals() {
+    const a = this.state.article;
+    const first = this.props.firstDay ?? false;
+    const streak = this.props.streakDays ?? 4;
+    const doneCount = this.WEEK.filter(d => d.done).length;
+    return {
+      // 헤더 아래로 흘러내린 물감 방울 (굵기·길이·속도를 서로 다르게)
+      drips: [
+        { left: '9%', w: '26px', h: '17px', r: '13px', dur: '1.1s', delay: '.85s' },
+        { left: '24%', w: '15px', h: '30px', r: '8px', dur: '1.3s', delay: '1.05s' },
+        { left: '44%', w: '34px', h: '12px', r: '17px', dur: '1s', delay: '.75s' },
+        { left: '58%', w: '11px', h: '40px', r: '6px', dur: '1.5s', delay: '1.2s' },
+        { left: '72%', w: '22px', h: '21px', r: '11px', dur: '1.2s', delay: '.95s' },
+        { left: '88%', w: '14px', h: '27px', r: '7px', dur: '1.25s', delay: '1.3s' },
+      ],
+      dateLabel: '8월 5일 수요일',
+      points: (this.props.points ?? 1280).toLocaleString('ko-KR'),
+      userName: this.props.userName ?? '김영수',
+      streakLine: first ? '첫 걸음을 기다리고 있어요' : `${streak}일 연속 기록 중`,
+      weekDoneLine: `${doneCount}일 채웠어요`,
+      week: this.WEEK.map(d => ({
+        label: d.label,
+        weight: d.today ? 800 : 600,
+        labelColor: d.today ? '#0B4A32' : '#5C6862',
+        iconColor: d.done ? '#12784F' : '#C3CCC7',
+        fill: d.done ? 1 : 0,
+        bg: d.today ? '#EBF4EF' : 'transparent',
+        border: d.today ? '2px solid #12784F' : '2px solid transparent',
+      })),
+      firstDay: first,
+      hasImpact: !first,
+      // EcoMath: carbonKg = trashKg × 0.66, pineTrees = carbonKg ÷ 6.6
+      carbonKg: '8.2',
+      pineTrees: '1.2',
+      trashKg: '12.4',
+      totalSteps: '38,420',
+      level: 4,
+      news: this.NEWS_ALL.slice(0, 2).map(n => this.newsCard(n)),
+      regionLine: `오늘 ${this.props.regionActive ?? 7}명이 활동했어요`,
+      groups: this.GROUPS.map(g => ({
+        name: g.name,
+        active: g.today > 0,
+        status: g.today > 0 ? `멤버 ${g.members}명 · 오늘 ${g.today}명 활동` : `멤버 ${g.members}명 · 오늘 활동 없음`,
+        weight: g.today > 0 ? 700 : 500,
+        color: g.today > 0 ? '#0B4A32' : '#5C6862',
+        open: () => this.setState({ group: g }),
+      })),
+      newsOpen: this.state.newsOpen,
+      openNews: () => this.setState({ newsOpen: true }),
+      closeNews: () => this.setState({ newsOpen: false, newsTab: '전체' }),
+      newsMeta: `오늘 ${this.NEWS_ALL.length}건 · 매일 아침 새로 담겨요`,
+      newsTabs: ['전체', '재활용', '정책', '생활', '해양'].map(label => ({
+        label,
+        bg: this.state.newsTab === label ? '#12784F' : '#fff',
+        fg: this.state.newsTab === label ? '#fff' : '#414B46',
+        border: this.state.newsTab === label ? '#12784F' : '#E0E8E3',
+        pick: () => this.setState({ newsTab: label }),
+      })),
+      newsAll: (this.state.newsTab === '전체'
+        ? this.NEWS_ALL
+        : this.NEWS_ALL.filter(n => n.cat === this.state.newsTab)).map(n => this.newsCard(n)),
+
+      articleOpen: !!a,
+      closeArticle: () => this.setState({ article: null, summaryOpen: true }),
+      artCategory: a?.cat ?? '',
+      artTitle: a?.title ?? '',
+      artReporter: a?.reporter ?? '',
+      artDate: a?.date ?? '',
+      artSource: a?.source ?? '출처',
+      artSummary: (a?.summary ?? []).map((text, i) => ({ no: i + 1, text })),
+      artBody: (a?.body ?? []).map(text => ({ text })),
+      summaryChevron: this.state.summaryOpen ? 'expand_less' : 'expand_more',
+      summaryRows: this.state.summaryOpen ? '1fr' : '0fr',
+      summaryOp: this.state.summaryOpen ? 1 : 0,
+      summaryPad: this.state.summaryOpen ? '14px' : '0px',
+      toggleSummary: () => this.setState(s => ({ summaryOpen: !s.summaryOpen })),
+      hasRelated: !!a && this.NEWS_ALL.some(n => n.cat === a.cat && n.title !== a.title),
+      related: a
+        ? this.NEWS_ALL.filter(n => n.cat === a.cat && n.title !== a.title).slice(0, 3)
+            .map(n => ({ title: n.title, meta: `${n.cat} · ${n.date}`,
+              open: () => this.setState({ article: n, summaryOpen: true }) }))
+        : [],
+      groupOpen: this.state.group !== null,
+      closeGroup: () => this.setState({ group: null }),
+      sheetName: this.state.group?.name ?? '',
+      sheetRegion: this.state.group?.region ?? '',
+      sheetIntro: this.state.group?.intro ?? '',
+      sheetMembers: this.state.group?.members ?? 0,
+      sheetToday: this.state.group?.today ?? 0,
+      sheetCreated: this.state.group?.created ?? '',
+      sheetAvatars: Array.from({ length: Math.min(this.state.group?.members ?? 0, 5) },
+        (_, i) => ({ overlap: i === 0 ? '0px' : '-9px' })),
+      sheetHasMore: (this.state.group?.members ?? 0) > 5,
+      sheetMore: `+${Math.max((this.state.group?.members ?? 0) - 5, 0)}`,
+      sheetTodayLine: (this.state.group?.today ?? 0) > 0
+        ? `오늘 ${this.state.group.today}명이 활동했어요`
+        : '오늘은 아직 활동이 없어요',
+      sheetTodayColor: (this.state.group?.today ?? 0) > 0 ? '#0B4A32' : '#7D8783',
+      pointsOpen: this.state.pointsOpen,
+      openShop: () => this.setState({ pointsOpen: true }),
+      closePoints: () => this.setState({ pointsOpen: false, ledgerTab: '전체' }),
+      monthEarnedNum: '2,490',
+      monthSpentNum: '4,500',
+      ledgerTabs: ['전체', '적립', '사용'].map(label => ({
+        label,
+        bg: this.state.ledgerTab === label ? '#12784F' : '#fff',
+        fg: this.state.ledgerTab === label ? '#fff' : '#414B46',
+        border: this.state.ledgerTab === label ? '#12784F' : '#E0E8E3',
+        pick: () => this.setState({ ledgerTab: label }),
+      })),
+      ledgerGroups: this.LEDGER.map(g => ({
+        day: g.day,
+        rows: g.rows.filter(r =>
+          this.state.ledgerTab === '전체' ||
+          (this.state.ledgerTab === '적립' && r.kind === 'earn') ||
+          (this.state.ledgerTab === '사용' && r.kind === 'spend')),
+      })).filter(g => g.rows.length).map(g => ({
+        day: g.day,
+        rows: g.rows.map((r, i) => ({
+          icon: r.icon, title: r.title, sub: r.sub,
+          iconBg: r.kind === 'earn' ? '#D2E9DC' : '#EFF5F1',
+          iconFg: r.kind === 'earn' ? '#0B4A32' : '#7D8783',
+          amount: `${r.amount > 0 ? '+' : ''}${r.amount.toLocaleString('ko-KR')} P`,
+          amountColor: r.kind === 'earn' ? '#0B4A32' : '#414B46',
+          divider: i === 0 ? 'none' : '1px solid #EFF5F1',
+        })),
+      })),
+      ecoOpen: this.state.ecoOpen,
+      openEcoMath: () => this.setState({ ecoOpen: true }),
+      closeEcoMath: () => this.setState({ ecoOpen: false }),
+      joinOpen: !!this.state.join,
+      joinName: this.state.join ?? '',
+      askJoin: () => this.setState({ join: this.state.group?.name ?? '', group: null }),
+      closeJoin: () => this.setState({ join: null }),
+      doJoin: () => {
+        this.setState({ join: null, toast: '그룹에 가입했어요' });
+        clearTimeout(this._toast);
+        this._toast = setTimeout(() => this.setState({ toast: null }), 1900);
+      },
+      toastOpen: !!this.state.toast,
+      toastText: this.state.toast ?? '',
+      stop: e => e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>

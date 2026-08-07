@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#083F2B}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="그룹 만들기" style="width:390px;height:844px;background:#F3F8F4;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2)">
+
+  <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+
+  <div style="display:flex;align-items:center;gap:2px;padding:6px 16px 10px 6px">
+    <button style="width:44px;height:44px;flex:none;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+    <span style="flex:1;font:800 20px/1.4 Pretendard;letter-spacing:-.3px;color:#24302B">그룹 만들기</span>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;top:104px;bottom:108px;overflow-y:auto;scrollbar-width:none;padding:8px 20px 20px">
+
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <button style="width:92px;height:92px;border:0;border-radius:22px;background:#DCEDE3;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#B0E3C6"><span style="font-family:'Material Symbols Rounded';font-size:30px;color:#0B4A32">add_a_photo</span></button>
+      <span style="font:500 13px Pretendard;color:#5C6862;margin-top:8px">대표 사진 (선택)</span>
+    </div>
+
+    <div style="font:700 15px/1.4 Pretendard;color:#24302B;margin-top:26px">그룹 이름</div>
+    <div style="background:#fff;border:1.5px solid {{ nameBorder }};border-radius:14px;padding:13px 14px;margin-top:8px;display:flex;align-items:center;gap:8px;transition:border-color .18s">
+      <input value="{{ name }}" onInput="{{ onName }}" maxlength="20" placeholder="그룹 이름을 입력하세요" style="flex:1;min-width:0;border:0;outline:none;background:none;font:400 15px Pretendard;color:#24302B" />
+      <span style="font:500 13px Pretendard;color:#9FA9A4;font-variant-numeric:tabular-nums;flex:none">{{ nameCount }}/20</span>
+    </div>
+
+    <div style="font:700 15px/1.4 Pretendard;color:#24302B;margin-top:18px">동네</div>
+    <div style="background:#E7EFE9;border-radius:14px;padding:14px;margin-top:8px;display:flex;align-items:center;gap:8px">
+      <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#5C6862">location_on</span>
+      <span style="flex:1;font:500 15px Pretendard;color:#414B46">인천 남동구 만수동</span>
+      <span style="font:500 13px Pretendard;color:#7D8783;white-space:nowrap">현재 위치</span>
+    </div>
+    <div style="font:400 13px/1.55 Pretendard;color:#5C6862;margin-top:7px;padding:0 2px">동네는 현재 위치로 자동 설정돼요. 같은 동네 이웃에게 먼저 보입니다.</div>
+
+    <div style="font:700 15px/1.4 Pretendard;color:#24302B;margin-top:18px">소개</div>
+    <div style="background:#fff;border:1.5px solid {{ introBorder }};border-radius:14px;padding:13px 14px;margin-top:8px;transition:border-color .18s">
+      <textarea value="{{ intro }}" onInput="{{ onIntro }}" maxlength="200" rows="4" placeholder="그룹을 소개해 주세요" style="width:100%;border:0;outline:none;background:none;resize:none;font:400 15px/1.6 Pretendard;color:#24302B;box-sizing:border-box"></textarea>
+      <div style="text-align:right;font:500 13px Pretendard;color:#9FA9A4;font-variant-numeric:tabular-nums">{{ introCount }}/200</div>
+    </div>
+    <div style="font:400 13px/1.55 Pretendard;color:#5C6862;margin-top:7px;padding:0 2px">언제 어디서 모이는지 적어두면 이웃이 참여하기 쉬워요.</div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);border-top:1px solid #EFF5F1;padding:12px 20px 26px">
+    <button onClick="{{ submit }}" style="width:100%;height:56px;border:0;border-radius:18px;background:{{ ctaBg }};color:{{ ctaFg }};font:600 18px Pretendard;cursor:{{ ctaCursor }};box-shadow:{{ ctaShadow }};transition:background .2s">{{ ctaLabel }}</button>
+  </div>
+
+  <sc-if value="{{ doneOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ close }}" style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;align-items:center;justify-content:center;padding:0 28px;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:24px;padding:26px 22px 20px;animation:popIn .26s cubic-bezier(.32,.72,0,1)">
+        <span style="width:44px;height:44px;border-radius:50%;background:#EBF4EF;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#12784F;font-variation-settings:'FILL' 1">check_circle</span></span>
+        <div style="font:800 20px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:14px">그룹이 만들어졌어요</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:8px">{{ doneName }} 채팅방이 열렸어요. 이웃을 초대해보세요.</div>
+        <button onClick="{{ close }}" style="width:100%;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer;margin-top:20px">채팅방 열기</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ blockedOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ close }}" style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;align-items:center;justify-content:center;padding:0 28px;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:24px;padding:26px 22px 20px;animation:popIn .26s cubic-bezier(.32,.72,0,1)">
+        <span style="width:44px;height:44px;border-radius:50%;background:#FCEDEC;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#C4342E;font-variation-settings:'FILL' 1">error</span></span>
+        <div style="font:800 20px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:14px">이미 그룹에 가입되어 있어요</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:8px">그룹은 한 번에 하나만 가입할 수 있어요. 기존 그룹에서 탈퇴한 뒤 다시 만들어 주세요.</div>
+        <button onClick="{{ close }}" style="width:100%;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer;margin-top:20px">알겠어요</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;alreadyInGroup&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  // 목업을 실제 앱처럼 눌러볼 수 있게 상단 뒤로가기를 이전 화면으로 연결한다.
+  _wireBack() {
+    setTimeout(() => {
+      const root = document.querySelector('[data-screen-label]');
+      if (!root) return;
+      root.querySelectorAll('button').forEach(b => {
+        if (b.dataset.backWired) return;
+        const t = (b.textContent || '').trim();
+        if (t !== 'chevron_left' && t !== 'arrow_back') return;
+        // 화면 안에서 이미 다른 곳으로 돌아가는 버튼은 건드리지 않는다
+        if (root.querySelectorAll('[data-screen-label]').length > 1) return;
+        b.dataset.backWired = '1';
+        b.addEventListener('click', () => {
+          setTimeout(() => {
+            // 화면 안 하위 페이지가 닫힌 게 아니라면 이전 목업으로 이동
+            if (!document.querySelector('[data-sub-open]')) {
+              window.location.href = "Group Home.dc.html";
+            }
+          }, 30);
+        }, true);
+      });
+    }, 80);
+  }
+
+  componentDidMount() { this._wireBack(); }
+
+  state = { name: '', intro: '', creating: false, dialog: null };
+
+  renderVals() {
+    const name = this.state.name.trim();
+    const ready = name.length > 0 && !this.state.creating;
+    const already = this.props.alreadyInGroup ?? false;
+
+    return {
+      name: this.state.name,
+      nameCount: this.state.name.length,
+      nameBorder: this.state.name.length > 0 ? '#12784F' : '#E0E8E3',
+      onName: e => this.setState({ name: e.target.value }),
+
+      intro: this.state.intro,
+      introCount: this.state.intro.length,
+      introBorder: this.state.intro.length > 0 ? '#12784F' : '#E0E8E3',
+      onIntro: e => this.setState({ intro: e.target.value }),
+
+      ctaLabel: this.state.creating ? '만드는 중...' : '그룹 만들기',
+      ctaBg: ready ? '#12784F' : '#E0E8E3',
+      ctaFg: ready ? '#fff' : '#9FA9A4',
+      ctaCursor: ready ? 'pointer' : 'default',
+      ctaShadow: ready ? '0 3px 10px rgba(36,48,43,.16)' : 'none',
+      submit: () => {
+        if (!ready) return;
+        if (already) return this.setState({ dialog: 'blocked' });
+        this.setState({ creating: true });
+        clearTimeout(this._t);
+        this._t = setTimeout(() => this.setState({ creating: false, dialog: 'done' }), 700);
+      },
+
+      doneOpen: this.state.dialog === 'done',
+      blockedOpen: this.state.dialog === 'blocked',
+      doneName: name || '새 그룹',
+      close: () => this.setState({ dialog: null }),
+      stop: e => e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>

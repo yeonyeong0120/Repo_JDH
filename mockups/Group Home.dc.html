@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}
+a:hover{color:#0B5238}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="그룹 홈" style="width:390px;height:844px;background:#F3F8F4;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2)">
+
+  <div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:104px;scrollbar-width:none">
+    <div style="background:#D2E9DC;border-radius:0 0 28px 28px;padding:8px 20px 28px">
+      <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 6px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span style="flex:1;font:600 13px/1.4 Pretendard;color:#414B46">인천 남동구 만수동</span>
+        <button style="width:40px;height:40px;flex:none;border:0;border-radius:13px;background:rgba(255,255,255,.86);display:flex;align-items:center;justify-content:center;cursor:pointer" onClick="{{ goSearch }}"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#0B4A32">search</span></button>
+        <button style="width:40px;height:40px;flex:none;border:0;border-radius:13px;background:rgba(255,255,255,.86);display:flex;align-items:center;justify-content:center;cursor:pointer" onClick="{{ goCreate }}"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#0B4A32">add</span></button>
+      </div>
+      <div style="font:800 26px/1.35 Pretendard;letter-spacing:-.7px;color:#24302B;margin-top:16px">같이 주우면<br>두 배로 재밌어요</div>
+      <div style="font:600 15px/1.5 Pretendard;color:#0B4A32;margin-top:8px">{{ todayLine }}</div>
+    </div>
+
+    <div style="padding:24px 20px 0">
+      <div style="font:700 20px/1.4 Pretendard;letter-spacing:-.3px;color:#24302B">내 그룹</div>
+
+      <sc-if value="{{ joined }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ goChat }}" style="background:#fff;border-radius:20px;padding:18px;margin-top:12px;box-shadow:0 2px 12px rgba(36,48,43,.07);cursor:pointer" style-hover="box-shadow:0 4px 18px rgba(36,48,43,.12)">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="width:64px;height:64px;flex:none;border-radius:16px;background:#EFF5F1;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:27px;color:#9FA9A4;font-variation-settings:'FILL' 1">groups</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="font:700 20px/1.35 Pretendard;letter-spacing:-.3px;color:#24302B">만수동 줍깅크루</div>
+              <div style="font:500 13px/1.45 Pretendard;color:#5C6862;margin-top:4px">인천 남동구 만수동 · 멤버 14명</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:#DCEDE3;border-radius:14px;padding:11px 14px;margin-top:16px">
+            <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#0B4A32;font-variation-settings:'FILL' 1">directions_walk</span>
+            <span style="flex:1;font:600 15px/1.45 Pretendard;color:#414B46">오늘 3명이 활동했어요</span>
+            <span style="font:700 13px/1.4 Pretendard;color:#0B4A32;white-space:nowrap">피드 보기</span>
+            <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#0B4A32">chevron_right</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ notJoined }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fff;border-radius:20px;padding:18px;margin-top:12px;box-shadow:0 2px 12px rgba(36,48,43,.07)">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="width:56px;height:56px;flex:none;border-radius:16px;background:#EBF4EF;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:26px;color:#0B4A32">person_add</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="font:700 17px/1.4 Pretendard;color:#24302B">아직 가입한 그룹이 없어요</div>
+              <div style="font:400 15px/1.55 Pretendard;color:#5C6862;margin-top:4px">이웃과 함께 걷고 기록을 나눠보세요</div>
+            </div>
+          </div>
+          <button onClick="{{ goSearch }}" style="width:100%;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer;margin-top:16px">그룹 찾아보기</button>
+        </div>
+      </sc-if>
+
+      <div style="margin-top:28px">
+        <div style="font:700 20px/1.4 Pretendard;letter-spacing:-.3px;color:#24302B">다른 동네 그룹</div>
+        <div style="font:500 13px/1.45 Pretendard;color:#5C6862;margin-top:4px">오늘 활동이 많은 순이에요</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        <sc-for list="{{ others }}" as="g" hint-placeholder-count="4">
+          <div onClick="{{ goDetail }}" style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 12px rgba(36,48,43,.07);display:flex;align-items:center;gap:16px;cursor:pointer" style-hover="box-shadow:0 4px 18px rgba(36,48,43,.12)">
+            <div style="width:56px;height:56px;flex:none;border-radius:16px;background:#EFF5F1;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#9FA9A4;font-variation-settings:'FILL' 1">groups</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.name }}</div>
+              <div style="font:500 13px/1.45 Pretendard;color:#5C6862;margin-top:4px">{{ g.region }}</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
+                <sc-if value="{{ g.active }}" hint-placeholder-val="{{ true }}">
+                  <span style="width:7px;height:7px;border-radius:50%;background:#12784F"></span>
+                </sc-if>
+                <span style="font:{{ g.weight }} 13px/1.4 Pretendard;color:{{ g.color }}">{{ g.status }}</span>
+              </div>
+            </div>
+            <span style="font-family:'Material Symbols Rounded';font-size:24px;color:#9FA9A4">chevron_right</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:-1px;right:-1px;bottom:0;height:76px;box-sizing:border-box;background:#fff;border:1px solid #E0E8E3;border-radius:20px 20px 0 0">
+    <div style="position:absolute;left:0;right:0;bottom:12px;height:63px;display:flex;align-items:flex-end;justify-content:center">
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:{{ navHome }}">home</span><span style="font:700 13px Pretendard;color:{{ navHome }}">홈</span></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:{{ navGroup }}">diversity_1</span><span style="font:700 13px Pretendard;color:{{ navGroup }}">그룹</span></div>
+      <div style="width:86px"></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:{{ navMy }}">person</span><span style="font:700 13px Pretendard;color:{{ navMy }}">내 활동</span></div>
+      <div style="width:73px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-bottom:6px"><span style="font-family:'Material Symbols Rounded';font-size:32px;color:{{ navMenu }}">more_horiz</span><span style="font:700 13px Pretendard;color:{{ navMenu }}">메뉴</span></div>
+    </div>
+    <div style="position:absolute;left:50%;top:-13px;transform:translateX(-50%);width:88px;height:88px;border-radius:50%;background:#fff;border:1px solid #E0E8E3;display:flex;align-items:center;justify-content:center;box-sizing:border-box">
+      <div style="width:75px;height:75px;border-radius:50%;background:#12784F;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:33px;color:#fff;font-variation-settings:'FILL' 1,'wght' 500">directions_run</span><span style="font:700 14px Pretendard;color:#fff">시작</span></div>
+    </div>
+    <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:86px;height:3px;background:#fff;border-radius:0 0 3px 3px"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844},"joined":{"editor":"boolean","default":true,"tsType":"boolean"},"todayTotal":{"editor":"int","default":7,"min":0,"max":99,"tsType":"number"}}'>
+class Component extends DCLogic {
+  // 목업을 실제 앱처럼 눌러볼 수 있게 하단 내비를 연결한다.
+  _wireNav() {
+    const DEST = {"홈":"Home.dc.html","그룹":"Group Home.dc.html","내 활동":"My Activity.dc.html","메뉴":"Menu.dc.html","시작":"Destination Setup.dc.html"};
+    const here = "그룹";
+    setTimeout(() => {
+      document.querySelectorAll('[data-screen-label] div').forEach(el => {
+        const t = (el.textContent || '').trim();
+        const hit = Object.keys(DEST).find(k => t === k || t.endsWith(k));
+        if (!hit || hit === here) return;
+        if (getComputedStyle(el).cursor !== 'pointer') return;
+        if (el.dataset.navWired) return;
+        el.dataset.navWired = '1';
+        el.addEventListener('click', () => { window.location.href = DEST[hit]; });
+      });
+    }, 60);
+  }
+
+  componentDidMount() { this._wireNav(); }
+
+  GROUPS = [
+    { name: '구월동 새벽줍기', region: '인천 남동구 구월동', today: 5, members: 22, created: '2024.11',
+      intro: '출근 전 30분, 구월동 일대를 가볍게 돌며 주웁니다. 조용히 걷는 걸 좋아하는 분들 모임이에요.' },
+    { name: '소래포구 플로깅', region: '인천 남동구 논현동', today: 2, members: 9, created: '2025.03',
+      intro: '주말 아침 소래포구 산책로를 함께 걸어요. 바닷바람 맞으며 천천히 주웁니다.' },
+    { name: '인천대공원 산책단', region: '인천 남동구 장수동', today: 0, members: 31, created: '2024.06',
+      intro: '매일 저녁 인천대공원 순환길을 한 바퀴 돕니다. 인원이 많아 언제 나와도 누군가 있어요.' },
+    { name: '연수구 바다지기', region: '인천 연수구 송도동', today: 0, members: 16, created: '2025.01',
+      intro: '송도 해안 산책로 중심으로 활동합니다. 해양 쓰레기를 주로 수거해요.' },
+    { name: '부평 아침줍기', region: '인천 부평구 부평동', today: 0, members: 12, created: '2025.05',
+      intro: '부평역 주변 골목을 아침마다 정리합니다. 짧고 가볍게 참여할 수 있어요.' },
+  ];
+
+  componentDidUpdate() { this._wireNav(); }
+
+  renderVals() {
+    const joined = this.props.joined ?? true;
+    const todayTotal = this.props.todayTotal ?? 7;
+    return {
+      navHome: '#D9D9D9', navGroup: '#8E8E93', navMy: '#D9D9D9', navMenu: '#D9D9D9',
+
+      // group_screen.dart: 내 그룹 → context.push('/group/feed'), 다른 그룹 → GroupDetailScreen
+      goChat: () => { location.href = 'Group Chat.dc.html'; },
+      goSearch: () => { location.href = 'Group Search.dc.html'; },
+      goCreate: () => { location.href = 'Group Create.dc.html'; },
+      goDetail: () => { location.href = 'Group Detail.dc.html'; },
+      joined, notJoined: !joined,
+      todayLine: todayTotal > 0 ? `오늘 벌써 ${todayTotal}명 출동!` : '오늘 1번 타자 되어볼래요?',
+      others: this.GROUPS.map(g => ({
+        name: g.name, region: g.region,
+        active: g.today > 0,
+        status: g.today > 0 ? `오늘 ${g.today}명 활동 중` : `멤버 ${g.members}명`,
+        weight: g.today > 0 ? 700 : 500,
+        color: g.today > 0 ? '#0B4A32' : '#5C6862',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

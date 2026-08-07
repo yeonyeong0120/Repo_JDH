@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#083F2B}
+@keyframes dropIn{from{transform:translateY(-6px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="그룹 검색" style="width:390px;height:844px;background:#F3F8F4;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2)">
+
+  <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+
+  <div style="display:flex;align-items:center;gap:6px;padding:6px 16px 8px 6px">
+    <button style="width:44px;height:44px;flex:none;border:0;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+    <div style="flex:1;min-width:0;height:44px;background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(36,48,43,.07);display:flex;align-items:center;gap:8px;padding:0 14px">
+      <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#5C6862">search</span>
+      <input value="{{ query }}" onInput="{{ onQuery }}" placeholder="그룹명 또는 동네 검색" style="flex:1;min-width:0;border:0;outline:none;background:none;font:400 15px Pretendard;color:#24302B" />
+      <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ clearQuery }}" style="width:24px;height:24px;flex:none;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#5C6862">close</span></button>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;top:108px;bottom:0;overflow-y:auto;scrollbar-width:none;padding:6px 20px 28px">
+    <div style="position:relative;z-index:3;display:flex;align-items:center;gap:10px;padding:0 2px 12px">
+      <span style="flex:1;font:700 15px Pretendard;color:#24302B">{{ resultLine }}</span>
+      <div style="position:relative">
+      <button onClick="{{ toggleRegion }}" style="height:32px;border:0;background:none;padding:0;display:flex;align-items:center;gap:2px;cursor:pointer">
+        <span style="font:700 15px Pretendard;color:{{ regionFg }}">{{ regionLabel }}</span>
+        <span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ regionFg }};transform:rotate({{ regionRotate }});transition:transform .22s cubic-bezier(.32,.72,0,1)">expand_more</span>
+      </button>
+      <sc-if value="{{ regionOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:38px;right:0;width:150px;background:#fff;border-radius:16px;box-shadow:0 8px 28px rgba(36,48,43,.16);padding:8px 0;animation:dropIn .18s cubic-bezier(.32,.72,0,1);transform-origin:top right">
+          <sc-for list="{{ regionOptions }}" as="o" hint-placeholder-count="3">
+            <button onClick="{{ o.pick }}" style="width:100%;height:48px;border:0;background:none;display:flex;align-items:center;padding:0 20px;cursor:pointer;transition:background .14s" style-hover="background:#F3F8F4">
+              <span style="flex:1;text-align:left;font:{{ o.weight }} 16px Pretendard;color:{{ o.fg }};white-space:nowrap">{{ o.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      </div>
+      <span style="width:1px;height:14px;background:#DDE4DF"></span>
+      <div style="position:relative">
+      <button onClick="{{ toggleSort }}" style="height:32px;border:0;background:none;padding:0;display:flex;align-items:center;gap:2px;cursor:pointer">
+        <span style="font:700 15px Pretendard;color:{{ sortFg }}">{{ sortLabel }}</span>
+        <span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ sortFg }};transform:rotate({{ sortRotate }});transition:transform .22s cubic-bezier(.32,.72,0,1)">expand_more</span>
+      </button>
+      <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:38px;right:0;width:168px;background:#fff;border-radius:16px;box-shadow:0 8px 28px rgba(36,48,43,.16);padding:8px 0;animation:dropIn .18s cubic-bezier(.32,.72,0,1);transform-origin:top right">
+          <sc-for list="{{ sortOptions }}" as="o" hint-placeholder-count="3">
+            <button onClick="{{ o.pick }}" style="width:100%;height:48px;border:0;background:none;display:flex;align-items:center;padding:0 20px;cursor:pointer;transition:background .14s" style-hover="background:#F3F8F4">
+              <span style="flex:1;text-align:left;font:{{ o.weight }} 16px Pretendard;color:{{ o.fg }};white-space:nowrap">{{ o.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      </div>
+    </div>
+
+    <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ results }}" as="g" hint-placeholder-count="4">
+          <div onClick="{{ goDetail }}" style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 12px rgba(36,48,43,.07);display:flex;align-items:center;gap:16px;cursor:pointer" style-hover="box-shadow:0 4px 18px rgba(36,48,43,.12)">
+            <div style="width:56px;height:56px;flex:none;border-radius:16px;background:#EFF5F1;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#9FA9A4;font-variation-settings:'FILL' 1">groups</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="font:700 17px/1.4 Pretendard;letter-spacing:-.2px;color:#24302B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.name }}</div>
+              <div style="font:500 13px/1.45 Pretendard;color:#5C6862;margin-top:4px">{{ g.region }}</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
+                <sc-if value="{{ g.active }}" hint-placeholder-val="{{ true }}"><span style="width:7px;height:7px;border-radius:50%;background:#12784F"></span></sc-if>
+                <span style="font:{{ g.weight }} 13px/1.4 Pretendard;color:{{ g.color }}">{{ g.status }}</span>
+              </div>
+            </div>
+            <span style="font-family:'Material Symbols Rounded';font-size:24px;color:#9FA9A4">chevron_right</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:70px 24px 0">
+        <div style="width:64px;height:64px;border-radius:50%;background:#E9EFEB;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:30px;color:#9FA9A4">search_off</span></div>
+        <div style="font:700 17px/1.4 Pretendard;color:#24302B;margin-top:16px">찾는 그룹이 없어요</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:6px">다른 이름으로 찾아보거나<br>직접 그룹을 만들어보세요</div>
+        <button onClick="{{ goCreate }}" style="height:52px;border:1.5px solid #12784F;border-radius:16px;background:#fff;color:#0B4A32;font:600 16px Pretendard;padding:0 22px;cursor:pointer;margin-top:20px;display:flex;align-items:center;gap:7px"><span style="font-family:'Material Symbols Rounded';font-size:20px">add</span>그룹 만들기</button>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ anyOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeFilters }}" style="position:absolute;inset:0;z-index:2"></div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  // 목업을 실제 앱처럼 눌러볼 수 있게 상단 뒤로가기를 이전 화면으로 연결한다.
+  _wireBack() {
+    setTimeout(() => {
+      const root = document.querySelector('[data-screen-label]');
+      if (!root) return;
+      root.querySelectorAll('button').forEach(b => {
+        if (b.dataset.backWired) return;
+        const t = (b.textContent || '').trim();
+        if (t !== 'chevron_left' && t !== 'arrow_back') return;
+        // 화면 안에서 이미 다른 곳으로 돌아가는 버튼은 건드리지 않는다
+        if (root.querySelectorAll('[data-screen-label]').length > 1) return;
+        b.dataset.backWired = '1';
+        b.addEventListener('click', () => {
+          setTimeout(() => {
+            // 화면 안 하위 페이지가 닫힌 게 아니라면 이전 목업으로 이동
+            if (!document.querySelector('[data-sub-open]')) {
+              window.location.href = "Group Home.dc.html";
+            }
+          }, 30);
+        }, true);
+      });
+    }, 80);
+  }
+
+  componentDidMount() { this._wireBack(); }
+
+  state = { query: '', region: 0, sort: 0, open: null, style: 'A', sheet: false };
+
+  REGIONS = ['내 동네', '전체'];
+  SORTS = ['인원 많은 순', '최근 활동순', '최신순'];
+
+  GROUPS = [
+    { name: '구월동 새벽줍기', region: '인천 남동구 구월동', today: 5, members: 22, created: 4 },
+    { name: '소래포구 플로깅', region: '인천 남동구 논현동', today: 2, members: 9, created: 1 },
+    { name: '인천대공원 산책단', region: '인천 남동구 장수동', today: 0, members: 31, created: 8 },
+    { name: '만수동 저녁산책', region: '인천 남동구 만수동', today: 0, members: 7, created: 0 },
+    { name: '연수구 바다지기', region: '인천 연수구 송도동', today: 0, members: 16, created: 6 },
+    { name: '부평 아침줍기', region: '인천 부평구 부평동', today: 0, members: 12, created: 2 },
+  ];
+
+  renderVals() {
+    const q = this.state.query.trim();
+    const nearby = ['인천 남동구'];
+    let list = this.GROUPS
+      .filter(g => this.state.region === 1 || nearby.some(r => g.region.startsWith(r)))
+      .filter(g => !q || g.name.includes(q) || g.region.includes(q));
+    if (this.state.sort === 0) list = [...list].sort((a, b) => b.members - a.members);
+    else if (this.state.sort === 1) list = [...list].sort((a, b) => b.today - a.today || b.members - a.members);
+    else list = [...list].sort((a, b) => a.created - b.created);
+
+    const dd = (kind, options, current) => options.map((label, i) => {
+      const on = current === i;
+      return {
+        label, on,
+        weight: on ? 700 : 500,
+        fg: on ? '#0B4A32' : '#5C6862',
+        pick: () => this.setState({ [kind]: i, open: null }),
+      };
+    });
+    const seg = (kind, options, current) => options.map((label, i) => {
+      const on = current === i;
+      return {
+        label,
+        chipBg: on ? '#12784F' : '#fff',
+        chipFg: on ? '#fff' : '#414B46',
+        border: on ? '#12784F' : '#E0E8E3',
+        segBg: on ? '#fff' : 'transparent',
+        segFg: on ? '#0B4A32' : '#5C6862',
+        segWeight: on ? 700 : 500,
+        segShadow: on ? '0 1px 4px rgba(36,48,43,.14)' : 'none',
+        pick: () => this.setState({ [kind]: i }),
+      };
+    });
+    const chip = (isOpen) => ({
+      fg: isOpen ? '#0B4A32' : '#414B46',
+      rotate: isOpen ? '180deg' : '0deg',
+    });
+    const rc = chip(this.state.open === 'region', this.state.region === 0);
+    const sc = chip(this.state.open === 'sort', this.state.sort === 0);
+
+    return {
+      query: this.state.query,
+      hasQuery: q.length > 0,
+      onQuery: e => this.setState({ query: e.target.value }),
+      clearQuery: () => this.setState({ query: '' }),
+
+      regionLabel: this.REGIONS[this.state.region],
+      regionOpen: this.state.open === 'region',
+      regionFg: rc.fg,
+      regionRotate: rc.rotate,
+      regionOptions: dd('region', this.REGIONS, this.state.region),
+      toggleRegion: () => this.setState(s => ({ open: s.open === 'region' ? null : 'region' })),
+
+      sortLabel: this.SORTS[this.state.sort],
+      sortOpen: this.state.open === 'sort',
+      sortFg: sc.fg,
+      sortRotate: sc.rotate,
+      sortOptions: dd('sort', this.SORTS, this.state.sort),
+      toggleSort: () => this.setState(s => ({ open: s.open === 'sort' ? null : 'sort' })),
+
+      anyOpen: this.state.open !== null,
+      closeFilters: () => this.setState({ open: null }),
+
+      styleTabs: [['A', '드롭다운'], ['B', '칩 나열'], ['C', '필터 시트'], ['D', '세그먼트']].map(([k, label]) => ({
+        label,
+        bg: this.state.style === k ? '#24302B' : '#fff',
+        fg: this.state.style === k ? '#fff' : '#7D8783',
+        border: this.state.style === k ? '#24302B' : '#E0E8E3',
+        pick: () => this.setState({ style: k, open: null, sheet: false }),
+      })),
+      isA: this.state.style === 'A',
+      isB: this.state.style === 'B',
+      isC: this.state.style === 'C',
+      isD: this.state.style === 'D',
+      listTop: this.state.style === 'D' ? '234px' : '186px',
+
+      segRegion: seg('region', this.REGIONS, this.state.region),
+      segSort: seg('sort', this.SORTS, this.state.sort),
+      filterSummary: `${this.REGIONS[this.state.region]} · ${this.SORTS[this.state.sort]}`,
+      sheetOpen: this.state.sheet,
+      openSheet: () => this.setState({ sheet: true }),
+      closeSheet: () => this.setState({ sheet: false }),
+      stop: e => e.stopPropagation(),
+      switchBg: this.state.region === 0 ? '#12784F' : '#C3CCC7',
+      switchX: this.state.region === 0 ? '21px' : '3px',
+      switchLabel: this.state.region === 0 ? '내 동네만 보기' : '인천 전체 보기',
+      toggleRegionSwitch: () => this.setState(s => ({ region: s.region === 0 ? 1 : 0 })),
+
+      resultLine: q ? `'${q}' 검색 결과 ${list.length}개` : `${list.length}개 그룹`,
+      hasResults: list.length > 0,
+      empty: list.length === 0,
+      results: list.map(g => ({
+        name: g.name, region: g.region,
+        active: g.today > 0,
+        status: g.today > 0 ? `오늘 ${g.today}명 활동 중` : `멤버 ${g.members}명`,
+        weight: g.today > 0 ? 700 : 500,
+        color: g.today > 0 ? '#0B4A32' : '#5C6862',
+      })),
+      goDetail: () => { location.href = 'Group Detail.dc.html'; },
+      goCreate: () => { location.href = 'Group Create.dc.html'; },
+    };
+  }
+}
+</script>
+</body>
+</html>

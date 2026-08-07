@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#0B5238}
+@keyframes popIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes popOut{from{transform:scale(1);opacity:1}to{transform:scale(.96);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes sheetDown{from{transform:translateY(0)}to{transform:translateY(100%)}}
+@keyframes halo{0%,100%{opacity:.5;transform:scale(.7)}50%{opacity:0;transform:scale(1.5)}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div style="width:390px;height:844px;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2);background:#F3F8F4">
+<div data-screen-label="플로깅 활동" style="position:absolute;inset:0;background:#F3F8F4;overflow:hidden">
+
+  <svg viewBox="0 0 390 844" width="390" height="844" style="position:absolute;inset:0"><rect width="390" height="844" fill="#E9EFE9"></rect><rect x="-20" y="150" width="200" height="160" rx="26" fill="#DCE9DC"></rect><rect x="230" y="430" width="220" height="200" rx="30" fill="#DCE9DC"></rect><rect x="40" y="600" width="150" height="120" rx="22" fill="#DCE9DC"></rect><path d="M-10 360 H400" stroke="#F6F8F6" stroke-width="26"></path><path d="M-10 560 H400" stroke="#F6F8F6" stroke-width="18"></path><path d="M120 -10 V860" stroke="#F6F8F6" stroke-width="22"></path><path d="M290 -10 V860" stroke="#F6F8F6" stroke-width="16"></path><path d="{{ routeD }}" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" style="transition:d .6s cubic-bezier(.32,.72,0,1)"></path><path d="{{ routeD }}" fill="none" stroke="#1D9E75" stroke-width="6" stroke-linecap="round" style="transition:d .6s cubic-bezier(.32,.72,0,1)"></path></svg>
+
+  <div style="position:absolute;left:88px;top:308px;width:44px;height:44px;border-radius:50%;background:rgba(23,133,90,.28);animation:halo 2.6s ease-out infinite"></div>
+  <div style="position:absolute;left:98px;top:318px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(36,48,43,.3);display:flex;align-items:center;justify-content:center"><span style="width:13px;height:13px;border-radius:50%;background:{{ brand }}"></span></div>
+
+  <div style="position:absolute;left:279px;top:141px;display:flex;flex-direction:column;align-items:center">
+    <div style="width:42px;height:42px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(36,48,43,.22);display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:22px;color:{{ brand }};font-variation-settings:'FILL' 1">flag</span></div>
+    <div style="width:12px;height:9px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0);margin-top:-1px"></div>
+  </div>
+
+  <div style="position:absolute;left:52px;top:356px;display:flex;flex-direction:column;align-items:center">
+    <div style="width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid #fff;box-shadow:0 3px 10px rgba(36,48,43,.18);display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ brand }};font-variation-settings:'FILL' 1">person</span></div>
+    <div style="width:10px;height:7px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0);margin-top:-1px"></div>
+  </div>
+
+  <div onClick="{{ toggleOffRoute }}" style="position:absolute;left:186px;top:238px;display:flex;flex-direction:column;align-items:center;cursor:pointer">
+    <div style="width:34px;height:34px;border-radius:50%;background:{{ brandTint }};border:2px solid #fff;box-shadow:0 3px 10px rgba(36,48,43,.18);display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#0B4A32;font-variation-settings:'FILL' 1">recycling</span></div>
+    <div style="width:10px;height:7px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0);margin-top:-1px"></div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+
+  <div style="position:absolute;left:16px;right:16px;top:60px;display:flex;gap:10px;align-items:stretch">
+    <button onClick="{{ openBack }}" style="width:40px;flex:none;border:1px solid rgba(36,48,43,.06);border-radius:13px;background:rgba(255,255,255,.86);box-shadow:0 2px 10px rgba(36,48,43,.1);display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#fff"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B;font-variation-settings:'wght' 500">chevron_left</span></button>
+    <div style="flex:1;min-width:0;background:rgba(255,255,255,.94);border:1px solid rgba(36,48,43,.07);border-radius:14px;padding:7px 12px;box-shadow:0 4px 16px rgba(36,48,43,.1)">
+      <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'Material Symbols Rounded';font-size:17px;color:{{ brand }};font-variation-settings:'FILL' 1">flag</span><span style="font:700 12px/1.4 Pretendard;letter-spacing:.6px;color:#0B4A32;flex:none">목적지</span><span style="font:600 14px/1.4 Pretendard;letter-spacing:-.1px;color:#24302B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ place }}</span></div>
+      <sc-if value="{{ rangeWarn }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:5px;margin-top:5px;background:#FCEDEC;border-radius:9px;padding:5px 8px"><span style="font-family:'Material Symbols Rounded';font-size:16px;color:#C4342E;font-variation-settings:'FILL' 1">error</span><span style="font:600 13px/1.4 Pretendard;color:#A93028">{{ rangeMsg }}</span></div>
+      </sc-if>
+      <sc-if value="{{ showRemaining }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px"><div style="flex:1;height:4px;border-radius:3px;background:#E0E8E3;overflow:hidden"><div style="width:62%;height:100%;border-radius:3px;background:#34AE77"></div></div><span style="font:500 13px/1.4 Pretendard;color:#5C6862;font-variant-numeric:tabular-nums;flex:none">1.2km 남음</span></div>
+      </sc-if>
+    </div>
+    <button onClick="{{ openHelp }}" style="width:40px;flex:none;border:1px solid rgba(36,48,43,.06);border-radius:13px;background:rgba(255,255,255,.86);box-shadow:0 2px 10px rgba(36,48,43,.1);display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#fff"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#414B46">help</span></button>
+  </div>
+
+  <sc-if value="{{ rerouting }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:16px;right:16px;bottom:{{ bannerBottom }};display:flex;justify-content:center;transition:bottom .5s cubic-bezier(.32,.72,0,1)">
+    <div style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.97);border:1px solid #E0E8E3;border-radius:16px;padding:11px 14px;box-shadow:0 4px 14px rgba(36,48,43,.14);animation:fadeIn .2s ease">
+      <span style="width:18px;height:18px;border-radius:50%;border:3px solid #DCEDE3;border-top-color:{{ brand }};animation:spin .8s linear infinite"></span>
+      <span style="font:600 14px/1.4 Pretendard;color:#414B46;white-space:nowrap">새 경로를 계산하고 있어요</span>
+    </div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ routeToast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:16px;right:16px;bottom:{{ bannerBottom }};display:flex;justify-content:center;transition:bottom .5s cubic-bezier(.32,.72,0,1)">
+    <div style="display:flex;align-items:center;gap:9px;background:{{ brandTint }};border:1px solid #9CDDB6;border-radius:16px;padding:11px 14px;box-shadow:0 4px 14px rgba(36,48,43,.14);animation:fadeIn .24s ease">
+      <span style="font-family:'Material Symbols Rounded';font-size:19px;color:{{ brandDeep }};font-variation-settings:'FILL' 1">check_circle</span>
+      <span style="font:600 14px/1.4 Pretendard;color:{{ brandDeep }};white-space:nowrap">새 경로를 받았어요 · 1.4km</span>
+    </div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ offRoute }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:16px;right:16px;bottom:{{ bannerBottom }};display:flex;justify-content:center;transition:bottom .5s cubic-bezier(.32,.72,0,1)">
+    <div style="display:flex;align-items:center;gap:10px;background:#FCEDEC;border:1px solid #F1C9C5;border-radius:16px;padding:9px 12px;box-shadow:0 4px 14px rgba(36,48,43,.14);animation:fadeIn .28s ease">
+      <span style="width:28px;height:28px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:17px;color:#C4342E;font-variation-settings:'FILL' 1">alt_route</span></span>
+      <span style="min-width:0"><span style="display:block;font:700 14px/1.35 Pretendard;color:#A93028;white-space:nowrap">추천 경로에서 벗어났어요</span><span style="display:block;font:500 13px/1.4 Pretendard;color:#5C6862;white-space:nowrap">120m · 45초 이탈</span></span>
+      <button onClick="{{ dismissOffRoute }}" style="flex:none;height:36px;border:1px solid #EBD2CF;border-radius:18px;background:#fff;color:#A93028;font:600 14px Pretendard;padding:0 12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px" style-hover="background:#FFF6F5"><span style="font-family:'Material Symbols Rounded';font-size:17px">refresh</span>재추천</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="position:absolute;left:16px;right:16px;bottom:24px;background:#fff;border-radius:26px;padding:20px;box-shadow:0 -2px 28px rgba(36,48,43,.16)">
+    <div style="display:flex;justify-content:center;margin-top:-34px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #E0E8E3;border-radius:999px;padding:7px 14px;box-shadow:0 3px 10px rgba(36,48,43,.1)"><span style="width:8px;height:8px;border-radius:50%;background:#34AE77"></span><span style="font:600 13px/1.4 Pretendard;color:#414B46">GPS 양호 · 기록 중</span></div></div>
+    <div style="text-align:center">
+      <div style="font:500 13px/1.5 Pretendard;color:#5C6862">활동 시간</div>
+      <div style="font:800 44px/1.15 Pretendard;letter-spacing:-1.1px;color:#24302B;font-variant-numeric:tabular-nums;margin-top:2px">{{ clock }}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:{{ cols }};column-gap:{{ colGap }};margin:30px 0 0;align-items:start;transition:{{ rowT }}">
+      <div style="position:relative;min-width:0;opacity:{{ sideOp }};transition:opacity {{ fadeT }}">
+        <div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #fff,0 2px 8px rgba(36,48,43,.14);z-index:2;pointer-events:none"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#2F6FB0;font-variation-settings:'FILL' 1">footprint</span></div>
+        <div style="height:52px;background:#F3F8F4;border-radius:16px;overflow:hidden;position:relative"><div style="position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;align-items:baseline;gap:4px;white-space:nowrap"><span style="font-family:Pretendard;font-weight:700;font-size:{{ stepsFs }};line-height:1.2;color:#24302B;font-variant-numeric:tabular-nums;letter-spacing:-.4px">{{ steps }}</span><span style="font:500 14px/1.3 Pretendard;color:#5C6862">걸음</span></div></div>
+      </div>
+      <div style="position:relative;min-width:0;opacity:{{ sideOp }};transition:opacity {{ fadeT }}">
+        <div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #fff,0 2px 8px rgba(36,48,43,.14);z-index:2;pointer-events:none"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#5F51A0;font-variation-settings:'FILL' 1">route</span></div>
+        <div style="height:52px;background:#F3F8F4;border-radius:16px;overflow:hidden;position:relative"><div style="position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;align-items:baseline;gap:4px;white-space:nowrap"><span style="font:700 19px/1.2 Pretendard;color:#24302B;font-variant-numeric:tabular-nums;letter-spacing:-.4px">{{ dist }}</span><span style="font:500 14px/1.3 Pretendard;color:#5C6862">km</span></div></div>
+      </div>
+      <button onClick="{{ toggleChips }}" style="min-width:0;height:{{ tileH }};background:{{ brandTint }};border:0;border-radius:16px;padding:0;position:relative;cursor:pointer;transition:{{ tileT }}">
+        <div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #fff,0 2px 8px rgba(36,48,43,.14);z-index:2;pointer-events:none;opacity:{{ hCollapsedOp }};transition:opacity {{ headFadeT }}"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:{{ brandDeep }};font-variation-settings:'FILL' 1">delete</span></div>
+        <div style="position:absolute;inset:0;border-radius:16px;overflow:hidden">
+          <div style="position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;align-items:baseline;gap:3px;white-space:nowrap;opacity:{{ hCollapsedOp }};transition:opacity {{ headFadeT }};pointer-events:none"><span style="font-family:Pretendard;font-weight:700;font-size:{{ totalFs }};line-height:1.2;color:#24302B;font-variant-numeric:tabular-nums;letter-spacing:-.4px">{{ total }}</span><span style="font:500 14px/1.3 Pretendard;color:#5C6862">개</span><span style="font-family:'Material Symbols Rounded';font-size:16px;color:{{ brandSoft }};align-self:center">unfold_more</span></div>
+          <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:298px;height:24px;display:flex;align-items:center;justify-content:center;gap:6px;opacity:{{ hOpenOp }};transition:opacity {{ headFadeT }};pointer-events:none"><span style="font:700 17px/1.3 Pretendard;color:{{ brandDeep }};font-variant-numeric:tabular-nums;white-space:nowrap">총 {{ total }}개 수거 중</span><span style="font-family:'Material Symbols Rounded';font-size:16px;color:{{ brandSoft }}">unfold_less</span></div>
+          <div style="position:absolute;top:44px;left:50%;width:298px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;opacity:{{ chipOp }};transform:translateX(-50%) translateY({{ chipY }});transition:{{ chipT }};pointer-events:none">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border-radius:12px;padding:8px 2px"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#5F9EE8;font-variation-settings:'FILL' 1">water_bottle</span><span style="font:700 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ cPlastic }}</span><span style="font:500 13px Pretendard;color:#5C6862">플라스틱</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border-radius:12px;padding:8px 2px"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#E07B2E;font-variation-settings:'FILL' 1">local_drink</span><span style="font:700 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ cCan }}</span><span style="font:500 13px Pretendard;color:#5C6862">캔</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border-radius:12px;padding:8px 2px"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#31C88B;font-variation-settings:'FILL' 1">description</span><span style="font:700 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ cPaper }}</span><span style="font:500 13px Pretendard;color:#5C6862">종이</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border-radius:12px;padding:8px 2px"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#8E7EC4;font-variation-settings:'FILL' 1">wine_bar</span><span style="font:700 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ cGlass }}</span><span style="font:500 13px Pretendard;color:#5C6862">유리</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border-radius:12px;padding:8px 2px"><span style="font-family:'Material Symbols Rounded';font-size:23px;color:#7D8783;font-variation-settings:'FILL' 1">delete</span><span style="font:700 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ cTrash }}</span><span style="font:500 13px Pretendard;color:#5C6862">일반</span></div>
+          </div>
+        </div>
+      </button>
+    </div>
+    <div style="height:64px;background:#F3F8F4;border-radius:32px;display:grid;grid-template-columns:{{ actCols }};padding:5px;gap:5px;margin-top:16px;transition:grid-template-columns .42s cubic-bezier(.32,.72,0,1)">
+      <button onClick="{{ pressShot }}" style="min-width:0;border:0;border-radius:27px;background:{{ shotBg }};color:{{ shotFg }};display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;overflow:hidden;box-shadow:{{ shotShadow }};transition:background .3s ease,color .3s ease,box-shadow .3s ease"><span style="font-family:'Material Symbols Rounded';font-size:27px;font-variation-settings:'FILL' 1">photo_camera</span><span style="text-align:{{ shotAlign }};min-width:0"><span style="display:block;font:600 18px Pretendard;letter-spacing:-.2px;white-space:nowrap">{{ shotLabel }}</span><span style="display:block;font:400 13px Pretendard;color:rgba(255,255,255,.9);max-height:{{ shotSubH }};opacity:{{ shotSubOp }};overflow:hidden;white-space:nowrap;transition:max-height .34s cubic-bezier(.32,.72,0,1),opacity .28s ease">한 개씩 찍기</span></span></button>
+      <button onClick="{{ pressEnd }}" style="min-width:0;border:0;border-radius:27px;background:{{ endBg }};color:{{ endFg }};display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;box-shadow:{{ endShadow }};transition:background .3s ease,color .3s ease,box-shadow .3s ease"><span style="font:600 18px Pretendard;letter-spacing:-.2px;white-space:nowrap">{{ endLabel }}</span></button>
+    </div>
+  </div>
+
+  <sc-if value="{{ backVisible }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;align-items:center;justify-content:center;padding:0 28px;animation:{{ backBackdropAnim }}">
+      <div style="width:100%;background:#fff;border-radius:24px;padding:26px 22px 20px;box-shadow:0 12px 32px rgba(36,48,43,.24);animation:{{ backDialogAnim }}">
+        <span style="width:44px;height:44px;border-radius:50%;background:#FBEBEA;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#C4342E;font-variation-settings:'FILL' 1">warning</span></span>
+        <div style="font:800 20px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:14px">지금 나가면 기록이 사라져요</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:8px">아직 저장되지 않은 활동이에요. 나가면 처음부터 다시 시작해야 합니다.</div>
+        <div style="display:flex;gap:8px;margin-top:20px">
+          <button onClick="{{ goHome }}" style="flex:1;height:52px;background:#fff;color:#414B46;font:600 17px Pretendard;cursor:pointer;border:1.5px solid #E0E8E3;border-radius:16px">나가기</button>
+          <button onClick="{{ closeBack }}" style="flex:1;height:52px;background:{{ brand }};color:#fff;font:600 17px Pretendard;cursor:pointer;border:0;border-radius:16px">계속하기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:24px;right:24px;bottom:150px;z-index:12;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:8px;background:#24302B;border-radius:999px;padding:11px 18px;box-shadow:0 6px 20px rgba(16,21,18,.34);animation:fadeIn .2s ease">
+        <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#7FDCAE;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font:600 15px Pretendard;color:#fff">{{ toastText }}</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ helpVisible }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeHelp }}" style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:{{ backdropAnim }}">
+      <div style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:24px 20px 30px;animation:{{ sheetAnim }}">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E0E8E3;margin:0 auto 16px"></div>
+        <div style="font:800 21px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B">{{ helpTitle }}</div>
+        <sc-if value="{{ isFirstRun }}" hint-placeholder-val="{{ false }}">
+          <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:6px">시작하기 전에 네 가지만 알려드릴게요.</div>
+        </sc-if>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+          <div style="display:flex;gap:11px;align-items:flex-start;background:#F3F8F4;border-radius:16px;padding:13px 14px">
+            <span style="width:32px;height:32px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:{{ brand }};font-variation-settings:'FILL' 1">map</span></span>
+            <span><span style="display:block;font:700 15px/1.4 Pretendard;color:#24302B">활동 범위</span><span style="display:block;font:400 14px/1.55 Pretendard;color:#5C6862;margin-top:2px">인천시 안에서만 플로깅할 수 있어요. 목적지는 300km 이내로 정해주세요.</span></span>
+          </div>
+          <div style="display:flex;gap:11px;align-items:flex-start;background:#F3F8F4;border-radius:16px;padding:13px 14px">
+            <span style="width:32px;height:32px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:{{ brand }};font-variation-settings:'FILL' 1">recycling</span></span>
+            <span><span style="display:block;font:700 15px/1.4 Pretendard;color:#24302B">정화 거점과 위험 구간</span><span style="display:block;font:400 14px/1.55 Pretendard;color:#5C6862;margin-top:2px">지도의 초록 핀은 <b style="font-weight:700;color:#24302B">정화 거점</b>이에요. 쓰레기가 많이 나오는 곳이라 여기를 지나면 더 많이 주울 수 있어요.</span><span style="display:block;font:400 14px/1.55 Pretendard;color:#5C6862;margin-top:6px"><b style="font-weight:700;color:#24302B">위험 구간</b>은 공사장·차도처럼 걷기 위험한 곳이에요. 경로는 이곳을 피해서 그려집니다.</span></span>
+          </div>
+          <div style="display:flex;gap:11px;align-items:flex-start;background:#F3F8F4;border-radius:16px;padding:13px 14px">
+            <span style="width:32px;height:32px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:{{ brand }};font-variation-settings:'FILL' 1">photo_camera</span></span>
+            <span><span style="display:block;font:700 15px/1.4 Pretendard;color:#24302B">쓰레기 촬영</span><span style="display:block;font:400 14px/1.55 Pretendard;color:#5C6862;margin-top:2px">주울 때마다 한 개씩 찍어주세요. 종류는 자동으로 나눠 담깁니다.</span><span style="display:block;font:600 14px/1.55 Pretendard;color:#C4342E;margin-top:6px">주운 쓰레기는 활동 중에만 촬영할 수 있으며, 종료 후에는 활동 인증샷만 촬영이 가능해요.</span></span>
+          </div>
+          <div style="display:flex;gap:11px;align-items:flex-start;background:#F3F8F4;border-radius:16px;padding:13px 14px">
+            <span style="width:32px;height:32px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:{{ brand }};font-variation-settings:'FILL' 1">flag</span></span>
+            <span><span style="display:block;font:700 15px/1.4 Pretendard;color:#24302B">활동 종료 및 포인트 획득</span><span style="display:block;font:400 14px/1.55 Pretendard;color:#5C6862;margin-top:2px">활동을 종료하면 걸음·거리·수거량으로 <b style="font-weight:700;color:#24302B">포인트</b>와 <b style="font-weight:700;color:#24302B">경험치</b>를 얻을 수 있어요.<br>정산 화면에서 촬영하는 <b style="font-weight:700;color:#24302B">인증샷</b>은 그룹 채팅방에 올라가며, 선택사항이에요. 나중에 내 활동에서 따로 첨부할 수도 있어요.</span></span>
+          </div>
+        </div>
+        <button onClick="{{ closeHelp }}" style="width:100%;height:52px;border:0;border-radius:16px;background:{{ brand }};color:#fff;font:600 17px Pretendard;cursor:pointer;margin-top:18px">{{ helpCta }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ endVisible }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;align-items:flex-end;animation:{{ endBackdropAnim }}">
+      <div style="width:100%;background:#fff;border-radius:24px 24px 38px 38px;padding:28px 20px 32px;animation:{{ endSheetAnim }}">
+        <div style="font:800 22px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B">오늘의 플로깅을 마칠까요?</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:8px">지금까지 총 {{ total }}개를 주웠어요.</div>
+        <div style="display:flex;gap:10px;margin-top:22px"><button onClick="{{ closeEnd }}" style="flex:1;height:52px;border:0;border-radius:16px;background:{{ brand }};color:#fff;font:600 17px Pretendard;cursor:pointer">계속하기</button><button onClick="{{ goSettlement }}" style="flex:1;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#C4342E;font:600 17px Pretendard;cursor:pointer">종료</button></div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;place&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;인천대공원 순환길&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showRemaining&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;startFocus&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;shot&quot;,&quot;end&quot;],&quot;default&quot;:&quot;shot&quot;,&quot;tsType&quot;:&quot;'shot'|'end'&quot;},&quot;rangeState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ok&quot;,&quot;outsideCity&quot;,&quot;tooFar&quot;],&quot;default&quot;:&quot;ok&quot;,&quot;tsType&quot;:&quot;'ok'|'outsideCity'|'tooFar'&quot;},&quot;offRoute&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stepCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:200000,&quot;step&quot;:1000,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { sec: 2538, counts: { plastic: 4, can: 2, paper: 1, glass: 0, trash: 3 }, endOpen: false, chipsOpen: false, focus: null, icon: 3, pin: 1, start: 6, stat: 'A', helpOpen: false, near: false };
+
+  componentDidMount() {
+    this._t = setInterval(() => this.setState(s => ({ sec: s.sec + 1 })), 1000);
+    // 첫 플로깅이면 안내를 자동으로 띄운다 (도착지 설정에서 ?first=1 로 넘어옴)
+    const q = new URLSearchParams(location.search);
+    if (q.get('first') === '1' || this.props.firstRun) this.setState({ helpOpen: true, firstRun: true });
+    // 촬영 화면에서 담아온 수거량 반영 (add=plastic:1,can:2)
+    const add = q.get('add');
+    if (add) {
+      this.setState(s => {
+        const next = { ...s.counts };
+        add.split(',').forEach(p => {
+          const [k, n] = p.split(':');
+          if (k in next) next[k] += Number(n) || 0;
+        });
+        return { counts: next, chipsOpen: true };
+      });
+    }
+    const t = q.get('toast');
+    if (t) {
+      this.setState({ toast: `${t}개 담았어요` });
+      setTimeout(() => this.setState({ toast: null }), 1800);
+    }
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  get focus() { return this.state.focus ?? (this.props.startFocus === 'end' ? 'end' : 'shot'); }
+
+  renderVals() {
+    const s = this.state.sec, o = this.state.chipsOpen, f = this.focus;
+    const pad = n => String(n).padStart(2, '0');
+    const c = this.state.counts;
+    const total = Object.values(c).reduce((a, b) => a + b, 0);
+    const btn = this.state.btn ?? '#12784F';
+    const stepVal = (this.props.stepCount || 0) > 0 ? this.props.stepCount : 3180 + (s - 2538) * 2;
+    const stepStr = stepVal.toLocaleString('ko-KR');
+    const hx = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    const toHex = a => '#' + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+    const mixWhite = (h, w) => toHex(hx(h).map(v => v + (255 - v) * w));
+    const darken = (h, k) => toHex(hx(h).map(v => v * (1 - k)));
+    const shot = () => this.setState(st => {
+      const keys = ['plastic', 'can', 'paper', 'glass', 'trash'];
+      const k = keys[Math.floor(Math.random() * keys.length)];
+      return { counts: { ...st.counts, [k]: st.counts[k] + 1 }, chipsOpen: true };
+    });
+    return {
+      clock: `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`,
+      steps: stepStr,
+      dist: '2.4', total,
+      place: this.props.place ?? '인천대공원 순환길',
+      showRemaining: this.props.showRemaining ?? true,
+      cPlastic: c.plastic, cCan: c.can, cPaper: c.paper, cGlass: c.glass, cTrash: c.trash,
+
+      cols: o ? '0fr 0fr 1fr' : '1fr 1fr 1fr',
+      colGap: o ? '0px' : '8px',
+      sideOp: o ? 0 : 1,
+      tileH: o ? '139px' : '52px',
+      rowT: 'grid-template-columns 520ms cubic-bezier(.32,.72,0,1),column-gap 520ms cubic-bezier(.32,.72,0,1)',
+      tileT: 'height 520ms cubic-bezier(.32,.72,0,1)',
+      fadeT: o ? '190ms cubic-bezier(.4,0,1,1)' : '200ms cubic-bezier(0,0,.2,1)',
+      headFadeT: '240ms cubic-bezier(.4,0,.2,1)',
+      hCollapsedOp: o ? 0 : 1,
+      hOpenOp: o ? 1 : 0,
+      chipOp: o ? 1 : 0,
+      chipY: o ? '0px' : '10px',
+      chipT: o
+        ? 'opacity 300ms cubic-bezier(.4,0,.2,1) 170ms,transform 380ms cubic-bezier(.32,.72,0,1) 170ms'
+        : 'opacity 160ms cubic-bezier(.4,0,1,1),transform 240ms cubic-bezier(.32,.72,0,1)',
+      toggleChips: () => this.setState(st => ({ chipsOpen: !st.chipsOpen })),
+
+      shotAlign: f === 'shot' ? 'left' : 'center',
+      actCols: f === 'shot' ? '1.85fr 1fr' : '1fr 1.85fr',
+      brand: btn,
+      brandTint: mixWhite(btn, 0.89),
+      brandDeep: darken(btn, 0.2),
+      brandSoft: mixWhite(btn, 0.28),
+      shotLabel: f === 'shot' ? '촬영하기' : '촬영',
+      endLabel: f === 'end' ? '종료하기' : '종료',
+      shotBg: f === 'shot' ? btn : '#fff',
+      shotFg: f === 'shot' ? '#fff' : '#414B46',
+      shotShadow: f === 'shot' ? '0 3px 10px rgba(36,48,43,.22)' : 'none',
+      shotSubH: f === 'shot' ? '19px' : '0px',
+      shotSubOp: f === 'shot' ? 1 : 0,
+      endBg: f === 'end' ? '#C4342E' : '#fff',
+      endFg: f === 'end' ? '#fff' : '#C4342E',
+      endShadow: f === 'end' ? '0 3px 10px rgba(196,52,46,.3)' : 'none',
+      endSubH: f === 'end' ? '18px' : '0px',
+      endSubOp: f === 'end' ? 1 : 0,
+      pressShot: () => {
+        if (f !== 'shot') return this.setState({ focus: 'shot' });
+        window.location.href = 'Trash Camera.dc.html';
+      },
+      pressEnd: () => f === 'end' ? this.setState({ endOpen: true }) : this.setState({ focus: 'end' }),
+      endOpen: this.state.endOpen,
+      goSettlement: () => { window.location.href = 'Settlement.dc.html'; },
+      closeEnd: () => {
+        this.setState({ endOpen: false, endClosing: true });
+        setTimeout(() => this.setState({ endClosing: false }), 240);
+      },
+
+      backVisible: this.state.backOpen || this.state.backClosing,
+      backDialogAnim: this.state.backClosing ? 'popOut .2s ease forwards' : 'popIn .26s cubic-bezier(.32,.72,0,1)',
+      backBackdropAnim: this.state.backClosing ? 'fadeOut .2s ease forwards' : 'fadeIn .2s ease',
+      openBack: () => this.setState({ backOpen: true }),
+      closeBack: () => {
+        this.setState({ backOpen: false, backClosing: true });
+        setTimeout(() => this.setState({ backClosing: false }), 200);
+      },
+      goHome: () => {
+        this.setState({ backOpen: false, backClosing: true });
+        setTimeout(() => { window.location.href = 'Home.dc.html'; }, 200);
+      },
+      helpVisible: this.state.helpOpen || this.state.helpClosing,
+      sheetAnim: this.state.helpClosing ? 'sheetDown .24s cubic-bezier(.4,0,1,1) forwards' : 'sheetUp .34s cubic-bezier(.32,.72,0,1)',
+      backdropAnim: this.state.helpClosing ? 'fadeOut .24s ease forwards' : 'fadeIn .24s ease',
+      toastOpen: !!this.state.toast,
+      toastText: this.state.toast ?? '',
+      isFirstRun: !!this.state.firstRun,
+      helpTitle: this.state.firstRun ? '첫 플로깅을 시작할게요' : '플로깅 활동 규칙',
+      helpCta: this.state.firstRun ? '시작하기' : '알겠어요',
+      openHelp: () => this.setState({ helpOpen: true }),
+      closeHelp: () => {
+        this.setState({ helpOpen: false, helpClosing: true, firstRun: false });
+        setTimeout(() => this.setState({ helpClosing: false }), 240);
+      },
+      endVisible: this.state.endOpen || this.state.endClosing,
+      endSheetAnim: this.state.endClosing ? 'sheetDown .24s cubic-bezier(.4,0,1,1) forwards' : 'sheetUp .34s cubic-bezier(.32,.72,0,1)',
+      endBackdropAnim: this.state.endClosing ? 'fadeOut .24s ease forwards' : 'fadeIn .24s ease',
+
+      rangeWarn: (this.props.rangeState ?? 'ok') !== 'ok',
+      rangeMsg: this.props.rangeState === 'outsideCity'
+        ? '인천시 밖이에요. 시 안에서만 활동할 수 있어요'
+        : '목적지가 너무 멀어요. 300km 이내로 정해주세요',
+
+      bannerBottom: o ? '452px' : '380px',
+      offRoute: this.state.offRoute ?? (this.props.offRoute ?? false),
+      toggleOffRoute: () => this.setState(st => ({ offRoute: !(st.offRoute ?? this.props.offRoute ?? false) })),
+      rerouting: !!this.state.rerouting,
+      routeToast: !!this.state.routeToast,
+      routeD: this.state.altRoute
+        ? 'M110 330 C150 296 148 254 194 240 C236 228 270 216 300 192'
+        : 'M110 330 C162 328 172 278 210 250 C244 226 272 210 300 192',
+      stepsFs: stepStr.length >= 7 ? '15px' : stepStr.length >= 6 ? '17px' : '19px',
+      totalFs: total >= 1000 ? '17px' : '19px',
+      dismissOffRoute: () => {
+        this.setState({ offRoute: false, rerouting: true });
+        setTimeout(() => this.setState({ rerouting: false, routeToast: true, altRoute: !this.state.altRoute }), 1100);
+        setTimeout(() => this.setState({ routeToast: false }), 3000);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

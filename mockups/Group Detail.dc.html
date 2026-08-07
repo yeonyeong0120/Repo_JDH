@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#083F2B}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="그룹 소개·가입" style="width:390px;height:844px;background:#F3F8F4;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.2)">
+
+  <div style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding-bottom:130px">
+    <div style="background:#D2E9DC;border-radius:0 0 28px 28px;padding:8px 20px 26px">
+      <div style="height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 6px 4px;font:600 13px Pretendard;color:#24302B"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+      <button style="width:40px;height:40px;border:0;border-radius:14px;background:rgba(255,255,255,.82);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:6px"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#24302B">chevron_left</span></button>
+      <div style="display:flex;align-items:center;gap:16px;margin-top:18px">
+        <div style="width:76px;height:76px;flex:none;border-radius:22px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(36,48,43,.1)"><span style="font-family:'Material Symbols Rounded';font-size:34px;color:#9FA9A4;font-variation-settings:'FILL' 1">groups</span></div>
+        <div style="flex:1;min-width:0">
+          <div style="font:800 24px/1.35 Pretendard;letter-spacing:-.6px;color:#24302B">구월동 새벽줍기</div>
+          <div style="font:500 14px/1.45 Pretendard;color:#414B46;margin-top:4px">인천 남동구 구월동 · 멤버 22명</div>
+          <div style="display:inline-flex;align-items:center;gap:5px;background:#fff;border-radius:999px;padding:5px 10px;margin-top:8px"><span style="width:7px;height:7px;border-radius:50%;background:#12784F"></span><span style="font:700 12.5px Pretendard;color:#0B4A32">오늘 5명 활동 중</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:20px 20px 0;display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 12px rgba(36,48,43,.07)">
+        <div style="font:700 17px/1.4 Pretendard;color:#24302B">그룹 소개</div>
+        <div style="font:400 15px/1.65 Pretendard;color:#414B46;margin-top:8px">매일 아침 6시, 구월동 근린공원에서 만나 한 시간쯤 걸으며 쓰레기를 주워요. 처음이면 장갑과 봉투는 저희가 챙겨드려요.</div>
+      </div>
+
+      <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 12px rgba(36,48,43,.07)">
+        <div style="font:700 17px/1.4 Pretendard;color:#24302B">함께 만든 기록</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">
+          <div style="background:#F3F8F4;border-radius:14px;padding:12px 8px;text-align:center"><div style="font:700 19px/1.2 Pretendard;color:#24302B;font-variant-numeric:tabular-nums">412</div><div style="font:500 13px/1.4 Pretendard;color:#5C6862;margin-top:2px">주운 개수</div></div>
+          <div style="background:#F3F8F4;border-radius:14px;padding:12px 8px;text-align:center"><div style="font:700 19px/1.2 Pretendard;color:#24302B;font-variant-numeric:tabular-nums">96</div><div style="font:500 13px/1.4 Pretendard;color:#5C6862;margin-top:2px">함께 걸은 km</div></div>
+          <div style="background:#F3F8F4;border-radius:14px;padding:12px 8px;text-align:center"><div style="font:700 19px/1.2 Pretendard;color:#24302B;font-variant-numeric:tabular-nums">31</div><div style="font:500 13px/1.4 Pretendard;color:#5C6862;margin-top:2px">함께한 날</div></div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 12px rgba(36,48,43,.07)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span style="font:700 17px/1.4 Pretendard;color:#24302B">멤버</span>
+          <span style="font:500 13px/1.4 Pretendard;color:#5C6862">22명</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:-8px;margin-top:14px">
+          <sc-for list="{{ avatars }}" as="a" hint-placeholder-count="6">
+            <span style="width:40px;height:40px;flex:none;border-radius:50%;background:#DCEDE3;border:2px solid #fff;margin-right:-8px;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#3F9C74;font-variation-settings:'FILL' 1">person</span></span>
+          </sc-for>
+          <span style="width:40px;height:40px;flex:none;border-radius:50%;background:#EFF5F1;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font:700 12px Pretendard;color:#5C6862">+16</span>
+        </div>
+        <div style="font:400 14px/1.55 Pretendard;color:#5C6862;margin-top:12px">가입하면 멤버들의 인증샷과 채팅방을 볼 수 있어요.</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:12px">
+          <span style="font-family:'Material Symbols Rounded';font-size:17px;color:#9FA9A4">calendar_month</span>
+          <span style="font:500 13px Pretendard;color:#5C6862">2024.11 개설</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:9px;background:#EFF5F1;border-radius:16px;padding:13px 14px">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#5C6862;font-variation-settings:'FILL' 1">info</span>
+        <span style="font:400 13.5px/1.55 Pretendard;color:#5C6862">그룹은 한 번에 하나만 가입할 수 있어요. 다른 그룹으로 옮기려면 지금 그룹에서 먼저 탈퇴해 주세요.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);border-top:1px solid #EFF5F1;padding:12px 20px 26px">
+    <sc-if value="{{ canJoin }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ openJoin }}" style="width:100%;height:56px;border:0;border-radius:18px;background:#12784F;color:#fff;font:600 18px Pretendard;cursor:pointer;box-shadow:0 3px 10px rgba(36,48,43,.22)">가입하기</button>
+    </sc-if>
+    <sc-if value="{{ blocked }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#C4342E;font-variation-settings:'FILL' 1">error</span><span style="font:600 13.5px/1.45 Pretendard;color:#A93028">이미 그룹에 가입되어 있어요</span></div>
+      <button onClick="{{ openBlocked }}" style="width:100%;height:56px;border:0;border-radius:18px;background:#E0E8E3;color:#7D8783;font:600 18px Pretendard;cursor:not-allowed">가입하기</button>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ joinOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAll }}" style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;align-items:center;justify-content:center;padding:0 28px;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:24px;padding:26px 22px 20px;animation:popIn .26s cubic-bezier(.32,.72,0,1)">
+        <span style="width:44px;height:44px;border-radius:50%;background:#EBF4EF;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#12784F;font-variation-settings:'FILL' 1">diversity_1</span></span>
+        <div style="font:800 20px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:14px">구월동 새벽줍기에 가입할까요?</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:8px">가입하면 채팅방에 바로 들어가요. 언제든 탈퇴할 수 있어요.</div>
+        <div style="display:flex;gap:8px;margin-top:20px">
+          <button onClick="{{ closeAll }}" style="flex:1;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 17px Pretendard;cursor:pointer">아니오</button>
+          <button onClick="{{ doJoin }}" style="flex:1;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer">가입하기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ blockedOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAll }}" style="position:absolute;inset:0;z-index:10;background:rgba(36,48,43,.45);display:flex;align-items:center;justify-content:center;padding:0 28px;animation:fadeIn .2s ease">
+      <div onClick="{{ stop }}" style="width:100%;background:#fff;border-radius:24px;padding:26px 22px 20px;animation:popIn .26s cubic-bezier(.32,.72,0,1)">
+        <span style="width:44px;height:44px;border-radius:50%;background:#FCEDEC;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#C4342E;font-variation-settings:'FILL' 1">error</span></span>
+        <div style="font:800 20px/1.4 Pretendard;letter-spacing:-.4px;color:#24302B;margin-top:14px">가입할 수 없어요</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:8px">이미 그룹에 가입되어 있어요. 기존 그룹에서 탈퇴한 뒤 다시 가입해 주세요.</div>
+        <div style="display:flex;gap:8px;margin-top:20px">
+          <button onClick="{{ closeAll }}" style="flex:1;height:52px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 17px Pretendard;cursor:pointer">닫기</button>
+          <button onClick="{{ closeAll }}" style="flex:1;height:52px;border:0;border-radius:16px;background:#12784F;color:#fff;font:600 17px Pretendard;cursor:pointer">내 그룹 보기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:20px;right:20px;bottom:104px;z-index:11;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(36,48,43,.94);color:#fff;border-radius:16px;padding:12px 16px;box-shadow:0 6px 18px rgba(36,48,43,.28);animation:fadeIn .24s ease">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#9CDDB6;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font:600 14px/1.45 Pretendard">가입했어요. 채팅방으로 이동할게요</span>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;alreadyInGroup&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  // 목업을 실제 앱처럼 눌러볼 수 있게 상단 뒤로가기를 이전 화면으로 연결한다.
+  _wireBack() {
+    setTimeout(() => {
+      const root = document.querySelector('[data-screen-label]');
+      if (!root) return;
+      root.querySelectorAll('button').forEach(b => {
+        if (b.dataset.backWired) return;
+        const t = (b.textContent || '').trim();
+        if (t !== 'chevron_left' && t !== 'arrow_back') return;
+        // 화면 안에서 이미 다른 곳으로 돌아가는 버튼은 건드리지 않는다
+        if (root.querySelectorAll('[data-screen-label]').length > 1) return;
+        b.dataset.backWired = '1';
+        b.addEventListener('click', () => {
+          setTimeout(() => {
+            // 화면 안 하위 페이지가 닫힌 게 아니라면 이전 목업으로 이동
+            if (!document.querySelector('[data-sub-open]')) {
+              window.location.href = "Group Home.dc.html";
+            }
+          }, 30);
+        }, true);
+      });
+    }, 80);
+  }
+
+  componentDidMount() { this._wireBack(); }
+
+  state = { joinOpen: false, blockedOpen: false, toastOpen: false };
+
+  renderVals() {
+    const already = this.props.alreadyInGroup ?? false;
+    return {
+      avatars: [1, 2, 3, 4, 5, 6],
+      canJoin: !already,
+      blocked: already,
+      joinOpen: this.state.joinOpen,
+      blockedOpen: this.state.blockedOpen,
+      toastOpen: this.state.toastOpen,
+      stop: e => e.stopPropagation(),
+      openJoin: () => this.setState({ joinOpen: true }),
+      openBlocked: () => this.setState({ blockedOpen: true }),
+      closeAll: () => this.setState({ joinOpen: false, blockedOpen: false }),
+      doJoin: () => {
+        this.setState({ joinOpen: false, toastOpen: true });
+        clearTimeout(this._t);
+        this._t = setTimeout(() => this.setState({ toastOpen: false }), 2600);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

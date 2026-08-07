@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0">
+<style>
+body{margin:0;background:#DDE4DF;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all;text-wrap:pretty;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+a{color:#0B4A32}a:hover{color:#0B5238}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes scanPulse{0%,100%{opacity:.45}50%{opacity:.9}}
+@keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+@media (max-width: 480px){
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  [data-screen-label]{
+    position:fixed !important;left:50% !important;top:50% !important;
+    transform:translate(-50%,-50%) scale(var(--__fitPhone,1));
+    transform-origin:center center;border-radius:0 !important;box-shadow:none !important;
+  }
+}
+</style>
+<script>
+(function(){
+  // 휴대폰에서는 목업(390x844)을 화면 크기에 맞춰 확대한다
+  function fit(){
+    if (window.innerWidth > 480) return;
+    var s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    document.documentElement.style.setProperty('--__fitPhone', s);
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  document.addEventListener('DOMContentLoaded', fit);
+  setTimeout(fit, 80); setTimeout(fit, 400);
+})();
+</script></helmet>
+
+<div data-screen-label="쓰레기 등록" style="width:390px;height:844px;background:#101512;border-radius:38px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(36,48,43,.24)">
+
+  <div style="position:absolute;inset:0;background:linear-gradient(168deg,#2B3730 0%,#1A231E 46%,#0F1512 100%)"></div>
+  <div style="position:absolute;left:38px;top:300px;width:150px;height:196px;border-radius:22px;background:rgba(255,255,255,.05)"></div>
+  <div style="position:absolute;left:212px;top:392px;width:132px;height:150px;border-radius:20px;background:rgba(255,255,255,.04)"></div>
+  <div style="position:absolute;left:0;right:0;top:560px;height:284px;background:rgba(255,255,255,.03)"></div>
+
+  <div style="position:absolute;left:50%;top:300px;transform:translateX(-50%);width:250px;height:250px;pointer-events:none">
+    <div style="position:absolute;left:0;top:0;width:34px;height:34px;border-left:3px solid rgba(255,255,255,.62);border-top:3px solid rgba(255,255,255,.62);border-radius:12px 0 0 0"></div>
+    <div style="position:absolute;right:0;top:0;width:34px;height:34px;border-right:3px solid rgba(255,255,255,.62);border-top:3px solid rgba(255,255,255,.62);border-radius:0 12px 0 0"></div>
+    <div style="position:absolute;left:0;bottom:0;width:34px;height:34px;border-left:3px solid rgba(255,255,255,.62);border-bottom:3px solid rgba(255,255,255,.62);border-radius:0 0 0 12px"></div>
+    <div style="position:absolute;right:0;bottom:0;width:34px;height:34px;border-right:3px solid rgba(255,255,255,.62);border-bottom:3px solid rgba(255,255,255,.62);border-radius:0 0 12px 0"></div>
+  </div>
+
+  <sc-for list="{{ boxes }}" as="b" hint-placeholder-count="2">
+    <div style="position:absolute;left:{{ b.x }};top:{{ b.y }};width:{{ b.w }};height:{{ b.h }};border:3px solid {{ b.color }};border-radius:10px;animation:popIn .18s ease">
+      <span style="position:absolute;left:-3px;top:-27px;background:{{ b.color }};color:#fff;font:700 13px Pretendard;padding:3px 8px;border-radius:7px 7px 7px 0;white-space:nowrap">{{ b.label }}</span>
+    </div>
+  </sc-for>
+
+  <div style="position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font:600 13px Pretendard;color:#fff"><span>9:41</span><span style="font-family:'Material Symbols Rounded';font-size:16px;letter-spacing:4px">signal_cellular_alt wifi battery_full</span></div>
+
+  <div style="position:absolute;left:16px;right:16px;top:60px;display:flex;align-items:center;gap:10px">
+    <button onClick="{{ cancel }}" style="width:40px;height:40px;flex:none;border:0;border-radius:13px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:#fff">chevron_left</span></button>
+    <span style="flex:1;font:700 17px Pretendard;color:#fff">쓰레기 등록</span>
+    <button onClick="{{ toggleGuide }}" style="width:40px;height:40px;flex:none;border:0;border-radius:13px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#fff">help</span></button>
+  </div>
+
+  <sc-if value="{{ guideOpen }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;left:16px;right:16px;top:112px;background:rgba(16,21,18,.86);border-radius:16px;padding:13px 15px;animation:fadeIn .24s ease">
+      <div style="display:flex;align-items:flex-start;gap:9px">
+        <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#7FDCAE;font-variation-settings:'FILL' 1;margin-top:1px">lightbulb</span>
+        <span style="flex:1;font:400 14px/1.55 Pretendard;color:rgba(255,255,255,.9)"><b style="font-weight:700;color:#fff">한 번에 하나씩</b> 비춰주세요. 바닥에 내려놓고 찍으면 더 잘 인식돼요.</span>
+        <button onClick="{{ toggleGuide }}" style="width:22px;height:22px;flex:none;border:0;background:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:rgba(255,255,255,.6)">close</span></button>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;padding:52px 20px 30px;background:linear-gradient(180deg,rgba(16,21,18,0) 0%,rgba(16,21,18,.82) 34%,rgba(16,21,18,.96) 100%)">
+
+    <div style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.13);border-radius:16px;padding:12px 14px">
+      <span style="width:9px;height:9px;flex:none;border-radius:50%;background:{{ dotColor }};animation:{{ dotAnim }}"></span>
+      <span style="flex:1;min-width:0;font:{{ statusWeight }} 15px/1.45 Pretendard;color:{{ statusColor }}">{{ statusText }}</span>
+      <sc-if value="{{ hasDetection }}" hint-placeholder-val="{{ true }}">
+        <span style="font:700 15px Pretendard;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap">{{ totalNow }}개</span>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ hasDetection }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+        <sc-for list="{{ chips }}" as="c" hint-placeholder-count="2">
+          <span style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.13);border-radius:999px;padding:7px 12px">
+            <span style="width:8px;height:8px;border-radius:50%;background:{{ c.color }}"></span>
+            <span style="font:600 14px Pretendard;color:#fff">{{ c.label }} {{ c.n }}</span>
+          </span>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <div style="display:flex;align-items:center;gap:14px;margin-top:22px">
+      <button onClick="{{ cancel }}" style="width:56px;height:56px;flex:none;border:0;border-radius:18px;background:rgba(255,255,255,.14);color:#fff;font:600 15px Pretendard;cursor:pointer">취소</button>
+      <button onClick="{{ capture }}" style="flex:1;height:56px;border:0;border-radius:18px;background:{{ ctaBg }};color:{{ ctaFg }};font:600 18px Pretendard;cursor:{{ ctaCursor }};display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s"><span style="font-family:'Material Symbols Rounded';font-size:24px;font-variation-settings:'FILL' 1">photo_camera</span>{{ ctaLabel }}</button>
+    </div>
+  </div>
+
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:10;background:rgba(16,21,18,.6);display:flex;align-items:flex-end;animation:fadeIn .22s ease">
+      <div style="width:100%;background:#fff;border-radius:26px 26px 38px 38px;padding:14px 20px 28px;animation:sheetUp .3s cubic-bezier(.32,.72,0,1)">
+        <div style="width:44px;height:5px;border-radius:3px;background:#E0E8E3;margin:0 auto 18px"></div>
+        <div style="font:800 21px/1.35 Pretendard;letter-spacing:-.4px;color:#24302B">이렇게 담을까요?</div>
+        <div style="font:400 15px/1.6 Pretendard;color:#5C6862;margin-top:6px">다르면 개수를 고쳐주세요.</div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:18px">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:12px;background:#F4F7F5;border-radius:16px;padding:11px 12px 11px 14px">
+              <span style="width:34px;height:34px;flex:none;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ r.color }};font-variation-settings:'FILL' 1">{{ r.icon }}</span></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:700 16px/1.4 Pretendard;color:#24302B">{{ r.label }}</span>
+                <span style="display:block;font:500 13px/1.4 Pretendard;color:{{ r.subColor }}">{{ r.sub }}</span>
+              </span>
+              <span style="display:flex;align-items:center;gap:2px;background:#fff;border-radius:12px;padding:3px">
+                <button onClick="{{ r.dec }}" style="width:36px;height:36px;border:0;border-radius:10px;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F0F4F1"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ r.decColor }}">remove</span></button>
+                <span style="min-width:24px;text-align:center;font:700 17px Pretendard;color:#24302B;font-variant-numeric:tabular-nums">{{ r.n }}</span>
+                <button onClick="{{ r.inc }}" style="width:36px;height:36px;border:0;border-radius:10px;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F0F4F1"><span style="font-family:'Material Symbols Rounded';font-size:20px;color:#0B4A32">add</span></button>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+
+        <button onClick="{{ toggleMore }}" style="width:100%;height:46px;border:0;background:none;display:flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;margin-top:6px">
+          <span style="font:600 14px Pretendard;color:#5C6862">{{ moreLabel }}</span>
+          <span style="font-family:'Material Symbols Rounded';font-size:19px;color:#9FA9A4;transform:rotate({{ moreRotate }});transition:transform .22s cubic-bezier(.32,.72,0,1)">expand_more</span>
+        </button>
+
+        <sc-if value="{{ moreOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:7px;padding-bottom:6px">
+            <sc-for list="{{ otherKinds }}" as="k" hint-placeholder-count="3">
+              <button onClick="{{ k.add }}" style="display:flex;align-items:center;gap:6px;height:42px;border:1.5px solid #E0E8E3;border-radius:14px;background:#fff;padding:0 13px;cursor:pointer" style-hover="background:#F4F7F5">
+                <span style="font-family:'Material Symbols Rounded';font-size:19px;color:{{ k.color }};font-variation-settings:'FILL' 1">{{ k.icon }}</span>
+                <span style="font:600 14px Pretendard;color:#24302B">{{ k.label }}</span>
+                <span style="font-family:'Material Symbols Rounded';font-size:17px;color:#9FA9A4">add</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button onClick="{{ retake }}" style="flex:1;height:54px;border:1.5px solid #E0E8E3;border-radius:16px;background:#fff;color:#414B46;font:600 16px Pretendard;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-family:'Material Symbols Rounded';font-size:20px">refresh</span>다시 찍기</button>
+          <button onClick="{{ confirm }}" style="flex:1.4;height:54px;border:0;border-radius:16px;background:{{ confirmBg }};color:{{ confirmFg }};font:600 17px Pretendard;cursor:{{ confirmCursor }}">{{ confirmLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:24px;right:24px;bottom:120px;z-index:12;display:flex;justify-content:center;pointer-events:none">
+      <div style="display:flex;align-items:center;gap:8px;background:#24302B;border-radius:999px;padding:11px 18px;box-shadow:0 6px 20px rgba(16,21,18,.4);animation:popIn .2s ease">
+        <span style="font-family:'Material Symbols Rounded';font-size:20px;color:#7FDCAE;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font:600 15px Pretendard;color:#fff">{{ toastText }}</span>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  // 색은 app_colors v3 의 dataXxx 토큰과 동일.
+  // (코드의 box_painter.dart 는 Colors.red/blue/amber… 를 쓰고 있어 이 값으로 교체 필요)
+  KINDS = {
+    plastic: { label: '플라스틱', color: '#5F9EE8', icon: 'water_bottle' },
+    can: { label: '캔', color: '#E07B2E', icon: 'local_drink' },
+    paper: { label: '종이', color: '#31C88B', icon: 'description' },
+    glass: { label: '유리', color: '#8E7EC4', icon: 'wine_bar' },
+    trash: { label: '일반', color: '#7D8783', icon: 'delete' },
+  };
+
+  // 라이브 인식 시나리오 — 실제로는 서버 응답(detections / counts)
+  FRAMES = [
+    { boxes: [], counts: {} },
+    { boxes: [{ k: 'plastic', x: 126, y: 336, w: 132, h: 168 }], counts: { plastic: 1 } },
+    { boxes: [{ k: 'plastic', x: 118, y: 328, w: 140, h: 176 }, { k: 'can', x: 246, y: 430, w: 86, h: 104 }], counts: { plastic: 1, can: 1 } },
+  ];
+
+  state = { frame: 0, guideOpen: true, confirmOpen: false, counts: null, moreOpen: false, toast: null };
+
+  componentDidMount() {
+    this._t = setInterval(() => {
+      if (this.state.confirmOpen) return;
+      this.setState(s => ({ frame: (s.frame + 1) % this.FRAMES.length }));
+    }, 2200);
+  }
+  componentWillUnmount() { clearInterval(this._t); if (this._tt) clearTimeout(this._tt); }
+
+  showToast(text) {
+    this.setState({ toast: text });
+    if (this._tt) clearTimeout(this._tt);
+    this._tt = setTimeout(() => this.setState({ toast: null }), 1800);
+  }
+
+  renderVals() {
+    const f = this.FRAMES[this.state.frame];
+    const live = f.counts;
+    const total = Object.values(live).reduce((a, b) => a + b, 0);
+    const has = total > 0;
+    const counts = this.state.counts ?? {};
+    const confirmTotal = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    const setCount = (k, n) => this.setState(s => {
+      const next = { ...s.counts };
+      if (n <= 0) delete next[k]; else next[k] = n;
+      return { counts: next };
+    });
+
+    return {
+      boxes: f.boxes.map(b => ({
+        x: `${b.x}px`, y: `${b.y}px`, w: `${b.w}px`, h: `${b.h}px`,
+        color: this.KINDS[b.k].color, label: this.KINDS[b.k].label,
+      })),
+      guideOpen: this.state.guideOpen,
+      toggleGuide: () => this.setState(s => ({ guideOpen: !s.guideOpen })),
+
+      hasDetection: has,
+      totalNow: total,
+      statusText: has ? '이렇게 인식했어요' : '쓰레기를 비춰주세요',
+      statusColor: has ? '#fff' : 'rgba(255,255,255,.72)',
+      statusWeight: has ? 600 : 400,
+      dotColor: has ? '#7FDCAE' : 'rgba(255,255,255,.45)',
+      dotAnim: has ? 'none' : 'scanPulse 1.6s ease-in-out infinite',
+      chips: Object.entries(live).map(([k, n]) => ({ label: this.KINDS[k].label, color: this.KINDS[k].color, n })),
+
+      ctaLabel: has ? '촬영하기' : '쓰레기를 비춰주세요',
+      ctaBg: has ? '#12784F' : 'rgba(255,255,255,.14)',
+      ctaFg: has ? '#fff' : 'rgba(255,255,255,.45)',
+      ctaCursor: has ? 'pointer' : 'not-allowed',
+      capture: () => { if (has) this.setState({ confirmOpen: true, counts: { ...live }, moreOpen: false }); },
+      cancel: () => { window.location.href = 'Plogging Activity Redesign.dc.html'; },
+
+      confirmOpen: this.state.confirmOpen,
+      rows: Object.entries(counts).map(([k, n]) => ({
+        label: this.KINDS[k].label, color: this.KINDS[k].color, icon: this.KINDS[k].icon,
+        n,
+        sub: live[k] === n ? '인식된 그대로예요' : '직접 고쳤어요',
+        subColor: live[k] === n ? '#7D8783' : '#0B4A32',
+        decColor: n <= 0 ? '#C3CCC7' : '#414B46',
+        dec: () => setCount(k, n - 1),
+        inc: () => setCount(k, n + 1),
+      })),
+      moreOpen: this.state.moreOpen,
+      moreLabel: this.state.moreOpen ? '접기' : '다른 종류 추가',
+      moreRotate: this.state.moreOpen ? '180deg' : '0deg',
+      toggleMore: () => this.setState(s => ({ moreOpen: !s.moreOpen })),
+      otherKinds: Object.entries(this.KINDS)
+        .filter(([k]) => !(k in counts))
+        .map(([k, v]) => ({ label: v.label, color: v.color, icon: v.icon, add: () => setCount(k, 1) })),
+
+      confirmLabel: confirmTotal > 0 ? `${confirmTotal}개 담기` : '담을 항목이 없어요',
+      confirmBg: confirmTotal > 0 ? '#12784F' : '#E0E8E3',
+      confirmFg: confirmTotal > 0 ? '#fff' : '#9FA9A4',
+      confirmCursor: confirmTotal > 0 ? 'pointer' : 'not-allowed',
+      confirm: () => {
+        if (confirmTotal <= 0) return;
+        const q = Object.entries(counts).map(([k, n]) => `${k}:${n}`).join(',');
+        window.location.href = `Plogging Activity Redesign.dc.html?add=${q}&toast=${confirmTotal}`;
+      },
+      retake: () => this.setState({ confirmOpen: false, counts: null }),
+
+      toastOpen: !!this.state.toast,
+      toastText: this.state.toast ?? '',
+    };
+  }
+}
+</script>
+</body>
+</html>
