@@ -194,6 +194,21 @@ class GroupService {
     });
     batch.update(ref, {'memberCount': FieldValue.increment(1)});
     batch.set(_userDoc()!, {'groupId': groupId}, SetOptions(merge: true));
+    // 채팅방에 '가입' 시스템 알림 남기기 (내가 가입할 때뿐 아니라 남이 가입해도
+    // 각자 이 코드가 실행되므로 모두의 채팅에 뜬다).
+    batch.set(ref.collection('posts').doc(), {
+      'uid': uid,
+      'userName': userName,
+      'type': PostType.system,
+      'text': '$userName님이 그룹에 가입하셨습니다!',
+      'imageUrl': null,
+      'distance': '',
+      'trash': 0,
+      'duration': '',
+      'likes': 0,
+      'likedBy': <String>[],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
     await batch.commit();
   }
 

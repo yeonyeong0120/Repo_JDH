@@ -182,6 +182,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     photoUrl: p.photoUrl,
     imageUrl: p.imageUrl,
     isMessage: p.isMessage, // 채팅 메시지 여부
+    isSystem: p.isSystem, // 가입 등 시스템 알림
     text: p.text,
   );
 
@@ -346,28 +347,43 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
               ),
             ),
             const Divider(height: 1, color: AppColors.border),
-            // 하단 탈퇴하기
+            // 하단 탈퇴하기 (목업: 꽉 찬 빨강 버튼)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-              child: SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: () {
-                    _scaffoldKey.currentState?.closeEndDrawer();
-                    _confirmLeave();
-                  },
-                  icon: const Icon(Icons.logout, size: 20),
-                  label: const Text(
-                    '탈퇴하기',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  _scaffoldKey.currentState?.closeEndDrawer();
+                  _confirmLeave();
+                },
+                child: Container(
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.actionDanger,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.actionDanger.withValues(alpha: 0.24),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.actionDanger,
-                    backgroundColor: AppColors.actionDanger.withValues(alpha: 0.08),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.logout, size: 20, color: Colors.white),
+                      SizedBox(width: 7),
+                      Text(
+                        '탈퇴하기',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -379,194 +395,212 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   }
 
   // ───────── 신고 (대상: 개별 활동) ─────────
+  // ───────── 신고 (대상: 활동 또는 메시지) — 목업: 사유 선택 바텀시트 ─────────
   void _showReport(_FeedItem item) {
-    // [사유, 설명]
     const reasons = [
-      ['부정 활동', '고의적 조작 의심 (이동수단 이용, 비정상 수치 등)'],
-      ['기록 오류', '기록이 잘못 찍힘 (GPS 튐, 앱 오작동 등)'],
-      ['기타', '직접 작성해 주세요'],
+      '부적절한 사진이에요',
+      '욕설·비방이 있어요',
+      '광고·스팸이에요',
+      '활동과 관계없는 내용이에요',
+      '다른 사유',
     ];
     String? selected;
-    final etcController = TextEditingController();
+    final otherController = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet<void>(
       context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSt) {
-          final isEtc = selected == '기타';
-          // 사유 선택 필수 + 기타면 입력까지 있어야 활성
-          final canSubmit =
-              selected != null &&
-              (!isEtc || etcController.text.trim().isNotEmpty);
-          return Dialog(
-            backgroundColor: Colors.white,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 40),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+          final isOther = selected == '다른 사유';
+          final canSubmit = selected != null &&
+              (!isOther || otherController.text.trim().isNotEmpty);
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              12,
+              20,
+              24 + MediaQuery.of(ctx).viewInsets.bottom,
             ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${item.name}님의 활동 신고',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 18),
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // 사유 선택 (커스텀 옵션 행)
-                  ...reasons.map((r) {
-                    final on = selected == r[0];
-                    return GestureDetector(
-                      onTap: () => setSt(() => selected = r[0]),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: on ? AppColors.surfaceBrand : AppColors.bg,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: on ? AppColors.primary : AppColors.border,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            // 라디오 표시
-                            Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: on
-                                      ? AppColors.primary
-                                      : AppColors.textSecondary,
-                                  width: 2,
-                                ),
-                              ),
-                              child: on
-                                  ? Center(
-                                      child: Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    r[0],
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    r[1],
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                  // 기타 선택 시 입력창
-                  if (isEtc)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2, bottom: 4),
-                      child: TextField(
-                        controller: etcController,
-                        autofocus: true,
-                        maxLength: 100,
-                        maxLines: 2,
-                        onChanged: (_) => setSt(() {}),
-                        decoration: InputDecoration(
-                          hintText: '신고 사유를 입력해 주세요',
-                          hintStyle: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                          filled: true,
-                          fillColor: AppColors.bg,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.border,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.border,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.border,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppButton(
-                          label: '취소',
-                          onTap: () => Navigator.pop(ctx),
-                          type: AppButtonType.secondary,
-                          expand: false,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: AppButton(
-                          label: '신고',
-                          enabled: canSubmit,
-                          type: AppButtonType.danger,
-                          onTap: () {
-                            Navigator.pop(ctx);
-                            // TODO: 실제 신고 접수 처리
-                            //   대상: item(활동) / 사유: selected
-                            //   기타면 상세 사유: etcController.text
-                            AppSnackBar.show(context, '신고가 접수됐어요');
-                          },
-                        ),
-                      ),
-                    ],
+                ),
+                Text(
+                  item.isMessage ? '${item.name}님 메시지 신고' : '${item.name}님 활동 신고',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    height: 1.35,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                    color: AppColors.textPrimary,
                   ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  '신고 내용은 그룹장과 운영진만 볼 수 있어요. 같은 멤버를 3번 이상 신고하면 자동으로 확인해요.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.6,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                for (final r in reasons) ...[
+                  _reportReasonTile(
+                    label: r,
+                    selected: selected == r,
+                    onTap: () => setSt(() => selected = r),
+                  ),
+                  const SizedBox(height: 8),
                 ],
-              ),
+                if (isOther)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2, bottom: 4),
+                    child: TextField(
+                      controller: otherController,
+                      autofocus: true,
+                      maxLength: 100,
+                      maxLines: 2,
+                      onChanged: (_) => setSt(() {}),
+                      decoration: InputDecoration(
+                        hintText: '어떤 점이 문제였나요? (선택)',
+                        hintStyle: const TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textSecondary,
+                        ),
+                        counterText: '',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: AppColors.border,
+                            width: 1.5,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: AppColors.border,
+                            width: 1.5,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: AppColors.border,
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: '취소',
+                        type: AppButtonType.secondary,
+                        onTap: () => Navigator.pop(ctx),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: AppButton(
+                        label: '신고하기',
+                        enabled: canSubmit,
+                        type: AppButtonType.danger,
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          // TODO: 실제 신고 접수 (대상 item · 사유 selected · 상세 otherController.text)
+                          AppSnackBar.show(context, '신고를 접수했어요. 검토 후 알려드릴게요');
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  // 신고 사유 한 줄 (라디오 + 라벨)
+  Widget _reportReasonTile({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 52),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.green100 : AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? AppColors.actionPrimary : AppColors.border,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? AppColors.actionPrimary : Colors.transparent,
+                border: Border.all(
+                  color: selected ? AppColors.actionPrimary : AppColors.border,
+                  width: 2,
+                ),
+              ),
+              child: selected
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.45,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -691,7 +725,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     final ok = await AppDialog.show(
       context,
       title: '그룹 탈퇴',
-      message: '${widget.groupName}에서 탈퇴하시겠습니까?',
+      message: '그룹에서 탈퇴하시겠습니까?',
       cancelText: '아니오',
       confirmText: '탈퇴',
       danger: true,
@@ -800,6 +834,31 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   }
 
   // ───────────────────────── 활동 공유 카드 (A안) ─────────────────────────
+  // 가입 등 시스템 알림 — 가운데 회색 칩 (목업의 '오늘' 칩과 같은 톤)
+  Widget _systemNotice(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.neutral900.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // 채팅 말풍선 — 내 메시지는 오른쪽(초록), 남의 메시지는 왼쪽(흰색)
   Widget _chatBubble(_FeedItem item) {
     final mine = item.isMine;
@@ -820,16 +879,29 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       constraints: const BoxConstraints(maxWidth: 200),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: mine ? AppColors.primary : AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.cardShadow,
+        // 내 말풍선: 꽉 찬 초록 X → 연초록(#DCEDE3) + 진초록 글씨(#153A2B)
+        color: mine ? const Color(0xFFDCEDE3) : AppColors.surface,
+        borderRadius: mine
+            ? const BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(6),
+              )
+            : const BorderRadius.only(
+                topLeft: Radius.circular(6),
+                topRight: Radius.circular(18),
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+              ),
+        boxShadow: mine ? null : AppColors.cardShadow,
       ),
       child: Text(
         item.text,
         style: TextStyle(
           fontSize: 15,
-          height: 1.35,
-          color: mine ? Colors.white : AppColors.textPrimary,
+          height: 1.5,
+          color: mine ? const Color(0xFF153A2B) : AppColors.textPrimary,
         ),
       ),
     );
@@ -862,13 +934,29 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          item.name,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textOnTint,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        // 메시지 신고 깃발 (목업: 이름 옆)
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _showReport(item),
+                          child: const Icon(
+                            Icons.outlined_flag,
+                            size: 15,
+                            color: AppColors.neutral400,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     bubble,
@@ -925,8 +1013,17 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                     horizontal: 16,
                     vertical: 10,
                   ),
+                  // 포커스 시 초록 테두리가 뜨지 않게 모든 상태를 테두리 없음으로.
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
                   ),
                 ),
@@ -937,11 +1034,11 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
             GestureDetector(
               onTap: _sending ? null : _sendMessage,
               child: Container(
-                width: 42,
-                height: 42,
+                width: 48,
+                height: 48,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                  color: Color(0xFFB4E5C9), // 목업 보내기 버튼 연초록
                   shape: BoxShape.circle,
                 ),
                 child: _sending
@@ -950,10 +1047,14 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.textBrandOnLight,
                         ),
                       )
-                    : const Icon(Icons.send, color: Colors.white, size: 20),
+                    : const Icon(
+                        Icons.arrow_upward,
+                        color: AppColors.textBrandOnLight,
+                        size: 24,
+                      ),
               ),
             ),
           ],
@@ -963,6 +1064,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   }
 
   Widget _feedCard(_FeedItem item) {
+    // 가입 등 시스템 알림은 가운데 정렬 회색 칩으로 표시
+    if (item.isSystem) return _systemNotice(item.text);
     // 채팅 메시지는 말풍선으로 표시 (활동 카드와 구분)
     if (item.isMessage) return _chatBubble(item);
 
@@ -1192,6 +1295,7 @@ class _FeedItem {
   final String? photoUrl; // 작성자 프로필 사진
   final String? imageUrl; // 봉투 인증샷 URL
   final bool isMessage; // true 면 채팅 말풍선으로 표시
+  final bool isSystem; // true 면 가운데 시스템 알림(가입 등)으로 표시
   final String text; // 채팅 메시지 내용
   _FeedItem(
     this.name,
@@ -1207,6 +1311,7 @@ class _FeedItem {
     this.photoUrl,
     this.imageUrl,
     this.isMessage = false,
+    this.isSystem = false,
     this.text = '',
   });
 }

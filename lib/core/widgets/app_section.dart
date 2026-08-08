@@ -15,12 +15,16 @@ class SectionHeader extends StatelessWidget {
   final VoidCallback? onMore;
   final String moreLabel;
 
+  /// true면 caption을 제목 아래가 아니라 제목 오른쪽에 나란히 붙인다.
+  final bool captionInline;
+
   const SectionHeader({
     super.key,
     required this.title,
     this.caption,
     this.onMore,
     this.moreLabel = '더보기',
+    this.captionInline = false,
   });
 
   @override
@@ -31,22 +35,41 @@ class SectionHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title, style: AppType.title2),
-                if (caption != null) ...[
-                  Gap.h4,
-                  Text(
-                    caption!,
-                    style: AppType.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+            child: (captionInline && caption != null)
+                // 제목 오른쪽에 caption 나란히 (베이스라인 정렬)
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(title, style: AppType.title2),
+                      Gap.w8,
+                      Flexible(
+                        child: Text(
+                          caption!,
+                          style: AppType.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(title, style: AppType.title2),
+                      if (caption != null) ...[
+                        Gap.h4,
+                        Text(
+                          caption!,
+                          style: AppType.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ],
-            ),
           ),
           if (onMore != null)
             // 텍스트 + 화살표를 하나의 48 터치 타깃으로 묶는다.
@@ -92,6 +115,9 @@ class AppSection extends StatelessWidget {
   final String moreLabel;
   final Widget child;
 
+  /// true면 caption을 제목 오른쪽에 나란히 붙인다.
+  final bool captionInline;
+
   /// 마지막 섹션이면 true — 아래 여백을 없앤다.
   final bool last;
 
@@ -102,6 +128,7 @@ class AppSection extends StatelessWidget {
     this.caption,
     this.onMore,
     this.moreLabel = '더보기',
+    this.captionInline = false,
     this.last = false,
   });
 
@@ -118,6 +145,7 @@ class AppSection extends StatelessWidget {
             caption: caption,
             onMore: onMore,
             moreLabel: moreLabel,
+            captionInline: captionInline,
           ),
           child,
         ],

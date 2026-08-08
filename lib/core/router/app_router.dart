@@ -72,6 +72,10 @@ final authStatusProvider = Provider<AuthStatus>((ref) {
 final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>();
 
+// 루트 내비게이터 키 — 화면 전환 이후(정산→홈/피드)에도 다이얼로그를 띄우기 위해 공개.
+final GlobalKey<NavigatorState> rootNavigatorKey =
+    GlobalKey<NavigatorState>();
+
 @riverpod
 GoRouter appRouter(Ref ref) {
   // ─────────────────────────────────────────────────────────
@@ -92,6 +96,7 @@ GoRouter appRouter(Ref ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     // [문제 ②] 스플래시로 시작 — 인증 확인 중 홈이 잠깐 보였다가
     // 로그인으로 밀리는 깜빡임을 막는다. (splash 라우트는 아래에 정의)
     initialLocation: AppRoutes.splash,

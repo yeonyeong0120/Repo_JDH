@@ -16,6 +16,7 @@ class NewsArticle {
   final String sourceName; // 출처 언론사
   final String sourceUrl; // 원문 링크
   final List<String> aiSummary; // AI 3줄 요약 (없으면 summary 로 대체)
+  final String imageUrl; // 대표 이미지 URL (없으면 빈 문자열 → 이미지 미표시)
 
   const NewsArticle({
     required this.category,
@@ -28,6 +29,7 @@ class NewsArticle {
     this.sourceName = '',
     this.sourceUrl = '',
     this.aiSummary = const [],
+    this.imageUrl = '',
   });
 
   /// 요약 줄 목록 — AI 요약이 없으면 기존 한 줄 요약 사용
@@ -140,19 +142,9 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // 기자 · 날짜
+                    // 기자 · 날짜 (프로필 사진 없이 텍스트만)
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor: AppColors.surfaceBrand,
-                          child: const Icon(
-                            Icons.person,
-                            size: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Text(
                           article.reporter,
                           style: const TextStyle(
@@ -171,21 +163,19 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    // 대표 이미지 (지금은 이모지 placeholder → 실제 기사 이미지로 교체)
-                    Container(
-                      width: double.infinity,
-                      height: 180,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceBrand,
+                    // 대표 이미지 — 있으면 원본 비율로 보여주고, 없으면 자리 없이 글만.
+                    if (article.imageUrl.isNotEmpty) ...[
+                      const SizedBox(height: 18),
+                      ClipRRect(
                         borderRadius: BorderRadius.circular(18),
+                        child: Image.network(
+                          article.imageUrl,
+                          width: double.infinity,
+                          fit: BoxFit.fitWidth,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
                       ),
-                      child: Text(
-                        article.emoji,
-                        style: const TextStyle(fontSize: 64),
-                      ),
-                    ),
+                    ],
                     const SizedBox(height: 20),
                     // AI 요약 토글
                     _summaryCard(),
@@ -227,10 +217,12 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     final lines = article.summaryLines;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
-        color: AppColors.surfaceBrand,
+        // 하양 배경 + 은은한 그림자(테두리 없음)
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
+        boxShadow: AppColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,7 +235,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 const Icon(
                   Icons.auto_awesome,
                   size: 18,
-                  color: AppColors.green800,
+                  color: AppColors.actionPrimary,
                 ),
                 const SizedBox(width: 8),
                 const Expanded(
@@ -252,7 +244,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.green800,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -261,37 +253,50 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   turns: _summaryOpen ? 0.5 : 0,
                   child: const Icon(
                     Icons.expand_more,
-                    size: 20,
-                    color: AppColors.green800,
+                    size: 22,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
             ),
           ),
           if (_summaryOpen) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             for (int i = 0; i < lines.length; i++)
               Padding(
-                padding: EdgeInsets.only(bottom: i == lines.length - 1 ? 0 : 8),
+                padding: EdgeInsets.only(
+                  bottom: i == lines.length - 1 ? 0 : 12,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 번호 원형 뱃지 (1 · 2 · 3)
                     Container(
-                      margin: const EdgeInsets.only(top: 7, right: 8),
-                      width: 4,
-                      height: 4,
+                      width: 22,
+                      height: 22,
+                      margin: const EdgeInsets.only(top: 1, right: 10),
+                      alignment: Alignment.center,
                       decoration: const BoxDecoration(
-                        color: AppColors.primary,
+                        color: AppColors.green200,
                         shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${i + 1}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.green750,
+                        ),
                       ),
                     ),
                     Expanded(
                       child: Text(
                         lines[i],
+                        // 본문과 동일한 크기·굵기
                         style: const TextStyle(
-                          fontSize: 13,
-                          height: 1.65,
-                          color: AppColors.textSecondary,
+                          fontSize: 15,
+                          height: 1.55,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),

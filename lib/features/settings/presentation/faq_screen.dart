@@ -93,11 +93,8 @@ class _FaqScreenState extends State<FaqScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
                 children: [
-                  for (int i = 0; i < _faqs.length; i++) ...[
-                    _item(i),
-                    const SizedBox(height: 12),
-                  ],
-                  const SizedBox(height: 12),
+                  _faqGroup(),
+                  const SizedBox(height: 20),
                   _inquiryBox(),
                 ],
               ),
@@ -108,12 +105,35 @@ class _FaqScreenState extends State<FaqScreen> {
     );
   }
 
-  // 원하는 답변이 없을 때 → 문의 및 신고
+  // FAQ 항목 한 덩어리 카드 (항목 사이 구분선, 각 항목 인라인 펼침)
+  Widget _faqGroup() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < _faqs.length; i++) ...[
+            if (i > 0)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18),
+                child: Divider(height: 1, thickness: 0.8, color: AppColors.border),
+              ),
+            _item(i),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 원하는 답변이 없을 때 → 문의 및 신고 (색은 연하게)
   Widget _inquiryBox() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
       decoration: BoxDecoration(
-        color: AppColors.surfaceBrand,
+        color: AppColors.green100,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -167,15 +187,8 @@ class _FaqScreenState extends State<FaqScreen> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _open = open ? null : i),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
+      child: Padding(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppColors.cardShadow,
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

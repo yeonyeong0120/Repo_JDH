@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 
@@ -42,28 +43,41 @@ class _QuestListScreenState extends State<QuestListScreen> {
     setState(() {
       _quests = kBadges.map((b) {
         final (cur, total) = BadgeService.progressOf(b, stats);
-        return _Q(b.quest, cur, total, b.icon, _colorOf(b));
+        // 퀘스트 아이콘 = 연계 뱃지 아이콘. 쓰레기봉투는 '한 봉지의 시작' 하나만.
+        final collect = usesTrashBagIcon(b);
+        return _Q(
+          b.quest,
+          cur,
+          total,
+          b.icon,
+          _colorOf(b),
+          b.points,
+          b.tier,
+          collect,
+        );
       }).toList();
       _loading = false;
     });
   }
 
+  // 5색 카테고리: 걸음·거리(파랑) / 수거(초록) / 그룹(주황) / 시간(노랑) / 칼로리(빨강)
   Color _colorOf(BadgeData b) {
     final id = b.id;
-    if (id.startsWith('steps') || id.startsWith('distance')) {
-      return AppColors.categoryBlue;
+    if (id.startsWith('steps') ||
+        id.startsWith('distance') ||
+        id == 'first_plogging') {
+      return AppColors.dataSteps; // 파랑
     }
-    if (id.startsWith('kcal')) return AppColors.categoryRed;
-    if (id.startsWith('weight') || id.startsWith('plastic')) {
-      return AppColors.categoryGreen;
+    if (id.startsWith('kcal')) return AppColors.dataCalorie; // 빨강
+    if (id.startsWith('weight') ||
+        id.startsWith('plastic') ||
+        id == 'first_verify') {
+      return AppColors.green600; // 초록 (수거)
     }
     if (id.startsWith('group') || id.startsWith('share')) {
-      return AppColors.categoryOrange;
+      return AppColors.dataGroup; // 주황
     }
-    if (id.startsWith('time') || id == 'first_30min') {
-      return AppColors.categoryPurple;
-    }
-    return AppColors.primary; // 첫 인증·연속 출석 등
+    return AppColors.dataTime; // 노랑 (시간·연속 등)
   }
 
   @override
@@ -84,7 +98,28 @@ class _QuestListScreenState extends State<QuestListScreen> {
     return list;
   }
 
-  // 탭별 페이지 (리스트 or 빈 상태) — PageView 의 한 페이지
+  static const List<BadgeTier> _tierOrder = [
+    BadgeTier.seed,
+    BadgeTier.sprout,
+    BadgeTier.tree,
+    BadgeTier.forest,
+  ];
+
+  IconData _tierIcon(BadgeTier t) => switch (t) {
+    BadgeTier.seed => Icons.spa,
+    BadgeTier.sprout => Icons.eco,
+    BadgeTier.tree => Icons.park,
+    BadgeTier.forest => Icons.forest,
+  };
+
+  Color _tierColor(BadgeTier t) => switch (t) {
+    BadgeTier.seed => AppColors.green400,
+    BadgeTier.sprout => AppColors.green500,
+    BadgeTier.tree => AppColors.green600,
+    BadgeTier.forest => AppColors.green700,
+  };
+
+  // 탭별 페이지 — 등급(씨앗→새싹→나무→숲)별로 묶어서 표시.
   Widget _questPage(int tab) {
     if (_loading) {
       return const Center(
@@ -94,8 +129,38 @@ class _QuestListScreenState extends State<QuestListScreen> {
         ),
       );
     }
+    final full = _quests;
     final list = _listFor(tab);
-    if (list.isEmpty) {
+
+    final children = <Widget>[];
+    if (tab == 0) {
+      final doneAll = full.where((q) => q.done).length;
+      children
+        ..add(_summaryCard(doneAll, full.length))
+        ..add(const SizedBox(height: 10))
+        ..add(_legend())
+        ..add(const SizedBox(height: 4));
+    }
+
+    bool any = false;
+    for (final t in _tierOrder) {
+      final inTier = list.where((q) => q.tier == t).toList();
+      if (inTier.isEmpty) continue;
+      any = true;
+      final tierTotal = full.where((q) => q.tier == t).length;
+      final tierDone = full.where((q) => q.tier == t && q.done).length;
+      children.add(_tierHeader(t, tierDone, tierTotal));
+      for (final q in inTier) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _questCard(q),
+          ),
+        );
+      }
+    }
+
+    if (!any) {
       return const Center(
         child: Text(
           '해당하는 퀘스트가 없어요',
@@ -103,22 +168,114 @@ class _QuestListScreenState extends State<QuestListScreen> {
         ),
       );
     }
+
     return ListView(
-      // 하단 네비바가 뜬 채로 열리는 화면 → 바 높이(63+12+혹13+여유)만큼 여백.
       padding: EdgeInsets.fromLTRB(
         20,
         4,
         20,
         MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
       ),
-      children: list
-          .map(
-            (q) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _questCard(q),
+      children: children,
+    );
+  }
+
+  Widget _summaryCard(int done, int total) {
+    return Container(
+      height: 58,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Row(
+        children: [
+          const Text(
+            '달성한 퀘스트',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
             ),
-          )
-          .toList(),
+          ),
+          const Spacer(),
+          Text(
+            '$done / $total',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textBrandOnLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _legend() {
+    const items = [
+      (AppColors.dataSteps, '걸음·거리'),
+      (AppColors.green600, '수거'),
+      (AppColors.dataGroup, '그룹'),
+      (AppColors.dataTime, '시간'),
+      (AppColors.dataCalorie, '칼로리'),
+    ];
+    return Wrap(
+      spacing: 9,
+      runSpacing: 8,
+      alignment: WrapAlignment.end,
+      children: [
+        for (final it in items)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: it.$1, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                it.$2,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _tierHeader(BadgeTier t, int done, int total) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 16, 2, 12),
+      child: Row(
+        children: [
+          Icon(_tierIcon(t), size: 20, color: _tierColor(t)),
+          const SizedBox(width: 8),
+          Text(
+            '${t.label} 등급',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '$done / $total',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -141,10 +298,10 @@ class _QuestListScreenState extends State<QuestListScreen> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-                    '전체 퀘스트',
+                    '퀘스트',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -170,77 +327,133 @@ class _QuestListScreenState extends State<QuestListScreen> {
     );
   }
 
+  // 둥근 알약 3개 (전체=초록 채움 / 나머지=흰 테두리). 왼쪽 정렬.
   Widget _tabBar() {
-    const labels = ['전체', '진행중', '완료됨'];
-    final n = labels.length; // List.length는 const 평가 불가 → final
-    return LayoutBuilder(
-      builder: (context, c) {
-        final innerW = c.maxWidth - 8; // 좌우 padding 4씩 제외
-        final segW = innerW / n;
-        return Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceBrand, // 연한 트랙 (테두리 없이 부드럽게)
-            borderRadius: BorderRadius.circular(14),
+    const labels = ['전체', '진행 중', '달성'];
+    return Row(
+      children: [
+        for (int i = 0; i < labels.length; i++) ...[
+          _pill(labels[i], i),
+          if (i < labels.length - 1) const SizedBox(width: 8),
+        ],
+      ],
+    );
+  }
+
+  Widget _pill(String label, int i) {
+    final selected = _tab == i;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _pageController.animateToPage(
+        i,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.actionPrimary : AppColors.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: selected ? null : Border.all(color: AppColors.border),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: selected ? Colors.white : AppColors.textSecondary,
           ),
-          child: SizedBox(
-            height: 36,
-            child: Stack(
+        ),
+      ),
+    );
+  }
+
+  static String _comma(int n) {
+    final s = n.toString();
+    final b = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+      b.write(s[i]);
+    }
+    return b.toString();
+  }
+
+  Widget _questCard(_Q q) {
+    final done = q.done;
+    final progress = (q.current / q.total).clamp(0.0, 1.0);
+    final pct = (progress * 100).round();
+
+    // 완료된 퀘스트는 전체적으로 흐리게 (체크는 선명 유지).
+    final Widget iconWidget = q.isCollect
+        ? TrashBagIcon(size: 24, color: q.color)
+        : Icon(q.icon, color: q.color, size: 24);
+
+    final header = Row(
+      children: [
+        Opacity(
+          opacity: done ? 0.45 : 1,
+          child: Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: q.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: iconWidget,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Opacity(
+            opacity: done ? 0.5 : 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // 슬라이딩 선택 pill — 탭 바뀌면 부드럽게 이동
-                AnimatedAlign(
-                  alignment: Alignment(-1 + _tab * (2 / (n - 1)), 0),
-                  duration: const Duration(milliseconds: 240),
-                  curve: Curves.easeOutCubic,
-                  child: Container(
-                    width: segW,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: AppColors.buttonShadow,
-                    ),
+                Text(
+                  q.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                Row(
-                  children: List.generate(n, (i) {
-                    final selected = _tab == i;
-                    return Expanded(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _pageController.animateToPage(
-                          i,
-                          duration: const Duration(milliseconds: 280),
-                          curve: Curves.easeOutCubic,
-                        ),
-                        child: Center(
-                          child: AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 240),
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: selected
-                                  ? Colors.white
-                                  : AppColors.textSecondary,
-                            ),
-                            child: Text(labels[i]),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
+                const SizedBox(height: 2),
+                Text(
+                  done
+                      ? '달성 · ${q.title} 뱃지 획득'
+                      : '${_comma(q.current)} / ${_comma(q.total)} · 달성 시 ${q.points}P',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
           ),
-        );
-      },
+        ),
+        const SizedBox(width: 10),
+        if (done)
+          const Icon(Icons.check_circle, color: AppColors.green500, size: 24)
+        else
+          Text(
+            '$pct%',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: q.color,
+            ),
+          ),
+      ],
     );
-  }
 
-  Widget _questCard(_Q q) {
-    final done = q.current >= q.total;
-    final progress = (q.current / q.total).clamp(0.0, 1.0);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -248,67 +461,23 @@ class _QuestListScreenState extends State<QuestListScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: q.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(q.icon, color: q.color, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: done
+          ? header
+          : Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        q.title,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    if (done)
-                      const Icon(
-                        Icons.check_circle,
-                        color: AppColors.primary,
-                        size: 20,
-                      )
-                    else
-                      Text(
-                        '${q.current}/${q.total}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                header,
+                const SizedBox(height: 12),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(999),
                   child: LinearProgressIndicator(
                     value: progress,
-                    minHeight: 8,
-                    backgroundColor: AppColors.border,
+                    minHeight: 9,
+                    backgroundColor: AppColors.neutral200, // 진행 배경 회색 통일
                     color: q.color,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -319,5 +488,19 @@ class _Q {
   final int total;
   final IconData icon;
   final Color color;
-  const _Q(this.title, this.current, this.total, this.icon, this.color);
+  final int points;
+  final BadgeTier tier;
+  final bool isCollect; // 수거량 계열 → 쓰레기봉투 아이콘
+  const _Q(
+    this.title,
+    this.current,
+    this.total,
+    this.icon,
+    this.color,
+    this.points,
+    this.tier,
+    this.isCollect,
+  );
+
+  bool get done => current >= total;
 }

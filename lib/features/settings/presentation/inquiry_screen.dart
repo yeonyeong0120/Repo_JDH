@@ -194,6 +194,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                         maxLines: 8,
                         maxLength: 1000,
                         decoration: const InputDecoration(
+                          filled: false, // 안쪽 회색 박스 제거
                           hintText:
                               '어떤 점이 불편하셨는지 자세히 알려주세요.\n'
                               '신고의 경우 대상과 상황을 함께 적어주시면 빠르게 확인할 수 있어요.',
@@ -203,6 +204,8 @@ class _InquiryScreenState extends State<InquiryScreen> {
                             color: AppColors.textSecondary,
                           ),
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                           counterStyle: TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -225,12 +228,15 @@ class _InquiryScreenState extends State<InquiryScreen> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
+                          filled: false, // 안쪽 회색 박스 제거
                           hintText: '이메일을 입력해주세요',
                           hintStyle: TextStyle(
                             fontSize: 15,
                             color: AppColors.textSecondary,
                           ),
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                         ),
                         style: const TextStyle(fontSize: 15),
                       ),

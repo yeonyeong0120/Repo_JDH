@@ -4,9 +4,8 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 
 /// 줍다행 - 전체 활동 기록 (ACT-04)
-/// 기록 탭 "최근 활동 →" → 이 화면. 날짜별 리스트(시간 역순) + 날짜 검색.
+/// 기록 탭 "최근 활동 전체 보기" → 이 화면. 월별 그룹 + 기간 필터.
 /// 실제 데이터는 아직 없어 더미 + TODO.
-/// 위치 권장: lib/features/mypage/presentation/activity_list_screen.dart
 class ActivityListScreen extends StatefulWidget {
   const ActivityListScreen({super.key});
 
@@ -15,27 +14,48 @@ class ActivityListScreen extends StatefulWidget {
 }
 
 class _ActivityListScreenState extends State<ActivityListScreen> {
-  // 기간 필터 (둘 다 있어야 적용, 없으면 전체)
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
 
-  // TODO: 실제 활동 데이터로 교체 (날짜별, 시간 역순)
-  // title = 활동 시작 지점 지명 (TODO: 실제 시작 좌표 → 지명 변환)
-  static const List<_Act> _acts = [
-    _Act('2026.02.01', '06:15', '석촌호수길', '1.4 km', 2000, '70 g', 120, '0:30'),
-    _Act('2026.02.01', '17:15', '로데오거리', '2.1 km', 3000, '40 g', 125, '0:40'),
-    _Act('2026.01.28', '08:02', '탄천 산책로', '3.0 km', 4100, '90 g', 210, '0:58'),
-    _Act('2026.01.25', '19:30', '중앙공원', '1.1 km', 1600, '30 g', 88, '0:22'),
+  // TODO: 실제 활동 데이터로 교체 (시간 역순)
+  static final List<_Act> _acts = [
+    _Act(DateTime(2026, 8, 5, 7, 30), '소래습지 생태공원', 3180, '42분', 1.2, 124, 2.4, true),
+    _Act(DateTime(2026, 8, 4, 18, 12), '인천대공원 순환길', 2410, '31분', 0.9, 96, 1.7, true),
+    _Act(DateTime(2026, 8, 2, 8, 5), '만수천 산책로', 4020, '55분', 1.6, 158, 3.1, false),
+    _Act(DateTime(2026, 7, 30, 7, 10), '장수천 벚꽃길', 2860, '38분', 1.1, 112, 2.0, true),
+    _Act(DateTime(2026, 7, 28, 19, 40), '구월동 로데오거리', 1940, '26분', 0.7, 78, 1.3, false),
   ];
 
-  // 기간(시작~종료) 선택 — 달력/휠 둘 다, 연필로 전환. 키패드 없음.
+  static String _comma(int n) {
+    final s = n.toString();
+    final b = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+      b.write(s[i]);
+    }
+    return b.toString();
+  }
+
+  String _monthLabel(DateTime d) => '${d.year}년 ${d.month}월';
+
+  String _dateTimeLabel(DateTime d) {
+    final ampm = d.hour < 12 ? '오전' : '오후';
+    final h12 = d.hour % 12 == 0 ? 12 : d.hour % 12;
+    final mm = d.minute.toString().padLeft(2, '0');
+    return '${d.month}월 ${d.day}일 $ampm $h12:$mm';
+  }
+
+  String _fmt(DateTime d) =>
+      '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
+
+  // 기간(시작~종료) 선택 — 달력/휠, 연필로 전환.
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final first = DateTime(2024, 1, 1);
     DateTime start = _rangeStart ?? now;
     DateTime end = _rangeEnd ?? now;
-    bool editingStart = true; // 시작/종료 중 편집 대상
-    bool wheel = false; // 달력/휠
+    bool editingStart = true;
+    bool wheel = false;
 
     final ok = await showDialog<bool>(
       context: context,
@@ -98,7 +118,6 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 시작일/종료일 + 연필(달력<->휠)
                   Row(
                     children: [
                       rangeChip('시작일', start, true),
@@ -143,7 +162,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                             onDateChanged: (dt) => setLocal(() {
                               if (editingStart) {
                                 start = dt;
-                                editingStart = false; // 시작 고르면 종료로 자동 전환
+                                editingStart = false;
                               } else {
                                 end = dt;
                               }
@@ -180,41 +199,31 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
       end = t;
     }
     setState(() {
-      _rangeStart = start;
-      _rangeEnd = end;
+      _rangeStart = DateTime(start.year, start.month, start.day);
+      _rangeEnd = DateTime(end.year, end.month, end.day, 23, 59, 59);
     });
   }
 
-  DateTime? _parseDate(String s) {
-    final p = s.split('.');
-    if (p.length != 3) return null;
-    final y = int.tryParse(p[0]);
-    final m = int.tryParse(p[1]);
-    final d = int.tryParse(p[2]);
-    if (y == null || m == null || d == null) return null;
-    return DateTime(y, m, d);
-  }
-
-  String _fmt(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
-
   @override
   Widget build(BuildContext context) {
-    // 날짜 필터 적용
     final acts = (_rangeStart == null || _rangeEnd == null)
         ? _acts
-        : _acts.where((a) {
-            final d = _parseDate(a.date);
-            return d != null &&
-                !d.isBefore(_rangeStart!) &&
-                !d.isAfter(_rangeEnd!);
-          }).toList();
+        : _acts
+              .where(
+                (a) =>
+                    !a.date.isBefore(_rangeStart!) &&
+                    !a.date.isAfter(_rangeEnd!),
+              )
+              .toList();
 
-    // 날짜별 그룹 (입력이 이미 시간 역순이라고 가정)
-    final Map<String, List<_Act>> byDate = {};
+    // 월별 그룹 (입력이 시간 역순이라고 가정)
+    final Map<String, List<_Act>> byMonth = {};
     for (final a in acts) {
-      byDate.putIfAbsent(a.date, () => []).add(a);
+      byMonth.putIfAbsent(_monthLabel(a.date), () => []).add(a);
     }
+
+    final totalKg = acts.fold<double>(0, (s, a) => s + a.weightKg);
+    final bool ranged = _rangeStart != null && _rangeEnd != null;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -224,7 +233,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
           children: [
             // 상단 바
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
+              padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
               child: Row(
                 children: [
                   IconButton(
@@ -232,100 +241,142 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Expanded(
-                    child: Text(
-                      '전체 활동 기록',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
+                  const Text(
+                    '활동 기록',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.calendar_today_outlined, size: 20),
-                    color: AppColors.textSecondary,
-                    onPressed: _pickDate,
                   ),
                 ],
               ),
             ),
-            // 기간 필터 칩 (선택 시)
-            if (_rangeStart != null && _rangeEnd != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
+            Expanded(
+              child: ListView(
+                // 마지막 카드가 하단 네비바에 가리지 않게 넉넉히
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  6,
+                  20,
+                  MediaQueryData.fromView(View.of(context)).padding.bottom + 120,
+                ),
+                children: [
+                  // 기간 필터 pill
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _pickDate,
+                    child: Container(
+                      height: 52,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceBrand,
-                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: AppColors.cardShadow,
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            '${_fmt(_rangeStart!)} ~ ${_fmt(_rangeEnd!)}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.green800,
-                            ),
+                          const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 19,
+                            color: AppColors.textSecondary,
                           ),
-                          const SizedBox(width: 4),
-                          GestureDetector(
-                            onTap: () => setState(() {
-                              _rangeStart = null;
-                              _rangeEnd = null;
-                            }),
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: AppColors.green800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: acts.isEmpty
-                  ? const Center(
-                      child: Text(
-                        '해당 기간에 활동 기록이 없어요',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                      children: [
-                        for (final entry in byDate.entries) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6, bottom: 10),
+                          const SizedBox(width: 10),
+                          Expanded(
                             child: Text(
-                              entry.key,
+                              ranged
+                                  ? '${_fmt(_rangeStart!)} ~ ${_fmt(_rangeEnd!)}'
+                                  : '기간 전체',
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ),
-                          ...entry.value.map(
-                            (a) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _activityCard(context, a),
+                          if (ranged)
+                            GestureDetector(
+                              onTap: () => setState(() {
+                                _rangeStart = null;
+                                _rangeEnd = null;
+                              }),
+                              child: const Icon(
+                                Icons.close,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          ),
                         ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // 전체 활동 요약
+                  Container(
+                    height: 60,
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppColors.cardShadow,
+                    ),
+                    child: Row(
+                      children: [
+                        const Text(
+                          '전체 활동',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${acts.length}회 · ${totalKg.toStringAsFixed(1)}kg',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textBrandOnLight,
+                          ),
+                        ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (acts.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 60),
+                      child: Center(
+                        child: Text(
+                          '해당 기간에 활동 기록이 없어요',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  for (final entry in byMonth.entries) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(2, 14, 0, 12),
+                      child: Text(
+                        entry.key,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    ...entry.value.map(
+                      (a) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _activityCard(context, a),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
@@ -340,13 +391,14 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => ActivityDetailScreen(
-            dateTime: '${a.date} ${a.time}',
+            dateTime: _dateTimeLabel(a.date),
             title: a.title,
             steps: a.steps,
-            weight: a.weight,
+            weight: '${a.weightKg.toStringAsFixed(1)}kg',
             kcal: a.kcal,
             time: a.duration,
-            distance: a.distance,
+            distance: '${a.distanceKm.toStringAsFixed(1)}km',
+            hasPhoto: a.hasPhoto,
           ),
         ),
       ),
@@ -359,16 +411,38 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
         ),
         child: Row(
           children: [
-            // TODO: 실제 봉투 인증샷/경로 썸네일로 교체
-            Container(
-              width: 76,
-              height: 76,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceBrand,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.map, color: AppColors.green400),
+            // 경로 미니 지도 썸네일 (사진 있으면 카메라 배지)
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: const SizedBox(
+                    width: 84,
+                    height: 84,
+                    child: CustomPaint(painter: _RouteThumbPainter()),
+                  ),
+                ),
+                // 인증샷을 첨부하지 않은 기록: 카메라+ 배지 (우하단)
+                if (!a.hasPhoto)
+                  Positioned(
+                    right: 6,
+                    bottom: 6,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface.withValues(alpha: 0.92),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add_a_photo,
+                        size: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -376,19 +450,21 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    a.time,
+                    _dateTimeLabel(a.date),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     a.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -396,15 +472,14 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        // 거리 아이콘 = 걸음수와 동일(걷는 사람)
-                        _mini(Icons.directions_walk, a.distance),
-                        const SizedBox(width: 10),
-                        _mini(Icons.delete_outline, a.weight),
-                        const SizedBox(width: 10),
-                        _mini(Icons.alarm, a.duration),
-                      ],
+                    child: Text(
+                      '${_comma(a.steps)}걸음 · ${a.duration} · '
+                      '${a.weightKg.toStringAsFixed(1)}kg · ${a.kcal}kcal',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -415,43 +490,74 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
       ),
     );
   }
+}
 
-  Widget _mini(IconData icon, String value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 15, color: AppColors.textSecondary),
-        const SizedBox(width: 3),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
+// 경로 미니 지도 썸네일 (회색 격자 + 초록 곡선 + 시작·도착 점).
+class _RouteThumbPainter extends CustomPainter {
+  const _RouteThumbPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFFE7EFE9),
+    );
+    final grid = Paint()
+      ..color = const Color(0xFFF4F8F5)
+      ..strokeWidth = 7;
+    canvas.drawLine(Offset(0, h * 0.42), Offset(w, h * 0.42), grid);
+    canvas.drawLine(Offset(w * 0.5, 0), Offset(w * 0.5, h), grid);
+    final path = Path()
+      ..moveTo(w * 0.22, h * 0.78)
+      ..cubicTo(w * 0.30, h * 0.55, w * 0.34, h * 0.5, w * 0.5, h * 0.5)
+      ..cubicTo(w * 0.66, h * 0.5, w * 0.68, h * 0.34, w * 0.78, h * 0.3);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = AppColors.routeLine
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawCircle(
+      Offset(w * 0.22, h * 0.78),
+      4.5,
+      Paint()..color = AppColors.green700,
+    );
+    canvas.drawCircle(
+      Offset(w * 0.78, h * 0.3),
+      5,
+      Paint()..color = Colors.white,
+    );
+    canvas.drawCircle(
+      Offset(w * 0.78, h * 0.3),
+      3,
+      Paint()..color = AppColors.green600,
     );
   }
+
+  @override
+  bool shouldRepaint(covariant _RouteThumbPainter oldDelegate) => false;
 }
 
 class _Act {
-  final String date;
-  final String time;
+  final DateTime date;
   final String title;
-  final String distance;
   final int steps;
-  final String weight;
+  final String duration; // '42분'
+  final double weightKg; // 1.2
   final int kcal;
-  final String duration;
+  final double distanceKm; // 2.4
+  final bool hasPhoto;
   const _Act(
     this.date,
-    this.time,
     this.title,
-    this.distance,
     this.steps,
-    this.weight,
-    this.kcal,
     this.duration,
+    this.weightKg,
+    this.kcal,
+    this.distanceKm,
+    this.hasPhoto,
   );
 }

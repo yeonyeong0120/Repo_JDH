@@ -66,6 +66,7 @@ class Group {
 class PostType {
   static const String activity = 'activity';
   static const String message = 'message';
+  static const String system = 'system'; // 가입 등 시스템 알림
 }
 
 /// 그룹 피드 항목 (인증샷 카드 + 채팅 메시지)
@@ -108,6 +109,9 @@ class GroupPost {
 
   /// 채팅 메시지인지
   bool get isMessage => type == PostType.message;
+
+  /// 시스템 알림(가입 등)인지
+  bool get isSystem => type == PostType.system;
 
   factory GroupPost.fromJson(Map<String, dynamic> json, String myUid) {
     final likedBy = ((json['likedBy'] as List?) ?? const []).cast<String>();

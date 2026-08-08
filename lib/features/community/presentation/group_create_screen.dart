@@ -103,9 +103,10 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                 ],
               ),
             ),
+            // 스크롤 없이 한 화면에 다 보이게 (스크롤 제거)
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -115,22 +116,22 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         // TODO: 이미지 선택 연결
                         onTap: () {},
                         child: Container(
-                          width: 92,
-                          height: 92,
+                          width: 84,
+                          height: 84,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceBrand,
+                            color: const Color(0xFFDCEDE3), // 목업 대표사진 배경
                             borderRadius: BorderRadius.circular(22),
                           ),
                           child: const Icon(
                             Icons.add_a_photo_outlined,
-                            color: AppColors.textSecondary,
-                            size: 30,
+                            color: AppColors.textBrandOnLight,
+                            size: 40,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     const Center(
                       child: Text(
                         '대표 사진 (선택)',
@@ -140,7 +141,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 11),
 
                     // 이름
                     _label('그룹 이름'),
@@ -150,40 +151,58 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                       hint: '그룹 이름을 입력하세요',
                       maxLength: 20,
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 11),
 
                     // 동네 (자동)
                     _label('동네'),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
-                      ),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.border.withValues(alpha: 0.35),
+                        color: const Color(0xFFE7EFE9),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         children: const [
                           Icon(
                             Icons.location_on_outlined,
-                            size: 18,
+                            size: 19,
                             color: AppColors.textSecondary,
                           ),
                           SizedBox(width: 8),
                           // TODO: 실제 현재 위치(동네)로 자동 설정
+                          Expanded(
+                            child: Text(
+                              '00구 00동',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: AppColors.textOnTint,
+                              ),
+                            ),
+                          ),
                           Text(
-                            '00구 00동 (현재 위치로 자동 설정)',
+                            '현재 위치',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 13,
                               color: AppColors.textSecondary,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 7),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 2),
+                      child: Text(
+                        '동네는 현재 위치로 자동 설정돼요. 같은 동네 이웃에게 먼저 보입니다.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.55,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 11),
 
                     // 소개
                     _label('소개'),
@@ -192,7 +211,19 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                       controller: _introController,
                       hint: '그룹을 소개해 주세요',
                       maxLength: 200,
-                      maxLines: 4,
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 7),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 2),
+                      child: Text(
+                        '언제 어디서 모이는지 적어두면 이웃이 참여하기 쉬워요.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.55,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -201,7 +232,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
 
             // 하단 만들기 버튼
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 32),
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
               child: AppButton(
                 label: _creating ? '만드는 중...' : '그룹 만들기',
                 onTap: _create,
@@ -226,39 +257,73 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     );
   }
 
+  // 목업: 흰 칸 + 1.5px 테두리(입력 시 초록), 카운터는 칸 "안" 오른쪽에.
   Widget _field({
     required TextEditingController controller,
     required String hint,
     required int maxLength,
     int maxLines = 1,
   }) {
+    final Widget counter = Text(
+      '${controller.text.length}/$maxLength',
+      style: const TextStyle(fontSize: 13, color: AppColors.neutral400),
+    );
+
+    // 흰 박스 한 겹만. (테마의 회색 채움은 _rawInput 에서 filled:false 로 끈다)
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border, width: 1.5),
+      ),
+      // 한 줄(이름)은 낮게, 여러 줄(소개)은 여유 있게. (상하 여백 축소)
+      padding: maxLines == 1
+          ? const EdgeInsets.symmetric(horizontal: 14, vertical: 6)
+          : const EdgeInsets.fromLTRB(14, 8, 14, 6),
+      child: maxLines == 1
+          ? Row(
+              children: [
+                Expanded(child: _rawInput(controller, hint, maxLength, 1)),
+                const SizedBox(width: 8),
+                counter,
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _rawInput(controller, hint, maxLength, maxLines),
+                Align(alignment: Alignment.centerRight, child: counter),
+              ],
+            ),
+    );
+  }
+
+  Widget _rawInput(
+    TextEditingController controller,
+    String hint,
+    int maxLength,
+    int maxLines,
+  ) {
     return TextField(
       controller: controller,
       maxLength: maxLength,
       maxLines: maxLines,
+      onChanged: (_) => setState(() {}), // 카운터·테두리색 갱신
       decoration: InputDecoration(
+        isCollapsed: true,
+        filled: false, // 테마의 회색 채움 끔 → 바깥 흰 박스 한 겹만
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        counterText: '', // 기본(칸 밖) 카운터 숨김
         hintText: hint,
         hintStyle: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
-        filled: true,
-        fillColor: AppColors.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
       ),
-      style: const TextStyle(fontSize: 15),
+      style: const TextStyle(
+        fontSize: 15,
+        height: 1.6,
+        color: AppColors.textPrimary,
+      ),
     );
   }
 }

@@ -135,20 +135,22 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
           boxShadow: AppColors.cardShadow,
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 썸네일 (이모지 placeholder → 실제 이미지로 교체 가능)
-            Container(
-              width: 66,
-              height: 66,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceBrand,
+            // 원본 기사 사진이 있으면 왼쪽에 표시, 없으면 생략
+            if (a.imageUrl.isNotEmpty) ...[
+              ClipRRect(
                 borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  a.imageUrl,
+                  width: 66,
+                  height: 66,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
-              child: Text(a.emoji, style: const TextStyle(fontSize: 34)),
-            ),
-            const SizedBox(width: 14),
+              const SizedBox(width: 14),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

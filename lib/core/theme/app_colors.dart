@@ -1,4 +1,14 @@
-// 앱 전체에서 사용하는 컬러 시스템 (v2 — 밝게 재조정)
+// 앱 전체에서 사용하는 컬러 시스템 (v5 — v2 밝은 톤으로 되돌림 + 신규 토큰 유지)
+//
+// v4 에서 낮췄던 채도를 v2 값으로 되돌렸다.
+// 다만 v4 에서 새로 만든 토큰(green150 / actionSoft / dataXxx / routeLine)은
+// 화면들이 이미 참조하고 있어 그대로 둔다.
+//
+// 60 : 30 : 10 비율 규칙은 유지
+//   60% 메인      bg(#F4F8F5) + surface(#FFFFFF)
+//   30% 세컨더리  surfaceBrand(#C7EDD5) · green150(#E4F6EB)
+//   10% 포인트    actionPrimary(#17855A) — 주 버튼·핵심 수치에만
+//   dataXxx(카테고리·지표)는 데이터 전용이라 이 비율 밖.
 // 변경 시 모든 화면에 영향 가니까 신중하게.
 //
 // 규칙 3가지만 기억하면 됩니다.
@@ -17,12 +27,14 @@ class AppColors {
 
   static const Color green50 = Color(0xFFF3FBF6);
   static const Color green100 = Color(0xFFE4F6EB);
+  static const Color green150 = Color(0xFFDCF2E5); // 세컨더리 면 (카드·칩·내 말풍선)
   static const Color green200 = Color(0xFFC7EDD5);
   static const Color green300 = Color(0xFF9CDDB6);
   static const Color green400 = Color(0xFF64C795);
   static const Color green500 = Color(0xFF34AE77);
   static const Color green600 = Color(0xFF17855A); // ★ 브랜드. 흰 글씨 4.63:1
   static const Color green700 = Color(0xFF106B49);
+  static const Color green750 = Color(0xFF0B5238); // 초록 면 위 글자·아이콘 (green200 위 7.4:1)
   static const Color green800 = Color(0xFF0B5238);
   static const Color green900 = Color(0xFF073725);
 
@@ -72,6 +84,13 @@ class AppColors {
 
   static const Color actionPrimary = green600; // 화면당 1개
   static const Color actionSecondary = green100; // 보조 버튼 배경 (초록 글씨와 함께)
+  /// 연초록으로 채운 아이콘 버튼(채팅 보내기 등). 글리프는 textBrandOnLight.
+  static const Color actionSoft = Color(0xFFB4E5C9);
+
+  /// 내 채팅 말풍선. 꽉 찬 초록이 답답해 연초록 + 진한 글씨로.
+  static const Color bubbleMine = green150;
+  static const Color textOnBubbleMine = Color(0xFF153A2B);
+
   static const Color actionPressed = green700;
   static const Color actionDanger = Color(0xFFC4342E);
 
@@ -86,10 +105,23 @@ class AppColors {
   // ========================================================
 
   static const Color dataPlastic = Color(0xFF3A75AE); // 4.71:1
-  static const Color dataGeneral = Color(0xFFB44E3D); // 5.02:1
+  static const Color dataGeneral = neutral500; // 5.02:1
   static const Color dataPaper = green600; // 4.63:1
-  static const Color dataCan = Color(0xFF96650A); // 5.25:1
+  static const Color dataCan = Color(0xFFC97A17); // 5.25:1
   static const Color dataGlass = Color(0xFF7A63BC); // 4.84:1
+
+  // 지표(퀘스트·기록) 색 — 카테고리 색과 짝을 맞춘다.
+  //  걸음수=파랑 / 거리=보라 / 수거량=초록 / 그룹참여=주황 / 칼로리=빨강 / 시간=노랑
+  static const Color dataSteps = Color(0xFF2F6FB0);
+  static const Color dataDistance = Color(0xFF5F51A0);
+  static const Color dataCollect = green700;
+  static const Color dataGroup = dataCan;
+  static const Color dataCalorie = Color(0xFFE5392E); // 원색에 가까운 빨강
+  static const Color dataTime = Color(0xFFF2B705); // 원색에 가까운 노랑
+  static const Color dataTimeFill = Color(0xFFF5C400); // 면으로 깔 때(샛노랑)
+
+  /// 지도 경로선. 트래킹·정산·도착지 설정이 같은 값을 쓴다.
+  static const Color routeLine = Color(0xFF1D9E75);
 
   /// 분류색을 흰 배경 위 옅은 면으로 바꾼다.
   /// 차트 조각, 아이콘 타일 배경 등 "색은 유지하되 넓게 깔 때" 사용.
