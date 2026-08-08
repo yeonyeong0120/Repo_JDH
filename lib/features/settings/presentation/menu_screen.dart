@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
-import 'package:repo_jdh/core/theme/app_typography.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
+import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/mypage/domain/profile_detail.dart';
+import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/features/mypage/presentation/profile_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/notice_screen.dart';
@@ -10,13 +14,11 @@ import 'package:repo_jdh/features/settings/presentation/faq_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/terms_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/licenses_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/shop_screen.dart';
-import 'package:go_router/go_router.dart';
-import 'package:repo_jdh/core/widgets/app_dialog.dart';
-import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/features/shop/presentation/coupon_screen.dart';
+import 'package:repo_jdh/features/shop/presentation/point_history_screen.dart';
 
-/// 줍다행 - 메뉴 화면 (프로필 / 알림 / 에코포인트 상점 / 약관 등)
-/// 하단 네비는 ShellRoute 가 담당. 본문만.
-/// 위치 권장: lib/features/settings/presentation/menu_screen.dart
+/// 메뉴 화면 — 프로필 카드 · 포인트 · 쿠폰/내역 · 이용 안내.
+/// 하단 네비는 ShellRoute 담당. 본문만.
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
 
@@ -25,94 +27,324 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  bool _notifications = false;
-
   ProfileDetail _profile = const ProfileDetail();
+
+  // 프로필 카드 통계 (활동 횟수 · 누적 수거량 · 뱃지 수)
+  int _activityCount = 0;
+  String _weightText = '0kg';
+  int _badgeCount = 0;
+
+  // 알림 on/off (기본 켜짐)
+  // TODO: 실제 푸시 토큰 등록/해제 및 서버 저장과 연동
+  bool _alarmOn = true;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadStats();
   }
 
   Future<void> _loadProfile() async {
     try {
       final p = await UserService.loadProfileDetail();
       if (mounted) setState(() => _profile = p);
-    } catch (_) {
-      // 실패 시 기본값 유지
-    }
+    } catch (_) {}
   }
 
-  // 프로필 카드 → 수정 화면 (돌아오면 갱신)
+  Future<void> _loadStats() async {
+    try {
+      await BadgeService.loadEarned();
+      final stats = await BadgeService.loadStats();
+      if (!mounted) return;
+      setState(() {
+        _activityCount = stats.ploggingCount;
+        _weightText = '${stats.totalWeightKg.toStringAsFixed(1)}kg';
+        _badgeCount = kBadges.where((b) => BadgeRepo.isEarned(b.id)).length;
+      });
+    } catch (_) {}
+  }
+
   Future<void> _openProfile() async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const ProfileScreen()),
     );
     _loadProfile();
+    _loadStats();
+  }
+
+  void _push(Widget screen) => Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => screen),
+  );
+
+  static String _comma(int v) {
+    final s = v.toString();
+    final b = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+      b.write(s[i]);
+    }
+    return b.toString();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: SingleChildScrollView(
-        // 하단 네비바 클리어런스(바 높이 63+12+혹13+여유)
-        padding: EdgeInsets.only(
-          bottom: MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            8,
+            20,
+            MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              _profileCard(),
+              const SizedBox(height: 14),
+              _pointsCard(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _smallCard(
+                      icon: Icons.confirmation_number_outlined,
+                      title: '내 쿠폰함',
+                      subtitle: '교환한 쿠폰',
+                      onTap: () => _push(const CouponScreen()),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _smallCard(
+                      icon: Icons.receipt_long_outlined,
+                      title: '포인트 내역',
+                      subtitle: '적립·사용 기록',
+                      onTap: () => _push(const PointHistoryScreen()),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 26),
+              const Text(
+                '이용 안내',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _infoGroup(),
+              const SizedBox(height: 26),
+              _accountActions(),
+              const SizedBox(height: 10),
+              const Center(
+                child: Text(
+                  '플로고 v1.0.0',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 알림 on/off 벨 — 프로필 카드 안에 위치. 카드 탭(프로필 이동)과 분리된 자체 탭.
+  Widget _alarmBell() {
+    final on = _alarmOn;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() => _alarmOn = !_alarmOn);
+        AppSnackBar.show(context, _alarmOn ? '알림을 켰어요' : '알림을 껐어요');
+      },
+      child: Container(
+        width: 42,
+        height: 42,
+        alignment: Alignment.center,
+        // 켜짐=초록 배경 / 꺼짐=회색 배경
+        decoration: BoxDecoration(
+          color: on ? AppColors.green100 : AppColors.neutral100,
+          shape: BoxShape.circle,
+        ),
+        // 켜짐=초록 종 / 꺼짐=회색 종(빗금)
+        child: Icon(
+          on ? Icons.notifications : Icons.notifications_off,
+          size: 21,
+          color: on ? AppColors.textBrandOnLight : AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  // ── 프로필 카드 (레벨·XP 바 + 통계) ──
+  Widget _profileCard() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _openProfile,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppColors.cardShadow,
         ),
         child: Column(
           children: [
-            // 홈처럼 곡선 파스텔 헤더 + 프로필 카드가 곡선 중간까지 걸침
-            _buildHeaderWithProfile(),
-            const SizedBox(height: Gap.xl2),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
+            Row(
+              children: [
+                _avatar(56),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            _profile.nickname.isEmpty ? '플로거' : _profile.nickname,
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceBrand,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Lv.${_profile.level}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textOnTint,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: LinearProgressIndicator(
+                                value: _profile.levelProgress,
+                                minHeight: 7,
+                                backgroundColor: AppColors.neutral200,
+                                color: AppColors.actionPrimary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${_profile.xpInLevel} XP',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                const SizedBox(width: 10),
+                _alarmBell(),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _statBox('$_activityCount', '회', '활동'),
+                const SizedBox(width: 10),
+                _statBox(_weightText.replaceAll('kg', ''), 'kg', '수거'),
+                const SizedBox(width: 10),
+                _statBox('$_badgeCount', '개', '뱃지'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _avatar(double size) {
+    final url = _profile.photoUrl;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceBrand,
+        borderRadius: BorderRadius.circular(size * 0.32),
+      ),
+      child: (url == null || url.isEmpty)
+          ? Icon(Icons.person, size: size * 0.55,
+              color: AppColors.textSecondary)
+          : Image.network(url, width: size, height: size, fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Icon(Icons.person,
+                  size: size * 0.55, color: AppColors.textSecondary)),
+    );
+  }
+
+  Widget _statBox(String value, String unit, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.green50,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Text.rich(
+              TextSpan(
+                text: value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
                 children: [
-                  _toggleCard(
-                    icon: Icons.notifications_none,
-                    title: '실시간 알림 설정',
-                    value: _notifications,
-                    onChanged: (v) => setState(() => _notifications = v),
-                    // TODO: 알림 권한/설정에 연결
+                  TextSpan(
+                    text: unit,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                  const SizedBox(height: Gap.md),
-                  _linkCard(
-                    title: '에코포인트 상점',
-                    big: true,
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ShopScreen()),
-                      );
-                      _loadProfile(); // 포인트 사용했을 수 있으니 갱신
-                    },
-                  ),
-                  const SizedBox(height: Gap.xl2),
-                  _menuItem(
-                    Icons.campaign_outlined,
-                    '공지 사항',
-                    const NoticeListScreen(),
-                  ),
-                  const SizedBox(height: Gap.md),
-                  _menuItem(Icons.help_outline, '자주 묻는 질문', const FaqScreen()),
-                  const SizedBox(height: Gap.md),
-                  _menuItem(
-                    Icons.description_outlined,
-                    '이용 약관 및 정책',
-                    const TermsScreen(),
-                  ),
-                  const SizedBox(height: Gap.md),
-                  _menuItem(
-                    Icons.copyright_outlined,
-                    '오픈소스 및 출처',
-                    const LicensesScreen(),
-                  ),
-                  const SizedBox(height: Gap.xl3),
-                  _accountActions(),
                 ],
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -121,302 +353,225 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  // ─────────────────── 곡선 헤더 + 프로필 카드 (홈 스타일) ───────────────────
-  Widget _buildHeaderWithProfile() {
-    return Stack(
-      children: [
-        // 아래가 곡선인 파스텔 헤더 — 프로필 카드 중간쯤까지 내려옴
-        Container(
-          height: 172,
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            color: AppColors.surfaceBrand,
-            borderRadius: BorderRadius.vertical(
-              bottom: Radius.circular(Radii.sheet),
-            ),
-          ),
-        ),
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            // 위 여백 키워서 카드/컨텐츠 전체를 아래로 (숫자 ↑ = 더 내려감)
-            padding: const EdgeInsets.fromLTRB(
-              Gap.screenPad,
-              Gap.xl4,
-              Gap.screenPad,
-              0,
-            ),
-            child: _profileCard(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ───────────────────────── 프로필 카드 ─────────────────────────
-  Widget _profileCard() {
+  // ── 포인트 카드 ──
+  Widget _pointsCard() {
     return GestureDetector(
-      onTap: _openProfile,
       behavior: HitTestBehavior.opaque,
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ShopScreen()),
+        );
+        _loadProfile();
+      },
       child: Container(
-        padding: const EdgeInsets.all(Gap.xl),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: Radii.cardR,
-          boxShadow: AppColors.sheetShadow,
+          color: AppColors.green100,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              alignment: Alignment.center,
-              clipBehavior: Clip.antiAlias,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceBrand,
-              ),
-              child: (_profile.photoUrl == null || _profile.photoUrl!.isEmpty)
-                  ? const Icon(
-                      Icons.person,
-                      color: AppColors.textSecondary,
-                      size: 30,
-                    )
-                  : Image.network(
-                      _profile.photoUrl!,
-                      width: 56,
-                      height: 56,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.person,
-                        color: AppColors.textSecondary,
-                        size: 30,
-                      ),
-                    ),
-            ),
-            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        _profile.nickname.isEmpty ? '플로거' : _profile.nickname,
-                        style: AppType.title2,
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceBrand,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          'Lv.${_profile.level}',
-                          style: AppType.caption.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textOnTint,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '${_formatPoints(_profile.points)} ',
-                              style: AppType.title2
-                                  .copyWith(fontWeight: FontWeight.w800)
-                                  .tabular,
-                            ),
-                            TextSpan(
-                              text: 'P',
-                              style: AppType.title3.copyWith(
-                                color: AppColors.textBrand,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    '사용 가능한 포인트',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textOnTint,
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: _profile.levelProgress,
-                            minHeight: 8,
-                            backgroundColor: AppColors.neutral100,
-                            color: AppColors.progress,
+                  const SizedBox(height: 4),
+                  Text.rich(
+                    TextSpan(
+                      text: _comma(_profile.points),
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textBrandOnLight,
+                      ),
+                      children: const [
+                        TextSpan(
+                          text: ' P',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '${_profile.xpInLevel}/${_profile.xpNeeded}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
+            const Text(
+              '상점 가기',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textBrandOnLight,
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 20,
+                color: AppColors.textBrandOnLight),
           ],
         ),
       ),
     );
   }
 
-  // 1234 → '1,234'
-  String _formatPoints(int v) {
-    final s = v.toString();
-    final buf = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return buf.toString();
-  }
-
-  // ───────────────────────── 토글 카드 ─────────────────────────
-  Widget _toggleCard({
+  Widget _smallCard({
     required IconData icon,
     required String title,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value ? '켜짐' : '꺼짐',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _iconSwitch(icon: icon, value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-
-  // 아이콘이 썸(움직이는 원) 안에 들어간 커스텀 스위치.
-  // OFF: 검정 썸(아이콘 흰색) / ON: 노랑 썸(아이콘 검정).
-  Widget _iconSwitch({
-    required IconData icon,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    const dur = Duration(milliseconds: 240); // ← 애니메이션 속도(작을수록 빠름)
-    const w = 56.0, h = 32.0, thumb = 26.0;
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: dur,
-        curve: Curves.easeInOut,
-        width: w,
-        height: h,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          // 트랙: OFF 연회색 / ON 연한 크림(톤다운)
-          color: value ? const Color(0xFFF7EBC9) : AppColors.border,
-          borderRadius: BorderRadius.circular(h / 2),
-        ),
-        child: AnimatedAlign(
-          duration: dur,
-          curve: Curves.easeInOut,
-          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-          child: AnimatedContainer(
-            duration: dur,
-            curve: Curves.easeInOut,
-            width: thumb,
-            height: thumb,
-            decoration: BoxDecoration(
-              // 썸: OFF 차콜 그레이 / ON 부드러운 골드 (원색 톤다운)
-              color: value ? const Color(0xFFFFEA76) : const Color(0xFF4D4D4D),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: 15,
-              color: value ? const Color(0xFF4D4D4D) : const Color(0xFFF5F5F5),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ───────────────────────── 에코포인트 상점(큰 링크 카드) ─────────────────────────
-  Widget _linkCard({
-    required String title,
+    required String subtitle,
     required VoidCallback onTap,
-    bool big = false,
   }) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: big ? 22 : 18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: AppColors.cardShadow,
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+            Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.green50,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, size: 20, color: AppColors.textBrandOnLight),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  // ───────────────────────── 탈퇴 / 로그아웃 ─────────────────────────
+  // 이용 안내 — 한 덩어리 카드(행 사이 구분선)
+  Widget _infoGroup() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        children: [
+          _infoRow(
+            Icons.campaign_outlined,
+            '공지 사항',
+            onTap: () => _push(const NoticeListScreen()),
+            dot: true,
+            first: true,
+          ),
+          _infoDivider(),
+          _infoRow(
+            Icons.help_outline,
+            '자주 묻는 질문',
+            onTap: () => _push(const FaqScreen()),
+          ),
+          _infoDivider(),
+          _infoRow(
+            Icons.description_outlined,
+            '이용 약관 및 정책',
+            onTap: () => _push(const TermsScreen()),
+          ),
+          _infoDivider(),
+          _infoRow(
+            Icons.copyright_outlined,
+            '오픈소스 및 출처',
+            onTap: () => _push(const LicensesScreen()),
+            last: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoDivider() => const Padding(
+    padding: EdgeInsets.symmetric(horizontal: 18),
+    child: Divider(height: 1, thickness: 0.8, color: AppColors.border),
+  );
+
+  Widget _infoRow(
+    IconData icon,
+    String label, {
+    required VoidCallback onTap,
+    bool dot = false,
+    bool first = false,
+    bool last = false,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        // 위/아래 끝 행만 모서리를 카드에 맞춰 라운드 처리
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.vertical(
+            top: first ? const Radius.circular(18) : Radius.zero,
+            bottom: last ? const Radius.circular(18) : Radius.zero,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, size: 21, color: AppColors.textSecondary),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            if (dot)
+              Container(
+                width: 7,
+                height: 7,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: const BoxDecoration(
+                  color: AppColors.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            const Icon(Icons.chevron_right, size: 20,
+                color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _accountActions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -424,7 +579,7 @@ class _MenuScreenState extends State<MenuScreen> {
         TextButton(
           onPressed: _confirmDelete,
           child: const Text(
-            '탈퇴하기',
+            '회원 탈퇴',
             style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
         ),
@@ -472,35 +627,5 @@ class _MenuScreenState extends State<MenuScreen> {
       return;
     }
     if (mounted) context.go('/login');
-  }
-
-  // ───────────────────────── 하단 메뉴 항목 ─────────────────────────
-  Widget _menuItem(IconData icon, String label, Widget screen) {
-    return GestureDetector(
-      onTap: () =>
-          Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppColors.cardShadow,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: AppColors.textPrimary),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

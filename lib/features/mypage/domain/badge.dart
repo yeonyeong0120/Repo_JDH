@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:repo_jdh/core/theme/app_colors.dart';
 
 /// 뱃지 등급 (씨앗 → 새싹 → 나무 → 숲)
 enum BadgeTier { seed, sprout, tree, forest }
@@ -242,3 +243,32 @@ class BadgeRepo {
   static List<BadgeData> earnedBadges() =>
       kBadges.where((b) => isEarned(b.id)).toList();
 }
+
+/// 뱃지 카테고리 색 — 지표 색과 짝을 맞춘다. 타일·링·상세 팝업에서 공통 사용.
+///  걸음·거리=파랑 / 수거=초록 / 그룹=주황 / 시간=노랑 / 칼로리=빨강
+Color badgeColor(BadgeData b) {
+  final id = b.id;
+  if (id.startsWith('steps') ||
+      id.startsWith('distance') ||
+      id == 'first_plogging') {
+    return AppColors.dataSteps;
+  }
+  if (id.startsWith('kcal')) return AppColors.dataCalorie;
+  if (id.startsWith('weight') ||
+      id.startsWith('plastic') ||
+      id == 'first_verify') {
+    return AppColors.green600;
+  }
+  if (id.startsWith('group') || id.startsWith('share')) {
+    return AppColors.dataGroup;
+  }
+  if (id.startsWith('time') || id == 'first_30min') return AppColors.dataTime;
+  return AppColors.green600; // 연속(숲) 등 기타
+}
+
+/// 뱃지 경험치 = 포인트 / 25 (상세 팝업 표시용)
+int badgeXp(BadgeData b) => b.points ~/ 25;
+
+/// 쓰레기봉투 아이콘으로 표시할 뱃지 — 수거 '봉지' 뱃지('한 봉지의 시작') 하나뿐.
+/// 같은 아이콘을 여러 뱃지에 중복해서 쓰지 않는다.
+bool usesTrashBagIcon(BadgeData b) => b.id == 'weight_1kg';

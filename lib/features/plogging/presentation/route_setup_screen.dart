@@ -70,19 +70,10 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
   static const _fallback = NLatLng(37.5074, 126.7218);
 
   // 경로 색상.
-  static const _routeColor = Color(0xFF1D9E75);
-
-  // 핀 마커 크기(출발: 핀만 / 도착: 핀 + 라벨). 아래는 이미지를 굽는 원본 해상도.
-  static const double _pinW = 46;
-  static const double _pinH = 58;
-  static const double _markerW = 180;
-  static const double _markerH = 58;
-
-  // 지도에 실제로 표시되는 마커 배율. 원본 해상도는 그대로 두고 표시 크기만 줄여
-  // 핀·아이콘·라벨이 통째로 균일하게 축소된다(잘림 없음). 1.0 = 원본, 작을수록 작아짐.
-  static const double _markerScale = 0.8;
+  static const _routeColor = AppColors.routeLine;
 
   NaverMapController? _controller;
+  bool _dragging = false; // 지도를 움직이는 중인지 (중앙 깃발 살짝 뜸)
   // GPS 위치를 받아 지도를 처음 한 번만 출발지로 이동시키기 위한 플래그.
   bool _centeredOnOrigin = false;
 
@@ -116,6 +107,8 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
       });
     });
 
+    final bool showHint = _dragging || destination == null;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -125,35 +118,81 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
                 target: _fallback,
                 zoom: 14,
               ),
-              locationButtonEnable: true,
+              locationButtonEnable: false,
             ),
             onMapReady: (controller) {
               _controller = controller;
-              // 지도가 준비된 시점에 이미 GPS를 받았다면 즉시 이동한다.
               _centerOnOrigin(originAsync.valueOrNull);
               _render();
             },
-            onMapTapped: _onMapTapped,
+            // 탭이 아니라 '지도를 움직여' 중앙 깃발에 맞춘다.
+            onCameraChange: _onCameraChange,
+            onCameraIdle: _onCameraIdle,
           ),
-          // 상단 뒤로가기
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: _circleButton(
-                  icon: Icons.arrow_back_ios_new,
-                  onPressed: () => context.pop(),
+
+          // 중앙 고정 타깃 점 (깃발 끝이 가리키는 지점)
+          const IgnorePointer(
+            child: Center(
+              child: _CenterDot(),
+            ),
+          ),
+          // 중앙 고정 깃발 + ETA (핀 끝이 타깃 점에 오도록 위로 올림)
+          IgnorePointer(
+            child: Center(
+              child: Transform.translate(
+                // 꼬리 끝(하단)이 중앙 타깃 점에 오도록 위로 올린다. 말풍선 슬롯 포함 총높이의 절반.
+                offset: const Offset(0, -46),
+                child: _CenterFlag(etaLabel: _etaLabel(routeState)),
+              ),
+            ),
+          ),
+
+          // 상단: 뒤로가기 + 내 위치
+          Positioned(
+            left: 16,
+            right: 16,
+            top: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _glassButton(
+                      icon: Icons.chevron_left,
+                      onTap: () => context.pop(),
+                    ),
+                    _glassButton(
+                      icon: Icons.my_location,
+                      onTap: _recenter,
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          // 하단 패널(안내 + 경로 받기 + 카메라)
+          // 힌트 칩
+          if (showHint)
+            Positioned(
+              left: 16,
+              right: 16,
+              top: 0,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 64),
+                  child: Center(child: _hintChip()),
+                ),
+              ),
+            ),
+
+          // 하단 카드
           Positioned(
             left: 16,
             right: 16,
             bottom: 24,
-            child: _buildPanel(originAsync, destination, routeState),
+            child: _buildCard(originAsync, destination, routeState),
           ),
         ],
       ),
@@ -177,18 +216,100 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
     _render();
   }
 
-  // 지도 탭 → 도착지 설정/갱신 → 경로 자동 추천.
-  void _onMapTapped(NPoint point, NLatLng latLng) {
+  // 지도를 움직이는 중: 깃발을 살짝 띄우고, 이전 추천 경로는 비운다.
+  void _onCameraChange(NCameraUpdateReason reason, bool animated) {
+    if (reason != NCameraUpdateReason.gesture) return;
+    if (!_dragging) {
+      setState(() => _dragging = true);
+      ref.read(routeNotifierProvider.notifier).reset();
+      _render(); // 경로 폴리라인 제거 (출발 마커만 남김)
+    }
+  }
+
+  // 지도가 멈추면: 화면 중앙 좌표를 도착지로 확정하고 경로를 다시 요청한다.
+  Future<void> _onCameraIdle() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final pos = await controller.getCameraPosition();
+    if (!mounted) return;
+    final center = pos.target;
     ref.read(destinationProvider.notifier).state = (
-      latLng.latitude,
-      latLng.longitude,
+      center.latitude,
+      center.longitude,
     );
-    // 새 요청 시작 전에 이전 추천 경로를 비워 stale 폴리라인이 남지 않게 한다.
-    ref.read(routeNotifierProvider.notifier).reset();
-    _render(); // 이 시점엔 출발·도착 마커만 그려진다(경로 없음).
-    // 도착지를 설정/이동하면 경로를 자동으로 다시 추천한다.
-    // TODO(추후 디바운스 검토): 짧은 시간 연속 탭 시 요청이 몰리므로 디바운스 적용 검토.
+    setState(() => _dragging = false);
     _requestRoute();
+  }
+
+  // 내 위치로 복귀
+  void _recenter() {
+    final loc = ref.read(currentLocationProvider).valueOrNull;
+    final lat = (loc?['latitude'] as num?)?.toDouble();
+    final lon = (loc?['longitude'] as num?)?.toDouble();
+    final controller = _controller;
+    if (controller == null || lat == null || lon == null) return;
+    controller.updateCamera(
+      NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 15),
+    );
+  }
+
+  // 도착 마커 라벨과 같은 값: '약 N분 · N.Nkm' (결과 있을 때만)
+  String? _etaLabel(AsyncValue<RouteResult?> routeState) {
+    final result = routeState.valueOrNull;
+    if (result == null || result.durationMs <= 0) return null;
+    final min = (result.durationMs / 60000).round();
+    final km = (result.distanceM / 1000).toStringAsFixed(1);
+    return '약 ${min < 1 ? 1 : min}분 · ${km}km';
+  }
+
+  Widget _hintChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.neutral900.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.pan_tool_alt_outlined, size: 19, color: Colors.white),
+          SizedBox(width: 7),
+          Text(
+            '지도를 움직여 도착지를 맞춰주세요',
+            style: TextStyle(
+              fontSize: 13.5,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _glassButton({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: 0.86),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.neutral900.withValues(alpha: 0.10),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 23, color: AppColors.textPrimary),
+      ),
+    );
   }
 
   // 현재 상태(출발지·도착지·추천 결과)를 지도에 통째로 다시 그린다.
@@ -200,7 +321,7 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
 
     final overlays = <NAddableOverlay>{};
 
-    // 출발지 마커 (원 안 사람 핀)
+    // 출발지(내 위치) 마커 — 흰 링 안 초록 점(퍽)
     final origin = ref.read(currentLocationProvider).valueOrNull;
     final originLat = (origin?['latitude'] as num?)?.toDouble();
     final originLon = (origin?['longitude'] as num?)?.toDouble();
@@ -212,31 +333,15 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
           id: 'origin',
           position: NLatLng(originLat, originLon),
           icon: originIcon,
-          size: const NSize(_pinW * _markerScale, _pinH * _markerScale),
-          anchor: const NPoint(0.5, 1.0),
+          size: const NSize(26, 26),
+          anchor: const NPoint(0.5, 0.5), // 점이라 정중앙 고정
         ),
       );
     }
 
-    // 도착지 마커 (깃발 핀 + "약 N분" 라벨, 결과 없으면 라벨 없음)
-    final dest = ref.read(destinationProvider);
-    if (dest != null) {
-      final label = _destLabel(ref.read(routeNotifierProvider));
-      final icon = await _buildDestMarkerIcon(label);
-      if (!mounted) return;
-      overlays.add(
-        NMarker(
-          id: 'dest',
-          position: NLatLng(dest.$1, dest.$2),
-          icon: icon,
-          size: const NSize(_markerW * _markerScale, _markerH * _markerScale),
-          // 핀 끝(좌측 핀 하단 중앙)이 좌표를 가리키도록 앵커 지정(비율이라 배율과 무관)
-          anchor: const NPoint(_pinW / 2 / _markerW, 1.0),
-        ),
-      );
-    }
+    // 도착지는 화면 중앙 고정 깃발이 대신한다(지도 마커 없음).
 
-    // 추천 경로 + 핫스팟
+    // 추천 경로 + 정화 거점(핫스팟) 마커
     final result = ref.read(routeNotifierProvider).valueOrNull;
     if (result != null) {
       if (result.polyline.length >= 2) {
@@ -251,51 +356,47 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
           ),
         );
       }
-      // k3 핫스팟은 지도에 마커로 표시하지 않는다(경로 폴리라인만 노출).
+      // 정화 거점: 흰 핀 + 초록 재활용 아이콘
+      final hotspotIcon = await _buildHotspotIcon();
+      if (!mounted) return;
+      for (int i = 0; i < result.k3Hotspots.length; i++) {
+        final h = result.k3Hotspots[i];
+        overlays.add(
+          NMarker(
+            id: 'hotspot_$i',
+            position: NLatLng(h.latitude, h.longitude),
+            icon: hotspotIcon,
+            size: const NSize(34, 42),
+            anchor: const NPoint(0.5, 1.0),
+          ),
+        );
+      }
     }
 
     controller.clearOverlays();
     if (overlays.isNotEmpty) controller.addOverlayAll(overlays);
   }
 
-  // 도착 마커 라벨: 경로 결과가 있으면 "약 N분", 아직 없으면(로딩/실패) 라벨 없음.
-  String? _destLabel(AsyncValue<RouteResult?> routeState) {
-    final result = routeState.valueOrNull;
-    if (result != null && result.durationMs > 0) {
-      final min = (result.durationMs / 60000).round();
-      return '약 ${min < 1 ? 1 : min}분';
-    }
-    return null;
-  }
-
-  // 깃발+라벨 위젯을 도착 마커용 이미지로 변환한다.
-  Future<NOverlayImage> _buildDestMarkerIcon(String? label) {
+  // 내 위치 퍽: 흰 링 + 초록 점.
+  Future<NOverlayImage> _buildOriginMarkerIcon() {
     return NOverlayImage.fromWidget(
       context: context,
-      size: const Size(_markerW, _markerH),
-      widget: _PinMarker(
-        head: const Icon(Icons.flag, color: Colors.white, size: 28),
-        label: label,
+      size: const Size(30, 30),
+      widget: const Directionality(
+        textDirection: TextDirection.ltr,
+        child: _LocationPuck(),
       ),
     );
   }
 
-  // 출발 마커용 이미지(원 안 사람 핀).
-  Future<NOverlayImage> _buildOriginMarkerIcon() {
+  // 정화 거점 핀: 흰 물방울 + 초록 재활용 아이콘.
+  Future<NOverlayImage> _buildHotspotIcon() {
     return NOverlayImage.fromWidget(
       context: context,
-      size: const Size(_pinW, _pinH),
-      widget: _PinMarker(
-        head: Container(
-          width: 24,
-          height: 24,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.person, color: AppColors.primary, size: 16),
-        ),
+      size: const Size(34, 42),
+      widget: const Directionality(
+        textDirection: TextDirection.ltr,
+        child: _HotspotPin(),
       ),
     );
   }
@@ -330,187 +431,272 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  // 하단 패널: 추천 상태(AsyncValue.when)에 따른 안내 + 경로 받기 + 카메라 버튼.
-  Widget _buildPanel(
+  // 하단 카드(이미지1): 도착지 헤더 + 정화 거점/위험 구간 안내 + '이 위치로 도착지 설정'.
+  Widget _buildCard(
     AsyncValue<Map<String, dynamic>?> originAsync,
     (double, double)? destination,
     AsyncValue<RouteResult?> routeState,
   ) {
-    return Card(
-      elevation: 4,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 안내 문구 / 추천 결과
-            routeState.when(
-              loading: () => const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
+    final result = routeState.valueOrNull;
+    final bool loading = routeState.isLoading;
+    final bool hasError = routeState.hasError && !loading;
+    final bool ready = result != null && !loading;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppColors.sheetShadow,
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 도착지 헤더 (깃발 타일 + 라벨 + 주소) — 깃발은 위쪽 정렬
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.green100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.flag_rounded,
+                  size: 22,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '도착지',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                        color: AppColors.textBrandOnLight,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 12),
-                  Text('경로를 받는 중...'),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      // TODO: Geocoding 프록시 연결 시 실제 주소로 대체.
+                      _dragging ? '도착지를 맞추는 중' : '지도 중앙 지점',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      _dragging ? '핀을 원하는 위치에 맞춰요' : '핀 위치를 도착지로 설정해요',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              error: (e, _) => Text(
-                e.toString(),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ],
+          ),
+
+          // 구분선 + 안내(정화 거점 / 위험 구간)
+          if (!_dragging) ...[
+            const SizedBox(height: 14),
+            Divider(height: 1, thickness: 1, color: AppColors.border),
+            const SizedBox(height: 14),
+            if (loading)
+              _noticeRow(
+                icon: Icons.route_rounded,
+                text: '경로를 계산하고 있어요',
+                color: AppColors.textBrandOnLight,
+              )
+            else if (hasError)
+              _noticeRow(
+                icon: Icons.error_outline_rounded,
+                text: '경로를 계산하지 못했어요. 도착지를 다시 맞춰주세요.',
+                color: AppColors.actionDanger,
+              )
+            else if (ready) ...[
+              _noticeRow(
+                icon: Icons.recycling,
+                text: '정화 거점 ${result.k3Hotspots.length}곳을 지나요',
+                color: AppColors.textBrandOnLight,
               ),
-              data: (result) =>
-                  _buildStatusText(originAsync, destination, result),
+              if (result.isHardCase) ...[
+                const SizedBox(height: 10),
+                _noticeRow(
+                  icon: Icons.warning_amber_rounded,
+                  text: '위험 구간 약 ${result.intersectionM}m를 지나요',
+                  color: AppColors.warning,
+                ),
+              ],
+            ],
+          ],
+
+          const SizedBox(height: 16),
+          _startButton(loading: loading),
+        ],
+      ),
+    );
+  }
+
+  // 안내 한 줄 (아이콘 + 문구)
+  Widget _noticeRow({
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 19, color: color),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14.5,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+              color: color == AppColors.textBrandOnLight
+                  ? AppColors.textPrimary
+                  : color,
             ),
-            const SizedBox(height: 12),
-            // 플로깅 시작: 도착지가 설정돼야 활성화한다(준비 → 시작 흐름).
-            // 도착지·경로는 Riverpod provider로 공유되므로 추적 화면이 동일 상태를 watch한다.
-            // TODO(정식 출시): '경로 추천 성공 시에만 시작 가능'으로 조이기 검토.
-            FilledButton.icon(
-              onPressed: destination == null
-                  ? null
-                  : () => context.push(AppRoutes.ploggingTracking),
-              icon: const Icon(Icons.directions_run),
-              label: const Text('플로깅 시작'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // '이 위치로 도착지 설정' 버튼 (58px).
+  Widget _startButton({required bool loading}) {
+    final String label = _dragging
+        ? '도착지를 맞추는 중'
+        : (loading ? '경로 계산 중' : '이 위치로 도착지 설정');
+    // TODO(임시): 트래킹 화면 확인용 잠금 해제. 정식엔 ready 조건 추가.
+    final bool enabled = !_dragging && !loading;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: enabled ? () => context.push(AppRoutes.ploggingTracking) : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 58,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: enabled ? AppColors.actionPrimary : AppColors.neutral200,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (loading)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: AppColors.textSecondary,
+                ),
+              )
+            else
+              Icon(
+                Icons.flag_rounded,
+                size: 21,
+                color: enabled ? AppColors.textOnBrand : AppColors.textDisabled,
+              ),
+            const SizedBox(width: 9),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: enabled ? AppColors.textOnBrand : AppColors.textDisabled,
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  // 추천 전/후 안내 문구.
-  Widget _buildStatusText(
-    AsyncValue<Map<String, dynamic>?> originAsync,
-    (double, double)? destination,
-    RouteResult? result,
-  ) {
-    // 추천 결과가 있으면 통과 정보 + hard case 안내.
-    if (result != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '거리 ${result.distanceM}m · 통과 ${result.intersectionM}m · '
-            '${result.isHardCase ? "hard case" : "정상"}',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          if (result.isHardCase)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                '산업지대 약 ${result.intersectionM}m 통과',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
+// 내 위치 퍽: 흰 링 + 초록 점.
+class _LocationPuck extends StatelessWidget {
+  const _LocationPuck();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 26,
+        height: 26,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.neutral900.withValues(alpha: 0.22),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
-        ],
-      );
-    }
-
-    // 추천 전: GPS·도착지 선택 안내.
-    return originAsync.when(
-      loading: () => const Text('현재 위치를 확인하는 중...'),
-      error: (_, __) => const Text('현재 위치를 가져오지 못했습니다. 위치 권한을 확인해 주세요.'),
-      data: (_) =>
-          Text(destination == null ? '지도를 탭해 도착지를 선택하세요.' : '도착지가 설정되었습니다.'),
-    );
-  }
-
-  Widget _circleButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+          ],
+        ),
+        child: const DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
           ),
-        ],
-      ),
-      child: IconButton(
-        padding: EdgeInsets.zero,
-        iconSize: 20,
-        icon: Icon(icon),
-        color: Colors.black87,
-        onPressed: onPressed,
+          child: SizedBox(width: 13, height: 13),
+        ),
       ),
     );
   }
 }
 
-// 지도 마커 공통 핀: 부드러운 물방울 형태 + 가운데 아이콘(+오른쪽 라벨).
-// NOverlayImage.fromWidget 으로 이미지 변환되어 마커 아이콘이 된다.
-class _PinMarker extends StatelessWidget {
-  final Widget head; // 핀 머리 안에 들어갈 위젯(깃발/사람 등)
-  final String? label; // null이면 핀만
-  const _PinMarker({required this.head, this.label});
+// 정화 거점 핀: 흰 물방울 + 초록 재활용 아이콘.
+class _HotspotPin extends StatelessWidget {
+  const _HotspotPin();
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+    return SizedBox(
+      width: 34,
+      height: 42,
+      child: Stack(
         children: [
-          // 물방울 핀 + 머리 아이콘
-          SizedBox(
-            width: 46,
-            height: 58,
-            child: Stack(
-              children: [
-                const Positioned.fill(
-                  child: CustomPaint(painter: _PinPainter(AppColors.primary)),
-                ),
-                // 머리 중심(대략 y=22)에 아이콘 배치
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 10,
-                  child: Center(child: head),
-                ),
-              ],
-            ),
-          ),
-          if (label != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 6, top: 6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
-                ),
-                child: Text(
-                  label!,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+          const Positioned.fill(
+            child: CustomPaint(
+              painter: _PinPainter(
+                Colors.white,
+                border: Color(0x2924302B),
+                shadow: true,
               ),
             ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 5,
+            child: Center(
+              child: Icon(Icons.recycling, color: AppColors.primary, size: 17),
+            ),
+          ),
         ],
       ),
     );
@@ -519,8 +705,10 @@ class _PinMarker extends StatelessWidget {
 
 // 부드러운 물방울(핀) 모양을 그린다. 하단 끝점이 좌표를 가리킨다.
 class _PinPainter extends CustomPainter {
-  final Color color;
-  const _PinPainter(this.color);
+  final Color color; // 채움색
+  final Color? border; // 있으면 테두리
+  final bool shadow; // 흰 핀이 밝은 지도에서 묻히지 않도록 그림자
+  const _PinPainter(this.color, {this.border, this.shadow = false});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -533,9 +721,133 @@ class _PinPainter extends CustomPainter {
       ..cubicTo(25 * sx, 60 * sy, 50 * sx, 40 * sy, 50 * sx, 24 * sy)
       ..cubicTo(50 * sx, 11 * sy, 39 * sx, 0, 25 * sx, 0)
       ..close();
+    if (shadow) {
+      canvas.drawShadow(path, Colors.black.withValues(alpha: 0.4), 3, false);
+    }
     canvas.drawPath(path, Paint()..color = color);
+    if (border != null) {
+      canvas.drawPath(
+        path,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * sx
+          ..color = border!,
+      );
+    }
   }
 
   @override
-  bool shouldRepaint(covariant _PinPainter old) => old.color != color;
+  bool shouldRepaint(covariant _PinPainter old) =>
+      old.color != color || old.border != border || old.shadow != shadow;
+}
+
+// 화면 중앙에 고정되는 타깃 점. 깃발 대의 끝이 가리키는 실제 도착 지점.
+class _CenterDot extends StatelessWidget {
+  const _CenterDot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        color: AppColors.neutral900.withValues(alpha: 0.55),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+    );
+  }
+}
+
+// 화면 중앙에 고정되는 도착지 핀(이미지1): 흰 원 + 초록 깃발 + 아래 삼각 꼬리.
+// 경로가 계산되면 원 위에 검은 ETA 말풍선을 띄운다(레이아웃 밀림 방지용 고정 슬롯).
+class _CenterFlag extends StatelessWidget {
+  final String? etaLabel; // '약 N분 · N.Nkm' (경로 결과 있을 때만)
+  const _CenterFlag({this.etaLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 말풍선 슬롯: 높이를 고정해 핀의 세로 위치가 ETA 유무에 상관없이 일정하다.
+        SizedBox(
+          height: 30,
+          child: etaLabel == null
+              ? null
+              : Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.neutral900.withValues(alpha: 0.92),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      etaLabel!,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+        ),
+        const SizedBox(height: 6),
+        // 흰 원 + 꼬리를 하나의 도형(union)으로 그린 핀 + 초록 깃발
+        SizedBox(
+          width: 46,
+          height: 55,
+          child: Stack(
+            children: [
+              const Positioned.fill(
+                child: CustomPaint(painter: _PinShapePainter()),
+              ),
+              const Positioned(
+                left: 0,
+                right: 0,
+                top: 11,
+                child: Center(
+                  child: Icon(
+                    Icons.flag_rounded,
+                    color: AppColors.primary,
+                    size: 23,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// 도착지 핀: 원 + 아래 삼각을 union 으로 합쳐 이음새 없이 그린다.
+class _PinShapePainter extends CustomPainter {
+  const _PinShapePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final double r = w / 2;
+    final double cy = r; // 원 중심 y = 반지름
+    final circle = Path()
+      ..addOval(Rect.fromCircle(center: Offset(w / 2, cy), radius: r));
+    final tri = Path()
+      ..moveTo(w / 2 - r * 0.64, cy + r * 0.52)
+      ..lineTo(w / 2 + r * 0.64, cy + r * 0.52)
+      ..lineTo(w / 2, h)
+      ..close();
+    final pin = Path.combine(PathOperation.union, circle, tri);
+    canvas.drawShadow(pin, Colors.black.withValues(alpha: 0.4), 4, false);
+    canvas.drawPath(pin, Paint()..color = Colors.white..isAntiAlias = true);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PinShapePainter oldDelegate) => false;
 }

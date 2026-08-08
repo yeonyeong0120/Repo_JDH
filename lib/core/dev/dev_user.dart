@@ -9,7 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 /// 위치 권장: lib/core/dev/dev_user.dart
 class DevUser {
   /// false 로 바꾸면 실제 로그인 사용자만 사용 (운영 동작)
-  static const bool enabled = true;
+  static const bool enabled = false;
 
   /// 로그인 없이 사용할 고정 uid
   static const String uid = 'dev_user';

@@ -192,9 +192,10 @@ class AppTheme {
           borderRadius: Radii.innerR,
           borderSide: const BorderSide(color: AppColors.border),
         ),
+        // 포커스 시 초록 테두리를 쓰지 않는다(공통). enabled 와 동일한 회색 테두리 유지.
         focusedBorder: OutlineInputBorder(
           borderRadius: Radii.innerR,
-          borderSide: const BorderSide(color: AppColors.actionPrimary, width: 2),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: Radii.innerR,

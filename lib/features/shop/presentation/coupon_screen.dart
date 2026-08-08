@@ -11,7 +11,7 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
 
-/// SHOP-03 쿠폰함 (미사용 / 사용완료·만료)
+/// SHOP-03 내 쿠폰함 (사용 가능 / 사용 완료 탭)
 /// 위치 권장: lib/features/shop/presentation/coupon_screen.dart
 class CouponScreen extends StatefulWidget {
   const CouponScreen({super.key});
@@ -23,6 +23,7 @@ class CouponScreen extends StatefulWidget {
 class _CouponScreenState extends State<CouponScreen> {
   List<Coupon> _coupons = [];
   bool _loading = true;
+  int _tab = 0; // 0 사용 가능 / 1 사용 완료
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _CouponScreenState extends State<CouponScreen> {
   Widget build(BuildContext context) {
     final usable = _coupons.where((c) => c.usable).toList();
     final done = _coupons.where((c) => !c.usable).toList();
+    final list = _tab == 0 ? usable : done;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -74,41 +76,22 @@ class _CouponScreenState extends State<CouponScreen> {
                 ],
               ),
             ),
+            _tabs(),
             Expanded(
               child: _loading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: AppColors.primary,
+                        color: AppColors.actionPrimary,
                         strokeWidth: 2,
                       ),
                     )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                      children: [
-                        _label('미사용 쿠폰'),
-                        const SizedBox(height: 10),
-                        if (usable.isEmpty)
-                          _empty('사용할 수 있는 쿠폰이 없어요')
-                        else
-                          ...usable.map(
-                            (c) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _card(c),
-                            ),
-                          ),
-                        const SizedBox(height: 24),
-                        _label('사용 완료 및 만료'),
-                        const SizedBox(height: 10),
-                        if (done.isEmpty)
-                          _empty('아직 없어요')
-                        else
-                          ...done.map(
-                            (c) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _card(c),
-                            ),
-                          ),
-                      ],
+                  : list.isEmpty
+                  ? _empty(_tab == 0 ? '사용할 수 있는 쿠폰이 없어요' : '사용 완료·만료된 쿠폰이 없어요')
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+                      itemCount: list.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (_, i) => _card(list[i]),
                     ),
             ),
           ],
@@ -117,27 +100,58 @@ class _CouponScreenState extends State<CouponScreen> {
     );
   }
 
-  Widget _label(String t) => Text(
-    t,
-    style: const TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.w800,
-      color: AppColors.textPrimary,
-    ),
-  );
+  // ── 사용 가능 / 사용 완료 탭 ──
+  Widget _tabs() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          _tabItem('사용 가능', 0),
+          const SizedBox(width: 22),
+          _tabItem('사용 완료', 1),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
 
-  Widget _empty(String t) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(vertical: 24),
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: AppColors.border),
-    ),
+  Widget _tabItem(String label, int i) {
+    final on = _tab == i;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _tab = i),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: on ? FontWeight.w800 : FontWeight.w600,
+                color: on ? AppColors.textPrimary : AppColors.textSecondary,
+              ),
+            ),
+          ),
+          // 활성 탭 밑줄
+          Container(
+            height: 2.5,
+            width: 52,
+            decoration: BoxDecoration(
+              color: on ? AppColors.actionPrimary : Colors.transparent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _empty(String t) => Center(
     child: Text(
       t,
-      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+      style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
     ),
   );
 
@@ -153,7 +167,7 @@ class _CouponScreenState extends State<CouponScreen> {
         _load();
       },
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
@@ -161,7 +175,7 @@ class _CouponScreenState extends State<CouponScreen> {
         ),
         child: Row(
           children: [
-            Opacity(opacity: dim ? 0.45 : 1, child: _thumb(56)),
+            Opacity(opacity: dim ? 0.5 : 1, child: _thumb(64)),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -177,44 +191,65 @@ class _CouponScreenState extends State<CouponScreen> {
                   const SizedBox(height: 2),
                   Text(
                     c.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
                       color: dim
                           ? AppColors.textSecondary
                           : AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    c.expiresText,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: dim ? AppColors.textSecondary : AppColors.primary,
-                    ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _statusPill(c),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          c.expiresText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            if (dim)
-              Text(
-                c.statusText,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-              )
-            else
-              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
           ],
+        ),
+      ),
+    );
+  }
+
+  // 상태 배지 — 사용 가능(초록) / 사용 완료·기간 만료(회색)
+  Widget _statusPill(Coupon c) {
+    final usable = c.usable;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: usable ? AppColors.green100 : AppColors.neutral100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        usable ? '사용 가능' : c.statusText,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: usable ? AppColors.textBrandOnLight : AppColors.textSecondary,
         ),
       ),
     );
   }
 }
 
-/// SHOP-04 쿠폰 상세 (바코드 + 사용 완료)
+/// SHOP-04 쿠폰 상세 (바코드 + 사용 완료 처리)
 class CouponDetailScreen extends StatefulWidget {
   final Coupon coupon;
   const CouponDetailScreen({super.key, required this.coupon});
@@ -311,7 +346,12 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     final c = widget.coupon;
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: SafeArea(
+      body: Stack(
+        clipBehavior: Clip.none, // 오프스크린(-4000) 캡처 카드가 클립되지 않도록
+        children: [
+          // 갤러리 저장·공유용 오프스크린 캡처 카드(사진+상품명+유효기한+바코드 한 장)
+          Positioned(left: -4000, top: 0, child: _captureCard(c)),
+          SafeArea(
         child: Column(
           children: [
             Padding(
@@ -324,7 +364,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-                    '쿠폰 상세',
+                    '쿠폰',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -336,183 +376,148 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                 children: [
-                  Center(
-                    child: Opacity(
-                      opacity: _used ? 0.4 : 1,
-                      child: _thumb(150),
-                    ),
-                  ),
+                  _mainCard(c),
                   const SizedBox(height: 16),
-                  Text(
-                    c.brand,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
+                  _guideCard(c),
+                ],
+              ),
+            ),
+            // 하단 고정: 공유 / 저장 + 사용 완료 처리
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _outlinedAction(
+                          Icons.ios_share,
+                          '공유',
+                          _share,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _outlinedAction(
+                          Icons.download_outlined,
+                          '저장',
+                          _save,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 10),
+                  _bottomButton(c),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+        ],
+      ),
+    );
+  }
+
+  // ── 저장·공유 전용 캡처 카드 (초록 헤더 + 사진 + 상품명 + 유효기한 + 바코드) ──
+  Widget _captureCard(Coupon c) {
+    return RepaintBoundary(
+      key: _shotKey,
+      child: Container(
+        width: 340,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 초록 헤더
+            Container(
+              width: double.infinity,
+              color: AppColors.actionPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              child: Row(
+                children: const [
+                  Icon(Icons.eco, size: 18, color: Colors.white),
+                  SizedBox(width: 8),
                   Text(
-                    c.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
+                    '플로고 에코포인트 쿠폰',
+                    style: TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  // 바코드 (이 영역이 공유·저장 시 캡처됨)
-                  RepaintBoundary(
-                    key: _shotKey,
-                    child: Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                      child: Opacity(
-                        opacity: _used ? 0.35 : 1,
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      _thumb(64),
+                      const SizedBox(width: 14),
+                      Expanded(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              c.name,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // TODO: 실제 바코드 규격이 필요하면 barcode_widget 패키지로 교체
-                            SizedBox(
-                              height: 76,
-                              child: CustomPaint(
-                                size: const Size(double.infinity, 76),
-                                painter: _BarcodePainter(c.code),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              c.code,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                letterSpacing: 3,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              c.expiresText,
+                              c.brand,
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: AppColors.textSecondary,
                               ),
                             ),
+                            const SizedBox(height: 3),
+                            Text(
+                              c.name,
+                              style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              c.expiresText,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textBrandOnLight,
+                              ),
+                            ),
                           ],
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const _DashedDivider(),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 88,
+                    child: CustomPaint(
+                      size: const Size(double.infinity, 88),
+                      painter: _BarcodePainter(c.code),
                     ),
                   ),
-                  const SizedBox(height: 22),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _action(Icons.zoom_out_map, '확대', () => _zoom(c)),
-                      const SizedBox(width: 36),
-                      _action(Icons.share_outlined, '공유', _share),
-                      const SizedBox(width: 36),
-                      _action(Icons.download_outlined, '저장', _save),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-                  const Divider(color: AppColors.border, height: 1),
-                  const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        '유효기간  |  ',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      Text(
-                        c.expiresText,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 12),
+                  Text(
+                    _spacedCode(c.code),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ],
-              ),
-            ),
-            // 사용 완료 / 되돌리기 (기간이 지난 쿠폰은 조작 불가)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
-              child: c.expired
-                  ? Container(
-                      height: 52,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.border,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Text(
-                        '기간이 만료된 쿠폰이에요',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    )
-                  : GestureDetector(
-                      onTap: _toggleUsed,
-                      child: Container(
-                        height: 52,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: _used ? AppColors.surface : AppColors.primary,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: _used
-                                ? AppColors.border
-                                : AppColors.primary,
-                          ),
-                        ),
-                        child: Text(
-                          _used ? '사용 완료 취소' : '사용완료',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: _used
-                                ? AppColors.textSecondary
-                                : Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-            ),
-            // 버튼 아래 안내
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
-              child: Text(
-                c.expired
-                    ? '유효기간이 지나 사용할 수 없어요.'
-                    : _used
-                    ? '이미 사용한 쿠폰이에요. 실수로 눌렀다면 되돌릴 수 있어요.'
-                    : '매장에서 바코드를 보여준 뒤 사용 완료를 눌러주세요.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.6,
-                  color: AppColors.textSecondary,
-                ),
               ),
             ),
           ],
@@ -521,22 +526,247 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
-  Widget _action(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+  // ── 상품 + 바코드 카드 ──
+  Widget _mainCard(Coupon c) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: AppColors.cardShadow,
+      ),
       child: Column(
         children: [
-          Icon(icon, size: 22, color: AppColors.textSecondary),
-          const SizedBox(height: 4),
+          Opacity(opacity: _used ? 0.4 : 1, child: _thumb(96)),
+          const SizedBox(height: 16),
           Text(
-            label,
+            c.brand,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            c.name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _detailStatusPill(c),
+          const SizedBox(height: 20),
+          const _DashedDivider(),
+          const SizedBox(height: 20),
+          // 화면용 바코드 (탭하면 확대). 저장·공유 이미지는 _captureCard 로 별도 구성.
+          GestureDetector(
+            onTap: () => _zoom(c),
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Opacity(
+                opacity: _used ? 0.35 : 1,
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 78,
+                        child: CustomPaint(
+                          size: const Size(double.infinity, 78),
+                          painter: _BarcodePainter(c.code),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _spacedCode(c.code),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 2,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 10),
+          Text(
+            _used ? '이미 사용한 쿠폰이에요' : '매장에서 바코드를 보여주세요',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textBrandOnLight,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  // ── 사용 안내 카드 ──
+  Widget _guideCard(Coupon c) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 14, bottom: 6),
+            child: Text(
+              '사용 안내',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          _guideRow('유효 기간', c.expiresText, last: false),
+          _guideRow('사용처', '${c.brand} 전 매장', last: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _guideRow(String label, String value, {required bool last}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 13),
+      decoration: BoxDecoration(
+        border: last
+            ? null
+            : const Border(
+                bottom: BorderSide(color: AppColors.border, width: 0.8),
+              ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailStatusPill(Coupon c) {
+    final usable = !_used && !c.expired;
+    final label = usable ? '사용 가능' : (c.expired ? '기간 만료' : '사용 완료');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: usable ? AppColors.green100 : AppColors.neutral100,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: usable ? AppColors.textBrandOnLight : AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _outlinedAction(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: AppColors.textSecondary),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 하단 버튼 — 사용완료 처리 / 되돌리기 / 만료 안내
+  Widget _bottomButton(Coupon c) {
+    if (c.expired) {
+      return Container(
+        height: 54,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.neutral100,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Text(
+          '기간이 만료된 쿠폰이에요',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: _toggleUsed,
+      child: Container(
+        height: 54,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: _used ? AppColors.surface : AppColors.actionPrimary,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _used ? AppColors.border : AppColors.actionPrimary,
+          ),
+        ),
+        child: Text(
+          _used ? '사용 완료 취소' : '사용 완료 처리',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: _used ? AppColors.textSecondary : Colors.white,
+          ),
+        ),
       ),
     );
   }
@@ -563,7 +793,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                c.code,
+                _spacedCode(c.code),
                 style: const TextStyle(
                   fontSize: 20,
                   letterSpacing: 4,
@@ -576,24 +806,65 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
       ),
     );
   }
+
+  // 1234 5678 9012 형태로 4자리씩 띄우기
+  String _spacedCode(String code) {
+    final buf = StringBuffer();
+    for (int i = 0; i < code.length; i++) {
+      if (i > 0 && i % 4 == 0) buf.write(' ');
+      buf.write(code[i]);
+    }
+    return buf.toString();
+  }
 }
 
-// 공통 썸네일 — TODO: 실제 상품 이미지로 교체
+// 공통 썸네일 — '상품 이미지' 플레이스홀더 (실제 이미지 준비 시 교체)
 Widget _thumb(double size) {
   return Container(
     width: size,
     height: size,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: AppColors.surfaceBrand,
-      borderRadius: BorderRadius.circular(size * 0.16),
+      color: AppColors.neutral100,
+      borderRadius: BorderRadius.circular(size * 0.18),
     ),
-    child: Icon(
-      Icons.card_giftcard,
-      size: size * 0.4,
-      color: AppColors.green400,
+    child: Text(
+      '상품\n이미지',
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: size * 0.14,
+        height: 1.3,
+        color: AppColors.neutral400,
+      ),
     ),
   );
+}
+
+/// 점선 구분선 (쿠폰 절취선 느낌)
+class _DashedDivider extends StatelessWidget {
+  const _DashedDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        const dash = 6.0;
+        const gap = 5.0;
+        final count = (constraints.maxWidth / (dash + gap)).floor();
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(
+            count,
+            (_) => Container(
+              width: dash,
+              height: 1.4,
+              color: AppColors.border,
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 /// 숫자 코드로 막대를 그리는 간단한 바코드

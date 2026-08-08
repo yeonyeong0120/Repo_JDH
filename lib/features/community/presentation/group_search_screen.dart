@@ -3,6 +3,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'group_detail_screen.dart';
+import 'group_create_screen.dart';
 
 /// 줍다행 - 그룹 검색 화면 (GRP-02)
 /// 검색바 + 필터 드롭다운(지역/정렬) + 결과 리스트. 결과 카드 → 소개/가입 화면.
@@ -82,7 +83,6 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                   ),
                   Expanded(
                     child: Container(
-                      height: 42,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
@@ -101,13 +101,20 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                             child: TextField(
                               controller: _controller,
                               autofocus: true,
+                              textAlignVertical: TextAlignVertical.center,
                               onChanged: (v) {
                                 setState(() => _query = v);
                                 _load();
                               },
                               decoration: const InputDecoration(
-                                isCollapsed: true,
+                                isDense: true,
+                                // 위아래 여백을 대칭으로 줘서 문구를 세로 가운데로
+                                contentPadding: EdgeInsets.symmetric(vertical: 11),
+                                // 포커스해도 색/테두리 안 변하게 (테마 채움·초록 테두리 차단)
+                                filled: false,
                                 border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
                                 hintText: '그룹명 또는 동네 검색',
                                 hintStyle: TextStyle(
                                   fontSize: 15,
@@ -138,9 +145,20 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
             ),
             // 필터: 드롭다운 2개 (지역 / 정렬) — 오버레이로 떠서 화면 안 밀림
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Row(
                 children: [
+                  // 결과 개수 (목업: 왼쪽, 드롭다운은 오른쪽)
+                  Expanded(
+                    child: Text(
+                      _loading ? '' : '${_results.length}개 그룹',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
                   _FilterDropdown(
                     options: _regionOptions,
                     selected: _region,
@@ -153,7 +171,12 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                       _openFilter = null;
                     }),
                   ),
-                  const SizedBox(width: 10),
+                  Container(
+                    width: 1,
+                    height: 14,
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    color: AppColors.border,
+                  ),
                   _FilterDropdown(
                     options: _sortOptions,
                     selected: _sort,
@@ -203,21 +226,87 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     );
   }
 
+  Future<void> _openCreate() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupCreateScreen(alreadyInGroup: widget.alreadyInGroup),
+      ),
+    );
+    _load();
+  }
+
   Widget _empty() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
-          const SizedBox(height: 12),
-          Text(
-            '\'$_query\' 검색 결과가 없어요',
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 70, 24, 24),
+        child: Column(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE9EFEB),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.search_off,
+                size: 30,
+                color: AppColors.neutral400,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            const Text(
+              '찾는 그룹이 없어요',
+              style: TextStyle(
+                fontSize: 17,
+                height: 1.4,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              '다른 이름으로 찾아보거나\n직접 그룹을 만들어보세요',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.6,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _openCreate,
+              child: Container(
+                height: 52,
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.actionPrimary, width: 1.5),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 20, color: AppColors.textBrandOnLight),
+                    SizedBox(width: 7),
+                    Text(
+                      '그룹 만들기',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textBrandOnLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -229,10 +318,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => GroupDetailScreen(
-              groupId: g.id,
-              name: g.name,
-              region: g.region,
-              meta: g.meta,
+              group: g,
               alreadyInGroup: widget.alreadyInGroup,
             ),
           ),
@@ -321,7 +407,7 @@ class _FilterDropdown extends StatefulWidget {
       final tp = TextPainter(
         text: TextSpan(
           text: o,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -388,11 +474,11 @@ class _FilterDropdownState extends State<_FilterDropdown>
           CompositedTransformFollower(
             link: _link,
             showWhenUnlinked: false,
-            targetAnchor: Alignment.bottomLeft,
-            followerAnchor: Alignment.topLeft,
+            targetAnchor: Alignment.bottomRight,
+            followerAnchor: Alignment.topRight,
             offset: const Offset(0, 6),
             child: Align(
-              alignment: Alignment.topLeft,
+              alignment: Alignment.topRight,
               child: FadeTransition(
                 opacity: _fade,
                 child: SlideTransition(
@@ -400,10 +486,11 @@ class _FilterDropdownState extends State<_FilterDropdown>
                   child: Material(
                     color: Colors.transparent,
                     child: Container(
-                      width: 132,
+                      width: 168,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: AppColors.cardShadow,
                       ),
                       child: Column(
@@ -412,35 +499,22 @@ class _FilterDropdownState extends State<_FilterDropdown>
                           final on = widget.selected == i;
                           return InkWell(
                             onTap: () => widget.onSelect(i),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 11,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      widget.options[i],
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: on
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                        color: on
-                                            ? AppColors.green800
-                                            : AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                  if (on)
-                                    const Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: AppColors.primary,
-                                    ),
-                                ],
+                            child: Container(
+                              height: 48,
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              // 목업: 텍스트만, 선택 항목만 초록 굵게 (체크 없음)
+                              child: Text(
+                                widget.options[i],
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: on
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: on
+                                      ? AppColors.textBrandOnLight
+                                      : AppColors.textPrimary,
+                                ),
                               ),
                             ),
                           );
@@ -473,19 +547,14 @@ class _FilterDropdownState extends State<_FilterDropdown>
 
   @override
   Widget build(BuildContext context) {
+    // 목업: 테두리 상자 없이 텍스트 + 화살표.
     return CompositedTransformTarget(
       link: _link,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: widget.onToggle,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: widget.open ? AppColors.primary : AppColors.border,
-            ),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -497,22 +566,24 @@ class _FilterDropdownState extends State<_FilterDropdown>
                   softWrap: false,
                   overflow: TextOverflow.visible,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                     color: widget.open
-                        ? AppColors.green800
-                        : AppColors.textSecondary,
+                        ? AppColors.textBrandOnLight
+                        : AppColors.textPrimary,
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 2),
               AnimatedRotation(
                 turns: widget.open ? 0.5 : 0,
                 duration: const Duration(milliseconds: 180),
-                child: const Icon(
+                child: Icon(
                   Icons.keyboard_arrow_down,
-                  size: 18,
-                  color: AppColors.textSecondary,
+                  size: 20,
+                  color: widget.open
+                      ? AppColors.textBrandOnLight
+                      : AppColors.textSecondary,
                 ),
               ),
             ],

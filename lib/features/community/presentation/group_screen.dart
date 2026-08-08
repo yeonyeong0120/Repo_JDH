@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -32,6 +34,8 @@ class _GroupScreenState extends State<GroupScreen> {
   Group? _myGroup;
   List<Group> _others = [];
   bool _loading = true;
+  // 헤더 문구는 새로고침할 때마다 5개 중 하나가 무작위로 뽑힌다.
+  int _phraseIndex = 0;
 
   @override
   void initState() {
@@ -59,6 +63,7 @@ class _GroupScreenState extends State<GroupScreen> {
       _myGroup = mine;
       _others = others;
       _loading = false;
+      _phraseIndex = Random().nextInt(5);
     });
   }
 
@@ -66,6 +71,11 @@ class _GroupScreenState extends State<GroupScreen> {
   int get _todayTotal =>
       (_myGroup?.todayActiveCount ?? 0) +
       _others.fold<int>(0, (a, g) => a + g.todayActiveCount);
+
+  // ⚠️ 개발용 더미 — 아직 실제로 활동한 사람이 없을 때도 프로필 미리보기를
+  // 보여주기 위한 값. 실데이터 연동되면 이 상수와 아래 사용처를 삭제한다.
+  static const int _demoTodayTotal = 7;
+  int get _todayTotalOrDemo => _todayTotal > 0 ? _todayTotal : _demoTodayTotal;
 
   // ⚠️ 개발용 — 가짜 그룹 심기/지우기 (배포 전 삭제)
   Future<void> _runSeed({required bool seed}) async {
@@ -113,9 +123,10 @@ class _GroupScreenState extends State<GroupScreen> {
         child: Column(
           children: [
             _Header(
-              todayTotal: _todayTotal,
+              todayTotal: _todayTotalOrDemo, // ⚠️ 개발용 더미 포함
               region: _myGroup?.region ?? '',
               loading: _loading,
+              phraseIndex: _phraseIndex,
               onSearch: _openSearch,
               onCreate: _openCreate,
               onSeed: () => _runSeed(seed: true),
@@ -192,10 +203,7 @@ class _GroupScreenState extends State<GroupScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => GroupDetailScreen(
-          groupId: g.id,
-          name: g.name,
-          region: g.region,
-          meta: g.meta,
+          group: g,
           alreadyInGroup: _myGroup != null,
         ),
       ),
@@ -210,6 +218,7 @@ class _Header extends StatelessWidget {
   final int todayTotal;
   final String region;
   final bool loading;
+  final int phraseIndex;
   final VoidCallback onSearch;
   final VoidCallback onCreate;
   final VoidCallback onSeed;
@@ -219,25 +228,45 @@ class _Header extends StatelessWidget {
     required this.todayTotal,
     required this.region,
     required this.loading,
+    required this.phraseIndex,
     required this.onSearch,
     required this.onCreate,
     required this.onSeed,
     required this.onClear,
   });
 
+  // 왼쪽 문구: 활동한 사람이 있을 때 / 없을 때 각각 5개 중 하나를 무작위로.
+  // {N}에는 오늘 우리 동에서 활동한 실제 인원수가 들어간다.
+  static const List<String> _activePhrases = [
+    '오늘 벌써 {N}명 출동!',
+    '우리 동 {N}명이 먼저 나섰어요',
+    '{N}명이 벌써 줍고 있어요',
+    '오늘의 줍깅러 {N}명 발견!',
+    '{N}명 뒤를 이어볼까요?',
+  ];
+  static const List<String> _emptyPhrases = [
+    '오늘 1번 타자 되어볼래요?',
+    '아직 조용해요. 첫 걸음 어때요?',
+    '오늘은 아무도 안 나섰어요',
+    '우리 동 첫 줍깅러가 되어볼까요?',
+    '지금 나가면 오늘의 1등이에요',
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final list = todayTotal > 0 ? _activePhrases : _emptyPhrases;
+    // 로딩 중에는 0명이라고 단정하지 않는다.
+    final subtitle = loading
+        ? '동네 활동을 불러오는 중이에요'
+        : list[phraseIndex % list.length].replaceAll('{N}', '$todayTotal');
+
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceBrand,
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(Radii.sheet),
-        ),
-      ),
+      // 초록 헤더 제거 — 배경색으로 통일 (홈만 초록 유지)
+      color: AppColors.bg,
       padding: const EdgeInsets.fromLTRB(
         Gap.screenPad,
-        Gap.sm,
+        Gap.lg, // 검색·만들기 버튼이 너무 위에 붙지 않게 아래로
         Gap.screenPad,
         Gap.xl2,
       ),
@@ -246,12 +275,19 @@ class _Header extends StatelessWidget {
         children: [
           Row(
             children: [
+              const Icon(
+                Symbols.location_on,
+                size: 15,
+                fill: 1,
+                color: AppColors.neutral500,
+              ),
+              const SizedBox(width: 3),
               Expanded(
                 child: Text(
-                  region.isEmpty ? '우리 동네 그룹' : region,
+                  region.isEmpty ? '위치 좌표가 불명확합니다' : region,
                   style: AppType.caption.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textOnTint,
+                    color: AppColors.neutral500,
                   ),
                 ),
               ),
@@ -268,17 +304,98 @@ class _Header extends StatelessWidget {
           Gap.h16,
           Text('같이 주우면\n두 배로 재밌어요', style: AppType.title1),
           Gap.h8,
-          // 로딩 중에 0명이라고 단정하지 않는다.
-          Text(
-            loading
-                ? '동네 활동을 불러오는 중이에요'
-                : todayTotal > 0
-                ? '오늘 벌써 $todayTotal명 출동!'
-                : '오늘 1번 타자 되어볼래요?',
-            style: AppType.label.copyWith(color: AppColors.textBrandOnLight),
+          // 문구와 같은 가로줄에 오늘 활동한 사람 프로필(3명 + N)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  subtitle,
+                  style: AppType.label.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              if (!loading && todayTotal > 0) ...[
+                Gap.w12,
+                _TodayFaces(count: todayTotal),
+              ],
+            ],
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 오늘 우리 동에서 활동한 사람들의 프로필. 최대 3명 겹쳐 보이고, 나머지는 +N.
+class _TodayFaces extends StatelessWidget {
+  final int count;
+  const _TodayFaces({required this.count});
+
+  static const double _d = 46; // 원 지름(조금 더 크게)
+  static const double _overlap = 30; // 겹쳐 놓을 때 다음 원까지의 간격
+  static const List<Color> _tones = [
+    AppColors.green500,
+    AppColors.dataDistance,
+    AppColors.dataCan,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final int faces = count < 3 ? count : 3;
+    final int extra = count - faces;
+    final int circles = faces + (extra > 0 ? 1 : 0);
+    final double width = _d + (circles - 1) * _overlap;
+    return SizedBox(
+      width: width,
+      height: _d,
+      child: Stack(
+        children: [
+          for (int i = 0; i < faces; i++)
+            Positioned(
+              left: i * _overlap,
+              child: _face(_tones[i % _tones.length]),
+            ),
+          // 나머지 인원 — 마지막 원에 '+N명'
+          if (extra > 0)
+            Positioned(
+              left: faces * _overlap,
+              child: Container(
+                width: _d,
+                height: _d,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surface, width: 2),
+                ),
+                child: Text(
+                  '+$extra명',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.green500,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _face(Color tone) {
+    return Container(
+      width: _d,
+      height: _d,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.tint(tone, 0.30),
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.surface, width: 2),
+      ),
+      child: Icon(Symbols.person, size: 25, fill: 1, color: tone),
     );
   }
 }
@@ -296,20 +413,22 @@ class _IconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      borderRadius: Radii.tileR,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: SizedBox(
-          width: Touch.min,
-          height: Touch.min,
-          child: Icon(
-            icon,
-            size: 22,
-            color: dev ? AppColors.neutral400 : AppColors.textBrand,
-          ),
+    // 배경색 헤더 위 40px 판 · 흰 배경 · 라운드 13 · 잉크 없음.
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Icon(
+          icon,
+          size: 21,
+          color: dev ? AppColors.neutral400 : AppColors.textBrandOnLight,
         ),
       ),
     );

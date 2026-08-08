@@ -113,15 +113,15 @@ class AppButton extends StatelessWidget {
 
     final Widget button = Material(
       color: bg,
-      borderRadius: Radii.cardR,
+      borderRadius: const BorderRadius.all(Radius.circular(16)),
       child: InkWell(
         onTap: on ? onTap : null,
-        borderRadius: Radii.cardR,
+        borderRadius: const BorderRadius.all(Radius.circular(16)),
         splashColor: AppColors.neutral900.withValues(alpha: 0.06),
         child: Ink(
           height: height,
           decoration: BoxDecoration(
-            borderRadius: Radii.cardR,
+            borderRadius: const BorderRadius.all(Radius.circular(16)),
             border: side == BorderSide.none ? null : Border.fromBorderSide(side),
           ),
           child: Center(child: content),

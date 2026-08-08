@@ -5,6 +5,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
+import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
@@ -127,69 +128,87 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
 
   // 그래프 기간 토글 (주간/월간/누적) — 그래프 영역에서만 헤더 아래 고정 표시.
   // 탭하면 해당 기간 페이지로 슬라이드(_goPeriod).
+  // 목업: 알약이 아니라 오른쪽 정렬된 '점 + 라벨' 라디오.
   Widget _periodToggleBar() {
     const labels = ['주간', '월간', '누적'];
     final cur = _tab >= 2 ? _tab - 2 : 0;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceBrand,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: List.generate(labels.length, (i) {
-          final selected = cur == i;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => _goPeriod(i),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  labels[i],
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : AppColors.textSecondary,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        for (int i = 0; i < labels.length; i++) ...[
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _goPeriod(i),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: cur == i
+                        ? AppColors.actionPrimary
+                        : AppColors.neutral300,
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ),
+                const SizedBox(width: 5),
+                Text(
+                  labels[i],
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: cur == i ? FontWeight.w800 : FontWeight.w600,
+                    color: cur == i
+                        ? AppColors.textBrandOnLight
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-          );
-        }),
-      ),
+          ),
+          if (i < labels.length - 1) const SizedBox(width: 16),
+        ],
+      ],
     );
   }
 
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
+      // 초록 헤더 제거 — 배경색으로 통일 (홈만 초록 유지)
       decoration: const BoxDecoration(
-        color: AppColors.surfaceBrand,
+        color: AppColors.bg,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
-      // 상단바 넉넉하게 + 토글을 헤더 하단에 앉힘(위 여백 크게, 아래 작게).
-      padding: const EdgeInsets.fromLTRB(20, 44, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 44, 20, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 큰 제목 '내 활동' 제거(요청).
+          // 큰 제목 (내 활동 → 발자취 확인 문구) + 개발용 버튼
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _tabItem('기록', 0),
-              const SizedBox(width: 8),
-              _tabItem('뱃지', 1),
-              const SizedBox(width: 8),
-              _tabItem('그래프', 2),
-              const Spacer(),
-              // ⚠️ 개발용 임시 버튼 — 그래프 테스트용 가짜 데이터 심기/지우기
-              //    배포 전 이 _DevSeedButtons() 와 위 import 를 삭제할 것
+              const Expanded(
+                child: Text(
+                  '지금까지의 발자취를\n확인해볼까요?',
+                  style: TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.w800,
+                    height: 1.28,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              // ⚠️ 개발용 임시 버튼 — 배포 전 _DevSeedButtons() 삭제
               const _DevSeedButtons(),
             ],
+          ),
+          const SizedBox(height: 16),
+          // 3분할 세그먼트 — 둥근 네모 트랙 + 부드럽게 미끄러지는 흰 알약
+          _SegmentedTabs(
+            labels: const ['기록', '뱃지', '그래프'],
+            selected: _tab >= 2 ? 2 : _tab,
+            onSelect: _goTab,
           ),
         ],
       ),
@@ -205,30 +224,93 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
     );
   }
 
-  Widget _tabItem(String label, int index) {
-    // '그래프'(2)는 주간/월간/누적(page 2~4) 어디에 있어도 선택 표시
-    final selected = index == 2 ? _tab >= 2 : _tab == index;
-    return GestureDetector(
-      onTap: () => _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
+  // 기록(0)/뱃지(1)/그래프(2) 로 부드럽게 이동
+  void _goTab(int i) {
+    _pageController.animateToPage(
+      i,
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+}
+
+/// 둥근 네모 트랙 위에서 흰 알약이 미끄러지는 세그먼트 컨트롤.
+class _SegmentedTabs extends StatelessWidget {
+  final List<String> labels;
+  final int selected;
+  final ValueChanged<int> onSelect;
+  const _SegmentedTabs({
+    required this.labels,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const pad = 4.0;
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.all(pad),
+      decoration: BoxDecoration(
+        color: AppColors.neutral200,
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: selected ? AppColors.cardShadow : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-          ),
-        ),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final n = labels.length;
+          final w = c.maxWidth / n;
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              // 미끄러지는 흰 알약
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                left: selected * w,
+                top: 0,
+                bottom: 0,
+                width: w,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.neutral900.withValues(alpha: 0.10),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: List.generate(n, (i) {
+                  final on = selected == i;
+                  return Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onSelect(i),
+                      child: Center(
+                        child: AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 200),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: on ? FontWeight.w800 : FontWeight.w600,
+                            color: on
+                                ? AppColors.textPrimary
+                                : AppColors.textOnTint,
+                          ),
+                          child: Text(labels[i]),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -309,28 +391,35 @@ class _RecordsTabState extends State<_RecordsTab> {
     for (final b in kBadges) {
       final (cur, total) = BadgeService.progressOf(b, stats);
       if (cur >= total) continue; // 완료된 건 제외
-      list.add(_Quest(b.quest, cur, total, b.icon, _questColor(b)));
+      // 퀘스트 아이콘 = 연계된 뱃지 아이콘. 쓰레기봉투는 '한 봉지의 시작' 하나만.
+      final collect = usesTrashBagIcon(b);
+      list.add(
+        _Quest(b.quest, cur, total, b.icon, _questColor(b), b.points, collect),
+      );
     }
     list.sort((a, b) => (b.current / b.total).compareTo(a.current / a.total));
     setState(() => _quests = list.take(3).toList());
   }
 
+  // 5색: 걸음·거리(파랑)/수거(초록)/그룹(주황)/시간(노랑)/칼로리(빨강)
+  // 전체 퀘스트 화면의 _colorOf 와 동일하게 맞춘다.
   Color _questColor(BadgeData b) {
     final id = b.id;
-    if (id.startsWith('steps') || id.startsWith('distance')) {
-      return AppColors.categoryBlue;
+    if (id.startsWith('steps') ||
+        id.startsWith('distance') ||
+        id == 'first_plogging') {
+      return AppColors.dataSteps;
     }
-    if (id.startsWith('kcal')) return AppColors.categoryRed;
-    if (id.startsWith('weight') || id.startsWith('plastic')) {
-      return AppColors.categoryGreen;
+    if (id.startsWith('kcal')) return AppColors.dataCalorie;
+    if (id.startsWith('weight') ||
+        id.startsWith('plastic') ||
+        id == 'first_verify') {
+      return AppColors.green600;
     }
     if (id.startsWith('group') || id.startsWith('share')) {
-      return AppColors.categoryOrange;
+      return AppColors.dataGroup;
     }
-    if (id.startsWith('time') || id == 'first_30min') {
-      return AppColors.categoryPurple;
-    }
-    return AppColors.primary;
+    return AppColors.dataTime;
   }
 
   @override
@@ -458,15 +547,14 @@ class _RecordsTabState extends State<_RecordsTab> {
         ),
         child: Row(
           children: [
-            // TODO: 실제 경로 지도 썸네일로 교체
-            Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceBrand,
-                borderRadius: BorderRadius.circular(12),
+            // 경로 미니 지도 썸네일
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: const SizedBox(
+                width: 84,
+                height: 84,
+                child: CustomPaint(painter: _RouteThumbPainter()),
               ),
-              child: const Icon(Icons.map, color: AppColors.green400),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -481,29 +569,29 @@ class _RecordsTabState extends State<_RecordsTab> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     a.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
+                  // 걸음 · 분 · kg · kcal (아이콘 없이 텍스트)
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        _miniStat(Icons.directions_walk, '${a.steps}'),
-                        const SizedBox(width: 10),
-                        _miniStat(Icons.delete_outline, a.weight),
-                        const SizedBox(width: 10),
-                        _miniStat(Icons.local_fire_department, '${a.kcal}'),
-                        const SizedBox(width: 10),
-                        _miniStat(Icons.alarm, a.time),
-                      ],
+                    child: Text(
+                      '${_comma(a.steps)}걸음 · ${a.time} · ${a.weight} · ${a.kcal}kcal',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -515,26 +603,20 @@ class _RecordsTabState extends State<_RecordsTab> {
     );
   }
 
-  Widget _miniStat(IconData icon, String value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 15, color: AppColors.textSecondary),
-        const SizedBox(width: 3),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
+  // 천 단위 콤마
+  static String _comma(int n) {
+    final s = n.toString();
+    final b = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+      b.write(s[i]);
+    }
+    return b.toString();
   }
 
   Widget _questCard(_Quest q) {
     final progress = (q.current / q.total).clamp(0.0, 1.0);
+    final pct = (progress * 100).round();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -542,55 +624,71 @@ class _RecordsTabState extends State<_RecordsTab> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: q.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(q.icon, color: q.color, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: q.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: q.isCollect
+                    ? TrashBagIcon(size: 24, color: q.color)
+                    : Icon(q.icon, color: q.color, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Text(
-                        q.title,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+                    Text(
+                      q.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      '${q.current}/${q.total}',
+                      '${_comma(q.current)} / ${_comma(q.total)} · 달성 시 ${q.points}P',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor: AppColors.border,
-                    color: q.color,
-                  ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '$pct%',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: q.color,
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 9,
+              backgroundColor: AppColors.neutral200, // 진행 배경 회색 통일
+              color: q.color,
             ),
           ),
         ],
@@ -599,9 +697,118 @@ class _RecordsTabState extends State<_RecordsTab> {
   }
 }
 
+// 활동 카드 경로 미니 지도 썸네일 (회색 격자 + 초록 곡선 + 시작·도착 점).
+class _RouteThumbPainter extends CustomPainter {
+  const _RouteThumbPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    // 배경
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFFE7EFE9),
+    );
+    // 격자
+    final grid = Paint()
+      ..color = const Color(0xFFF4F8F5)
+      ..strokeWidth = 7;
+    canvas.drawLine(Offset(0, h * 0.42), Offset(w, h * 0.42), grid);
+    canvas.drawLine(Offset(w * 0.5, 0), Offset(w * 0.5, h), grid);
+    // 경로 (초록 곡선)
+    final path = Path()
+      ..moveTo(w * 0.22, h * 0.78)
+      ..cubicTo(w * 0.30, h * 0.55, w * 0.34, h * 0.5, w * 0.5, h * 0.5)
+      ..cubicTo(w * 0.66, h * 0.5, w * 0.68, h * 0.34, w * 0.78, h * 0.3);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = AppColors.routeLine
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round,
+    );
+    // 시작·도착 점
+    canvas.drawCircle(
+      Offset(w * 0.22, h * 0.78),
+      4.5,
+      Paint()..color = AppColors.green700,
+    );
+    canvas.drawCircle(
+      Offset(w * 0.78, h * 0.3),
+      5,
+      Paint()..color = Colors.white,
+    );
+    canvas.drawCircle(
+      Offset(w * 0.78, h * 0.3),
+      3,
+      Paint()..color = AppColors.green600,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RouteThumbPainter oldDelegate) => false;
+}
+
 // ════════════════════════════ 뱃지 탭 ════════════════════════════
-class _BadgesTab extends StatelessWidget {
+class _BadgesTab extends StatefulWidget {
   const _BadgesTab({super.key});
+
+  @override
+  State<_BadgesTab> createState() => _BadgesTabState();
+}
+
+class _BadgesTabState extends State<_BadgesTab> {
+  int _filter = 0; // 0 전체 / 1 걸음·거리 / 2 수거 / 3 그룹 / 4 시간 / 5 칼로리
+  UserStats? _stats; // 미획득 뱃지 달성률 링 계산용
+  // 진행률 카드 문구를 5개 중 하나로 (탭 진입 시 한 번 뽑음)
+  final int _phraseIndex = Random().nextInt(5);
+
+  static const List<String> _filters = [
+    '전체',
+    '걸음·거리',
+    '수거',
+    '그룹',
+    '시간',
+    '칼로리',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final s = await BadgeService.loadStats();
+      if (mounted) setState(() => _stats = s);
+    } catch (_) {
+      if (mounted) setState(() => _stats = const UserStats());
+    }
+  }
+
+  bool _inFilter(BadgeData b) {
+    if (_filter == 0) return true;
+    final id = b.id;
+    switch (_filter) {
+      case 1:
+        return id.startsWith('steps') ||
+            id.startsWith('distance') ||
+            id == 'first_plogging';
+      case 2:
+        return id.startsWith('weight') ||
+            id.startsWith('plastic') ||
+            id == 'first_verify';
+      case 3:
+        return id.startsWith('group') || id.startsWith('share');
+      case 4:
+        return id.startsWith('time') || id == 'first_30min';
+      case 5:
+        return id.startsWith('kcal');
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -615,77 +822,161 @@ class _BadgesTab extends StatelessWidget {
         MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
       ),
       children: [
-        _ProgressCard(earned: earnedCount, total: kBadges.length),
-        const SizedBox(height: Gap.xl3),
-        // 등급별로 나눈다 — 20개를 한 판에 쏟으면 무엇부터 노릴지 안 보인다.
-        for (final tier in BadgeTier.values) ...[
-          _TierSection(tier: tier),
-          if (tier != BadgeTier.values.last)
-            const SizedBox(height: Gap.xl3),
-        ],
+        _ProgressCard(
+          earned: earnedCount,
+          total: kBadges.length,
+          phraseIndex: _phraseIndex,
+        ),
+        const SizedBox(height: Gap.xl2),
+        // 카테고리 필터 알약
+        _filterPills(),
+        const SizedBox(height: Gap.xl),
+        // 등급별로 나눈다 — 필터에 맞는 뱃지만 노출.
+        for (final tier in BadgeTier.values)
+          if (kBadges.any((b) => b.tier == tier && _inFilter(b))) ...[
+            _TierSection(
+              tier: tier,
+              badges:
+                  kBadges.where((b) => b.tier == tier && _inFilter(b)).toList(),
+              stats: _stats,
+            ),
+            const SizedBox(height: 2),
+          ],
       ],
+    );
+  }
+
+  Widget _filterPills() {
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _filters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (_, i) {
+          final on = _filter == i;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _filter = i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: on ? AppColors.actionPrimary : AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: on ? AppColors.actionPrimary : AppColors.border,
+                ),
+              ),
+              child: Text(
+                _filters[i],
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: on ? AppColors.textOnBrand : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
 
-/// 전체 진행률 — 뱃지 탭에 들어오면 가장 먼저 보이는 것.
+/// 전체 진행률 — 뱃지 탭 최상단 도넛 카드.
 class _ProgressCard extends StatelessWidget {
   final int earned;
   final int total;
-  const _ProgressCard({required this.earned, required this.total});
+  final int phraseIndex;
+  const _ProgressCard({
+    required this.earned,
+    required this.total,
+    required this.phraseIndex,
+  });
+
+  // 진행률 안내 문구 5종 ({earned}·{remain}·{total} 치환)
+  static const List<String> _phrases = [
+    '다음 뱃지까지 조금만 더! 전체 {total}개 중 {remain}개가 남았어요.',
+    '벌써 {earned}개나 모았어요. {remain}개만 더 채워볼까요?',
+    '{remain}개를 더 모으면 전부 완성이에요.',
+    '{total}개 중 {earned}개 획득! 다음 뱃지가 기다려요.',
+    '한 걸음씩 {earned}개. 남은 {remain}개도 곧이에요.',
+  ];
 
   @override
   Widget build(BuildContext context) {
     final ratio = total == 0 ? 0.0 : earned / total;
+    final remain = total - earned;
+    final subtitle = remain <= 0
+        ? '축하해요! 모든 뱃지를 다 모았어요.'
+        : _phrases[phraseIndex % _phrases.length]
+              .replaceAll('{earned}', '$earned')
+              .replaceAll('{remain}', '$remain')
+              .replaceAll('{total}', '$total');
 
     return AppCard(
-      tone: CardTone.brand,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          SizedBox(
+            width: 66,
+            height: 66,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 66,
+                  height: 66,
+                  child: CircularProgressIndicator(
+                    value: ratio,
+                    strokeWidth: 8,
+                    backgroundColor: AppColors.neutral200,
+                    color: AppColors.actionPrimary,
+                  ),
+                ),
+                // 숫자 사이 여백 최소화 (13 / 20 바짝)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '모은 뱃지',
-                      style: AppType.label.copyWith(
-                        color: AppColors.textOnTint,
+                      '$earned',
+                      style: const TextStyle(
+                        fontSize: 21,
+                        height: 1.0,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    Gap.h4,
-                    Text.rich(
-                      TextSpan(
-                        text: '$earned',
-                        style: AppType.display
-                            .copyWith(color: AppColors.textBrandOnLight)
-                            .tabular,
-                        children: [
-                          TextSpan(
-                            text: ' / $total',
-                            style: AppType.title3.copyWith(
-                              color: AppColors.textOnTint,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      '/$total',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        height: 1.1,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          Gap.h16,
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: ratio,
-              minHeight: 10,
-              backgroundColor: AppColors.surface,
-              color: AppColors.actionPrimary,
+          Gap.w16,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('뱃지 $earned개 획득', style: AppType.title3),
+                Gap.h4,
+                Text(
+                  subtitle,
+                  style: AppType.caption.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -697,7 +988,13 @@ class _ProgressCard extends StatelessWidget {
 /// 등급 한 묶음. 등급 안에서는 획득한 것을 앞에 둔다.
 class _TierSection extends StatelessWidget {
   final BadgeTier tier;
-  const _TierSection({required this.tier});
+  final List<BadgeData> badges; // 이미 필터된 목록
+  final UserStats? stats;
+  const _TierSection({
+    required this.tier,
+    required this.badges,
+    required this.stats,
+  });
 
   static const _desc = {
     BadgeTier.seed: '처음 시작할 때',
@@ -708,12 +1005,11 @@ class _TierSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final list = kBadges.where((b) => b.tier == tier).toList()
-      ..sort((a, b) {
-        final ae = BadgeRepo.isEarned(a.id) ? 0 : 1;
-        final be = BadgeRepo.isEarned(b.id) ? 0 : 1;
-        return ae.compareTo(be);
-      });
+    final list = [...badges]..sort((a, b) {
+      final ae = BadgeRepo.isEarned(a.id) ? 0 : 1;
+      final be = BadgeRepo.isEarned(b.id) ? 0 : 1;
+      return ae.compareTo(be);
+    });
     final earned = list.where((b) => BadgeRepo.isEarned(b.id)).length;
 
     return Column(
@@ -750,15 +1046,17 @@ class _TierSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.sm),
         GridView.count(
-          crossAxisCount: 4,
+          crossAxisCount: 3,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: Gap.lg,
+          mainAxisSpacing: Gap.sm,
           crossAxisSpacing: Gap.md,
-          childAspectRatio: 0.70,
-          children: [for (final b in list) _BadgeTile(badge: b)],
+          childAspectRatio: 0.84,
+          children: [
+            for (final b in list) _BadgeTile(badge: b, stats: stats),
+          ],
         ),
       ],
     );
@@ -767,51 +1065,89 @@ class _TierSection extends StatelessWidget {
 
 class _BadgeTile extends StatelessWidget {
   final BadgeData badge;
-  const _BadgeTile({required this.badge});
+  final UserStats? stats;
+  const _BadgeTile({required this.badge, required this.stats});
 
   @override
   Widget build(BuildContext context) {
     final earned = BadgeRepo.isEarned(badge.id);
+    final color = badgeColor(badge);
+    final collect = usesTrashBagIcon(badge);
+    final (cur, tot) = BadgeService.progressOf(badge, stats ?? const UserStats());
+    final progress = tot == 0 ? 0.0 : (cur / tot).clamp(0.0, 1.0);
+
+    // 수거 계열은 쓰레기봉투 아이콘으로 통일
+    Widget iconOf(Color c, double size) => collect
+        ? TrashBagIcon(size: size, color: c)
+        : Icon(badge.icon, color: c, size: size);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => showBadgeDetail(context, badge),
-      child: Column(
-        children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: Container(
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: earned
-                    ? AppColors.surfaceBrand
-                    : AppColors.neutral100,
-                borderRadius: Radii.innerR,
-              ),
-              // TODO: 실제 2D 뱃지 이미지로 교체
-              child: Icon(
-                earned ? badge.icon : Icons.lock_outline,
-                color: earned
-                    ? AppColors.textBrandOnLight
-                    : AppColors.neutral400,
-                size: 28,
+      onTap: () => showBadgeDetail(context, badge, current: cur, total: tot),
+      // 아이콘 + 이름 + 설명 전체를 하얀 라운드 카드로 감싼다.
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppColors.cardShadow,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 아이콘 칩 — 획득: 카테고리 배경색 / 미획득: 회색 링
+            SizedBox(
+              width: 52,
+              height: 52,
+              child: earned
+                  ? DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.tint(color, 0.16),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Center(child: iconOf(color, 26)),
+                    )
+                  : Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: BadgeRingPainter(
+                              progress,
+                              AppColors.neutral400,
+                              stroke: 5,
+                              radius: 15,
+                            ),
+                          ),
+                        ),
+                        iconOf(AppColors.neutral400, 24),
+                      ],
+                    ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              badge.name,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: earned ? AppColors.textPrimary : AppColors.textSecondary,
               ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            earned ? badge.name : '???',
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppType.caption.copyWith(
-              fontWeight: FontWeight.w600,
-              color: earned
-                  ? AppColors.textPrimary
-                  : AppColors.textSecondary,
+            const SizedBox(height: 2),
+            Text(
+              earned ? badge.condition : '${badge.points}P',
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -846,13 +1182,13 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
   List<_GData> _monthly = const [];
   _GData _cumulative = const _GData('전체', '', '0', '0', '0g', [], [], 0);
 
-  // 도넛 색·한글 라벨 매핑 (영문 카테고리 → 화면 표시)
+  // 도넛 색·한글 라벨 매핑 — 정산/기록 상세의 쓰레기 카테고리 색과 동일하게.
   static const Map<String, (String, Color)> _catMeta = {
-    'plastic': ('플라스틱', AppColors.categoryBlue),
-    'trash': ('일반', AppColors.categoryRed),
-    'paper': ('종이', AppColors.categoryGreen),
-    'can': ('캔', AppColors.categoryOrange),
-    'glass': ('유리', AppColors.categoryPurple),
+    'plastic': ('플라스틱', Color(0xFF5F9EE8)), // 밝은 파랑
+    'can': ('캔', Color(0xFFE07B2E)), // 밝은 주황
+    'paper': ('종이', Color(0xFF31C88B)), // 밝은 초록
+    'glass': ('유리', Color(0xFF8E7EC4)), // 보라
+    'trash': ('일반', Color(0xFF9AA3A0)), // 회색
   };
 
   // 집계 실행 — activities 로 _weekly/_monthly/_cumulative 채움
@@ -930,11 +1266,11 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     super.initState();
     _ac = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1400), // 꺾은선: 왼→오
     )..forward();
     _acFast = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 850),
+      duration: const Duration(milliseconds: 1250), // 막대·도넛
     )..forward();
     _recompute(); // 초기 집계
   }
@@ -1037,32 +1373,10 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
         const SizedBox(height: 18),
         Row(
           children: [
-            _summaryStat(
-              '걸음수',
-              d.steps,
-              AppColors.categoryBlue,
-              'track_thick.svg',
-              iconSize: 58,
-              iconBottom: 2,
-              dx: 8, // 가운데쪽으로(오른쪽), 아이콘도 같이
-            ),
-            _summaryStat(
-              '칼로리',
-              d.kcal,
-              AppColors.categoryRed,
-              'fire_thick.svg',
-              iconBottom: 8,
-              dx: 0, // 정중앙 (기준)
-            ),
-            _summaryStat(
-              '수거량',
-              d.weight,
-              AppColors.categoryGreen,
-              'garbage_thick.svg',
-              iconBottom: 4, // 아이콘마다 투명배경 여백이 달라 개별 보정(사용자 조정값)
-              dx: -8, // 가운데쪽으로(왼쪽), 걸음수와 대칭
-              textY: -0.35, // 수거량 글씨만 미세하게 위로
-            ),
+            _summaryStat('걸음수', d.steps, AppColors.dataSteps, 'track_thick.svg'),
+            _summaryStat('칼로리', d.kcal, AppColors.dataCalorie, 'fire_thick.svg'),
+            _summaryStat('수거량', d.weight, AppColors.dataCollect,
+                'garbage_thick.svg'),
           ],
         ),
         const SizedBox(height: 22),
@@ -1078,6 +1392,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                     _barChart(d.bars, d.barLabels, d.peakIndex, _acFast.value),
               ),
             ),
+            note: '활동 시간을 산출하여 나타낸 결과예요',
           ),
           const SizedBox(height: 16),
         ],
@@ -1089,6 +1404,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               builder: (_, __) =>
                   _lineChart(d.bars, d.barLabels, d.peakIndex, _ac.value),
             ),
+            note: '활동 시간을 산출하여 나타낸 결과예요',
           ),
           const SizedBox(height: 16),
         ],
@@ -1115,79 +1431,91 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     );
   }
 
+  // 상단 요약(걸음수·칼로리·수거량).
+  // 배경 픽토그램 + 라벨 + 숫자를 '한 덩어리'로 묶고, 그 덩어리를 셀 안에서
+  // 가운데보다 살짝 왼쪽에 둔다 (아이콘이 오른쪽에 붙어 있어 시각 중심을 보정).
+  // 라벨 크기는 고정, 숫자만 길어지면 축소된다.
+  // 라벨 위 / 숫자 아래, 그 오른쪽 끝에 픽토그램이 살짝 겹쳐 시작한다.
+  // 숫자는 최대폭 안에서만 커지고 길어지면 축소 → 오버플로우 없음.
   Widget _summaryStat(
     String label,
     String value,
     Color color,
     String asset, {
-    double iconSize = 46,
-    double iconBottom = 6,
-    double dx = 0, // 묶음(글씨+아이콘)을 통째로 좌우 이동(px) — 둘이 항상 같은 픽셀로 이동
-    double textY = 0, // 글씨 세로 위치 (0=가운데, 음수=위)
+    double iconDy = 0, // 픽토그램 세로 미세조정
   }) {
     return Expanded(
       child: SizedBox(
         height: 64,
         child: Align(
-          alignment: Alignment.center,
+          alignment: const Alignment(-0.16, 0), // 가운데→살짝 왼쪽
+          // 덩어리 전체를 오른쪽으로 1px 이동 + 셀에 맞춰 축소(오버플로우 방지)
           child: Transform.translate(
-            offset: Offset(dx, 0),
-            child: SizedBox(
-              // ★ 고정 폭 묶음: 글씨(왼쪽) + 아이콘(오른쪽)이 한 덩어리로 같이 이동
-              width: 92,
-              height: 64,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // 배경 흑백 아이콘 — 묶음 오른쪽에 peek (글씨 뒤에 안 묻힘)
-                  Positioned(
-                    right: 0,
-                    bottom: iconBottom,
-                    child: SvgPicture.asset(
-                      'assets/icons/$asset',
-                      width: iconSize,
-                      height: iconSize,
-                      colorFilter: ColorFilter.mode(
-                        AppColors.textSecondary.withValues(alpha: 0.18),
-                        BlendMode.srcIn,
+            offset: const Offset(1, 0), // ← 오른쪽 1px (숫자만 바꾸면 됨)
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              // 고정 폭 박스: 픽토그램은 오른쪽 끝에 못 박고, 숫자는 왼쪽에서
+              // (숫자가 길어져도 픽토그램은 안 움직이고 그 위로 겹친다)
+              child: SizedBox(
+                width: 96,
+                height: 54,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // 배경 픽토그램 — 오른쪽 끝 고정 (숫자 길이와 무관)
+                    Positioned(
+                      right: 0,
+                      top: 2 + iconDy,
+                      child: SvgPicture.asset(
+                        'assets/icons/$asset',
+                        width: 50,
+                        height: 50,
+                        colorFilter: ColorFilter.mode(
+                          AppColors.textSecondary.withValues(alpha: 0.20),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  ),
-                  // 글씨 — 묶음 왼쪽
-                  Align(
-                    alignment: Alignment(-1, textY),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: color,
+                    // 라벨 + 숫자 (왼쪽 고정, 픽토그램과 겹쳐도 OK)
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 라벨은 항상 그대로
+                          Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: color,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 3),
-                        SizedBox(
-                          height: 32,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              value,
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                color: color,
+                          const SizedBox(height: 0), // 라벨-숫자 여백 최소화
+                          // 숫자: base 크기 고정(짧아도 안 커짐), 길면 축소
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 90),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                value,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w700,
+                                  color: color,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1207,17 +1535,29 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppType.title3),
-          if (note != null) ...[
-            const SizedBox(height: 4),
-            // 무엇을 그린 그래프인지 밝힌다.
-            Text(
-              note,
-              style: AppType.caption.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          // 제목 + ⓘ + 산출 기준 설명 (한 줄)
+          if (note == null)
+            Text(title, style: AppType.title3)
+          else
+            Row(
+              children: [
+                Text(title, style: AppType.title3),
+                const SizedBox(width: 6),
+                const Icon(Icons.info_outline, size: 15,
+                    color: AppColors.neutral400),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    note,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppType.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
           const SizedBox(height: Gap.lg),
           child,
         ],
@@ -1231,15 +1571,21 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     int peakIndex,
     double t,
   ) {
+    // 데이터가 하나도 없으면 왕관을 씌우지 않는다.
+    final hasData = bars.any((b) => b > 0.001);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: List.generate(bars.length, (i) {
-        final peak = i == peakIndex;
+        final peak = hasData && i == peakIndex;
+        final v = bars[i];
+        // 활동이 거의 없는 날은 전부 동일한 회색 찔끔으로 통일
+        // (아주 짧은 막대가 회색 스텁보다 더 작게 보이는 것 방지)
+        final empty = v < 0.08;
         return Expanded(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // 최다 활동 막대 위에 2D 왕관 (도형, 차트 색과 맞춤)
+              // 최다 활동 막대 위에 2D 왕관 (데이터 있을 때만)
               if (peak) ...[
                 CustomPaint(
                   size: const Size(18, 13),
@@ -1247,25 +1593,32 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 3),
               ],
-              Container(
-                width: 16,
-                height: 90 * bars[i] * t,
-                decoration: BoxDecoration(
-                  color: peak
-                      ? const Color(0xFF4C58AE) // 최다 활동 막대: 더 진한 인디고로 강조
-                      : AppColors.chartActivity,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+              // 활동 없는 날은 회색으로 찔끔 (주간 한정 — 비어 보이지 않게)
+              empty
+                  ? Container(
+                      width: 16,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppColors.neutral300,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    )
+                  : Container(
+                      width: 16,
+                      height: 90 * v * t,
+                      decoration: BoxDecoration(
+                        color: peak ? _kBarPeak : _kBarColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
               const SizedBox(height: 8),
               Text(
                 labels[i],
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: peak ? FontWeight.w700 : FontWeight.w500,
-                  color: peak
-                      ? AppColors.chartActivityPeak
-                      : AppColors.textSecondary,
+                  // 최다 활동 날 글씨는 진한 파랑
+                  color: peak ? _kBarPeak : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -1281,17 +1634,20 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     int peakIndex,
     double t,
   ) {
+    final hasData = values.any((v) => v > 0.001);
     return Column(
       children: [
         SizedBox(
           height: 128, // 왕관 얹을 여유 포함(원래 110)
           width: double.infinity,
-          child: CustomPaint(painter: _LinePainter(values, peakIndex, t)),
+          child: CustomPaint(
+            painter: _LinePainter(values, peakIndex, t, hasData),
+          ),
         ),
         const SizedBox(height: 8),
         Row(
           children: List.generate(labels.length, (i) {
-            final peak = i == peakIndex;
+            final peak = hasData && i == peakIndex;
             return Expanded(
               child: Text(
                 labels[i],
@@ -1299,9 +1655,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: peak ? FontWeight.w700 : FontWeight.w500,
-                  color: peak
-                      ? AppColors.chartActivityPeak
-                      : AppColors.textSecondary,
+                  // 최다 활동 주 글씨는 진한 파랑
+                  color: peak ? _kBarPeak : AppColors.textSecondary,
                 ),
               ),
             );
@@ -1608,15 +1963,30 @@ class _Quest {
   final int total;
   final IconData icon;
   final Color color;
-  const _Quest(this.title, this.current, this.total, this.icon, this.color);
+  final int points; // 달성 시 지급 포인트
+  final bool isCollect; // 수거량 계열 → 쓰레기봉투 아이콘
+  const _Quest(
+    this.title,
+    this.current,
+    this.total,
+    this.icon,
+    this.color,
+    this.points,
+    this.isCollect,
+  );
 }
 
 // 월간 주별 활동 꺾은선 차트
+// 활동 막대·꺾은선 색 — 보라(인디고) 계열. 최다 활동(peak)은 더 진하게.
+const Color _kBarColor = Color(0xFF6E77D0);
+const Color _kBarPeak = Color(0xFF4C58AE);
+
 class _LinePainter extends CustomPainter {
   final List<double> values; // 0~1 비율
   final int peakIndex;
   final double progress; // 0~1, 선 그려짐 진행도
-  _LinePainter(this.values, this.peakIndex, this.progress);
+  final bool hasData; // 데이터 없으면 왕관 생략
+  _LinePainter(this.values, this.peakIndex, this.progress, this.hasData);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1647,13 +2017,13 @@ class _LinePainter extends CustomPainter {
     canvas.drawPath(
       area,
       Paint()
-        ..color = AppColors.chartActivity.withValues(alpha: 0.12 * progress)
+        ..color = _kBarColor.withValues(alpha: 0.12 * progress)
         ..style = PaintingStyle.fill,
     );
 
     // 선 (progress 만큼만 그림 = 왼→오로 그려짐)
     final linePaint = Paint()
-      ..color = AppColors.chartActivity
+      ..color = _kBarColor
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round
@@ -1671,10 +2041,7 @@ class _LinePainter extends CustomPainter {
       canvas.drawCircle(
         c,
         peak ? 5.5 : 4,
-        Paint()
-          ..color = peak
-              ? AppColors.chartActivityPeak
-              : AppColors.chartActivity,
+        Paint()..color = peak ? _kBarPeak : _kBarColor,
       );
       canvas.drawCircle(
         c,
@@ -1686,9 +2053,9 @@ class _LinePainter extends CustomPainter {
       );
     }
 
-    // 최고 지점 위에 왕관 (주간 막대와 동일 톤)
+    // 최고 지점 위에 왕관 (데이터 있을 때만)
     final peakFrac = n == 1 ? 0.0 : peakIndex / (n - 1);
-    if (peakIndex >= 0 && peakIndex < n && peakFrac <= progress) {
+    if (hasData && peakIndex >= 0 && peakIndex < n && peakFrac <= progress) {
       _drawCrown(
         canvas,
         Offset(xOf(peakIndex), yOf(values[peakIndex])),
@@ -1727,7 +2094,8 @@ class _LinePainter extends CustomPainter {
   bool shouldRepaint(covariant _LinePainter old) =>
       old.values != values ||
       old.peakIndex != peakIndex ||
-      old.progress != progress;
+      old.progress != progress ||
+      old.hasData != hasData;
 }
 
 // 2D 심플 왕관 (3봉우리 납작한 도형 — 그래프 톤에 맞춘 단색)

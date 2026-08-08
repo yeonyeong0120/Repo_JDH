@@ -12,7 +12,7 @@ import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 /// 실제 연동을 켤 때: enabled = false 로 바꾸기만 하면 원래 Firestore 경로로 돌아감.
 /// 위치 권장: lib/core/dev/dev_data.dart
 class DevData {
-  static const bool enabled = true;
+  static const bool enabled = false;
 
   static final DateTime _now = DateTime.now();
 
