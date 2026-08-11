@@ -4,12 +4,10 @@ import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 
-/// Ploggo - 전체 퀘스트 (ACT-09)
-/// 기록 탭 "진행 중인 퀘스트 →" → 이 화면.
+/// Ploggo - 챌린지 목록 (ACT-09)
+/// 기록 탭 "진행 중인 챌린지 →" → 이 화면.
 /// 진행률은 BadgeService.loadStats() 의 실제 누적 통계로 계산된다.
-/// (걸음·칼로리·무게 계수는 ActivityMetrics 와 통일)
-/// 상단 [전체 / 진행중 / 완료됨] 탭으로 분류.
-/// 위치 권장: lib/features/mypage/presentation/quest_list_screen.dart
+/// 상단 [진행 중 / 달성] 탭으로 분류. (전체 탭·등급 구분 없음)
 class QuestListScreen extends StatefulWidget {
   const QuestListScreen({super.key});
 
@@ -18,10 +16,9 @@ class QuestListScreen extends StatefulWidget {
 }
 
 class _QuestListScreenState extends State<QuestListScreen> {
-  int _tab = 0; // 0 전체 / 1 진행중 / 2 완료됨
+  int _tab = 0; // 0 진행 중 / 1 달성
   final PageController _pageController = PageController();
 
-  // 퀘스트 색: 걸음수 파랑 / 칼로리 빨강 / 수거량 초록 / 그룹참여 주황 / 시간 보라
   List<_Q> _quests = [];
   bool _loading = true;
 
@@ -31,7 +28,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
     _load();
   }
 
-  // 누적 통계 → 퀘스트 20개 진행률
+  // 누적 통계 → 챌린지 진행률
   Future<void> _load() async {
     UserStats stats = const UserStats();
     try {
@@ -43,18 +40,9 @@ class _QuestListScreenState extends State<QuestListScreen> {
     setState(() {
       _quests = kBadges.map((b) {
         final (cur, total) = BadgeService.progressOf(b, stats);
-        // 퀘스트 아이콘 = 연계 뱃지 아이콘. 쓰레기봉투는 '한 봉지의 시작' 하나만.
+        // 챌린지 아이콘 = 연계 뱃지 아이콘. 수거 계열은 쓰레기봉투 아이콘.
         final collect = usesTrashBagIcon(b);
-        return _Q(
-          b.quest,
-          cur,
-          total,
-          b.icon,
-          _colorOf(b),
-          b.points,
-          b.tier,
-          collect,
-        );
+        return _Q(b.quest, cur, total, b.icon, _colorOf(b), b.points, collect);
       }).toList();
       _loading = false;
     });
@@ -86,89 +74,35 @@ class _QuestListScreenState extends State<QuestListScreen> {
     super.dispose();
   }
 
-  // 탭별 퀘스트 목록 (필터 + 진행률 오름차순 정렬)
-  // 진행중 = 0<현재<목표 / 완료됨 = 현재>=목표 / 전체 = 모두(미착수 포함)
+  // 탭별 목록 — 진행 중(미달성) / 달성. 진행률 오름차순.
   List<_Q> _listFor(int tab) {
     final list = _quests.where((q) {
-      if (tab == 1) return q.current > 0 && q.current < q.total;
-      if (tab == 2) return q.current >= q.total;
-      return true;
+      if (tab == 0) return q.current < q.total; // 진행 중(미착수 포함)
+      return q.current >= q.total; // 달성
     }).toList();
     list.sort((a, b) => (a.current / a.total).compareTo(b.current / b.total));
     return list;
   }
 
-  static const List<BadgeTier> _tierOrder = [
-    BadgeTier.seed,
-    BadgeTier.sprout,
-    BadgeTier.tree,
-    BadgeTier.forest,
-  ];
-
-  IconData _tierIcon(BadgeTier t) => switch (t) {
-    BadgeTier.seed => Icons.spa,
-    BadgeTier.sprout => Icons.eco,
-    BadgeTier.tree => Icons.park,
-    BadgeTier.forest => Icons.forest,
-  };
-
-  Color _tierColor(BadgeTier t) => switch (t) {
-    BadgeTier.seed => AppColors.green400,
-    BadgeTier.sprout => AppColors.green500,
-    BadgeTier.tree => AppColors.green600,
-    BadgeTier.forest => AppColors.green700,
-  };
-
-  // 탭별 페이지 — 등급(씨앗→새싹→나무→숲)별로 묶어서 표시.
+  // 등급 구분 없이 평평하게 나열.
   Widget _questPage(int tab) {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(
-          color: AppColors.primary,
+          color: AppColors.actionPrimary,
           strokeWidth: 2,
         ),
       );
     }
-    final full = _quests;
     final list = _listFor(tab);
-
-    final children = <Widget>[];
-    if (tab == 0) {
-      final doneAll = full.where((q) => q.done).length;
-      children
-        ..add(_summaryCard(doneAll, full.length))
-        ..add(const SizedBox(height: 10))
-        ..add(_legend())
-        ..add(const SizedBox(height: 4));
-    }
-
-    bool any = false;
-    for (final t in _tierOrder) {
-      final inTier = list.where((q) => q.tier == t).toList();
-      if (inTier.isEmpty) continue;
-      any = true;
-      final tierTotal = full.where((q) => q.tier == t).length;
-      final tierDone = full.where((q) => q.tier == t && q.done).length;
-      children.add(_tierHeader(t, tierDone, tierTotal));
-      for (final q in inTier) {
-        children.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _questCard(q),
-          ),
-        );
-      }
-    }
-
-    if (!any) {
-      return const Center(
+    if (list.isEmpty) {
+      return Center(
         child: Text(
-          '해당하는 퀘스트가 없어요',
-          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+          tab == 0 ? '진행 중인 챌린지가 없어요' : '아직 달성한 챌린지가 없어요',
+          style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
         ),
       );
     }
-
     return ListView(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -176,106 +110,13 @@ class _QuestListScreenState extends State<QuestListScreen> {
         20,
         MediaQueryData.fromView(View.of(context)).padding.bottom + 92,
       ),
-      children: children,
-    );
-  }
-
-  Widget _summaryCard(int done, int total) {
-    return Container(
-      height: 58,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: Row(
-        children: [
-          const Text(
-            '달성한 퀘스트',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            '$done / $total',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textBrandOnLight,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _legend() {
-    const items = [
-      (AppColors.dataSteps, '걸음·거리'),
-      (AppColors.green600, '수거'),
-      (AppColors.dataGroup, '그룹'),
-      (AppColors.dataTime, '시간'),
-      (AppColors.dataCalorie, '칼로리'),
-    ];
-    return Wrap(
-      spacing: 9,
-      runSpacing: 8,
-      alignment: WrapAlignment.end,
       children: [
-        for (final it in items)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(color: it.$1, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                it.$2,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
+        for (final q in list)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _questCard(q),
           ),
       ],
-    );
-  }
-
-  Widget _tierHeader(BadgeTier t, int done, int total) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 16, 2, 12),
-      child: Row(
-        children: [
-          Icon(_tierIcon(t), size: 20, color: _tierColor(t)),
-          const SizedBox(width: 8),
-          Text(
-            '${t.label} 등급',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            '$done / $total',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -298,7 +139,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-                    '퀘스트',
+                    '챌린지',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
@@ -308,7 +149,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                 ],
               ),
             ),
-            // 분류 탭
+            // 분류 탭 (진행 중 / 달성)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
               child: _tabBar(),
@@ -316,9 +157,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
             Expanded(
               child: PageView(
                 controller: _pageController,
-                // 스와이프로도 탭 전환 → 토글 pill 이 따라오도록 _tab 갱신
                 onPageChanged: (i) => setState(() => _tab = i),
-                children: [_questPage(0), _questPage(1), _questPage(2)],
+                children: [_questPage(0), _questPage(1)],
               ),
             ),
           ],
@@ -327,9 +167,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
     );
   }
 
-  // 둥근 알약 3개 (전체=초록 채움 / 나머지=흰 테두리). 왼쪽 정렬.
   Widget _tabBar() {
-    const labels = ['전체', '진행 중', '달성'];
+    const labels = ['진행 중', '달성'];
     return Row(
       children: [
         for (int i = 0; i < labels.length; i++) ...[
@@ -384,7 +223,6 @@ class _QuestListScreenState extends State<QuestListScreen> {
     final progress = (q.current / q.total).clamp(0.0, 1.0);
     final pct = (progress * 100).round();
 
-    // 완료된 퀘스트는 전체적으로 흐리게 (체크는 선명 유지).
     final Widget iconWidget = q.isCollect
         ? TrashBagIcon(size: 24, color: q.color)
         : Icon(q.icon, color: q.color, size: 24);
@@ -472,7 +310,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 9,
-                    backgroundColor: AppColors.neutral200, // 진행 배경 회색 통일
+                    backgroundColor: AppColors.neutral200,
                     color: q.color,
                   ),
                 ),
@@ -489,7 +327,6 @@ class _Q {
   final IconData icon;
   final Color color;
   final int points;
-  final BadgeTier tier;
   final bool isCollect; // 수거량 계열 → 쓰레기봉투 아이콘
   const _Q(
     this.title,
@@ -498,7 +335,6 @@ class _Q {
     this.icon,
     this.color,
     this.points,
-    this.tier,
     this.isCollect,
   );
 

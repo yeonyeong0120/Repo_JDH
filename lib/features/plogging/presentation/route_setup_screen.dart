@@ -238,7 +238,7 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
       center.longitude,
     );
     setState(() => _dragging = false);
-    _requestRoute();
+    // 경로는 '이 위치로 도착지 설정' 버튼을 눌러야 계산한다 (핀 이동마다 자동 계산 X).
   }
 
   // 내 위치로 복귀
@@ -345,14 +345,28 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
     final result = ref.read(routeNotifierProvider).valueOrNull;
     if (result != null) {
       if (result.polyline.length >= 2) {
+        final coords = result.polyline
+            .map((p) => NLatLng(p[0], p[1]))
+            .toList();
+        // 바탕: 얇은 회색 테두리로 둘러싼 흰 선
+        overlays.add(
+          NPathOverlay(
+            id: 'route_base',
+            coords: coords,
+            width: 11,
+            color: Colors.white,
+            outlineWidth: 1,
+            outlineColor: AppColors.neutral300,
+          ),
+        );
+        // 위: 흰 선 안쪽의 초록 선
         overlays.add(
           NPathOverlay(
             id: 'route',
-            coords: result.polyline.map((p) => NLatLng(p[0], p[1])).toList(),
-            width: 6,
+            coords: coords,
+            width: 4,
             color: _routeColor,
-            outlineWidth: 2,
-            outlineColor: Colors.white,
+            outlineWidth: 0,
           ),
         );
       }
@@ -489,7 +503,9 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
                     const SizedBox(height: 2),
                     Text(
                       // TODO: Geocoding 프록시 연결 시 실제 주소로 대체.
-                      _dragging ? '도착지를 맞추는 중' : '지도 중앙 지점',
+                      _dragging
+                          ? '도착지를 맞추는 중'
+                          : (loading ? '경로를 계산하고 있어요' : '지도 중앙 지점'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -500,7 +516,11 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      _dragging ? '핀을 원하는 위치에 맞춰요' : '핀 위치를 도착지로 설정해요',
+                      _dragging
+                          ? '핀을 원하는 위치에 맞춰요'
+                          : (loading
+                                ? '쓰레기가 많은 곳을 지나도록 골라요'
+                                : (ready ? '경로 계산 완료' : '버튼을 누르면 경로를 계산해요')),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -514,42 +534,41 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
             ],
           ),
 
-          // 구분선 + 안내(정화 거점 / 위험 구간)
-          if (!_dragging) ...[
+          // 구분선 + 안내 — 경로가 준비됐거나 실패했을 때만 노출
+          if (ready || hasError) ...[
             const SizedBox(height: 14),
             Divider(height: 1, thickness: 1, color: AppColors.border),
             const SizedBox(height: 14),
-            if (loading)
-              _noticeRow(
-                icon: Icons.route_rounded,
-                text: '경로를 계산하고 있어요',
-                color: AppColors.textBrandOnLight,
-              )
-            else if (hasError)
+            if (hasError)
               _noticeRow(
                 icon: Icons.error_outline_rounded,
                 text: '경로를 계산하지 못했어요. 도착지를 다시 맞춰주세요.',
                 color: AppColors.actionDanger,
               )
-            else if (ready) ...[
+            else ...[
               _noticeRow(
                 icon: Icons.recycling,
-                text: '정화 거점 ${result.k3Hotspots.length}곳을 지나요',
+                text: '정화 거점 ${result!.k3Hotspots.length}곳을 지나요',
                 color: AppColors.textBrandOnLight,
               ),
-              if (result.isHardCase) ...[
-                const SizedBox(height: 10),
+              const SizedBox(height: 10),
+              if (result!.isHardCase)
                 _noticeRow(
                   icon: Icons.warning_amber_rounded,
                   text: '위험 구간 약 ${result.intersectionM}m를 지나요',
                   color: AppColors.warning,
+                )
+              else
+                _noticeRow(
+                  icon: Icons.check_circle_rounded,
+                  text: '위험 구간을 지나지 않아요',
+                  color: AppColors.textBrandOnLight,
                 ),
-              ],
             ],
           ],
 
           const SizedBox(height: 16),
-          _startButton(loading: loading),
+          _startButton(loading: loading, ready: ready),
         ],
       ),
     );
@@ -582,17 +601,42 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
     );
   }
 
-  // '이 위치로 도착지 설정' 버튼 (58px).
-  Widget _startButton({required bool loading}) {
-    final String label = _dragging
-        ? '도착지를 맞추는 중'
-        : (loading ? '경로 계산 중' : '이 위치로 도착지 설정');
-    // TODO(임시): 트래킹 화면 확인용 잠금 해제. 정식엔 ready 조건 추가.
-    final bool enabled = !_dragging && !loading;
+  // 단계별 하단 버튼:
+  //  - 도착지 맞추는 중 → 잠금
+  //  - (도착지 확정) '이 위치로 도착지 설정' → 경로 계산 요청
+  //  - 계산 중 → '경로를 계산하고 있어요' 잠금(스피너)
+  //  - 계산 완료 → '플로깅 시작' → 트래킹 화면
+  Widget _startButton({required bool loading, required bool ready}) {
+    late final String label;
+    late final IconData icon;
+    late final bool enabled;
+    late final VoidCallback? onTap;
+
+    if (_dragging) {
+      label = '도착지를 맞추는 중';
+      icon = Icons.flag_rounded;
+      enabled = false;
+      onTap = null;
+    } else if (loading) {
+      label = '경로를 계산하고 있어요';
+      icon = Icons.route_rounded;
+      enabled = false;
+      onTap = null;
+    } else if (ready) {
+      label = '플로깅 시작';
+      icon = Icons.directions_walk;
+      enabled = true;
+      onTap = () => context.push(AppRoutes.ploggingTracking);
+    } else {
+      label = '이 위치로 도착지 설정';
+      icon = Icons.flag_rounded;
+      enabled = true;
+      onTap = _requestRoute;
+    }
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: enabled ? () => context.push(AppRoutes.ploggingTracking) : null,
+      onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         height: 58,
@@ -615,7 +659,7 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
               )
             else
               Icon(
-                Icons.flag_rounded,
+                icon,
                 size: 21,
                 color: enabled ? AppColors.textOnBrand : AppColors.textDisabled,
               ),
@@ -669,7 +713,7 @@ class _LocationPuck extends StatelessWidget {
   }
 }
 
-// 정화 거점 핀: 흰 물방울 + 초록 재활용 아이콘.
+// 정화 거점 핀: 도착지 핀과 같은 모양(흰 원 + 아래 삼각 꼬리) + 초록 재활용 아이콘.
 class _HotspotPin extends StatelessWidget {
   const _HotspotPin();
 
@@ -680,65 +724,22 @@ class _HotspotPin extends StatelessWidget {
       height: 42,
       child: Stack(
         children: [
+          // 도착지 핀과 동일한 도형(_PinShapePainter)을 사용해 모양을 맞춘다.
           const Positioned.fill(
-            child: CustomPaint(
-              painter: _PinPainter(
-                Colors.white,
-                border: Color(0x2924302B),
-                shadow: true,
-              ),
-            ),
+            child: CustomPaint(painter: _PinShapePainter()),
           ),
-          Positioned(
+          const Positioned(
             left: 0,
             right: 0,
-            top: 5,
+            top: 9,
             child: Center(
-              child: Icon(Icons.recycling, color: AppColors.primary, size: 17),
+              child: Icon(Icons.recycling, color: AppColors.primary, size: 16),
             ),
           ),
         ],
       ),
     );
   }
-}
-
-// 부드러운 물방울(핀) 모양을 그린다. 하단 끝점이 좌표를 가리킨다.
-class _PinPainter extends CustomPainter {
-  final Color color; // 채움색
-  final Color? border; // 있으면 테두리
-  final bool shadow; // 흰 핀이 밝은 지도에서 묻히지 않도록 그림자
-  const _PinPainter(this.color, {this.border, this.shadow = false});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final sx = size.width / 50;
-    final sy = size.height / 60;
-    final path = Path()
-      ..moveTo(25 * sx, 0)
-      ..cubicTo(11 * sx, 0, 0, 11 * sy, 0, 24 * sy)
-      ..cubicTo(0, 40 * sy, 25 * sx, 60 * sy, 25 * sx, 60 * sy)
-      ..cubicTo(25 * sx, 60 * sy, 50 * sx, 40 * sy, 50 * sx, 24 * sy)
-      ..cubicTo(50 * sx, 11 * sy, 39 * sx, 0, 25 * sx, 0)
-      ..close();
-    if (shadow) {
-      canvas.drawShadow(path, Colors.black.withValues(alpha: 0.4), 3, false);
-    }
-    canvas.drawPath(path, Paint()..color = color);
-    if (border != null) {
-      canvas.drawPath(
-        path,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5 * sx
-          ..color = border!,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _PinPainter old) =>
-      old.color != color || old.border != border || old.shadow != shadow;
 }
 
 // 화면 중앙에 고정되는 타깃 점. 깃발 대의 끝이 가리키는 실제 도착 지점.

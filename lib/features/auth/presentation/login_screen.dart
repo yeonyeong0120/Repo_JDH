@@ -232,8 +232,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ],
       ),
-      // 아래 여백을 키워 버튼·링크를 위로 올린다(하양은 화면 끝까지 유지)
-      padding: EdgeInsets.fromLTRB(26, 24, 26, safeBottom + 60),
+      // 위 여백은 원래대로: 입력 필드는 시트 위쪽에 붙는다(늘어난 길이는 버튼 위 공백으로)
+      padding: EdgeInsets.fromLTRB(26, 24, 26, safeBottom + 28),
       child: Form(
         key: _formKey,
         child: Column(
@@ -293,7 +293,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            // 비밀번호 찾기 링크와 로그인 버튼 사이 공백
+            // (시트가 길어진 만큼 이 공백이 커져 필드는 위로, 버튼은 하단 고정)
+            const SizedBox(height: 76),
             SizedBox(
               height: 56,
               child: ElevatedButton(

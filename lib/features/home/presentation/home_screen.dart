@@ -1,17 +1,13 @@
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/features/home/domain/eco_math.dart';
 import 'package:repo_jdh/core/view_models/screen_views.dart';
-import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 // NewsArticle 타입. screen_views.dart 의 import 와 같은 경로를 쓴다.
 import 'package:repo_jdh/features/news/presentation/news_detail_screen.dart';
@@ -177,95 +173,42 @@ class _TintHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 헤더 내용(날짜·인사말·칩)은 한 번만 빌드해 child 로 넘긴다.
+    // 인사말(하단) — 날씨는 헤더 상단 오른쪽에 별도 배치.
     final Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                v.dateLabel,
-                style: AppType.caption.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textOnTint,
-                ),
-              ),
-            ),
-            // 에코 포인트 칩 제거 — 프로필만 크게 + 아래/왼쪽으로 살짝
-            Transform.translate(
-              offset: const Offset(-6, 10), // 왼쪽 6 · 아래 10 (숫자만 바꾸면 됨)
-              child: _RoundIconButton(
-                icon: Symbols.person,
-                filled: true,
-                size: 60,
-                iconSize: 34,
-                radius: 18, // 둥근 네모
-                onTap: () => context.go(AppRoutes.mypage),
-              ),
-            ),
-          ],
+        Text(
+          '${v.userName} 님,\n오늘도 한 바퀴 어떠세요?',
+          style: AppType.title1.copyWith(fontSize: 23),
         ),
-        Gap.h16,
-        // 인사말: 오른쪽 이미지 칸(플레이스홀더) 제거 → 배경만 남기고 전체 폭 사용
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${v.userName} 님,\n오늘도 한 바퀴 어떠세요?',
-              // 두 줄 인사말이라 title1(26)보다 한 단계 낮춘다
-              style: AppType.title1.copyWith(fontSize: 23),
-            ),
-            Gap.h8,
-            Text(
-              v.isFirstDay ? '첫 걸음을 기다리고 있어요' : '${v.streakDays}일 연속 기록 중',
-              style: AppType.label.copyWith(
-                color: AppColors.textBrandOnLight,
-              ),
-            ),
-          ],
-        ),
+        Gap.h12,
+        _streakChip(),
       ],
     );
 
-    // 진입 애니메이션 (DESIGN_SPEC 01 + 목업 Home.dc.html)
-    //  ┌ 물감(pour) : 초록 면이 위→아래로 채워짐  1.9s  Cubic(0.33,0.72,0.24,1)
-    //  └ 포커스(focus): 글씨가 1.1s 뒤부터 흐릿·투명 → 선명하게 떠오름  1.7s
-    // 하나의 t(0→1, 2.8s)로 두 구간을 각자의 커브로 나눠 구동한다.
-    // 오버슈트(튕김) 없이 곧게 멈춘다.
-    const totalMs = 1900; // 살짝 빠르게 (기존 2800)
-    const pourEnd = 1250 / totalMs; // 물감이 끝나는 지점
-    const focusStart = 700 / totalMs; // 글씨가 뜨기 시작하는 지점
+    // 진입: 초록 면이 위→아래로 채워지고(pour), 글씨는 뒤이어 떠오른다(focus).
+    const totalMs = 2600;
+    const pourEnd = 0.62;
+    const focusStart = 0.36;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: const Duration(milliseconds: totalMs),
-      curve: Curves.linear, // 구간별 커브는 builder 안에서 직접 적용한다
+      curve: Curves.linear,
       child: content,
       builder: (context, t, child) {
         final double pour = const Cubic(0.33, 0.72, 0.24, 1)
             .transform((t / pourEnd).clamp(0.0, 1.0));
-        final double focus = const Cubic(0.25, 0.6, 0.3, 1)
+        final double focus = Curves.easeOutCubic
             .transform(((t - focusStart) / (1 - focusStart)).clamp(0.0, 1.0));
 
-        // 글씨: 투명→불투명 + 아래에서 살짝 떠오름 + 흐릿→선명(블러)
-        Widget faded = Opacity(
+        final Widget faded = Opacity(
           opacity: focus,
           child: Transform.translate(
-            offset: Offset(0, (1 - focus) * 12),
+            offset: Offset(0, (1 - focus) * 10),
             child: child,
           ),
         );
-        if (focus < 0.999) {
-          final double blur = (1 - focus) * 6;
-          faded = ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-            child: faded,
-          );
-        }
 
-        // 헤더는 자리(높이)를 처음부터 그대로 차지한다. 초록 면만 위→아래로
-        // scaleY 로 채워지므로 아래 콘텐츠가 밀리지 않는다 (목업 paintPour 방식).
-        // 콘텐츠(faded)는 Opacity 0 일 때도 자리를 지켜 헤더 높이가 고정된다.
         return Stack(
           children: [
             Positioned.fill(
@@ -283,61 +226,109 @@ class _TintHeader extends StatelessWidget {
               ),
             ),
             Padding(
+              // 텍스트를 상단바 하단쪽으로 (위 여백 크게 · 아래 작게)
               padding: const EdgeInsets.fromLTRB(
                 Gap.screenPad,
-                Gap.sm,
+                130,
                 Gap.screenPad,
-                Gap.xl2,
+                28,
               ),
               child: faded,
+            ),
+            // 날씨·온도 — 헤더 상단 오른쪽(인사말보다 위)
+            Positioned(
+              top: 34,
+              right: Gap.screenPad,
+              child: Opacity(opacity: focus, child: _weatherBlock()),
             ),
           ],
         );
       },
     );
   }
-}
 
-class _RoundIconButton extends StatelessWidget {
-  final IconData icon;
-  final bool filled;
-  final VoidCallback onTap;
-  final double? size;
-  final double? iconSize;
-  final double? radius; // 값이 있으면 둥근 네모, 없으면 원
-
-  const _RoundIconButton({
-    required this.icon,
-    required this.onTap,
-    this.filled = false,
-    this.size,
-    this.iconSize,
-    this.radius,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // 목업: 눌림(잉크) 효과 없음. 흰 판만 (원 또는 둥근 네모).
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: size ?? Touch.min,
-        height: size ?? Touch.min,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          shape: radius == null ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius:
-              radius == null ? null : BorderRadius.circular(radius!),
-        ),
-        child: Icon(
-          icon,
-          size: iconSize ?? Touch.icon,
-          fill: filled ? 1 : 0,
-          color: AppColors.textBrand,
-        ),
+  // 연속 기록 칩 (초록 상단바 위 — 흰 pill 로 대비)
+  Widget _streakChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(999),
       ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Symbols.local_fire_department,
+            size: 16,
+            fill: 1,
+            color: AppColors.textBrandOnLight,
+          ),
+          Gap.w4,
+          Text(
+            v.isFirstDay ? '첫 걸음을 기다리고 있어요' : '${v.streakDays}일 연속 기록 중',
+            style: AppType.label.copyWith(
+              color: AppColors.textBrandOnLight,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 날씨·온도 (헤더 오른쪽) — 타이포만.
+  // TODO: FastAPI 프록시 경유 날씨 API 연동 시 실제 값으로 교체 (지금은 표시용 고정값).
+  Widget _weatherBlock() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Symbols.partly_cloudy_day,
+              size: 30,
+              fill: 1,
+              color: AppColors.dataCan,
+            ),
+            Gap.w4,
+            Text(
+              '24°',
+              style: AppType.title1.copyWith(
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+                height: 1.0,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '구름 조금',
+          style: AppType.body.copyWith(color: AppColors.textOnTint),
+        ),
+        const SizedBox(height: 5),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: AppColors.green600,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Gap.w4,
+            Text(
+              '미세 좋음',
+              style: AppType.body.copyWith(color: AppColors.textOnTint),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -371,12 +362,12 @@ class _PotDay extends StatelessWidget {
     final today = log.isToday;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: Gap.xs),
+      // 오늘 칸은 배경 전체를 초록으로 (다른 칸보다 살짝 크게)
+      padding: EdgeInsets.symmetric(vertical: today ? 12 : 6),
       decoration: today
           ? BoxDecoration(
-              color: AppColors.green100, // 오늘 칸 안은 연한 초록
+              color: AppColors.actionPrimary,
               borderRadius: Radii.innerR,
-              border: Border.all(color: AppColors.actionPrimary, width: 2),
             )
           : null,
       child: Column(
@@ -386,19 +377,19 @@ class _PotDay extends StatelessWidget {
             log.weekdayLabel,
             style: AppType.caption.copyWith(
               fontWeight: today ? FontWeight.w800 : FontWeight.w600,
-              color: today
-                  ? AppColors.textBrandOnLight
-                  : AppColors.textSecondary,
+              color: today ? Colors.white : AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
-          // 채움(했음) vs 외곽선(안 함) — 색뿐 아니라 형태로도 구분
+          // 채움(했음/오늘) vs 외곽선(안 함) — 색·형태로 구분
           Icon(
             Symbols.potted_plant,
             size: 28,
-            fill: log.done ? 1 : 0,
-            weight: log.done ? 500 : 400,
-            color: log.done ? AppColors.actionPrimary : AppColors.neutral500,
+            fill: (today || log.done) ? 1 : 0,
+            weight: (today || log.done) ? 500 : 400,
+            color: today
+                ? Colors.white
+                : (log.done ? AppColors.actionPrimary : AppColors.neutral500),
           ),
         ],
       ),
@@ -408,12 +399,106 @@ class _PotDay extends StatelessWidget {
 
 // ── 내가 만든 변화 ───────────────────────────────────────
 
-class _ImpactCard extends StatelessWidget {
+class _ImpactCard extends StatefulWidget {
   final HomeView v;
   const _ImpactCard({required this.v});
 
   @override
+  State<_ImpactCard> createState() => _ImpactCardState();
+}
+
+class _ImpactCardState extends State<_ImpactCard> {
+  final LayerLink _calcLink = LayerLink();
+  final GlobalKey _infoKey = GlobalKey();
+  OverlayEntry? _calcEntry;
+
+  @override
+  void dispose() {
+    _calcEntry?.remove();
+    _calcEntry = null;
+    super.dispose();
+  }
+
+  void _removeCalc() {
+    _calcEntry?.remove();
+    _calcEntry = null;
+    if (mounted) setState(() {});
+  }
+
+  // '어떻게 계산했나요?' 바로 아래에 뜨는 오버레이(카드 위에 겹침, 카드 크기 불변).
+  void _toggleCalc() {
+    if (_calcEntry != null) {
+      _removeCalc();
+      return;
+    }
+    final w = _infoKey.currentContext?.size?.width ?? 240;
+    _calcEntry = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _removeCalc,
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _calcLink,
+            showWhenUnlinked: false,
+            targetAnchor: Alignment.bottomLeft,
+            followerAnchor: Alignment.topLeft,
+            offset: const Offset(0, 8),
+            child: Material(
+              color: Colors.transparent,
+              child: SizedBox(width: w, child: _calcBox()),
+            ),
+          ),
+        ],
+      ),
+    );
+    Overlay.of(context).insert(_calcEntry!);
+    setState(() {});
+  }
+
+  Widget _calcBox() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      decoration: BoxDecoration(
+        color: AppColors.neutral900,
+        borderRadius: Radii.innerR,
+        boxShadow: AppColors.sheetShadow,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 16,
+            color: AppColors.green300,
+          ),
+          Gap.w8,
+          Expanded(
+            child: Text(
+              '쓰레기 1kg은 탄소 ${EcoMath.co2PerTrashKg}kg을 줄여요.\n'
+              '소나무 한 그루가 1년에 흡수하는 양이 ${EcoMath.co2PerPineTreeYear}kg이에요.',
+              style: AppType.caption.copyWith(color: Colors.white, height: 1.5),
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _removeCalc,
+            child: const Padding(
+              padding: EdgeInsets.only(left: 4, top: 1),
+              child: Icon(Icons.close, size: 16, color: Colors.white54),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final v = widget.v;
     if (v.isFirstDay) return const _ImpactFirstDay();
 
     return AppCard(
@@ -476,27 +561,31 @@ class _ImpactCard extends StatelessWidget {
             ],
           ),
           Gap.h12,
-          // 계산 근거를 숨기지 않는다 — 눌러서 환산식을 볼 수 있다.
-          InkWell(
-            onTap: () => _showEcoMathInfo(context),
-            borderRadius: Radii.innerR,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: Gap.sm),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    size: 17,
-                    color: AppColors.neutral500,
-                  ),
-                  Gap.w4,
-                  Text(
-                    '어떻게 계산했나요?',
-                    style: AppType.caption.copyWith(
-                      color: AppColors.textSecondary,
+          // 계산 근거 — 눌러서 바로 아래에 뜨는 오버레이(카드 위에 겹침, 카드 불변).
+          CompositedTransformTarget(
+            link: _calcLink,
+            child: InkWell(
+              key: _infoKey,
+              onTap: _toggleCalc,
+              borderRadius: Radii.innerR,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: Gap.sm),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 17,
+                      color: AppColors.neutral500,
                     ),
-                  ),
-                ],
+                    Gap.w4,
+                    Text(
+                      '어떻게 계산했나요?',
+                      style: AppType.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -506,93 +595,6 @@ class _ImpactCard extends StatelessWidget {
   }
 }
 
-/// 탄소 환산식 안내. 계수는 EcoMath 한 곳에서만 관리한다.
-void _showEcoMathInfo(BuildContext context) {
-  showDialog<void>(
-    context: context,
-    builder: (ctx) => Dialog(
-      backgroundColor: AppColors.surface,
-      insetPadding: const EdgeInsets.all(28), // 목업 팝업 바깥 여백
-      shape: RoundedRectangleBorder(borderRadius: Radii.cardR),
-      child: Padding(
-        // 목업: 위 24 · 좌우 22 · 아래 20
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '어떻게 계산했나요?',
-              style: AppType.title2.copyWith(fontWeight: FontWeight.w800),
-            ),
-            Gap.h8,
-            Text(
-              '주운 쓰레기의 무게로 탄소 감축량을 추정합니다.',
-              style: AppType.body.copyWith(color: AppColors.textSecondary),
-            ),
-            Gap.h16,
-            _InfoRow(
-              '쓰레기 1kg',
-              '탄소 ${EcoMath.co2PerTrashKg}kg 감축',
-            ),
-            Gap.h8,
-            _InfoRow(
-              '소나무 1그루',
-              '1년에 탄소 ${EcoMath.co2PerPineTreeYear}kg 흡수',
-            ),
-            Gap.h16,
-            Text(
-              '실제 감축량은 쓰레기 종류와 재활용 방식에 따라 달라질 수 있어요.',
-              style: AppType.caption.copyWith(color: AppColors.textSecondary),
-            ),
-            Gap.h16,
-            // 목업: 가로 꽉 찬 초록 버튼 (텍스트 버튼 X)
-            AppButton(
-              label: '알겠어요',
-              type: AppButtonType.primary,
-              onTap: () => Navigator.pop(ctx),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: Gap.sm, vertical: 3),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceBrand,
-            borderRadius: Radii.fullR,
-          ),
-          child: Text(
-            label,
-            style: AppType.caption.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.textOnTint,
-            ),
-          ),
-        ),
-        Gap.w8,
-        Expanded(
-          child: Text(
-            value,
-            style: AppType.caption.copyWith(color: AppColors.textPrimary),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _MiniStat extends StatelessWidget {
   final String value;
@@ -866,7 +868,7 @@ class _NeighborBlock extends StatelessWidget {
 // ── 그룹 소개 시트 · 가입 팝업 (목업 Home.dc.html groupOpen / joinOpen) ──
 
 /// 그룹 카드를 누르면 아래에서 올라오는 소개 시트.
-void _showGroupSheet(BuildContext context, WidgetRef ref, Group group) {
+void _showGroupSheet(BuildContext context, Group group) {
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: AppColors.surface,
@@ -880,26 +882,14 @@ void _showGroupSheet(BuildContext context, WidgetRef ref, Group group) {
       onClose: () => Navigator.pop(ctx),
       onJoin: () {
         Navigator.pop(ctx); // 시트 닫고 (시트 컨텍스트로 pop)
-        _confirmJoin(context, ref, group); // 살아있는 페이지 컨텍스트로 팝업
+        _confirmJoin(context, group); // 살아있는 페이지 컨텍스트로 팝업
       },
     ),
   );
 }
 
-/// 가입 실패 사유를 사용자 문구로 바꾼다.
-/// GroupService.joinGroup 은 '이미 그룹에 가입되어 있습니다' 처럼 그대로 보여줄 수
-/// 있는 메시지를 던지므로, Exception 접두사만 벗겨 쓴다. 그 외에는 일반 문구.
-String _joinErrorMessage(Object e) {
-  const prefix = 'Exception: ';
-  final raw = e.toString();
-  // 접두사가 없으면 Firebase 예외 등 내부 메시지이므로 그대로 노출하지 않는다.
-  if (!raw.startsWith(prefix)) return '가입하지 못했어요';
-  final msg = raw.substring(prefix.length).trim();
-  return msg.isEmpty ? '가입하지 못했어요' : msg;
-}
-
-/// 가입 확인 팝업. "가입하기"를 누르면 실제로 GroupService.joinGroup 을 호출한다.
-void _confirmJoin(BuildContext context, WidgetRef ref, Group group) {
+/// 가입 확인 팝업. "예"를 누르면 토스트로 안내한다(실제 가입 연결은 TODO).
+void _confirmJoin(BuildContext context, Group group) {
   showDialog<void>(
     context: context,
     builder: (ctx) => Dialog(
@@ -951,30 +941,10 @@ void _confirmJoin(BuildContext context, WidgetRef ref, Group group) {
                 Expanded(
                   child: AppButton(
                     label: '가입하기',
-                    onTap: () async {
+                    onTap: () {
                       Navigator.pop(ctx);
-                      try {
-                        if (group.id.isEmpty) throw Exception('가입하지 못했어요');
-                        await GroupService.joinGroup(group.id);
-                      } catch (e) {
-                        if (!context.mounted) return;
-                        AppSnackBar.show(
-                          context,
-                          _joinErrorMessage(e),
-                          kind: SnackKind.error,
-                        );
-                        return;
-                      }
-                      if (!context.mounted) return;
-                      AppSnackBar.show(
-                        context,
-                        '그룹에 가입했어요',
-                        kind: SnackKind.success,
-                      );
-                      // 홈의 '지금 우리 동네는' 목록에서 가입한 그룹이 빠지도록
-                      // 새로고침한다. 스낵바보다 뒤에 둬야 한다 — 이 호출로
-                      // _GroupCard 가 사라지면서 context 가 unmount 되기 때문.
-                      ref.invalidate(homeViewProvider);
+                      // TODO: 실제 그룹 가입 처리(그룹 provider) 연결
+                      AppSnackBar.show(context, '그룹에 가입했어요');
                     },
                   ),
                 ),
@@ -1226,15 +1196,14 @@ class _AvatarStack extends StatelessWidget {
   }
 }
 
-// 가입 처리 후 홈을 새로고침해야 해서 ref 가 필요하다.
-class _GroupCard extends ConsumerWidget {
+class _GroupCard extends StatelessWidget {
   final Group group;
   const _GroupCard({required this.group});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return AppCard(
-      onTap: () => _showGroupSheet(context, ref, group),
+      onTap: () => _showGroupSheet(context, group),
       padding: const EdgeInsets.all(Gap.lg),
       child: Row(
         children: [

@@ -22,7 +22,7 @@ Future<bool> showRewardFlow(BuildContext context, List<BadgeData> badges) async 
     await showQuestComplete(
       context,
       quest: b.quest,
-      desc: '${b.quest} 퀘스트를 완료했어요.',
+      desc: '${b.quest} 챌린지를 완료했어요.',
     );
     if (!context.mounted) return false;
     final goBadges = await showBadgeEarnedAnimated(context, badge: b);
@@ -163,7 +163,7 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      '퀘스트 완료',
+                      '챌린지 완료',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -302,7 +302,7 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
   @override
   Widget build(BuildContext context) {
     final b = widget.badge;
-    final desc = '${b.quest} 퀘스트를 달성해 받은 뱃지예요.';
+    final desc = '${b.quest} 챌린지를 달성해 받은 뱃지예요.';
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 36),

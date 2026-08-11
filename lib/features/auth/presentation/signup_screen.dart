@@ -688,9 +688,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
       link = null;
     }
-    // 로그인 화면의 버튼·링크와 같은 높이에 오도록 아래 여백을 맞춤
+    // 로그인 화면의 버튼·링크와 같은 높이에 오도록 아래 여백을 맞춤(더 아래로)
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 60),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

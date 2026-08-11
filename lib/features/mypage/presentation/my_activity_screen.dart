@@ -18,7 +18,7 @@ import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_stats.dart';
 import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
 
-/// Ploggo - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
+/// 줍다행 - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
 /// 위치 권장: lib/features/mypage/presentation/my_activity_screen.dart
 class MyActivityScreen extends StatefulWidget {
@@ -444,7 +444,7 @@ class _RecordsTabState extends State<_RecordsTab> {
         ..._buildRecordsSection(context),
         const SizedBox(height: 22),
         _sectionHeader(
-          '진행 중인 퀘스트',
+          '진행 중인 챌린지',
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const QuestListScreen()),
@@ -831,17 +831,40 @@ class _BadgesTabState extends State<_BadgesTab> {
         // 카테고리 필터 알약
         _filterPills(),
         const SizedBox(height: Gap.xl),
-        // 등급별로 나눈다 — 필터에 맞는 뱃지만 노출.
-        for (final tier in BadgeTier.values)
-          if (kBadges.any((b) => b.tier == tier && _inFilter(b))) ...[
-            _TierSection(
-              tier: tier,
-              badges:
-                  kBadges.where((b) => b.tier == tier && _inFilter(b)).toList(),
-              stats: _stats,
-            ),
-            const SizedBox(height: 2),
-          ],
+        // 등급 구분 없이 필터된 뱃지를 한 그리드에 (획득한 것 앞으로).
+        _badgeGrid(),
+      ],
+    );
+  }
+
+  // 필터된 뱃지 평면 그리드 (등급 헤더 없음)
+  Widget _badgeGrid() {
+    final list = kBadges.where(_inFilter).toList()
+      ..sort((a, b) {
+        final ae = BadgeRepo.isEarned(a.id) ? 0 : 1;
+        final be = BadgeRepo.isEarned(b.id) ? 0 : 1;
+        return ae.compareTo(be);
+      });
+    if (list.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 24),
+        child: Center(
+          child: Text(
+            '해당하는 뱃지가 없어요',
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: Gap.sm,
+      crossAxisSpacing: Gap.md,
+      childAspectRatio: 0.84,
+      children: [
+        for (final b in list) _BadgeTile(badge: b, stats: _stats),
       ],
     );
   }
@@ -981,84 +1004,6 @@ class _ProgressCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// 등급 한 묶음. 등급 안에서는 획득한 것을 앞에 둔다.
-class _TierSection extends StatelessWidget {
-  final BadgeTier tier;
-  final List<BadgeData> badges; // 이미 필터된 목록
-  final UserStats? stats;
-  const _TierSection({
-    required this.tier,
-    required this.badges,
-    required this.stats,
-  });
-
-  static const _desc = {
-    BadgeTier.seed: '처음 시작할 때',
-    BadgeTier.sprout: '꾸준히 걷고 모을 때',
-    BadgeTier.tree: '이웃과 함께할 때',
-    BadgeTier.forest: '매일 이어갈 때',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final list = [...badges]..sort((a, b) {
-      final ae = BadgeRepo.isEarned(a.id) ? 0 : 1;
-      final be = BadgeRepo.isEarned(b.id) ? 0 : 1;
-      return ae.compareTo(be);
-    });
-    final earned = list.where((b) => BadgeRepo.isEarned(b.id)).length;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${tier.label} 등급', style: AppType.title2),
-                  Gap.h4,
-                  Text(
-                    _desc[tier] ?? '',
-                    style: AppType.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              '$earned / ${list.length}',
-              style: AppType.caption
-                  .copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: earned == list.length
-                        ? AppColors.textBrandOnLight
-                        : AppColors.textSecondary,
-                  )
-                  .tabular,
-            ),
-          ],
-        ),
-        const SizedBox(height: Gap.sm),
-        GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: Gap.sm,
-          crossAxisSpacing: Gap.md,
-          childAspectRatio: 0.84,
-          children: [
-            for (final b in list) _BadgeTile(badge: b, stats: stats),
-          ],
-        ),
-      ],
     );
   }
 }
@@ -1689,13 +1634,6 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const Text(
-                    '총 수거',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],

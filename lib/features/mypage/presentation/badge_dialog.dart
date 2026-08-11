@@ -34,25 +34,14 @@ Future<void> showBadgeDetail(
       shape: RoundedRectangleBorder(borderRadius: Radii.sheetR),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.lg, Gap.xl, Gap.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            // 닫기 (X)
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.pop(ctx),
-                child: const Padding(
-                  padding: EdgeInsets.all(2),
-                  child: Icon(Icons.close, size: 22,
-                      color: AppColors.textSecondary),
-                ),
-              ),
-            ),
-            Gap.h4,
-            // 상단: 뱃지 아이콘 + 등급/이름/조건
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+            // 상단: 뱃지 아이콘 + 이름/조건 (X는 아래 Stack 오버레이 — 레이아웃 안 밀림)
             Row(
               children: [
                 _BadgeMedal(
@@ -67,14 +56,6 @@ Future<void> showBadgeDetail(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${badge.tier.label} 등급',
-                        style: AppType.caption.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textBrandOnLight,
-                        ),
-                      ),
-                      Gap.h4,
                       Text(badge.name, style: AppType.title2),
                       Gap.h4,
                       Text(
@@ -117,6 +98,21 @@ Future<void> showBadgeDetail(
               _valueRow('경험치', '$xp XP',
                   valueColor: AppColors.textBrandOnLight),
             ],
+              ],
+            ),
+            Positioned(
+              top: -6,
+              right: -6,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.pop(ctx),
+                child: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(Icons.close, size: 22,
+                      color: AppColors.textSecondary),
+                ),
+              ),
+            ),
           ],
         ),
       ),
