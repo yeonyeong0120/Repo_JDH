@@ -120,7 +120,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 수거량 20kg',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.shield_outlined,
+    icon: Icons.inventory_2_outlined,
   ),
   BadgeData(
     id: 'plastic_50',

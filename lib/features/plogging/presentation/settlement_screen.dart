@@ -19,7 +19,7 @@ import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 
-/// Ploggo - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
+/// 줍다행 - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
 class SettlementScreen extends ConsumerStatefulWidget {
   const SettlementScreen({super.key});
 
@@ -348,7 +348,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppColors.green100,
+        // 다른 화면과 톤 통일: 쿨 뉴트럴 블록 + 초록은 포인트(제목)로만.
+        color: AppColors.neutral100,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       padding: EdgeInsets.fromLTRB(24, 24 + topPad, 24, 40),
@@ -362,7 +363,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
-              color: AppColors.green800,
+              color: AppColors.textBrandOnLight,
             ),
           ),
           const SizedBox(height: 8),
@@ -373,7 +374,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
               fontSize: 17,
               height: 1.4,
               fontWeight: FontWeight.w600,
-              color: AppColors.textOnTint,
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -513,23 +514,15 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           Row(
             children: [
               _metricTile(
-                const Icon(
-                  Symbols.schedule,
-                  size: 20,
-                  fill: 1,
-                  color: AppColors.dataTime,
-                ),
+                const Icon(Symbols.schedule,
+                    size: 20, fill: 1, color: AppColors.dataTime),
                 '시간',
                 t.durationText,
               ),
               const SizedBox(width: 10),
               _metricTile(
-                const Icon(
-                  Symbols.route,
-                  size: 20,
-                  fill: 1,
-                  color: AppColors.dataDistance,
-                ),
+                const Icon(Symbols.route,
+                    size: 20, fill: 1, color: AppColors.dataDistance),
                 '거리',
                 '${t.distanceText} km',
               ),
@@ -539,12 +532,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           Row(
             children: [
               _metricTile(
-                const Icon(
-                  Symbols.footprint,
-                  size: 20,
-                  fill: 1,
-                  color: AppColors.dataSteps,
-                ),
+                const Icon(Symbols.footprint,
+                    size: 20, fill: 1, color: AppColors.dataSteps),
                 '걸음',
                 _comma(t.steps),
               ),
@@ -577,7 +566,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.green50, // 연하고 화사한 라이트 그린
+          color: AppColors.neutral100, // 쿨 뉴트럴 타일 (다른 화면과 통일)
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -635,7 +624,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.surfaceBrand,
+          color: AppColors.neutral100,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -643,7 +632,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppColors.green800,
+            color: AppColors.textSecondary,
           ),
         ),
       ),
@@ -657,12 +646,9 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 2,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.green50,
+                  color: AppColors.neutral100,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
@@ -736,13 +722,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           ),
           const Spacer(),
           // 포인트는 느리게, 경험치는 빠르게 올라간다.
-          _rewardPill(
-            Symbols.eco,
-            'P',
-            _rewardPoints,
-            AppColors.dataDistance,
-            2000,
-          ),
+          _rewardPill(Symbols.eco, 'P', _rewardPoints, AppColors.dataDistance, 2000),
           const SizedBox(width: 8),
           _rewardPill(Symbols.star, 'XP', _rewardXp, AppColors.dataTime, 1100),
         ],

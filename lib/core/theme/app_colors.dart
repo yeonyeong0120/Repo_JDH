@@ -39,20 +39,21 @@ class AppColors {
   static const Color green900 = Color(0xFF073725);
 
   // ========================================================
-  // NEUTRAL — 아주 옅은 초록기 (초록과 같은 공기)
+  // NEUTRAL — 차가운 라이트 그레이(쿨 뉴트럴). 초록기·따뜻함 모두 제거.
+  // (초록은 SEMANTIC 의 accent/action 에만 남긴다 — 지운 게 아님)
   // ========================================================
 
   static const Color neutral0 = Color(0xFFFFFFFF);
-  static const Color neutral50 = Color(0xFFF9FBFA);
-  static const Color neutral75 = Color(0xFFF4F8F5); // 앱 배경 전용
-  static const Color neutral100 = Color(0xFFF1F5F2);
-  static const Color neutral200 = Color(0xFFE4EAE6);
-  static const Color neutral300 = Color(0xFFCBD3CE);
-  static const Color neutral400 = Color(0xFF9FA9A4);
-  static const Color neutral500 = Color(0xFF7D8783);
-  static const Color neutral600 = Color(0xFF5C6862); // 텍스트 하한 5.7:1
-  static const Color neutral700 = Color(0xFF414B46);
-  static const Color neutral900 = Color(0xFF24302B);
+  static const Color neutral50 = Color(0xFFFBFCFD);
+  static const Color neutral75 = Color(0xFFF6F8F9); // 앱 배경 전용 (밝은 쿨 오프화이트)
+  static const Color neutral100 = Color(0xFFF0F3F4);
+  static const Color neutral200 = Color(0xFFE6E9EC);
+  static const Color neutral300 = Color(0xFFCDD1D5);
+  static const Color neutral400 = Color(0xFF979CA1);
+  static const Color neutral500 = Color(0xFF747A7E);
+  static const Color neutral600 = Color(0xFF565B5F); // 텍스트 하한 (흰 위 6.4:1)
+  static const Color neutral700 = Color(0xFF3C4145);
+  static const Color neutral900 = Color(0xFF212528);
 
   // ========================================================
   // CORAL — 유일한 액센트 (연속 기록, 수거 핫스팟)

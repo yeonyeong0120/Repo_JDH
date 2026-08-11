@@ -20,6 +20,7 @@ class _ShopScreenState extends State<ShopScreen> {
   final PageController _pageController = PageController();
   int _index = 0; // 현재 카테고리 인덱스
   int _points = 0;
+  int _couponCount = 0; // 상단 쿠폰함 배지
   bool _loading = true;
   String _query = ''; // 검색어 (상품명·브랜드)
   bool _sortAsc = true; // true=낮은 포인트순 / false=높은 포인트순
@@ -40,14 +41,21 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _loadPoints() async {
     int p = 0;
+    int coupons = 0;
     try {
       p = await ShopService.myPoints();
+    } catch (_) {
+      // 실패 시 0
+    }
+    try {
+      coupons = (await ShopService.myCoupons()).where((c) => c.usable).length;
     } catch (_) {
       // 실패 시 0
     }
     if (!mounted) return;
     setState(() {
       _points = p;
+      _couponCount = coupons;
       _loading = false;
     });
   }
@@ -125,7 +133,43 @@ class _ShopScreenState extends State<ShopScreen> {
               color: AppColors.textPrimary,
             ),
           ),
+          const Spacer(),
+          _couponChip(),
         ],
+      ),
+    );
+  }
+
+  // 상단 우측 쿠폰함 칩 (미사용 쿠폰 수 배지)
+  Widget _couponChip() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _openCoupons,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.green100,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Symbols.confirmation_number,
+              size: 17,
+              color: AppColors.textBrandOnLight,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              _couponCount > 0 ? '쿠폰함 $_couponCount' : '쿠폰함',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textBrandOnLight,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

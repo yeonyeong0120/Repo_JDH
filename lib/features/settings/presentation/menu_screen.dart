@@ -14,7 +14,6 @@ import 'package:repo_jdh/features/settings/presentation/faq_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/terms_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/licenses_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/shop_screen.dart';
-import 'package:repo_jdh/features/shop/presentation/coupon_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/point_history_screen.dart';
 
 /// 메뉴 화면 — 프로필 카드 · 포인트 · 쿠폰/내역 · 이용 안내.
@@ -110,26 +109,65 @@ class _MenuScreenState extends State<MenuScreen> {
               const SizedBox(height: 14),
               _pointsCard(),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _smallCard(
-                      icon: Icons.confirmation_number_outlined,
-                      title: '내 쿠폰함',
-                      subtitle: '교환한 쿠폰',
-                      onTap: () => _push(const CouponScreen()),
-                    ),
+              // 쿠폰함은 상점 안으로 이동. 여기선 포인트 내역을 전체 폭으로.
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _push(const PointHistoryScreen()),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: AppColors.cardShadow,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _smallCard(
-                      icon: Icons.receipt_long_outlined,
-                      title: '포인트 내역',
-                      subtitle: '적립·사용 기록',
-                      onTap: () => _push(const PointHistoryScreen()),
-                    ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.green50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.receipt_long_outlined,
+                          size: 21,
+                          color: AppColors.textBrandOnLight,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '포인트 내역',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              '적립·사용 기록',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
               const SizedBox(height: 26),
               const Text(
@@ -274,14 +312,19 @@ class _MenuScreenState extends State<MenuScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                _statBox('$_activityCount', '회', '활동'),
-                const SizedBox(width: 10),
-                _statBox(_weightText.replaceAll('kg', ''), 'kg', '수거'),
-                const SizedBox(width: 10),
-                _statBox('$_badgeCount', '개', '뱃지'),
-              ],
+            // 통계(활동·수거·뱃지)는 눌러도 프로필 편집이 열리지 않게 탭을 흡수한다.
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {},
+              child: Row(
+                children: [
+                  _statBox('$_activityCount', '회', '활동'),
+                  const SizedBox(width: 10),
+                  _statBox(_weightText.replaceAll('kg', ''), 'kg', '수거'),
+                  const SizedBox(width: 10),
+                  _statBox('$_badgeCount', '개', '뱃지'),
+                ],
+              ),
             ),
           ],
         ),
@@ -314,7 +357,7 @@ class _MenuScreenState extends State<MenuScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.green50,
+          color: AppColors.neutral100, // 쿨 뉴트럴 타일 (다른 화면과 통일)
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -422,59 +465,6 @@ class _MenuScreenState extends State<MenuScreen> {
       ),
     );
   }
-
-  Widget _smallCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppColors.cardShadow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.green50,
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(icon, size: 20, color: AppColors.textBrandOnLight),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // 이용 안내 — 한 덩어리 카드(행 사이 구분선)
   Widget _infoGroup() {
     return Container(

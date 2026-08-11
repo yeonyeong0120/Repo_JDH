@@ -6,7 +6,7 @@ import 'package:repo_jdh/core/theme/app_typography.dart';
 /// 스낵바 종류. 색은 여기서만 결정한다.
 enum SnackKind { neutral, success, error }
 
-/// Ploggo 공용 스낵바.
+/// 줍다행 공용 스낵바.
 ///
 /// ```dart
 /// AppSnackBar.show(context, '그룹에서 탈퇴했어요');
@@ -57,6 +57,8 @@ class AppSnackBar {
           Expanded(
             child: Text(
               message,
+              // 아이콘 없는 안내는 가운데 정렬
+              textAlign: icon == null ? TextAlign.center : TextAlign.start,
               style: AppType.label.copyWith(color: AppColors.neutral0),
             ),
           ),
