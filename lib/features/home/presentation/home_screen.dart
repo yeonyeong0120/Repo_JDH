@@ -2,13 +2,16 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/features/home/domain/eco_math.dart';
 import 'package:repo_jdh/core/view_models/screen_views.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 // NewsArticle 타입. screen_views.dart 의 import 와 같은 경로를 쓴다.
 import 'package:repo_jdh/features/news/presentation/news_detail_screen.dart';
@@ -198,7 +201,7 @@ class _TintHeader extends StatelessWidget {
                 size: 60,
                 iconSize: 34,
                 radius: 18, // 둥근 네모
-                onTap: () {}, // TODO: 마이페이지
+                onTap: () => context.go(AppRoutes.mypage),
               ),
             ),
           ],
@@ -863,7 +866,7 @@ class _NeighborBlock extends StatelessWidget {
 // ── 그룹 소개 시트 · 가입 팝업 (목업 Home.dc.html groupOpen / joinOpen) ──
 
 /// 그룹 카드를 누르면 아래에서 올라오는 소개 시트.
-void _showGroupSheet(BuildContext context, Group group) {
+void _showGroupSheet(BuildContext context, WidgetRef ref, Group group) {
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: AppColors.surface,
@@ -877,14 +880,26 @@ void _showGroupSheet(BuildContext context, Group group) {
       onClose: () => Navigator.pop(ctx),
       onJoin: () {
         Navigator.pop(ctx); // 시트 닫고 (시트 컨텍스트로 pop)
-        _confirmJoin(context, group); // 살아있는 페이지 컨텍스트로 팝업
+        _confirmJoin(context, ref, group); // 살아있는 페이지 컨텍스트로 팝업
       },
     ),
   );
 }
 
-/// 가입 확인 팝업. "예"를 누르면 토스트로 안내한다(실제 가입 연결은 TODO).
-void _confirmJoin(BuildContext context, Group group) {
+/// 가입 실패 사유를 사용자 문구로 바꾼다.
+/// GroupService.joinGroup 은 '이미 그룹에 가입되어 있습니다' 처럼 그대로 보여줄 수
+/// 있는 메시지를 던지므로, Exception 접두사만 벗겨 쓴다. 그 외에는 일반 문구.
+String _joinErrorMessage(Object e) {
+  const prefix = 'Exception: ';
+  final raw = e.toString();
+  // 접두사가 없으면 Firebase 예외 등 내부 메시지이므로 그대로 노출하지 않는다.
+  if (!raw.startsWith(prefix)) return '가입하지 못했어요';
+  final msg = raw.substring(prefix.length).trim();
+  return msg.isEmpty ? '가입하지 못했어요' : msg;
+}
+
+/// 가입 확인 팝업. "가입하기"를 누르면 실제로 GroupService.joinGroup 을 호출한다.
+void _confirmJoin(BuildContext context, WidgetRef ref, Group group) {
   showDialog<void>(
     context: context,
     builder: (ctx) => Dialog(
@@ -936,10 +951,30 @@ void _confirmJoin(BuildContext context, Group group) {
                 Expanded(
                   child: AppButton(
                     label: '가입하기',
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(ctx);
-                      // TODO: 실제 그룹 가입 처리(그룹 provider) 연결
-                      AppSnackBar.show(context, '그룹에 가입했어요');
+                      try {
+                        if (group.id.isEmpty) throw Exception('가입하지 못했어요');
+                        await GroupService.joinGroup(group.id);
+                      } catch (e) {
+                        if (!context.mounted) return;
+                        AppSnackBar.show(
+                          context,
+                          _joinErrorMessage(e),
+                          kind: SnackKind.error,
+                        );
+                        return;
+                      }
+                      if (!context.mounted) return;
+                      AppSnackBar.show(
+                        context,
+                        '그룹에 가입했어요',
+                        kind: SnackKind.success,
+                      );
+                      // 홈의 '지금 우리 동네는' 목록에서 가입한 그룹이 빠지도록
+                      // 새로고침한다. 스낵바보다 뒤에 둬야 한다 — 이 호출로
+                      // _GroupCard 가 사라지면서 context 가 unmount 되기 때문.
+                      ref.invalidate(homeViewProvider);
                     },
                   ),
                 ),
@@ -1191,14 +1226,15 @@ class _AvatarStack extends StatelessWidget {
   }
 }
 
-class _GroupCard extends StatelessWidget {
+// 가입 처리 후 홈을 새로고침해야 해서 ref 가 필요하다.
+class _GroupCard extends ConsumerWidget {
   final Group group;
   const _GroupCard({required this.group});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppCard(
-      onTap: () => _showGroupSheet(context, group),
+      onTap: () => _showGroupSheet(context, ref, group),
       padding: const EdgeInsets.all(Gap.lg),
       child: Row(
         children: [

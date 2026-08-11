@@ -5,12 +5,10 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:repo_jdh/core/router/placeholder_screen.dart';
 import 'package:repo_jdh/core/providers/auth_provider.dart';
 import 'package:repo_jdh/features/auth/presentation/login_screen.dart';
 import 'package:repo_jdh/features/auth/presentation/nickname_setup_screen.dart';
 import 'package:repo_jdh/features/auth/data/user_profile_provider.dart';
-import 'package:repo_jdh/features/vision/presentation/camera_detection_screen.dart';
 import 'package:repo_jdh/features/plogging/presentation/plogging_tracking_screen.dart';
 import 'package:repo_jdh/features/home/presentation/home_screen.dart';
 import 'package:repo_jdh/features/community/presentation/group_screen.dart';
@@ -32,10 +30,6 @@ class AppRoutes {
   static const settings = '/settings';
   static const ploggingRoute = '/plogging/route';
   static const ploggingTracking = '/plogging/tracking';
-  static const visionCamera = '/vision/camera';
-  static const visionResult = '/vision/result';
-  static const reward = '/reward';
-  static const news = '/news';
   static const ploggingSettlement = '/plogging/settlement';
   static const groupFeed = '/group/feed';
 }
@@ -195,10 +189,6 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const PloggingTrackingScreen(),
       ),
       GoRoute(
-        path: AppRoutes.visionCamera,
-        builder: (context, state) => const CameraDetectionScreen(),
-      ),
-      GoRoute(
         path: AppRoutes.ploggingSettlement,
         builder: (context, state) => const SettlementScreen(),
       ),
@@ -214,21 +204,6 @@ GoRouter appRouter(Ref ref) {
           }
           return GroupFeedScreen(groupName: (extra as String?) ?? '그룹');
         },
-      ),
-      GoRoute(
-        path: AppRoutes.visionResult,
-        builder: (context, state) =>
-            const PlaceholderScreen(screenName: 'AI 인증 결과'),
-      ),
-      GoRoute(
-        path: AppRoutes.reward,
-        builder: (context, state) =>
-            const PlaceholderScreen(screenName: '에코포인트'),
-      ),
-      GoRoute(
-        path: AppRoutes.news,
-        builder: (context, state) =>
-            const PlaceholderScreen(screenName: '환경 뉴스'),
       ),
     ],
   );
