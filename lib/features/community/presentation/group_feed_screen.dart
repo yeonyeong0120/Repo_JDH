@@ -9,7 +9,7 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
 
-/// 줍다행 - 그룹 세부 화면 (활동 공유 피드)
+/// Ploggo - 그룹 세부 화면 (활동 공유 피드)
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
 /// 위치 권장: lib/features/community/presentation/group_feed_screen.dart
 class GroupFeedScreen extends StatefulWidget {

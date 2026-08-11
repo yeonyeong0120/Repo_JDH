@@ -5,7 +5,7 @@ import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'group_detail_screen.dart';
 import 'group_create_screen.dart';
 
-/// 줍다행 - 그룹 검색 화면 (GRP-02)
+/// Ploggo - 그룹 검색 화면 (GRP-02)
 /// 검색바 + 필터 드롭다운(지역/정렬) + 결과 리스트. 결과 카드 → 소개/가입 화면.
 /// 위치 권장: lib/features/community/presentation/group_search_screen.dart
 class GroupSearchScreen extends StatefulWidget {

@@ -3,7 +3,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 
-/// 줍다행 공용 버튼.
+/// Ploggo 공용 버튼.
 /// 앱 전체 버튼을 이 위젯으로 통일 (primary / secondary / danger / quiet).
 enum AppButtonType {
   /// 화면의 주 행동. 화면당 1개.
