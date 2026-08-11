@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 
-/// 줍다행 - 전체 활동 기록 (ACT-04)
+/// Ploggo - 전체 활동 기록 (ACT-04)
 /// 기록 탭 "최근 활동 전체 보기" → 이 화면. 월별 그룹 + 기간 필터.
 /// 실제 데이터는 아직 없어 더미 + TODO.
 class ActivityListScreen extends StatefulWidget {

@@ -8,7 +8,7 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 
-/// 줍다행 - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
+/// Ploggo - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
 /// 목업 Group Detail.dc.html 기준: 초록 헤더 + 소개/기록/멤버 카드 + 하단 고정 가입바.
 /// 채팅방(멤버 인증샷)은 가입 전엔 보여주지 않고, 소개 + 가입만.
 class GroupDetailScreen extends StatelessWidget {

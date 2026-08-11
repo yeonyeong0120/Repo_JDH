@@ -4,7 +4,7 @@ import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 
-/// 줍다행 공용 팝업.
+/// Ploggo 공용 팝업.
 /// 제목 + 본문 + 버튼(1개 또는 2개). 버튼은 AppButton으로 통일.
 class AppDialog extends StatelessWidget {
   final String title;

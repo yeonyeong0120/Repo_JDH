@@ -5,7 +5,7 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 
-/// 줍다행 - 그룹 만들기 화면 (GRP-03)
+/// Ploggo - 그룹 만들기 화면 (GRP-03)
 /// 이름·사진·동네(자동)·소개·공개설정 입력. 이미 그룹 소속이면 GRP-04 차단.
 /// 위치 권장: lib/features/community/presentation/group_create_screen.dart
 class GroupCreateScreen extends StatefulWidget {
