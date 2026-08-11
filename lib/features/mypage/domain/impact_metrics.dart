@@ -1,22 +1,18 @@
+import 'package:repo_jdh/core/constants/eco_constants.dart';
+
 /// 환경 기여도(임팩트) 환산 유틸.
 ///
 /// 수거량 → 온실가스 감축량 → 나무 그루 수로 환산한다.
 ///
-/// ── 계수 근거 ──
-/// • 수거 1kg → CO₂ 1.1kg 감축
-///   한국환경공단: 폐플라스틱 18만 톤 재활용 → 온실가스 202,357톤 감축
-///   (202,357 / 180,000 ≈ 1.12)
-/// • CO₂ 6.6kg → 소나무 1그루
-///   국립산림과학원 표준탄소흡수량: 30년생 소나무 1그루 연간 흡수량 6.6kg
-/// • 목표: 연간 CO₂ 20kg 감축 (팀 논의로 조정 가능)
-///
-/// 계수를 바꾸려면 아래 상수만 고치면 전체에 반영된다.
+/// CO₂·소나무 계수는 근거와 함께 `EcoConstants` 한 곳에서만 정의한다.
+/// 계수를 바꾸려면 그 파일을 고친다. 여기서 리터럴을 다시 쓰지 않는다.
+/// 목표치(`goalCo2Kg`)는 mypage 화면 전용이라 이 파일에 남긴다.
 class ImpactMetrics {
   /// 수거량 1kg 당 CO₂ 감축량(kg)
-  static const double co2PerKg = 1.1;
+  static const double co2PerKg = EcoConstants.co2PerTrashKg;
 
   /// 소나무 1그루의 연간 CO₂ 흡수량(kg)
-  static const double co2PerTree = 6.6;
+  static const double co2PerTree = EcoConstants.co2PerPineTreeYear;
 
   /// 연간 CO₂ 감축 목표(kg)
   static const double goalCo2Kg = 20.0;
