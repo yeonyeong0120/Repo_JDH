@@ -4,7 +4,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 
-/// 줍다행 - 개별 활동 상세 (ACT-05)
+/// Ploggo - 개별 활동 상세 (ACT-05)
 /// 상단 경로 지도 + 기록/수거/인증샷/보상. 실제 데이터는 아직 없어 더미 + TODO.
 class ActivityDetailScreen extends StatelessWidget {
   final String dateTime;
