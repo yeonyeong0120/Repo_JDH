@@ -18,12 +18,63 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   DateTime? _rangeEnd;
 
   // TODO: 실제 활동 데이터로 교체 (시간 역순)
+  // 수거 개수는 더미로 지어내지 않는다 — 빈 맵을 넘겨 상세에서 0으로 드러나게 둔다.
   static final List<_Act> _acts = [
-    _Act(DateTime(2026, 8, 5, 7, 30), '소래습지 생태공원', 3180, '42분', 1.2, 124, 2.4, true),
-    _Act(DateTime(2026, 8, 4, 18, 12), '인천대공원 순환길', 2410, '31분', 0.9, 96, 1.7, true),
-    _Act(DateTime(2026, 8, 2, 8, 5), '만수천 산책로', 4020, '55분', 1.6, 158, 3.1, false),
-    _Act(DateTime(2026, 7, 30, 7, 10), '장수천 벚꽃길', 2860, '38분', 1.1, 112, 2.0, true),
-    _Act(DateTime(2026, 7, 28, 19, 40), '구월동 로데오거리', 1940, '26분', 0.7, 78, 1.3, false),
+    _Act(
+      DateTime(2026, 8, 5, 7, 30),
+      '소래습지 생태공원',
+      3180,
+      '42분',
+      1.2,
+      124,
+      2.4,
+      true,
+      const {},
+    ),
+    _Act(
+      DateTime(2026, 8, 4, 18, 12),
+      '인천대공원 순환길',
+      2410,
+      '31분',
+      0.9,
+      96,
+      1.7,
+      true,
+      const {},
+    ),
+    _Act(
+      DateTime(2026, 8, 2, 8, 5),
+      '만수천 산책로',
+      4020,
+      '55분',
+      1.6,
+      158,
+      3.1,
+      false,
+      const {},
+    ),
+    _Act(
+      DateTime(2026, 7, 30, 7, 10),
+      '장수천 벚꽃길',
+      2860,
+      '38분',
+      1.1,
+      112,
+      2.0,
+      true,
+      const {},
+    ),
+    _Act(
+      DateTime(2026, 7, 28, 19, 40),
+      '구월동 로데오거리',
+      1940,
+      '26분',
+      0.7,
+      78,
+      1.3,
+      false,
+      const {},
+    ),
   ];
 
   static String _comma(int n) {
@@ -259,7 +310,8 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                   20,
                   6,
                   20,
-                  MediaQueryData.fromView(View.of(context)).padding.bottom + 120,
+                  MediaQueryData.fromView(View.of(context)).padding.bottom +
+                      120,
                 ),
                 children: [
                   // 기간 필터 pill
@@ -398,7 +450,9 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
             kcal: a.kcal,
             time: a.duration,
             distance: '${a.distanceKm.toStringAsFixed(1)}km',
-            hasPhoto: a.hasPhoto,
+            // _acts 가 더미라 인증샷 URL 이 없다. 실제 조회로 바꾸면
+            // 서버 Activity.imageUrls 를 그대로 넘긴다.
+            trashCounts: a.trashCounts,
           ),
         ),
       ),
@@ -550,6 +604,11 @@ class _Act {
   final int kcal;
   final double distanceKm; // 2.4
   final bool hasPhoto;
+
+  /// 활동별 수거 개수. 위 _acts 는 아직 더미라 비어 있고, 실제 조회로 바꾸면
+  /// 서버 Activity.trashCounts 를 그대로 넣는다. 비어 있으면 상세에서 전부 0.
+  final Map<String, int> trashCounts;
+
   const _Act(
     this.date,
     this.title,
@@ -559,5 +618,6 @@ class _Act {
     this.kcal,
     this.distanceKm,
     this.hasPhoto,
+    this.trashCounts,
   );
 }

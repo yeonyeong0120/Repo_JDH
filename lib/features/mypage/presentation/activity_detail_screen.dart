@@ -5,7 +5,9 @@ import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 
 /// Ploggo - 개별 활동 상세 (ACT-05)
-/// 상단 경로 지도 + 기록/수거/인증샷/보상. 실제 데이터는 아직 없어 더미 + TODO.
+/// 상단 경로 지도 + 기록/수거/인증샷/보상.
+/// 수거 개수는 호출부가 활동별 trashCounts 를 넘겨야 한다 — 기본값을 더미로 두면
+/// 누락됐을 때 모든 활동이 같은 숫자로 보이므로 빈 맵(전부 0)으로 둔다.
 class ActivityDetailScreen extends StatelessWidget {
   final String dateTime;
   final String title;
@@ -14,7 +16,12 @@ class ActivityDetailScreen extends StatelessWidget {
   final int kcal;
   final String time;
   final String distance;
-  final bool hasPhoto;
+
+  /// 인증샷 URL. 비어 있으면 '사진 없음'으로 그린다 —
+  /// 별도의 hasPhoto 플래그를 두면 URL 과 어긋나 사진이 없는데도
+  /// '인증샷 이미지'라고 표시되는 문제가 생긴다. 여기가 유일한 판단 근거다.
+  final List<String> imageUrls;
+
   final Map<String, int> trashCounts;
   final int rewardPoints;
   final int rewardXp;
@@ -28,14 +35,8 @@ class ActivityDetailScreen extends StatelessWidget {
     this.kcal = 0,
     this.time = '0분',
     this.distance = '0km',
-    this.hasPhoto = true,
-    this.trashCounts = const {
-      'plastic': 5,
-      'can': 3,
-      'paper': 1,
-      'glass': 0,
-      'trash': 3,
-    },
+    this.imageUrls = const [],
+    this.trashCounts = const {},
     this.rewardPoints = 330,
     this.rewardXp = 20,
   });
@@ -375,41 +376,61 @@ class ActivityDetailScreen extends StatelessWidget {
     );
   }
 
+  /// 인증샷 유무는 URL 목록으로만 판단한다.
+  bool get _hasPhoto => imageUrls.isNotEmpty;
+
+  /// 사진이 없거나 불러오지 못했을 때 보여줄 자리.
+  Widget _photoPlaceholder() {
+    return Container(
+      height: 170,
+      width: double.infinity,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.green50,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _hasPhoto ? Icons.image_outlined : Icons.add_a_photo_outlined,
+            size: 34,
+            color: AppColors.neutral400,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _hasPhoto ? '인증샷을 불러오지 못했어요' : '인증샷 추가하기',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _photoCard() {
     return _card(
       title: '인증샷',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 170,
-            width: double.infinity,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.green50,
+          // 여러 장을 저장하게 되면 여기서 가로 목록으로 바꾼다 (지금은 1장).
+          if (_hasPhoto)
+            ClipRRect(
               borderRadius: BorderRadius.circular(14),
-            ),
-            // TODO: 실제 사진(Image.network)으로 교체
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  hasPhoto ? Icons.image_outlined : Icons.add_a_photo_outlined,
-                  size: 34,
-                  color: AppColors.neutral400,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  hasPhoto ? '인증샷 이미지' : '인증샷 추가하기',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (hasPhoto) ...[
+              child: Image.network(
+                imageUrls.first,
+                height: 170,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _photoPlaceholder(),
+              ),
+            )
+          else
+            _photoPlaceholder(),
+          if (_hasPhoto) ...[
             const SizedBox(height: 12),
             Row(
               children: [

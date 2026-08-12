@@ -376,6 +376,8 @@ class _RecordsTabState extends State<_RecordsTab> {
       ActivityMetrics.weightLabel(a.trashCounts),
       ActivityMetrics.estimateKcal(a.distanceMeters),
       ActivityMetrics.durationLabel(a.durationSeconds),
+      a.trashCounts, // 상세 화면에서 활동별 수거 개수를 그대로 쓴다
+      a.imageUrls, // 인증샷도 원본 그대로 (없으면 빈 목록)
     );
   }
 
@@ -535,6 +537,8 @@ class _RecordsTabState extends State<_RecordsTab> {
             weight: a.weight,
             kcal: a.kcal,
             time: a.time,
+            trashCounts: a.trashCounts,
+            imageUrls: a.imageUrls,
           ),
         ),
       ),
@@ -1885,6 +1889,14 @@ class _Activity {
   final String weight;
   final int kcal;
   final String time;
+
+  /// 활동별 수거 개수 (서버 Activity.trashCounts 원본).
+  /// 무게로 환산만 하고 버리면 상세 화면이 활동을 구분하지 못한다.
+  final Map<String, int> trashCounts;
+
+  /// 인증샷 URL (서버 Activity.imageUrls 원본). 상세 화면이 실제 사진을 그린다.
+  final List<String> imageUrls;
+
   const _Activity(
     this.dateTime,
     this.title,
@@ -1892,6 +1904,8 @@ class _Activity {
     this.weight,
     this.kcal,
     this.time,
+    this.trashCounts,
+    this.imageUrls,
   );
 }
 
