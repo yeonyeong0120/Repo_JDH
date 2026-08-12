@@ -91,16 +91,23 @@ class GroupService {
   static Future<List<Group>> otherGroups({int limit = 20}) async {
     if (_useDummy) return DevData.otherGroups;
     final mine = await myGroupId();
+    // 내 그룹 제외를 클라이언트에서 하므로, 그게 상위 limit 개 안에 있으면
+    // 결과가 limit-1 개로 줄어든다. 한 개 더 받아 두고 제외한 뒤 잘라낸다.
+    // (쿼리에서 isNotEqualTo 로 거르는 방식은 orderBy 조합 제약·색인 문제가 있음)
     final query = await _groups
         .orderBy('createdAt', descending: true)
-        .limit(limit)
+        .limit(limit + 1)
         .get();
 
-    return query.docs.where((d) => d.id != mine).map((d) {
-      final data = d.data();
-      data['id'] = d.id;
-      return Group.fromJson(data);
-    }).toList();
+    return query.docs
+        .where((d) => d.id != mine)
+        .take(limit)
+        .map((d) {
+          final data = d.data();
+          data['id'] = d.id;
+          return Group.fromJson(data);
+        })
+        .toList();
   }
 
   /// 이름으로 검색 (접두 일치)
