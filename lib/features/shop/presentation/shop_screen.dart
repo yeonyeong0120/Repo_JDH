@@ -4,7 +4,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
-import 'package:repo_jdh/features/shop/presentation/coupon_screen.dart';
+import 'package:repo_jdh/features/shop/presentation/coupon_list_screen.dart';
 
 /// SHOP-01 에코 포인트 상점 (+ SHOP-02 구매 컨펌 모달)
 /// 위치 권장: lib/features/shop/presentation/shop_screen.dart
@@ -63,7 +63,7 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> _openCoupons() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const CouponScreen()),
+      MaterialPageRoute(builder: (_) => const CouponListScreen()),
     );
     _loadPoints();
   }
