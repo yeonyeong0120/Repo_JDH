@@ -144,11 +144,21 @@ class _GroupScreenState extends State<GroupScreen> {
                       onRefresh: _load,
                       color: AppColors.actionPrimary,
                       child: ListView(
-                        padding: const EdgeInsets.fromLTRB(
+                        // 바텀 내비는 extendBody 로 본문 위에 떠 있어 이 여백으로만
+                        // 피한다. Gap.navSafe(96) 고정만으로는 제스처 내비 기기에서
+                        // 모자라 마지막 카드가 잘린다.
+                        // ⚠️ MediaQuery.of(context).padding.bottom 을 쓰면 안 된다 —
+                        // Scaffold(extendBody: true) 가 body 의 padding.bottom 을
+                        // 내비 높이로 덮어써서 여백이 이중으로 잡힌다.
+                        // 원시 시스템 inset 을 직접 읽는다 (홈·뱃지 탭과 동일한 식).
+                        padding: EdgeInsets.fromLTRB(
                           Gap.screenPad,
                           Gap.xl,
                           Gap.screenPad,
-                          Gap.navSafe,
+                          MediaQueryData.fromView(
+                                View.of(context),
+                              ).padding.bottom +
+                              92,
                         ),
                         children: [
                           AppSection(
