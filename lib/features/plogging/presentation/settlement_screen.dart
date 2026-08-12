@@ -68,7 +68,9 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
 
   // 활동 기록 저장 — 반드시 뱃지 판정보다 먼저 실행해야 한다.
   // (뱃지 판정이 activities 를 읽어 통계를 내므로, 이번 활동이 빠지면 안 됨)
-  Future<void> _saveActivity() async {
+  /// [imageUrl] 은 인증샷 업로드 결과. 없거나 업로드에 실패했으면 null 이고,
+  /// 그때는 사진 없는 활동으로 저장한다.
+  Future<void> _saveActivity({String? imageUrl}) async {
     try {
       final t = ref.read(trackingProvider);
       final counts = ref.read(ploggingProvider).totalCounts;
@@ -98,6 +100,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         path: t.pathJson, // 활동 경로 (나중에 기록 상세에서 지도 표시)
         startLocation: t.startLocation,
         endLocation: t.endLocation,
+        // 그룹 피드뿐 아니라 활동 기록에도 인증샷을 남긴다
+        imageUrls: imageUrl == null ? const [] : [imageUrl],
       );
     } catch (e) {
       debugPrint('[정산] 활동 저장 실패: $e');
@@ -161,7 +165,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
 
   // 사진 결정(찍기) 공통: 자동 그룹 공유 → '올렸어요' 시트 → 홈 or 피드
   Future<void> _shareAndHome({String? imageUrl}) async {
-    await _saveActivity(); // ① 활동 저장 (reset 전에 해야 데이터가 살아있음)
+    // ① 활동 저장 (reset 전에 해야 데이터가 살아있음). 인증샷도 함께 남긴다.
+    await _saveActivity(imageUrl: imageUrl);
 
     // ② 내 그룹 피드에 활동 카드 게시 (공유 횟수도 누적 → 'share_10' 뱃지)
     String myGroupName = '우리 동네 그룹';
@@ -769,7 +774,9 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     );
   }
 
-  // ───────────────────────── 하단 버튼 (찍기 / 갤러리 / 스킵) ─────────────────────────
+  // ─────────────── 하단 버튼 (인증샷 찍기 / 활동 마치기) ───────────────
+  //
+  // 갤러리 선택은 없다 — 현장에서 직접 찍어야 인증이 된다는 취지.
   //
   // SafeArea 로 감싸 시스템 네비게이션 바(홈·뒤로가기)와 겹치지 않게 한다.
   // 폰마다 네비바 높이가 달라 고정 여백으로는 대응할 수 없다.

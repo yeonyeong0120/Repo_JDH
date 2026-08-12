@@ -19,7 +19,6 @@ import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/providers/tracking_provider.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
-import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 
 class PloggingTrackingScreen extends ConsumerStatefulWidget {
   const PloggingTrackingScreen({super.key});
@@ -259,21 +258,11 @@ class _PloggingTrackingScreenState
     );
     if (ok != true || !mounted) return;
 
-    // 트래킹 정지 + 활동 기록 저장 (퀘스트·뱃지 판정에 사용)
-    final t = ref.read(trackingProvider);
+    // 트래킹만 정지한다. 값은 stop() 이후에도 남아 정산 화면이 읽는다.
+    // 활동 문서 저장은 정산 화면(_saveActivity)이 전담한다 — 여기서도 저장하면
+    // 플로깅 1회에 문서가 2건 쌓인다. 정산 쪽이 경로·위치·groupId·인증샷까지
+    // 함께 저장하므로 더 완전하다.
     ref.read(trackingProvider.notifier).stop();
-    try {
-      await ActivityService.saveCompleted(
-        startedAt: t.startedAt ?? DateTime.now(),
-        endedAt: DateTime.now(),
-        durationSeconds: t.elapsedSeconds,
-        distanceMeters: t.distanceMeters,
-        trashCounts: counts,
-      );
-    } catch (_) {
-      // 저장 실패해도 정산 화면은 보여줌
-    }
-    if (!mounted) return;
     context.push(AppRoutes.ploggingSettlement); // 정산 화면으로
   }
 

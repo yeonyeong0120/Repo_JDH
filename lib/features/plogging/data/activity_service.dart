@@ -174,6 +174,7 @@ class ActivityService {
     List<Map<String, dynamic>> path = const [], // 지나온 경로 [{lat,lng,t}]
     Map<String, double>? startLocation,
     Map<String, double>? endLocation,
+    List<String> imageUrls = const [], // 인증샷 URL (없으면 빈 배열)
   }) async {
     if (_useDummy) return 'dev_activity';
     final col = _activitiesCol();
@@ -187,7 +188,7 @@ class ActivityService {
       'distanceMeters': distanceMeters,
       'trashCounts': trashCounts,
       'totalTrash': total,
-      'imageUrls': <String>[],
+      'imageUrls': imageUrls,
       'detectionIds': <String>[],
       'path': path, // 활동 경로 (지도 표시용)
       'startLocation': startLocation,
