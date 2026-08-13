@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
+import 'package:repo_jdh/features/plogging/data/activity_service.dart';
+import 'package:repo_jdh/features/plogging/domain/activity.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 
 /// Ploggo - 전체 활동 기록 (ACT-04)
 /// 기록 탭 "최근 활동 전체 보기" → 이 화면. 월별 그룹 + 기간 필터.
-/// 실제 데이터는 아직 없어 더미 + TODO.
 class ActivityListScreen extends StatefulWidget {
   const ActivityListScreen({super.key});
 
@@ -17,65 +19,52 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
 
-  // TODO: 실제 활동 데이터로 교체 (시간 역순)
-  // 수거 개수는 더미로 지어내지 않는다 — 빈 맵을 넘겨 상세에서 0으로 드러나게 둔다.
-  static final List<_Act> _acts = [
-    _Act(
-      DateTime(2026, 8, 5, 7, 30),
-      '소래습지 생태공원',
-      3180,
-      '42분',
-      1.2,
-      124,
-      2.4,
-      true,
-      const {},
-    ),
-    _Act(
-      DateTime(2026, 8, 4, 18, 12),
-      '인천대공원 순환길',
-      2410,
-      '31분',
-      0.9,
-      96,
-      1.7,
-      true,
-      const {},
-    ),
-    _Act(
-      DateTime(2026, 8, 2, 8, 5),
-      '만수천 산책로',
-      4020,
-      '55분',
-      1.6,
-      158,
-      3.1,
-      false,
-      const {},
-    ),
-    _Act(
-      DateTime(2026, 7, 30, 7, 10),
-      '장수천 벚꽃길',
-      2860,
-      '38분',
-      1.1,
-      112,
-      2.0,
-      true,
-      const {},
-    ),
-    _Act(
-      DateTime(2026, 7, 28, 19, 40),
-      '구월동 로데오거리',
-      1940,
-      '26분',
-      0.7,
-      78,
-      1.3,
-      false,
-      const {},
-    ),
-  ];
+  // 다른 화면(뱃지 판정·내 변화)과 맞춘 조회 상한.
+  // ⚠️ 기간 필터는 클라이언트에서 거르므로, 이 상한을 넘는 과거 기록은
+  //    날짜를 지정해도 조회되지 않는다. 필요해지면 startedAt 범위 쿼리로 전환.
+  static const int _limit = 500;
+
+  // null = 로딩 중 / [] = 로딩됐고 기록 0건
+  List<_Act>? _acts;
+  Object? _loadError; // null 이 아니면 에러 발생
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final list = await ActivityService.getRecentCompleted(limit: _limit);
+      if (!mounted) return;
+      setState(() {
+        _acts = list.map(_toAct).toList();
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadError = e);
+    }
+  }
+
+  // 서버 Activity → 화면 _Act
+  // (걸음·칼로리·무게는 ActivityMetrics 로 추정, 장소명은 아직 없어 임시 표시)
+  _Act _toAct(Activity a) {
+    return _Act(
+      a.startedAt,
+      // TODO: 역지오코딩으로 실제 장소명 채우기 (기록 탭과 동일한 임시 처리)
+      a.groupId != null ? '그룹 플로깅' : '플로깅 기록',
+      ActivityMetrics.estimateSteps(a.distanceMeters),
+      ActivityMetrics.durationLabel(a.durationSeconds),
+      ActivityMetrics.weightGrams(a.trashCounts) / 1000.0,
+      ActivityMetrics.estimateKcal(a.distanceMeters),
+      a.distanceMeters / 1000.0,
+      a.imageUrls.isNotEmpty,
+      a.trashCounts,
+      a.imageUrls,
+    );
+  }
 
   static String _comma(int n) {
     final s = n.toString();
@@ -257,9 +246,10 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final all = _acts ?? const <_Act>[];
     final acts = (_rangeStart == null || _rangeEnd == null)
-        ? _acts
-        : _acts
+        ? all
+        : all
               .where(
                 (a) =>
                     !a.date.isBefore(_rangeStart!) &&
@@ -363,51 +353,89 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  // 전체 활동 요약
-                  Container(
-                    height: 60,
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: AppColors.cardShadow,
-                    ),
-                    child: Row(
-                      children: [
-                        const Text(
-                          '전체 활동',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
+                  // ── 로딩 / 에러 / 데이터 ──
+                  // 요약(N회·Xkg)도 이 분기 안에 둔다. 밖에 두면 로딩 중
+                  // '0회 · 0.0kg' 이 잠깐 보였다가 실제 값으로 바뀐다.
+                  if (_loadError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              '기록을 불러오지 못했어요',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: _load,
+                              child: const Text('다시 시도'),
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        Text(
-                          '${acts.length}회 · ${totalKg.toStringAsFixed(1)}kg',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textBrandOnLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (acts.isEmpty)
+                      ),
+                    )
+                  else if (_acts == null)
                     const Padding(
                       padding: EdgeInsets.only(top: 60),
                       child: Center(
-                        child: Text(
-                          '해당 기간에 활동 기록이 없어요',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: AppColors.textSecondary,
+                        child: CircularProgressIndicator(
+                          color: AppColors.progress,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    )
+                  else ...[
+                    // 전체 활동 요약
+                    Container(
+                      height: 60,
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: AppColors.cardShadow,
+                      ),
+                      child: Row(
+                        children: [
+                          const Text(
+                            '전체 활동',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${acts.length}회 · ${totalKg.toStringAsFixed(1)}kg',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textBrandOnLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (acts.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 60),
+                        child: Center(
+                          child: Text(
+                            '해당 기간에 활동 기록이 없어요',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                  ],
                   for (final entry in byMonth.entries) ...[
                     Padding(
                       padding: const EdgeInsets.fromLTRB(2, 14, 0, 12),
@@ -450,9 +478,8 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
             kcal: a.kcal,
             time: a.duration,
             distance: '${a.distanceKm.toStringAsFixed(1)}km',
-            // _acts 가 더미라 인증샷 URL 이 없다. 실제 조회로 바꾸면
-            // 서버 Activity.imageUrls 를 그대로 넘긴다.
             trashCounts: a.trashCounts,
+            imageUrls: a.imageUrls,
           ),
         ),
       ),
@@ -599,15 +626,17 @@ class _Act {
   final DateTime date;
   final String title;
   final int steps;
-  final String duration; // '42분'
+  final String duration; // '42:30' (분:초) — ActivityMetrics.durationLabel
   final double weightKg; // 1.2
   final int kcal;
   final double distanceKm; // 2.4
   final bool hasPhoto;
 
-  /// 활동별 수거 개수. 위 _acts 는 아직 더미라 비어 있고, 실제 조회로 바꾸면
-  /// 서버 Activity.trashCounts 를 그대로 넣는다. 비어 있으면 상세에서 전부 0.
+  /// 활동별 수거 개수 (서버 Activity.trashCounts 원본)
   final Map<String, int> trashCounts;
+
+  /// 인증샷 URL (서버 Activity.imageUrls 원본). 상세 화면이 실제 사진을 그린다.
+  final List<String> imageUrls;
 
   const _Act(
     this.date,
@@ -619,5 +648,6 @@ class _Act {
     this.distanceKm,
     this.hasPhoto,
     this.trashCounts,
+    this.imageUrls,
   );
 }
