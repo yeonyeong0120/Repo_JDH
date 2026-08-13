@@ -370,8 +370,7 @@ class _RecordsTabState extends State<_RecordsTab> {
   _Activity _toDisplay(Activity a) {
     return _Activity(
       ActivityMetrics.dateTimeLabel(a.startedAt),
-      // TODO: 역지오코딩으로 실제 장소명 채우기 (지금은 임시)
-      a.groupId != null ? '그룹 플로깅' : '플로깅 기록',
+      ActivityMetrics.placeLabel(placeName: a.placeName, groupId: a.groupId),
       ActivityMetrics.estimateSteps(a.distanceMeters),
       ActivityMetrics.weightLabel(a.trashCounts),
       ActivityMetrics.estimateKcal(a.distanceMeters),
@@ -768,14 +767,7 @@ class _BadgesTabState extends State<_BadgesTab> {
   // 진행률 카드 문구를 5개 중 하나로 (탭 진입 시 한 번 뽑음)
   final int _phraseIndex = Random().nextInt(5);
 
-  static const List<String> _filters = [
-    '전체',
-    '걸음·거리',
-    '수거',
-    '그룹',
-    '시간',
-    '칼로리',
-  ];
+  static const List<String> _filters = ['전체', '걸음·거리', '수거', '그룹', '시간', '칼로리'];
 
   @override
   void initState() {
@@ -867,9 +859,7 @@ class _BadgesTabState extends State<_BadgesTab> {
       mainAxisSpacing: Gap.sm,
       crossAxisSpacing: Gap.md,
       childAspectRatio: 0.84,
-      children: [
-        for (final b in list) _BadgeTile(badge: b, stats: _stats),
-      ],
+      children: [for (final b in list) _BadgeTile(badge: b, stats: _stats)],
     );
   }
 
@@ -1022,7 +1012,10 @@ class _BadgeTile extends StatelessWidget {
     final earned = BadgeRepo.isEarned(badge.id);
     final color = badgeColor(badge);
     final collect = usesTrashBagIcon(badge);
-    final (cur, tot) = BadgeService.progressOf(badge, stats ?? const UserStats());
+    final (cur, tot) = BadgeService.progressOf(
+      badge,
+      stats ?? const UserStats(),
+    );
     final progress = tot == 0 ? 0.0 : (cur / tot).clamp(0.0, 1.0);
 
     // 수거 계열은 쓰레기봉투 아이콘으로 통일
@@ -1168,7 +1161,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     final cats = ActivityStats.categoryTotals(scoped)
       ..sort((a, b) => b.count.compareTo(a.count));
     return cats.map((c) {
-      final meta = _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
+      final meta =
+          _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
       return _Segment(meta.$1, c.count, meta.$2);
     }).toList();
   }
@@ -1322,10 +1316,24 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
         const SizedBox(height: 18),
         Row(
           children: [
-            _summaryStat('걸음수', d.steps, AppColors.dataSteps, 'track_thick.svg'),
-            _summaryStat('칼로리', d.kcal, AppColors.dataCalorie, 'fire_thick.svg'),
-            _summaryStat('수거량', d.weight, AppColors.dataCollect,
-                'garbage_thick.svg'),
+            _summaryStat(
+              '걸음수',
+              d.steps,
+              AppColors.dataSteps,
+              'track_thick.svg',
+            ),
+            _summaryStat(
+              '칼로리',
+              d.kcal,
+              AppColors.dataCalorie,
+              'fire_thick.svg',
+            ),
+            _summaryStat(
+              '수거량',
+              d.weight,
+              AppColors.dataCollect,
+              'garbage_thick.svg',
+            ),
           ],
         ),
         const SizedBox(height: 22),
@@ -1492,8 +1500,11 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               children: [
                 Text(title, style: AppType.title3),
                 const SizedBox(width: 6),
-                const Icon(Icons.info_outline, size: 15,
-                    color: AppColors.neutral400),
+                const Icon(
+                  Icons.info_outline,
+                  size: 15,
+                  color: AppColors.neutral400,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
