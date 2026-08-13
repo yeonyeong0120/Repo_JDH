@@ -23,6 +23,11 @@ class Activity {
   final List<String> imageUrls;
   final List<String> detectionIds;
   final String? groupId;
+
+  /// 역지오코딩된 장소명 (startLocation 기준).
+  /// 이 필드가 생기기 전에 저장된 문서에는 없으므로 nullable.
+  final String? placeName;
+
   final int pointsEarned;
   final String status;
 
@@ -40,6 +45,7 @@ class Activity {
     this.imageUrls = const [],
     this.detectionIds = const [],
     this.groupId,
+    this.placeName,
     this.pointsEarned = 0,
     this.status = ActivityStatus.ongoing,
   });
@@ -61,9 +67,10 @@ class Activity {
       ),
       totalTrash: (json['totalTrash'] as num?)?.toInt() ?? 0,
       imageUrls: ((json['imageUrls'] as List?) ?? const []).cast<String>(),
-      detectionIds:
-          ((json['detectionIds'] as List?) ?? const []).cast<String>(),
+      detectionIds: ((json['detectionIds'] as List?) ?? const [])
+          .cast<String>(),
       groupId: json['groupId'] as String?,
+      placeName: json['placeName'] as String?,
       pointsEarned: (json['pointsEarned'] as num?)?.toInt() ?? 0,
       status: (json['status'] as String?) ?? ActivityStatus.ongoing,
     );
@@ -84,6 +91,7 @@ class Activity {
       'imageUrls': imageUrls,
       'detectionIds': detectionIds,
       'groupId': groupId,
+      'placeName': placeName,
       'pointsEarned': pointsEarned,
       'status': status,
     };

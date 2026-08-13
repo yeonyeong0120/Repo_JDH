@@ -16,6 +16,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/features/plogging/data/photo_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
+import 'package:repo_jdh/features/plogging/data/geocode_service.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 
@@ -90,6 +91,16 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         if (v > 0) trashCounts[k] = v;
       });
 
+      // 좌표 → 장소명. GeocodeService 가 실패를 null 로 흡수하므로
+      // 서버가 죽어 있거나 느려도 아래 저장은 그대로 진행된다.
+      // GPS 를 못 잡아 startLocation 이 없으면 서버를 아예 부르지 않는다.
+      final start = t.startLocation;
+      final lat = start?['lat'];
+      final lng = start?['lng'];
+      final placeName = (lat == null || lng == null)
+          ? null
+          : await GeocodeService.placeNameOf(lat: lat, lng: lng);
+
       await ActivityService.saveCompleted(
         startedAt: startedAt,
         endedAt: endedAt,
@@ -102,6 +113,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         endLocation: t.endLocation,
         // 그룹 피드뿐 아니라 활동 기록에도 인증샷을 남긴다
         imageUrls: imageUrl == null ? const [] : [imageUrl],
+        placeName: placeName,
       );
     } catch (e) {
       debugPrint('[정산] 활동 저장 실패: $e');
@@ -519,15 +531,23 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           Row(
             children: [
               _metricTile(
-                const Icon(Symbols.schedule,
-                    size: 20, fill: 1, color: AppColors.dataTime),
+                const Icon(
+                  Symbols.schedule,
+                  size: 20,
+                  fill: 1,
+                  color: AppColors.dataTime,
+                ),
                 '시간',
                 t.durationText,
               ),
               const SizedBox(width: 10),
               _metricTile(
-                const Icon(Symbols.route,
-                    size: 20, fill: 1, color: AppColors.dataDistance),
+                const Icon(
+                  Symbols.route,
+                  size: 20,
+                  fill: 1,
+                  color: AppColors.dataDistance,
+                ),
                 '거리',
                 '${t.distanceText} km',
               ),
@@ -537,8 +557,12 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           Row(
             children: [
               _metricTile(
-                const Icon(Symbols.footprint,
-                    size: 20, fill: 1, color: AppColors.dataSteps),
+                const Icon(
+                  Symbols.footprint,
+                  size: 20,
+                  fill: 1,
+                  color: AppColors.dataSteps,
+                ),
                 '걸음',
                 _comma(t.steps),
               ),
@@ -651,7 +675,10 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 2,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.neutral100,
                   borderRadius: BorderRadius.circular(14),
@@ -727,7 +754,13 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           ),
           const Spacer(),
           // 포인트는 느리게, 경험치는 빠르게 올라간다.
-          _rewardPill(Symbols.eco, 'P', _rewardPoints, AppColors.dataDistance, 2000),
+          _rewardPill(
+            Symbols.eco,
+            'P',
+            _rewardPoints,
+            AppColors.dataDistance,
+            2000,
+          ),
           const SizedBox(width: 8),
           _rewardPill(Symbols.star, 'XP', _rewardXp, AppColors.dataTime, 1100),
         ],

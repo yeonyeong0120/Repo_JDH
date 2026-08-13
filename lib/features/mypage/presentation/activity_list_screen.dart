@@ -53,8 +53,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   _Act _toAct(Activity a) {
     return _Act(
       a.startedAt,
-      // TODO: 역지오코딩으로 실제 장소명 채우기 (기록 탭과 동일한 임시 처리)
-      a.groupId != null ? '그룹 플로깅' : '플로깅 기록',
+      ActivityMetrics.placeLabel(placeName: a.placeName, groupId: a.groupId),
       ActivityMetrics.estimateSteps(a.distanceMeters),
       ActivityMetrics.durationLabel(a.durationSeconds),
       ActivityMetrics.weightGrams(a.trashCounts) / 1000.0,
