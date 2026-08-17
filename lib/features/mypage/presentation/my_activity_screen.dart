@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
+import 'package:repo_jdh/core/widgets/app_section.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
@@ -173,14 +175,11 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
   }
 
   Widget _buildHeader() {
-    return Container(
+    // 초록 워시는 홈처럼 위→아래로 차오르고(HeaderWashPour), 제목은 떠오른다 (탭은 고정).
+    return HeaderWashPour(
+      child: Container(
       width: double.infinity,
-      // 초록 헤더 제거 — 배경색으로 통일 (홈만 초록 유지)
-      decoration: const BoxDecoration(
-        color: AppColors.bg,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 44, 20, 14),
+      padding: const EdgeInsets.fromLTRB(20, 72, 20, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -189,13 +188,15 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Expanded(
-                child: Text(
-                  '지금까지의 발자취를\n확인해볼까요?',
-                  style: TextStyle(
-                    fontSize: 23,
-                    fontWeight: FontWeight.w800,
-                    height: 1.28,
-                    color: AppColors.textPrimary,
+                child: HeaderRise(
+                  child: Text(
+                    '지금까지의 발자취를\n확인해볼까요?',
+                    style: TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      height: 1.28,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
               ),
@@ -211,6 +212,7 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
             onSelect: _goTab,
           ),
         ],
+      ),
       ),
     );
   }
@@ -517,7 +519,7 @@ class _RecordsTabState extends State<_RecordsTab> {
               color: AppColors.textPrimary,
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          const Icon(TablerIcons.chevronRight, color: AppColors.textSecondary),
         ],
       ),
     );
@@ -767,7 +769,14 @@ class _BadgesTabState extends State<_BadgesTab> {
   // 진행률 카드 문구를 5개 중 하나로 (탭 진입 시 한 번 뽑음)
   final int _phraseIndex = Random().nextInt(5);
 
-  static const List<String> _filters = ['전체', '걸음·거리', '수거', '그룹', '시간', '칼로리'];
+  static const List<String> _filters = [
+    '전체',
+    '걸음·거리',
+    '수거',
+    '그룹',
+    '시간',
+    '칼로리',
+  ];
 
   @override
   void initState() {
@@ -859,7 +868,9 @@ class _BadgesTabState extends State<_BadgesTab> {
       mainAxisSpacing: Gap.sm,
       crossAxisSpacing: Gap.md,
       childAspectRatio: 0.84,
-      children: [for (final b in list) _BadgeTile(badge: b, stats: _stats)],
+      children: [
+        for (final b in list) _BadgeTile(badge: b, stats: _stats),
+      ],
     );
   }
 
@@ -1012,10 +1023,7 @@ class _BadgeTile extends StatelessWidget {
     final earned = BadgeRepo.isEarned(badge.id);
     final color = badgeColor(badge);
     final collect = usesTrashBagIcon(badge);
-    final (cur, tot) = BadgeService.progressOf(
-      badge,
-      stats ?? const UserStats(),
-    );
+    final (cur, tot) = BadgeService.progressOf(badge, stats ?? const UserStats());
     final progress = tot == 0 ? 0.0 : (cur / tot).clamp(0.0, 1.0);
 
     // 수거 계열은 쓰레기봉투 아이콘으로 통일
@@ -1161,8 +1169,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     final cats = ActivityStats.categoryTotals(scoped)
       ..sort((a, b) => b.count.compareTo(a.count));
     return cats.map((c) {
-      final meta =
-          _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
+      final meta = _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
       return _Segment(meta.$1, c.count, meta.$2);
     }).toList();
   }
@@ -1303,12 +1310,12 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               Row(
                 children: [
                   _arrow(
-                    Icons.chevron_left,
+                    TablerIcons.chevronLeft,
                     off < listLen - 1,
                     () => _shift(1),
                   ),
                   const SizedBox(width: 16),
-                  _arrow(Icons.chevron_right, off > 0, () => _shift(-1)),
+                  _arrow(TablerIcons.chevronRight, off > 0, () => _shift(-1)),
                 ],
               ),
           ],
@@ -1316,24 +1323,10 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
         const SizedBox(height: 18),
         Row(
           children: [
-            _summaryStat(
-              '걸음수',
-              d.steps,
-              AppColors.dataSteps,
-              'track_thick.svg',
-            ),
-            _summaryStat(
-              '칼로리',
-              d.kcal,
-              AppColors.dataCalorie,
-              'fire_thick.svg',
-            ),
-            _summaryStat(
-              '수거량',
-              d.weight,
-              AppColors.dataCollect,
-              'garbage_thick.svg',
-            ),
+            _summaryStat('걸음수', d.steps, AppColors.dataSteps, 'track_thick.svg'),
+            _summaryStat('칼로리', d.kcal, AppColors.dataCalorie, 'fire_thick.svg'),
+            _summaryStat('수거량', d.weight, AppColors.dataCollect,
+                'garbage_thick.svg'),
           ],
         ),
         const SizedBox(height: 22),
@@ -1500,11 +1493,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               children: [
                 Text(title, style: AppType.title3),
                 const SizedBox(width: 6),
-                const Icon(
-                  Icons.info_outline,
-                  size: 15,
-                  color: AppColors.neutral400,
-                ),
+                const Icon(TablerIcons.infoCircle, size: 15,
+                    color: AppColors.neutral400),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -1795,13 +1785,13 @@ class _DevSeedButtonsState extends State<_DevSeedButtons> {
       children: [
         IconButton(
           tooltip: '가짜 데이터 심기',
-          icon: const Icon(Icons.add_circle_outline, size: 22),
+          icon: const Icon(TablerIcons.circlePlus, size: 22),
           color: AppColors.textSecondary,
           onPressed: () => _run(() => DevSeed.seedActivities(), '심기'),
         ),
         IconButton(
           tooltip: '가짜 데이터 지우기',
-          icon: const Icon(Icons.delete_outline, size: 22),
+          icon: const Icon(TablerIcons.trash, size: 22),
           color: AppColors.textSecondary,
           onPressed: () => _run(() => DevSeed.clearActivities(), '삭제'),
         ),
@@ -1809,7 +1799,7 @@ class _DevSeedButtonsState extends State<_DevSeedButtons> {
         // (원래는 플로깅 정산 화면에서 자동 호출됨)
         IconButton(
           tooltip: '뱃지 판정 실행',
-          icon: const Icon(Icons.military_tech_outlined, size: 22),
+          icon: const Icon(TablerIcons.medal, size: 22),
           color: AppColors.textSecondary,
           onPressed: () => _run(() async {
             final fresh = await BadgeService.checkAndSave();
@@ -1837,7 +1827,7 @@ class _EmptyRecords extends StatelessWidget {
       ),
       child: Column(
         children: const [
-          Icon(Icons.directions_walk, size: 48, color: AppColors.textSecondary),
+          Icon(TablerIcons.walk, size: 48, color: AppColors.textSecondary),
           SizedBox(height: 12),
           Text(
             '아직 플로깅 기록이 없어요',
@@ -1875,7 +1865,7 @@ class _ErrorBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(Icons.cloud_off, size: 44, color: AppColors.textSecondary),
+          const Icon(TablerIcons.cloudOff, size: 44, color: AppColors.textSecondary),
           const SizedBox(height: 12),
           const Text(
             '기록을 불러오지 못했어요',

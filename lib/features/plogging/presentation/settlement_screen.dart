@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
@@ -60,11 +60,11 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
 
   // 쓰레기 종류 정의 (라벨, 목업 아이콘, 화사한 카테고리 색, ploggingProvider의 키)
   static const List<_TrashDef> _trashDefs = [
-    _TrashDef('플라스틱', Symbols.water_bottle, Color(0xFF5F9EE8), 'plastic'),
-    _TrashDef('캔', Symbols.local_drink, Color(0xFFE07B2E), 'can'),
-    _TrashDef('종이', Symbols.description, Color(0xFF31C88B), 'paper'),
-    _TrashDef('유리', Symbols.wine_bar, Color(0xFF8E7EC4), 'glass'),
-    _TrashDef('일반', Symbols.delete, Color(0xFF9AA3A0), 'trash'),
+    _TrashDef('플라스틱', TablerIcons.bottle, Color(0xFF5F9EE8), 'plastic'),
+    _TrashDef('캔', TablerIcons.cup, Color(0xFFE07B2E), 'can'),
+    _TrashDef('종이', TablerIcons.fileDescription, Color(0xFF31C88B), 'paper'),
+    _TrashDef('유리', TablerIcons.glassFull, Color(0xFF8E7EC4), 'glass'),
+    _TrashDef('일반', TablerIcons.trash, Color(0xFF9AA3A0), 'trash'),
   ];
 
   // 활동 기록 저장 — 반드시 뱃지 판정보다 먼저 실행해야 한다.
@@ -111,9 +111,9 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         path: t.pathJson, // 활동 경로 (나중에 기록 상세에서 지도 표시)
         startLocation: t.startLocation,
         endLocation: t.endLocation,
+        placeName: placeName, // 역지오코딩된 장소명 (없으면 null)
         // 그룹 피드뿐 아니라 활동 기록에도 인증샷을 남긴다
         imageUrls: imageUrl == null ? const [] : [imageUrl],
-        placeName: placeName,
       );
     } catch (e) {
       debugPrint('[정산] 활동 저장 실패: $e');
@@ -255,9 +255,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
-                  Symbols.groups,
+                  TablerIcons.users,
                   size: 26,
-                  fill: 1,
                   color: AppColors.textBrandOnLight,
                 ),
               ),
@@ -419,7 +418,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: const [
                       Icon(
-                        Icons.map_outlined,
+                        TablerIcons.map,
                         size: 32,
                         color: AppColors.textSecondary,
                       ),
@@ -474,8 +473,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
 
       // 시작(사람) · 도착(깃발) 커스텀 핀
       if (!mounted) return;
-      final startIcon = await _pinIcon(Icons.person);
-      final endIcon = await _pinIcon(Icons.flag_rounded);
+      final startIcon = await _pinIcon(TablerIcons.userFilled);
+      final endIcon = await _pinIcon(TablerIcons.flagFilled);
       if (!mounted) return;
       await controller.addOverlay(
         NMarker(
@@ -531,23 +530,15 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           Row(
             children: [
               _metricTile(
-                const Icon(
-                  Symbols.schedule,
-                  size: 20,
-                  fill: 1,
-                  color: AppColors.dataTime,
-                ),
+                const Icon(TablerIcons.clock,
+                    size: 20, color: AppColors.dataTime),
                 '시간',
                 t.durationText,
               ),
               const SizedBox(width: 10),
               _metricTile(
-                const Icon(
-                  Symbols.route,
-                  size: 20,
-                  fill: 1,
-                  color: AppColors.dataDistance,
-                ),
+                const Icon(TablerIcons.route,
+                    size: 20, color: AppColors.dataDistance),
                 '거리',
                 '${t.distanceText} km',
               ),
@@ -557,12 +548,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           Row(
             children: [
               _metricTile(
-                const Icon(
-                  Symbols.footprint,
-                  size: 20,
-                  fill: 1,
-                  color: AppColors.dataSteps,
-                ),
+                const Icon(TablerIcons.shoe,
+                    size: 20, color: AppColors.dataSteps),
                 '걸음',
                 _comma(t.steps),
               ),
@@ -675,10 +662,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 2,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
                 decoration: BoxDecoration(
                   color: AppColors.neutral100,
                   borderRadius: BorderRadius.circular(14),
@@ -694,7 +678,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(11),
                       ),
-                      child: Icon(d.icon, size: 20, fill: 1, color: d.color),
+                      child: Icon(d.icon, size: 20, color: d.color),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -754,15 +738,9 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           ),
           const Spacer(),
           // 포인트는 느리게, 경험치는 빠르게 올라간다.
-          _rewardPill(
-            Symbols.eco,
-            'P',
-            _rewardPoints,
-            AppColors.dataDistance,
-            2000,
-          ),
+          _rewardPill(TablerIcons.leaf, 'P', _rewardPoints, AppColors.dataDistance, 2000),
           const SizedBox(width: 8),
-          _rewardPill(Symbols.star, 'XP', _rewardXp, AppColors.dataTime, 1100),
+          _rewardPill(TablerIcons.starFilled, 'XP', _rewardXp, AppColors.dataTime, 1100),
         ],
       ),
     );
@@ -785,12 +763,12 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             color: AppColors.tint(color, 0.14),
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, fill: 1, color: color),
+              Icon(icon, size: 16, color: color),
               const SizedBox(width: 5),
               Text(
                 '+$v $unit',
@@ -847,7 +825,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
             Expanded(
               child: AppButton(
                 label: '인증샷 찍기',
-                icon: Icons.photo_camera,
+                icon: TablerIcons.cameraFilled,
                 onTap: _takePhoto,
                 type: AppButtonType.secondary,
                 expand: false,
