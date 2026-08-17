@@ -175,6 +175,7 @@ class ActivityService {
     Map<String, double>? startLocation,
     Map<String, double>? endLocation,
     List<String> imageUrls = const [], // 인증샷 URL (없으면 빈 배열)
+    String? placeName, // 역지오코딩 결과 (좌표가 없거나 실패했으면 null)
   }) async {
     if (_useDummy) return 'dev_activity';
     final col = _activitiesCol();
@@ -196,6 +197,7 @@ class ActivityService {
       'pointsEarned': pointsEarned,
       'status': ActivityStatus.completed,
       if (groupId != null) 'groupId': groupId,
+      if (placeName != null) 'placeName': placeName,
     });
     return doc.id;
   }

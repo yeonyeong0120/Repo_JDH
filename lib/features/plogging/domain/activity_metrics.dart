@@ -71,6 +71,16 @@ class ActivityMetrics {
     return '$g g';
   }
 
+  /// 활동 제목 — 역지오코딩된 장소명이 있으면 그것, 없으면 그룹 여부로 폴백.
+  ///
+  /// 기록 탭·전체 활동 기록 어디서 열든 같은 문구가 나오도록
+  /// 폴백 규칙을 여기 한 곳에서만 정한다 (화면마다 복제하면 어긋난다).
+  static String placeLabel({String? placeName, String? groupId}) {
+    final name = placeName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    return groupId != null ? '그룹 플로깅' : '플로깅 기록';
+  }
+
   /// 날짜 라벨 — DateTime → "26.02.01 06:15"
   static String dateTimeLabel(DateTime dt) {
     final yy = (dt.year % 100).toString().padLeft(2, '0');
