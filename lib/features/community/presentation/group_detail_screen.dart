@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
@@ -128,7 +128,7 @@ class GroupDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(
-                Symbols.chevron_left,
+                TablerIcons.chevronLeft,
                 size: 24,
                 color: AppColors.textPrimary,
               ),
@@ -147,9 +147,8 @@ class GroupDetailScreen extends StatelessWidget {
                   boxShadow: AppColors.cardShadow,
                 ),
                 child: const Icon(
-                  Symbols.groups,
-                  size: 34,
-                  fill: 1,
+                  TablerIcons.users,
+                  size: 34,
                   color: AppColors.neutral400,
                 ),
               ),
@@ -186,7 +185,7 @@ class GroupDetailScreen extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(13),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -355,7 +354,7 @@ class GroupDetailScreen extends StatelessWidget {
           Row(
             children: [
               const Icon(
-                Symbols.calendar_month,
+                TablerIcons.calendarMonth,
                 size: 17,
                 color: AppColors.neutral400,
               ),
@@ -385,9 +384,8 @@ class GroupDetailScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            Symbols.info,
-            size: 19,
-            fill: 1,
+            TablerIcons.infoCircleFilled,
+            size: 19,
             color: AppColors.textSecondary,
           ),
           SizedBox(width: 9),
@@ -423,9 +421,8 @@ class GroupDetailScreen extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(
-                      Symbols.error,
-                      size: 18,
-                      fill: 1,
+                      TablerIcons.alertCircleFilled,
+                      size: 18,
                       color: AppColors.actionDanger,
                     ),
                     const SizedBox(width: 8),
@@ -521,9 +518,8 @@ class _AvatarRow extends StatelessWidget {
                   border: Border.all(color: AppColors.surface, width: 2),
                 ),
                 child: const Icon(
-                  Symbols.person,
-                  size: 21,
-                  fill: 1,
+                  TablerIcons.userFilled,
+                  size: 21,
                   color: AppColors.textBrandOnLight,
                 ),
               ),

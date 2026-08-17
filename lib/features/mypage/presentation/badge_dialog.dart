@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
@@ -108,7 +108,7 @@ Future<void> showBadgeDetail(
                 onTap: () => Navigator.pop(ctx),
                 child: const Padding(
                   padding: EdgeInsets.all(8),
-                  child: Icon(Icons.close, size: 22,
+                  child: Icon(TablerIcons.x, size: 22,
                       color: AppColors.textSecondary),
                 ),
               ),
@@ -171,7 +171,7 @@ class _BadgeMedal extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.surface, width: 2),
                 ),
-                child: const Icon(Icons.check, size: 14,
+                child: const Icon(TablerIcons.check, size: 14,
                     color: AppColors.textOnBrand),
               ),
             ),
@@ -193,7 +193,7 @@ class _BadgeMedal extends StatelessWidget {
               painter: BadgeRingPainter(
                 progress,
                 AppColors.neutral400,
-                stroke: 5,
+                stroke: 7, // 미리보기 타일 링과 같은 두께
               ),
             ),
           ),
@@ -205,7 +205,7 @@ class _BadgeMedal extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(13),
                 boxShadow: AppColors.cardShadow,
               ),
               child: Text(
@@ -458,9 +458,8 @@ Future<void> showBadgeEarned(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(
-                    Symbols.eco,
-                    size: 20,
-                    fill: 1,
+                    TablerIcons.leaf,
+                    size: 20,
                     color: AppColors.textBrandOnLight,
                   ),
                   Gap.w8,

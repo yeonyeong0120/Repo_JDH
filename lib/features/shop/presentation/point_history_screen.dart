@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/shop/domain/point_log.dart';
 import 'package:repo_jdh/features/shop/data/point_history_service.dart';
@@ -113,7 +114,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: const Icon(TablerIcons.chevronLeft, size: 20),
             color: AppColors.textPrimary,
             onPressed: () => Navigator.pop(context),
           ),
@@ -363,9 +364,9 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
   }
 
   IconData _kindIcon(PointLogKind k) => switch (k) {
-    PointLogKind.plogging => Icons.directions_walk,
-    PointLogKind.exchange => Icons.local_cafe_outlined,
-    PointLogKind.quest => Icons.emoji_events_outlined,
+    PointLogKind.plogging => TablerIcons.walk,
+    PointLogKind.exchange => TablerIcons.coffee,
+    PointLogKind.quest => TablerIcons.trophy,
   };
 
   // 오늘이면 '오늘', 아니면 'M월 D일'

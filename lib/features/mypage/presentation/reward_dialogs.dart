@@ -5,6 +5,7 @@
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
@@ -155,7 +156,7 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
                         width: 60,
                         height: 60,
                         errorBuilder: (_, __, ___) => const Icon(
-                          Icons.celebration,
+                          TablerIcons.confetti,
                           size: 56,
                           color: AppColors.accent,
                         ),

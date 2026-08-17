@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
@@ -111,7 +112,7 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),

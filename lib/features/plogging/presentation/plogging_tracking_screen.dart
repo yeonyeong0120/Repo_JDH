@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
@@ -333,7 +333,7 @@ class _PloggingTrackingScreenState
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _glassSquareButton(
-                      icon: Icons.chevron_left,
+                      icon: TablerIcons.chevronLeft,
                       iconSize: 24,
                       onTap: _confirmCancel,
                     ),
@@ -341,7 +341,7 @@ class _PloggingTrackingScreenState
                     Expanded(child: _destProgressCard()),
                     const SizedBox(width: 8),
                     _glassSquareButton(
-                      icon: Icons.help_outline,
+                      icon: TablerIcons.helpCircle,
                       iconSize: 21,
                       onTap: _showGuide,
                     ),
@@ -389,7 +389,7 @@ class _PloggingTrackingScreenState
       ),
       child: Row(
         children: [
-          const Icon(Icons.flag, size: 18, color: AppColors.primary),
+          const Icon(TablerIcons.flagFilled, size: 18, color: AppColors.primary),
           const SizedBox(width: 8),
           const Text(
             '목적지',
@@ -503,7 +503,7 @@ class _PloggingTrackingScreenState
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE0E8E3)),
         boxShadow: [
           BoxShadow(
@@ -562,7 +562,7 @@ class _PloggingTrackingScreenState
       children: [
         Expanded(
           child: _statTile(
-            icon: Symbols.footprint,
+            icon: TablerIcons.shoe,
             iconColor: AppColors.dataSteps,
             value: _comma(tracking.steps),
             unit: '걸음',
@@ -571,7 +571,7 @@ class _PloggingTrackingScreenState
         const SizedBox(width: 8),
         Expanded(
           child: _statTile(
-            icon: Symbols.route,
+            icon: TablerIcons.route,
             iconColor: AppColors.dataDistance,
             value: tracking.distanceText,
             unit: 'km',
@@ -580,7 +580,7 @@ class _PloggingTrackingScreenState
         const SizedBox(width: 8),
         Expanded(
           child: _statTile(
-            icon: Symbols.delete,
+            icon: TablerIcons.trash,
             iconColor: AppColors.green700,
             value: '$collected',
             unit: '개',
@@ -588,7 +588,7 @@ class _PloggingTrackingScreenState
             trailing: RotationTransition(
               turns: Tween<double>(begin: 0, end: 0.5).animate(_expandAnim),
               child: const Icon(
-                Icons.keyboard_arrow_down,
+                TablerIcons.chevronDown,
                 size: 17,
                 color: AppColors.neutral500,
               ),
@@ -690,7 +690,7 @@ class _PloggingTrackingScreenState
           ),
         ],
       ),
-      child: Icon(icon, size: 18, fill: 1, color: color),
+      child: Icon(icon, size: 18, color: color),
     );
   }
 
@@ -704,15 +704,15 @@ class _PloggingTrackingScreenState
       ),
       child: Row(
         children: [
-          _catCell(Symbols.water_bottle, const Color(0xFF5F9EE8), '플라스틱',
+          _catCell(TablerIcons.bottle, const Color(0xFF5F9EE8), '플라스틱',
               totalCounts['plastic'] ?? 0),
-          _catCell(Symbols.local_drink, const Color(0xFFE07B2E), '캔',
+          _catCell(TablerIcons.cup, const Color(0xFFE07B2E), '캔',
               totalCounts['can'] ?? 0),
-          _catCell(Symbols.description, const Color(0xFF31C88B), '종이',
+          _catCell(TablerIcons.fileDescription, const Color(0xFF31C88B), '종이',
               totalCounts['paper'] ?? 0),
-          _catCell(Symbols.wine_bar, const Color(0xFF8E7EC4), '유리',
+          _catCell(TablerIcons.glassFull, const Color(0xFF8E7EC4), '유리',
               totalCounts['glass'] ?? 0),
-          _catCell(Symbols.delete, const Color(0xFF9AA3A0), '일반',
+          _catCell(TablerIcons.trash, const Color(0xFF9AA3A0), '일반',
               totalCounts['trash'] ?? 0),
         ],
       ),
@@ -731,7 +731,7 @@ class _PloggingTrackingScreenState
           ),
           child: Column(
             children: [
-              Icon(icon, size: 23, fill: 1, color: color),
+              Icon(icon, size: 23, color: color),
               const SizedBox(height: 3),
               Text(
                 '$count',
@@ -833,7 +833,7 @@ class _PloggingTrackingScreenState
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Symbols.photo_camera, size: 26, fill: 1, color: fg),
+            Icon(TablerIcons.cameraFilled, size: 26, color: fg),
             const SizedBox(width: 8),
             Flexible(
               child: Column(
@@ -966,14 +966,14 @@ class _PloggingRulesSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   _rule(
-                    icon: Symbols.map,
+                    icon: TablerIcons.map,
                     title: '활동 범위',
                     lines: const [
                       _Span('인천시 안에서만 플로깅할 수 있어요. 목적지는 300km 이내로 정해주세요.'),
                     ],
                   ),
                   _rule(
-                    icon: Symbols.recycling,
+                    icon: TablerIcons.recycle,
                     title: '정화 거점과 위험 구간',
                     lines: const [
                       _Span('지도의 초록 핀은 정화 거점이에요. 쓰레기가 많이 나오는 곳이라 여기를 지나면 더 많이 주울 수 있어요.'),
@@ -981,7 +981,7 @@ class _PloggingRulesSheet extends StatelessWidget {
                     ],
                   ),
                   _rule(
-                    icon: Symbols.photo_camera,
+                    icon: TablerIcons.cameraFilled,
                     title: '쓰레기 촬영',
                     lines: const [
                       _Span('주울 때마다 한 개씩 찍어주세요. 종류는 자동으로 나눠 담깁니다.'),
@@ -992,7 +992,7 @@ class _PloggingRulesSheet extends StatelessWidget {
                     ],
                   ),
                   _rule(
-                    icon: Symbols.flag,
+                    icon: TablerIcons.flagFilled,
                     title: '활동 종료 및 포인트 획득',
                     lines: const [
                       _Span('활동을 종료하면 걸음·거리·수거량으로 포인트와 경험치를 얻을 수 있어요.'),
@@ -1062,7 +1062,7 @@ class _PloggingRulesSheet extends StatelessWidget {
               color: AppColors.surface,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 19, fill: 1, color: AppColors.green700),
+            child: Icon(icon, size: 19, color: AppColors.green700),
           ),
           const SizedBox(width: 12),
           Expanded(

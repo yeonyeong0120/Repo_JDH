@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
@@ -88,7 +89,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -124,7 +125,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                             borderRadius: BorderRadius.circular(22),
                           ),
                           child: const Icon(
-                            Icons.add_a_photo_outlined,
+                            TablerIcons.cameraPlus,
                             color: AppColors.textBrandOnLight,
                             size: 40,
                           ),
@@ -165,7 +166,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                       child: Row(
                         children: const [
                           Icon(
-                            Icons.location_on_outlined,
+                            TablerIcons.mapPin,
                             size: 19,
                             color: AppColors.textSecondary,
                           ),

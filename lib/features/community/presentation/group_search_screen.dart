@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
@@ -77,7 +78,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -92,7 +93,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                       child: Row(
                         children: [
                           const Icon(
-                            Icons.search,
+                            TablerIcons.search,
                             size: 20,
                             color: AppColors.textSecondary,
                           ),
@@ -131,7 +132,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                                 setState(() => _query = '');
                               },
                               child: const Icon(
-                                Icons.close,
+                                TablerIcons.x,
                                 size: 18,
                                 color: AppColors.textSecondary,
                               ),
@@ -171,12 +172,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                       _openFilter = null;
                     }),
                   ),
-                  Container(
-                    width: 1,
-                    height: 14,
-                    margin: const EdgeInsets.symmetric(horizontal: 12),
-                    color: AppColors.border,
-                  ),
+                  const SizedBox(width: 8),
                   _FilterDropdown(
                     options: _sortOptions,
                     selected: _sort,
@@ -251,7 +247,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.search_off,
+                TablerIcons.searchOff,
                 size: 30,
                 color: AppColors.neutral400,
               ),
@@ -291,7 +287,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.add, size: 20, color: AppColors.textBrandOnLight),
+                    Icon(TablerIcons.plus, size: 20, color: AppColors.textBrandOnLight),
                     SizedBox(width: 7),
                     Text(
                       '그룹 만들기',
@@ -400,22 +396,6 @@ class _FilterDropdown extends StatefulWidget {
     required this.onSelect,
   });
 
-  // 가장 긴 옵션의 실제 렌더 폭으로 칩 라벨 폭 고정 (선택 바뀌어도 크기 불변)
-  double get _labelWidth {
-    double widest = 0;
-    for (final o in options) {
-      final tp = TextPainter(
-        text: TextSpan(
-          text: o,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      if (tp.width > widest) widest = tp.width;
-    }
-    return widest + 2; // 줄바꿈 방지용 여유
-  }
-
   @override
   State<_FilterDropdown> createState() => _FilterDropdownState();
 }
@@ -474,11 +454,12 @@ class _FilterDropdownState extends State<_FilterDropdown>
           CompositedTransformFollower(
             link: _link,
             showWhenUnlinked: false,
-            targetAnchor: Alignment.bottomRight,
-            followerAnchor: Alignment.topRight,
-            offset: const Offset(0, 6),
+            // 토글 바로 아래, 가운데 정렬로 연다.
+            targetAnchor: Alignment.bottomCenter,
+            followerAnchor: Alignment.topCenter,
+            offset: const Offset(0, 7),
             child: Align(
-              alignment: Alignment.topRight,
+              alignment: Alignment.topCenter,
               child: FadeTransition(
                 opacity: _fade,
                 child: SlideTransition(
@@ -486,23 +467,26 @@ class _FilterDropdownState extends State<_FilterDropdown>
                   child: Material(
                     color: Colors.transparent,
                     child: Container(
-                      width: 168,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      // 고정 폭 대신 항목 글씨 폭에 맞춘다.
+                      constraints: const BoxConstraints(minWidth: 112),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: AppColors.cardShadow,
                       ),
-                      child: Column(
+                      child: IntrinsicWidth(
+                        child: Column(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: List.generate(widget.options.length, (i) {
                           final on = widget.selected == i;
                           return InkWell(
                             onTap: () => widget.onSelect(i),
                             child: Container(
-                              height: 48,
-                              alignment: Alignment.centerLeft,
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              height: 44,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(horizontal: 18),
                               // 목업: 텍스트만, 선택 항목만 초록 굵게 (체크 없음)
                               child: Text(
                                 widget.options[i],
@@ -519,6 +503,7 @@ class _FilterDropdownState extends State<_FilterDropdown>
                             ),
                           );
                         }),
+                        ),
                       ),
                     ),
                   ),
@@ -545,46 +530,52 @@ class _FilterDropdownState extends State<_FilterDropdown>
     entry.remove();
   }
 
+  // 토글 라벨 스타일 (선택 텍스트 · 폭 예약용 동일 적용)
+  static const TextStyle _labelStyle = TextStyle(
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textBrandOnLight,
+  );
+
   @override
   Widget build(BuildContext context) {
-    // 목업: 테두리 상자 없이 텍스트 + 화살표.
+    // 테두리 없는 토글 — 라벨 + 아래 화살표.
+    // 폭은 가장 긴 옵션 기준으로 고정해, 선택이 바뀌어도 흔들리지 않는다.
     return CompositedTransformTarget(
       link: _link,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onToggle,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: widget._labelWidth,
-                child: Text(
-                  widget.options[widget.selected],
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: widget.open
-                        ? AppColors.textBrandOnLight
-                        : AppColors.textPrimary,
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  // 가장 긴 옵션들을 투명하게 깔아 폭을 고정한다.
+                  for (final o in widget.options)
+                    Opacity(
+                      opacity: 0,
+                      child: Text(o,
+                          maxLines: 1, softWrap: false, style: _labelStyle),
+                    ),
+                  // 실제 표시되는 선택 라벨
+                  Text(
+                    widget.options[widget.selected],
+                    maxLines: 1,
+                    softWrap: false,
+                    style: _labelStyle,
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: 2),
-              AnimatedRotation(
-                turns: widget.open ? 0.5 : 0,
-                duration: const Duration(milliseconds: 180),
-                child: Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 20,
-                  color: widget.open
-                      ? AppColors.textBrandOnLight
-                      : AppColors.textSecondary,
-                ),
+              const SizedBox(width: 3),
+              // 라벨 오른쪽에 아래 화살표(열리면 위로 뒤집힘)
+              Icon(
+                widget.open ? TablerIcons.chevronUp : TablerIcons.chevronDown,
+                size: 16,
+                color: AppColors.textBrandOnLight,
               ),
             ],
           ),

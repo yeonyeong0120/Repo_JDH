@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
@@ -134,7 +135,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -192,8 +193,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? AppColors.actionPrimary : AppColors.surface,
-          borderRadius: BorderRadius.circular(999),
+          color: selected ? AppColors.subPoint : AppColors.surface,
+          borderRadius: BorderRadius.circular(13),
           border: selected ? null : Border.all(color: AppColors.border),
         ),
         child: Text(
@@ -279,7 +280,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
         ),
         const SizedBox(width: 10),
         if (done)
-          const Icon(Icons.check_circle, color: AppColors.green500, size: 24)
+          const Icon(TablerIcons.circleCheckFilled, color: AppColors.subPoint, size: 24)
         else
           Text(
             '$pct%',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 
 /// 오픈소스 및 아이콘 출처 (메뉴 → 저작권 표기)
@@ -45,7 +46,7 @@ class LicensesScreen extends StatelessWidget {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -111,7 +112,7 @@ class LicensesScreen extends StatelessWidget {
                             ),
                           ),
                           const Icon(
-                            Icons.chevron_right,
+                            TablerIcons.chevronRight,
                             color: AppColors.textSecondary,
                           ),
                         ],

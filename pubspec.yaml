@@ -74,6 +74,7 @@ dependencies:
   path_provider: ^2.1.6
   gal: ^2.3.2
   url_launcher: ^6.3.2
+  tabler_icons_plus: ^3.44.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
@@ -189,10 +190,10 @@ class _NicknameSetupScreenState extends ConsumerState<NicknameSetupScreen> {
                             ),
                           )
                         : _isAvailable == true
-                            ? const Icon(Icons.check_circle,
+                            ? const Icon(TablerIcons.circleCheckFilled,
                                 color: Colors.green)
                             : _isAvailable == false
-                                ? const Icon(Icons.cancel, color: Colors.red)
+                                ? const Icon(TablerIcons.circleX, color: Colors.red)
                                 : null,
                   ),
                 ),

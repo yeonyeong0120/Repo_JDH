@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image/image.dart' as img;
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/vision/data/detector.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
@@ -253,7 +253,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
               child: Row(
                 children: [
-                  _darkIconButton(Icons.chevron_left, _cancel),
+                  _darkIconButton(TablerIcons.chevronLeft, _cancel),
                   const SizedBox(width: 10),
                   const Text(
                     '쓰레기 등록',
@@ -265,7 +265,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
                   ),
                   const Spacer(),
                   _darkIconButton(
-                    Icons.help_outline,
+                    TablerIcons.helpCircle,
                     () => setState(() => _showGuide = true),
                   ),
                 ],
@@ -405,7 +405,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.lightbulb, color: AppColors.green400, size: 20),
+          const Icon(TablerIcons.bulbFilled, color: AppColors.green400, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text.rich(
@@ -433,7 +433,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
             onTap: () => setState(() => _showGuide = false),
             child: const Padding(
               padding: EdgeInsets.only(left: 4, top: 1),
-              child: Icon(Icons.close, color: Colors.white54, size: 20),
+              child: Icon(TablerIcons.x, color: Colors.white54, size: 20),
             ),
           ),
         ],
@@ -488,7 +488,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(13),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -554,7 +554,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.photo_camera,
+              TablerIcons.cameraFilled,
               size: 22,
               color: on ? Colors.white : Colors.white38,
             ),
@@ -620,11 +620,11 @@ class _ConfirmSheet extends StatefulWidget {
 class _ConfirmSheetState extends State<_ConfirmSheet> {
   // (키, 라벨, 아이콘, 색)
   static const List<(String, String, IconData, Color)> _cats = [
-    ('plastic', '플라스틱', Symbols.water_bottle, Color(0xFF5F9EE8)),
-    ('can', '캔', Symbols.local_drink, Color(0xFFE07B2E)),
-    ('paper', '종이', Symbols.description, Color(0xFF31C88B)),
-    ('glass', '유리', Symbols.wine_bar, Color(0xFF8E7EC4)),
-    ('trash', '일반', Symbols.delete, Color(0xFF9AA3A0)),
+    ('plastic', '플라스틱', TablerIcons.bottle, Color(0xFF5F9EE8)),
+    ('can', '캔', TablerIcons.cup, Color(0xFFE07B2E)),
+    ('paper', '종이', TablerIcons.fileDescription, Color(0xFF31C88B)),
+    ('glass', '유리', TablerIcons.glassFull, Color(0xFF8E7EC4)),
+    ('trash', '일반', TablerIcons.trash, Color(0xFF9AA3A0)),
   ];
 
   late Map<String, int> _counts;
@@ -723,7 +723,7 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
                 Expanded(
                   child: _sheetButton(
                     label: '다시 찍기',
-                    icon: Icons.refresh,
+                    icon: TablerIcons.refresh,
                     primary: false,
                     onTap: () => Navigator.pop(context),
                   ),
@@ -771,7 +771,7 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(c.$3, size: 21, fill: 1, color: c.$4),
+            child: Icon(c.$3, size: 21,  color: c.$4),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -813,7 +813,7 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _stepBtn(Icons.remove, () => _dec(k)),
+          _stepBtn(TablerIcons.minus, () => _dec(k)),
           SizedBox(
             width: 26,
             child: Text(
@@ -826,7 +826,7 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
               ),
             ),
           ),
-          _stepBtn(Icons.add, () => _inc(k)),
+          _stepBtn(TablerIcons.plus, () => _inc(k)),
         ],
       ),
     );
@@ -864,7 +864,7 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
                   ),
                 ),
                 Icon(
-                  _showAdd ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  _showAdd ? TablerIcons.chevronUp : TablerIcons.chevronDown,
                   size: 20,
                   color: AppColors.textBrandOnLight,
                 ),
@@ -898,7 +898,7 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(c.$3, size: 18, fill: 1, color: c.$4),
+            Icon(c.$3, size: 18,  color: c.$4),
             const SizedBox(width: 6),
             Text(
               c.$2,
@@ -909,7 +909,7 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.add, size: 16, color: AppColors.textBrandOnLight),
+            const Icon(TablerIcons.plus, size: 16, color: AppColors.textBrandOnLight),
           ],
         ),
       ),

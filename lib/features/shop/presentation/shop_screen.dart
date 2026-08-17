@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
@@ -121,7 +121,7 @@ class _ShopScreenState extends State<ShopScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: const Icon(TablerIcons.chevronLeft, size: 20),
             color: AppColors.textPrimary,
             onPressed: () => Navigator.pop(context),
           ),
@@ -155,7 +155,7 @@ class _ShopScreenState extends State<ShopScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Symbols.confirmation_number,
+              TablerIcons.ticket,
               size: 17,
               color: AppColors.textBrandOnLight,
             ),
@@ -188,7 +188,7 @@ class _ShopScreenState extends State<ShopScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, size: 20, color: AppColors.textSecondary),
+            const Icon(TablerIcons.search, size: 20, color: AppColors.textSecondary),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
@@ -224,7 +224,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   setState(() => _query = '');
                 },
                 child: const Icon(
-                  Icons.close,
+                  TablerIcons.x,
                   size: 18,
                   color: AppColors.neutral400,
                 ),
@@ -325,8 +325,7 @@ class _ShopScreenState extends State<ShopScreen> {
             child: Row(
               children: [
                 const Icon(
-                  Symbols.eco,
-                  weight: 600,
+                  TablerIcons.leaf,
                   size: 16,
                   color: AppColors.actionPrimary,
                 ),
@@ -432,7 +431,7 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
             ),
             const Icon(
-              Icons.chevron_right,
+              TablerIcons.chevronRight,
               size: 22,
               color: AppColors.neutral400,
             ),
@@ -647,7 +646,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.check_rounded,
+                  TablerIcons.check,
                   size: 34,
                   color: AppColors.actionPrimary,
                 ),
@@ -760,7 +759,7 @@ class _SortDropdown extends StatefulWidget {
       final tp = TextPainter(
         text: TextSpan(
           text: o,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -904,38 +903,35 @@ class _SortDropdownState extends State<_SortDropdown>
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onToggle,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: widget._labelWidth,
-              child: Text(
-                widget.options[widget.selected],
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.visible,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: widget.open
-                      ? AppColors.textBrandOnLight
-                      : AppColors.textPrimary,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 가장 긴 옵션 폭으로 고정 → 선택이 바뀌어도 흔들리지 않는다.
+              SizedBox(
+                width: widget._labelWidth,
+                child: Text(
+                  widget.options[widget.selected],
+                  maxLines: 1,
+                  softWrap: false,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textBrandOnLight,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 2),
-            AnimatedRotation(
-              turns: widget.open ? 0.5 : 0,
-              duration: const Duration(milliseconds: 180),
-              child: Icon(
-                Icons.keyboard_arrow_down,
-                size: 20,
-                color: widget.open
-                    ? AppColors.textBrandOnLight
-                    : AppColors.textSecondary,
+              const SizedBox(width: 3),
+              // 라벨 오른쪽에 아래 화살표(열리면 위로 뒤집힘)
+              Icon(
+                widget.open ? TablerIcons.chevronUp : TablerIcons.chevronDown,
+                size: 16,
+                color: AppColors.textBrandOnLight,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/settings/presentation/inquiry_screen.dart';
 
@@ -74,7 +75,7 @@ class _FaqScreenState extends State<FaqScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -218,7 +219,7 @@ class _FaqScreenState extends State<FaqScreen> {
                   duration: const Duration(milliseconds: 180),
                   turns: open ? 0.5 : 0,
                   child: const Icon(
-                    Icons.expand_more,
+                    TablerIcons.chevronDown,
                     size: 22,
                     color: AppColors.textSecondary,
                   ),
