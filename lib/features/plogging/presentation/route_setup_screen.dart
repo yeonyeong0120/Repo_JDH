@@ -13,6 +13,7 @@
 //       지도가 렌더링된다. 경로 추천은 백엔드 /route/recommend 배포 시 실제 응답한다.
 
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -160,11 +161,11 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _glassButton(
-                      icon: Icons.chevron_left,
+                      icon: TablerIcons.chevronLeft,
                       onTap: () => context.pop(),
                     ),
                     _glassButton(
-                      icon: Icons.my_location,
+                      icon: TablerIcons.currentLocation,
                       onTap: _recenter,
                     ),
                   ],
@@ -267,12 +268,12 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
       decoration: BoxDecoration(
         color: AppColors.neutral900.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.pan_tool_alt_outlined, size: 19, color: Colors.white),
+          Icon(TablerIcons.handClick, size: 19, color: Colors.white),
           SizedBox(width: 7),
           Text(
             '지도를 움직여 도착지를 맞춰주세요',
@@ -480,7 +481,7 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.flag_rounded,
+                  TablerIcons.flagFilled,
                   size: 22,
                   color: AppColors.primary,
                 ),
@@ -541,26 +542,26 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
             const SizedBox(height: 14),
             if (hasError)
               _noticeRow(
-                icon: Icons.error_outline_rounded,
+                icon: TablerIcons.alertCircle,
                 text: '경로를 계산하지 못했어요. 도착지를 다시 맞춰주세요.',
                 color: AppColors.actionDanger,
               )
             else ...[
               _noticeRow(
-                icon: Icons.recycling,
+                icon: TablerIcons.recycle,
                 text: '정화 거점 ${result!.k3Hotspots.length}곳을 지나요',
                 color: AppColors.textBrandOnLight,
               ),
               const SizedBox(height: 10),
               if (result!.isHardCase)
                 _noticeRow(
-                  icon: Icons.warning_amber_rounded,
+                  icon: TablerIcons.alertTriangle,
                   text: '위험 구간 약 ${result.intersectionM}m를 지나요',
                   color: AppColors.warning,
                 )
               else
                 _noticeRow(
-                  icon: Icons.check_circle_rounded,
+                  icon: TablerIcons.circleCheckFilled,
                   text: '위험 구간을 지나지 않아요',
                   color: AppColors.textBrandOnLight,
                 ),
@@ -614,22 +615,22 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
 
     if (_dragging) {
       label = '도착지를 맞추는 중';
-      icon = Icons.flag_rounded;
+      icon = TablerIcons.flagFilled;
       enabled = false;
       onTap = null;
     } else if (loading) {
       label = '경로를 계산하고 있어요';
-      icon = Icons.route_rounded;
+      icon = TablerIcons.route;
       enabled = false;
       onTap = null;
     } else if (ready) {
       label = '플로깅 시작';
-      icon = Icons.directions_walk;
+      icon = TablerIcons.run;
       enabled = true;
       onTap = () => context.push(AppRoutes.ploggingTracking);
     } else {
       label = '이 위치로 도착지 설정';
-      icon = Icons.flag_rounded;
+      icon = TablerIcons.flagFilled;
       enabled = true;
       onTap = _requestRoute;
     }
@@ -733,7 +734,7 @@ class _HotspotPin extends StatelessWidget {
             right: 0,
             top: 9,
             child: Center(
-              child: Icon(Icons.recycling, color: AppColors.primary, size: 16),
+              child: Icon(TablerIcons.recycle, color: AppColors.primary, size: 16),
             ),
           ),
         ],
@@ -784,7 +785,7 @@ class _CenterFlag extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.neutral900.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
                       etaLabel!,
@@ -813,7 +814,7 @@ class _CenterFlag extends StatelessWidget {
                 top: 11,
                 child: Center(
                   child: Icon(
-                    Icons.flag_rounded,
+                    TablerIcons.flagFilled,
                     color: AppColors.primary,
                     size: 23,
                   ),

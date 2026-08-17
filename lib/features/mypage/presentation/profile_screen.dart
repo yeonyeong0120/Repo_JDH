@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
@@ -142,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: const Icon(TablerIcons.chevronLeft, size: 20),
             color: AppColors.textPrimary,
             onPressed: () => Navigator.pop(context),
           ),
@@ -206,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     )
                   : (url == null || url.isEmpty)
                   ? const Icon(
-                      Icons.person,
+                      TablerIcons.userFilled,
                       size: 56,
                       color: AppColors.textSecondary,
                     )
@@ -216,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 104,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Icon(
-                        Icons.person,
+                        TablerIcons.userFilled,
                         size: 56,
                         color: AppColors.textSecondary,
                       ),
@@ -235,7 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   border: Border.all(color: AppColors.bg, width: 3),
                 ),
                 child: const Icon(
-                  Icons.photo_camera,
+                  TablerIcons.cameraFilled,
                   size: 16,
                   color: Colors.white,
                 ),
@@ -448,7 +449,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(width: 4),
             const Icon(
-              Icons.chevron_right,
+              TablerIcons.chevronRight,
               size: 20,
               color: AppColors.neutral400,
             ),
@@ -604,12 +605,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
+              leading: const Icon(TablerIcons.photo),
               title: const Text('앨범에서 선택'),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
+              leading: const Icon(TablerIcons.camera),
               title: const Text('사진 촬영'),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
@@ -661,7 +662,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 title: Text(g),
                 trailing: _p.gender == g
-                    ? const Icon(Icons.check, color: AppColors.actionPrimary)
+                    ? const Icon(TablerIcons.check, color: AppColors.actionPrimary)
                     : null,
                 onTap: () => Navigator.pop(ctx, g),
               ),
@@ -896,7 +897,7 @@ class _NumberSheetState extends State<_NumberSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _roundBtn(Icons.remove, () => _set(_value - 1)),
+                  _roundBtn(TablerIcons.minus, () => _set(_value - 1)),
                   // 값 입력칸 — 고정 폭 박스(단색), IntrinsicWidth 미사용
                   SizedBox(
                     width: 150,
@@ -944,7 +945,7 @@ class _NumberSheetState extends State<_NumberSheet> {
                       ],
                     ),
                   ),
-                  _roundBtn(Icons.add, () => _set(_value + 1)),
+                  _roundBtn(TablerIcons.plus, () => _set(_value + 1)),
                 ],
               ),
               const SizedBox(height: 20),
@@ -1017,7 +1018,7 @@ class _NumberSheetState extends State<_NumberSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(13),
             border: Border.all(color: AppColors.neutral300),
           ),
           child: Text(

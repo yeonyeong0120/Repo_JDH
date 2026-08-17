@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'dart:math' as math;
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -267,14 +267,14 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
   // ▼▼▼ 직접 조절하는 값 ▼▼▼
   static const double _barHeight = 63;
   static const double _bumpRise = 13;
-  static const double _navIconSize = 32;
+  static const double _navIconSize = 29;
   static const double _navLabelSize = 13;
   static const double _navItemWidth = 73;
   static const double _itemGap = 0;
   static const double _centerGap = 86;
   static const double _startBtnSize = 75;
-  static const double _startIconSize = 33;
-  static const double _startLabelSize = 14;
+  static const double _startIconSize = 40;
+  static const double _bumpLift = 13; // 원래 위치 (_bumpRise 와 동일)
   static const double _navBottomPad = 0;
   static const double _barLift = 12;
   static const double _startBumpSize = 88;
@@ -320,19 +320,19 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _navItem(context, 0, Symbols.home, '홈', current),
+                        _navItem(context, 0, TablerIcons.smartHome, '홈', current),
                         const SizedBox(width: _itemGap),
                         _navItem(
                           context,
                           1,
-                          Symbols.diversity_1,
+                          TablerIcons.heartHandshake,
                           '그룹',
                           current,
                         ),
                         const SizedBox(width: _centerGap),
-                        _navItem(context, 3, Symbols.person, '내 활동', current),
+                        _navItem(context, 3, TablerIcons.activity, '내 활동', current),
                         const SizedBox(width: _itemGap),
-                        _navItem(context, 4, Symbols.more_horiz, '메뉴', current),
+                        _navItem(context, 4, TablerIcons.dots, '메뉴', current),
                       ],
                     ),
                   ),
@@ -341,7 +341,7 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: -_bumpRise,
+            top: -_bumpLift,
             left: 0,
             right: 0,
             child: Center(
@@ -376,7 +376,7 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
     int current,
   ) {
     final selected = current == index;
-    final color = selected ? const Color(0xFF8E8E93) : const Color(0xFFD9D9D9);
+    final color = selected ? AppColors.navActive : AppColors.navInactive;
     return SizedBox(
       width: _navItemWidth,
       child: GestureDetector(
@@ -385,14 +385,14 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Icon(icon, color: color, size: _navIconSize, weight: 400),
+            Icon(icon, color: color, size: _navIconSize),
             const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
                 color: color,
                 fontSize: _navLabelSize,
-                fontWeight: FontWeight.w700,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
             const SizedBox(height: _navBottomPad),
@@ -402,36 +402,21 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _startButton(BuildContext context) {
+    Widget _startButton(BuildContext context) {
     return GestureDetector(
       onTap: () => _onTap(context, 2),
       child: Container(
         width: _startBtnSize,
         height: _startBtnSize,
+        alignment: Alignment.center,
         decoration: const BoxDecoration(
           color: _startBtnColor,
           shape: BoxShape.circle,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Symbols.directions_run,
-              color: Colors.white,
-              size: _startIconSize,
-              fill: 1,
-              weight: 500,
-            ),
-            const SizedBox(height: 1),
-            Text(
-              '시작',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: _startLabelSize,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
+        child: const Icon(
+          TablerIcons.run,
+          color: Colors.white,
+          size: _startIconSize,
         ),
       ),
     );

@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
@@ -110,9 +110,9 @@ class _HomeBody extends ConsumerWidget {
                             ),
                     ),
                     AppSection(
-                      title: '지금 우리 동네는',
+                      title: '${v.userDistrict} 그룹',
                       // 지역명 없이 오늘 활동 인원만. 제목 오른쪽에 나란히. 더보기 없음.
-                      caption: '오늘 ${v.regionActiveTodayCount}명이 활동했어요',
+                      caption: '같은 구에서 오늘 ${v.regionActiveTodayCount}명이 활동했어요',
                       captionInline: true,
                       last: true,
                       child: _NeighborBlock(v: v),
@@ -142,7 +142,7 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Symbols.cloud_off,
+              TablerIcons.cloudOff,
               size: 44,
               color: AppColors.neutral400,
             ),
@@ -223,7 +223,8 @@ class _TintHeader extends StatelessWidget {
                 transform: Matrix4.diagonal3Values(1, pour.clamp(0.0001, 1.0), 1),
                 child: const DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceBrand,
+                    // 홈만 선명한 단색 상단바. 진하기는 워시 최상단(washTop)과 동일.
+                    color: AppColors.washTop,
                     borderRadius: BorderRadius.vertical(
                       bottom: Radius.circular(Radii.sheet),
                     ),
@@ -243,7 +244,7 @@ class _TintHeader extends StatelessWidget {
             ),
             // 날씨·온도 — 헤더 상단 오른쪽(인사말보다 위)
             Positioned(
-              top: 34,
+              top: 62, // 인사말 첫 줄과 눈높이를 맞춘다
               right: Gap.screenPad,
               child: Opacity(opacity: focus, child: _weatherBlock()),
             ),
@@ -258,23 +259,23 @@ class _TintHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(999),
+        // 연속 기록은 서브 컬러(주황) 자리 — 초록은 CTA·핵심 수치에만 남긴다.
+        color: AppColors.subPointBg,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            Symbols.local_fire_department,
+            TablerIcons.flame,
             size: 16,
-            fill: 1,
-            color: AppColors.textBrandOnLight,
+            color: AppColors.subPointText,
           ),
           Gap.w4,
           Text(
             v.isFirstDay ? '첫 걸음을 기다리고 있어요' : '${v.streakDays}일 연속 기록 중',
             style: AppType.label.copyWith(
-              color: AppColors.textBrandOnLight,
+              color: AppColors.subPointText,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -285,6 +286,30 @@ class _TintHeader extends StatelessWidget {
 
   // 날씨·온도 (헤더 오른쪽) — 타이포만.
   // TODO: FastAPI 프록시 경유 날씨 API 연동 시 실제 값으로 교체 (지금은 표시용 고정값).
+    // 날씨 상태값. API 연동 시 이 상수만 갈아끼우면 아이콘·색·문구가 함께 바뀐다.
+  static const String _wx = 'cloudy'; // sunny / cloudy / overcast / rain
+
+  IconData get _wxIcon => switch (_wx) {
+    'sunny' => TablerIcons.sun,
+    'overcast' => TablerIcons.cloudFilled,
+    'rain' => TablerIcons.cloudRain,
+    _ => TablerIcons.cloud,
+  };
+
+  Color get _wxColor => switch (_wx) {
+    'sunny' => AppColors.wxSunny,
+    'overcast' => AppColors.wxOvercast,
+    'rain' => AppColors.wxRain,
+    _ => AppColors.wxCloudy,
+  };
+
+  String get _wxLabel => switch (_wx) {
+    'sunny' => '맑음',
+    'overcast' => '흐림',
+    'rain' => '비',
+    _ => '구름 조금',
+  };
+
   Widget _weatherBlock() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -293,11 +318,10 @@ class _TintHeader extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Symbols.partly_cloudy_day,
+            Icon(
+              _wxIcon,
               size: 30,
-              fill: 1,
-              color: AppColors.dataCan,
+              color: _wxColor,
             ),
             Gap.w4,
             Text(
@@ -312,7 +336,7 @@ class _TintHeader extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          '구름 조금',
+          _wxLabel,
           style: AppType.body.copyWith(color: AppColors.textOnTint),
         ),
         const SizedBox(height: 5),
@@ -368,11 +392,11 @@ class _PotDay extends StatelessWidget {
     final today = log.isToday;
 
     return Container(
-      // 오늘 칸은 배경 전체를 초록으로 (다른 칸보다 살짝 크게)
+      // 오늘 칸은 채우지 않고 초록 테두리로만 구분한다 (꽉 찬 초록은 너무 강함)
       padding: EdgeInsets.symmetric(vertical: today ? 12 : 6),
       decoration: today
           ? BoxDecoration(
-              color: AppColors.actionPrimary,
+              border: Border.all(color: AppColors.actionPrimary, width: 1.5),
               borderRadius: Radii.innerR,
             )
           : null,
@@ -383,19 +407,17 @@ class _PotDay extends StatelessWidget {
             log.weekdayLabel,
             style: AppType.caption.copyWith(
               fontWeight: today ? FontWeight.w800 : FontWeight.w600,
-              color: today ? Colors.white : AppColors.textSecondary,
+              color: today ? AppColors.textBrandOnLight : AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
           // 채움(했음/오늘) vs 외곽선(안 함) — 색·형태로 구분
           Icon(
-            Symbols.potted_plant,
+            TablerIcons.plant,
             size: 28,
-            fill: (today || log.done) ? 1 : 0,
-            weight: (today || log.done) ? 500 : 400,
-            color: today
-                ? Colors.white
-                : (log.done ? AppColors.actionPrimary : AppColors.neutral500),
+            color: (today || log.done)
+                ? AppColors.actionPrimary
+                : AppColors.neutral500,
           ),
         ],
       ),
@@ -477,7 +499,7 @@ class _ImpactCardState extends State<_ImpactCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
-            Icons.info_outline_rounded,
+            TablerIcons.infoCircle,
             size: 16,
             color: AppColors.green300,
           ),
@@ -494,7 +516,7 @@ class _ImpactCardState extends State<_ImpactCard> {
             onTap: _removeCalc,
             child: const Padding(
               padding: EdgeInsets.only(left: 4, top: 1),
-              child: Icon(Icons.close, size: 16, color: Colors.white54),
+              child: Icon(TablerIcons.x, size: 16, color: Colors.white54),
             ),
           ),
         ],
@@ -518,7 +540,7 @@ class _ImpactCardState extends State<_ImpactCard> {
                 size: 80,
                 // TODO: 나무 일러스트로 교체
                 asset: 'assets/images/tree.png',
-                fallback: Symbols.forest,
+                fallback: TablerIcons.trees,
               ),
               Gap.w16,
               Expanded(
@@ -579,7 +601,7 @@ class _ImpactCardState extends State<_ImpactCard> {
                 child: Row(
                   children: [
                     const Icon(
-                      Icons.info_outline_rounded,
+                      TablerIcons.infoCircle,
                       size: 17,
                       color: AppColors.neutral500,
                     ),
@@ -663,7 +685,7 @@ class _ImpactFirstDay extends StatelessWidget {
           _IllustrationSlot(
             size: 72,
             asset: 'assets/images/tree.png',
-            fallback: Symbols.eco,
+            fallback: TablerIcons.leaf,
           ),
           Gap.w16,
           Expanded(
@@ -714,7 +736,6 @@ class _IllustrationSlot extends StatelessWidget {
         errorBuilder: (_, __, ___) => Icon(
           fallback,
           size: size * 0.42,
-          fill: 1,
           color: AppColors.green500,
         ),
       ),
@@ -806,7 +827,7 @@ class _NewsUnavailable extends StatelessWidget {
               borderRadius: Radii.tileR,
             ),
             child: const Icon(
-              Symbols.cloud_off,
+              TablerIcons.cloudOff,
               size: 22,
               color: AppColors.neutral500,
             ),
@@ -929,9 +950,8 @@ void _confirmJoin(BuildContext context, WidgetRef ref, Group group) {
                 borderRadius: BorderRadius.circular(Radii.inner),
               ),
               child: const Icon(
-                Symbols.handshake,
+                TablerIcons.heartHandshake,
                 size: 24,
-                fill: 1,
                 color: AppColors.textBrand,
               ),
             ),
@@ -1049,9 +1069,8 @@ class _GroupSheet extends StatelessWidget {
                     borderRadius: Radii.innerR,
                   ),
                   child: const Icon(
-                    Symbols.groups,
+                    TablerIcons.users,
                     size: 27,
-                    fill: 1,
                     color: AppColors.neutral400,
                   ),
                 ),
@@ -1136,7 +1155,7 @@ class _GroupSheet extends StatelessWidget {
             Row(
               children: [
                 const Icon(
-                  Symbols.calendar_month,
+                  TablerIcons.calendarMonth,
                   size: 17,
                   color: AppColors.neutral400,
                 ),
@@ -1207,9 +1226,8 @@ class _AvatarStack extends StatelessWidget {
                   border: Border.all(color: AppColors.bg, width: 2),
                 ),
                 child: const Icon(
-                  Symbols.person,
+                  TablerIcons.userFilled,
                   size: 19,
-                  fill: 1,
                   color: AppColors.textBrandOnLight,
                 ),
               ),
@@ -1263,7 +1281,7 @@ class _GroupCard extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: group.imageUrl == null
                 ? const Icon(
-                    Symbols.group,
+                    TablerIcons.users,
                     size: Touch.icon,
                     color: AppColors.neutral400,
                   )
@@ -1304,7 +1322,7 @@ class _GroupCard extends ConsumerWidget {
           ),
           Gap.w8,
           const Icon(
-            Icons.chevron_right_rounded,
+            TablerIcons.chevronRight,
             size: Touch.icon,
             color: AppColors.neutral400,
           ),

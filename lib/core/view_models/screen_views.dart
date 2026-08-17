@@ -99,6 +99,15 @@ class HomeView {
   int get xpRemaining => levelInfo.remainingXp;
 
   // ── 동네 ──
+  /// 사용자 프로필의 행정구(예: '남동구'). 홈 섹션 제목에 쓴다.
+  /// 주소가 비어 있으면 '우리 동네'로 대체한다.
+  String get userDistrict {
+    final region = profile.region.trim();
+    if (region.isEmpty) return '우리 동네';
+    final gu = RegExp(r'([가-힣]+구)').firstMatch(region)?.group(1);
+    return gu ?? region.split(' ').last;
+  }
+
   /// 그룹들의 오늘 활동 인원 합.
   int get regionActiveTodayCount =>
       groups.fold<int>(0, (a, g) => a + g.todayActiveCount);

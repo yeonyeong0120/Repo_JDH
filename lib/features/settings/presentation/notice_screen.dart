@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 
 /// 공지사항 목록 (EXTRA-03) → 카드 탭 → 상세 (EXTRA-04)
@@ -129,7 +130,7 @@ class NoticeListScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            const Icon(TablerIcons.chevronRight, color: AppColors.textSecondary),
           ],
         ),
       ),
@@ -215,7 +216,7 @@ class _TopBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: const Icon(TablerIcons.chevronLeft, size: 20),
             color: AppColors.textPrimary,
             onPressed: () => Navigator.pop(context),
           ),

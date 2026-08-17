@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
@@ -100,7 +101,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -115,7 +116,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.share_outlined, size: 20),
+                    icon: const Icon(TablerIcons.share, size: 20),
                     color: AppColors.textSecondary,
                     onPressed: _share,
                   ),
@@ -233,7 +234,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             child: Row(
               children: [
                 const Icon(
-                  Icons.auto_awesome,
+                  TablerIcons.sparkles,
                   size: 18,
                   color: AppColors.actionPrimary,
                 ),
@@ -252,7 +253,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   duration: const Duration(milliseconds: 180),
                   turns: _summaryOpen ? 0.5 : 0,
                   child: const Icon(
-                    Icons.expand_more,
+                    TablerIcons.chevronDown,
                     size: 22,
                     color: AppColors.textSecondary,
                   ),
@@ -347,7 +348,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               ),
             ),
             const Icon(
-              Icons.open_in_new,
+              TablerIcons.externalLink,
               size: 18,
               color: AppColors.textSecondary,
             ),

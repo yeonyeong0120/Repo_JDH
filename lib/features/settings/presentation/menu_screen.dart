@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
@@ -131,7 +132,7 @@ class _MenuScreenState extends State<MenuScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
-                          Icons.receipt_long_outlined,
+                          TablerIcons.receipt,
                           size: 21,
                           color: AppColors.textBrandOnLight,
                         ),
@@ -161,7 +162,7 @@ class _MenuScreenState extends State<MenuScreen> {
                         ),
                       ),
                       const Icon(
-                        Icons.chevron_right,
+                        TablerIcons.chevronRight,
                         size: 20,
                         color: AppColors.textSecondary,
                       ),
@@ -216,7 +217,7 @@ class _MenuScreenState extends State<MenuScreen> {
         ),
         // 켜짐=초록 종 / 꺼짐=회색 종(빗금)
         child: Icon(
-          on ? Icons.notifications : Icons.notifications_off,
+          on ? TablerIcons.bell : TablerIcons.bellOff,
           size: 21,
           color: on ? AppColors.textBrandOnLight : AppColors.textSecondary,
         ),
@@ -306,7 +307,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                const Icon(TablerIcons.chevronRight, color: AppColors.textSecondary),
                 const SizedBox(width: 10),
                 _alarmBell(),
               ],
@@ -344,10 +345,10 @@ class _MenuScreenState extends State<MenuScreen> {
         borderRadius: BorderRadius.circular(size * 0.32),
       ),
       child: (url == null || url.isEmpty)
-          ? Icon(Icons.person, size: size * 0.55,
+          ? Icon(TablerIcons.userFilled, size: size * 0.55,
               color: AppColors.textSecondary)
           : Image.network(url, width: size, height: size, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Icon(Icons.person,
+              errorBuilder: (_, __, ___) => Icon(TablerIcons.userFilled,
                   size: size * 0.55, color: AppColors.textSecondary)),
     );
   }
@@ -458,7 +459,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 color: AppColors.textBrandOnLight,
               ),
             ),
-            const Icon(Icons.chevron_right, size: 20,
+            const Icon(TablerIcons.chevronRight, size: 20,
                 color: AppColors.textBrandOnLight),
           ],
         ),
@@ -476,7 +477,7 @@ class _MenuScreenState extends State<MenuScreen> {
       child: Column(
         children: [
           _infoRow(
-            Icons.campaign_outlined,
+            TablerIcons.speakerphone,
             '공지 사항',
             onTap: () => _push(const NoticeListScreen()),
             dot: true,
@@ -484,19 +485,19 @@ class _MenuScreenState extends State<MenuScreen> {
           ),
           _infoDivider(),
           _infoRow(
-            Icons.help_outline,
+            TablerIcons.helpCircle,
             '자주 묻는 질문',
             onTap: () => _push(const FaqScreen()),
           ),
           _infoDivider(),
           _infoRow(
-            Icons.description_outlined,
+            TablerIcons.fileDescription,
             '이용 약관 및 정책',
             onTap: () => _push(const TermsScreen()),
           ),
           _infoDivider(),
           _infoRow(
-            Icons.copyright_outlined,
+            TablerIcons.copyright,
             '오픈소스 및 출처',
             onTap: () => _push(const LicensesScreen()),
             last: true,
@@ -554,7 +555,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   shape: BoxShape.circle,
                 ),
               ),
-            const Icon(Icons.chevron_right, size: 20,
+            const Icon(TablerIcons.chevronRight, size: 20,
                 color: AppColors.textSecondary),
           ],
         ),

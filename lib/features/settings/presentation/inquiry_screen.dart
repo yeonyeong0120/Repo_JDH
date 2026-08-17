@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 
@@ -88,7 +89,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.check,
+                  TablerIcons.check,
                   size: 32,
                   color: AppColors.primary,
                 ),
@@ -150,7 +151,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                      icon: const Icon(TablerIcons.chevronLeft, size: 20),
                       color: AppColors.textPrimary,
                       onPressed: () => Navigator.pop(context),
                     ),

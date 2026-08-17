@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 
 /// 뱃지 등급 (씨앗 → 새싹 → 나무 → 숲)
@@ -46,7 +47,7 @@ const List<BadgeData> kBadges = [
     condition: '플로깅 1회 완료',
     points: 100,
     tier: BadgeTier.seed,
-    icon: Icons.directions_walk,
+    icon: TablerIcons.walk,
   ),
   BadgeData(
     id: 'first_verify',
@@ -55,7 +56,7 @@ const List<BadgeData> kBadges = [
     condition: '쓰레기 수거 인증 1회',
     points: 100,
     tier: BadgeTier.seed,
-    icon: Icons.verified,
+    icon: TablerIcons.rosetteDiscountCheckFilled,
   ),
   BadgeData(
     id: 'first_30min',
@@ -64,7 +65,7 @@ const List<BadgeData> kBadges = [
     condition: '30분 이상 플로깅',
     points: 100,
     tier: BadgeTier.seed,
-    icon: Icons.timer,
+    icon: TablerIcons.clock,
   ),
   BadgeData(
     id: 'weight_1kg',
@@ -73,7 +74,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 수거량 1kg',
     points: 100,
     tier: BadgeTier.seed,
-    icon: Icons.shopping_bag_outlined,
+    icon: TablerIcons.shoppingBag,
   ),
 
   // ── 새싹 (걸음·수거·시간) ──
@@ -84,7 +85,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 10,000보',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.directions_run,
+    icon: TablerIcons.run,
   ),
   BadgeData(
     id: 'steps_30k',
@@ -93,7 +94,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 30,000보',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.terrain,
+    icon: TablerIcons.mountain,
   ),
   BadgeData(
     id: 'distance_10km',
@@ -102,7 +103,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 이동거리 10km',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.route,
+    icon: TablerIcons.route,
   ),
   BadgeData(
     id: 'weight_5kg',
@@ -111,7 +112,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 수거량 5kg',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.cleaning_services,
+    icon: TablerIcons.washMachine,
   ),
   BadgeData(
     id: 'weight_20kg',
@@ -120,7 +121,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 수거량 20kg',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.inventory_2_outlined,
+    icon: TablerIcons.package,
   ),
   BadgeData(
     id: 'plastic_50',
@@ -129,7 +130,7 @@ const List<BadgeData> kBadges = [
     condition: '플라스틱 누적 50개',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.recycling,
+    icon: TablerIcons.recycle,
   ),
   BadgeData(
     id: 'time_3h',
@@ -138,7 +139,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 활동시간 3시간',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.watch_later_outlined,
+    icon: TablerIcons.clock,
   ),
   BadgeData(
     id: 'time_10h',
@@ -147,7 +148,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 활동시간 10시간',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.wb_sunny_outlined,
+    icon: TablerIcons.sun,
   ),
   BadgeData(
     id: 'kcal_500',
@@ -156,7 +157,7 @@ const List<BadgeData> kBadges = [
     condition: '누적 500kcal 소모',
     points: 300,
     tier: BadgeTier.sprout,
-    icon: Icons.local_fire_department_outlined,
+    icon: TablerIcons.flame,
   ),
 
   // ── 나무 (그룹·커뮤니티) ──
@@ -167,7 +168,7 @@ const List<BadgeData> kBadges = [
     condition: '그룹 가입 1회',
     points: 500,
     tier: BadgeTier.tree,
-    icon: Icons.handshake_outlined,
+    icon: TablerIcons.heartHandshake,
   ),
   BadgeData(
     id: 'group_5',
@@ -176,7 +177,7 @@ const List<BadgeData> kBadges = [
     condition: '그룹 활동 5회 참여',
     points: 500,
     tier: BadgeTier.tree,
-    icon: Icons.groups,
+    icon: TablerIcons.users,
   ),
   BadgeData(
     id: 'group_10',
@@ -185,7 +186,7 @@ const List<BadgeData> kBadges = [
     condition: '그룹 활동 10회 참여',
     points: 500,
     tier: BadgeTier.tree,
-    icon: Icons.military_tech_outlined,
+    icon: TablerIcons.medal,
   ),
   BadgeData(
     id: 'share_10',
@@ -194,7 +195,7 @@ const List<BadgeData> kBadges = [
     condition: '인증샷 10회 공유',
     points: 500,
     tier: BadgeTier.tree,
-    icon: Icons.photo_camera_outlined,
+    icon: TablerIcons.camera,
   ),
 
   // ── 숲 (연속 출석) ──
@@ -205,7 +206,7 @@ const List<BadgeData> kBadges = [
     condition: '3일 연속 플로깅',
     points: 800,
     tier: BadgeTier.forest,
-    icon: Icons.eco_outlined,
+    icon: TablerIcons.leaf,
   ),
   BadgeData(
     id: 'streak_7',
@@ -214,7 +215,7 @@ const List<BadgeData> kBadges = [
     condition: '7일 연속 플로깅',
     points: 1500,
     tier: BadgeTier.forest,
-    icon: Icons.emoji_events_outlined,
+    icon: TablerIcons.trophy,
   ),
   BadgeData(
     id: 'streak_30',
@@ -223,7 +224,7 @@ const List<BadgeData> kBadges = [
     condition: '30일 연속 플로깅',
     points: 3000,
     tier: BadgeTier.forest,
-    icon: Icons.workspace_premium_outlined,
+    icon: TablerIcons.award,
   ),
 ];
 

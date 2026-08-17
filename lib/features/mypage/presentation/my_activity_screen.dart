@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
+import 'package:repo_jdh/core/widgets/app_section.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
@@ -173,14 +175,11 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
   }
 
   Widget _buildHeader() {
-    return Container(
+    // 초록 워시는 홈처럼 위→아래로 차오르고(HeaderWashPour), 제목은 떠오른다 (탭은 고정).
+    return HeaderWashPour(
+      child: Container(
       width: double.infinity,
-      // 초록 헤더 제거 — 배경색으로 통일 (홈만 초록 유지)
-      decoration: const BoxDecoration(
-        color: AppColors.bg,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 44, 20, 14),
+      padding: const EdgeInsets.fromLTRB(20, 72, 20, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -189,13 +188,15 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Expanded(
-                child: Text(
-                  '지금까지의 발자취를\n확인해볼까요?',
-                  style: TextStyle(
-                    fontSize: 23,
-                    fontWeight: FontWeight.w800,
-                    height: 1.28,
-                    color: AppColors.textPrimary,
+                child: HeaderRise(
+                  child: Text(
+                    '지금까지의 발자취를\n확인해볼까요?',
+                    style: TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      height: 1.28,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
               ),
@@ -211,6 +212,7 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
             onSelect: _goTab,
           ),
         ],
+      ),
       ),
     );
   }
@@ -518,7 +520,7 @@ class _RecordsTabState extends State<_RecordsTab> {
               color: AppColors.textPrimary,
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          const Icon(TablerIcons.chevronRight, color: AppColors.textSecondary),
         ],
       ),
     );
@@ -1309,12 +1311,12 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               Row(
                 children: [
                   _arrow(
-                    Icons.chevron_left,
+                    TablerIcons.chevronLeft,
                     off < listLen - 1,
                     () => _shift(1),
                   ),
                   const SizedBox(width: 16),
-                  _arrow(Icons.chevron_right, off > 0, () => _shift(-1)),
+                  _arrow(TablerIcons.chevronRight, off > 0, () => _shift(-1)),
                 ],
               ),
           ],
@@ -1492,7 +1494,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               children: [
                 Text(title, style: AppType.title3),
                 const SizedBox(width: 6),
-                const Icon(Icons.info_outline, size: 15,
+                const Icon(TablerIcons.infoCircle, size: 15,
                     color: AppColors.neutral400),
                 const SizedBox(width: 4),
                 Expanded(
@@ -1784,13 +1786,13 @@ class _DevSeedButtonsState extends State<_DevSeedButtons> {
       children: [
         IconButton(
           tooltip: '가짜 데이터 심기',
-          icon: const Icon(Icons.add_circle_outline, size: 22),
+          icon: const Icon(TablerIcons.circlePlus, size: 22),
           color: AppColors.textSecondary,
           onPressed: () => _run(() => DevSeed.seedActivities(), '심기'),
         ),
         IconButton(
           tooltip: '가짜 데이터 지우기',
-          icon: const Icon(Icons.delete_outline, size: 22),
+          icon: const Icon(TablerIcons.trash, size: 22),
           color: AppColors.textSecondary,
           onPressed: () => _run(() => DevSeed.clearActivities(), '삭제'),
         ),
@@ -1798,7 +1800,7 @@ class _DevSeedButtonsState extends State<_DevSeedButtons> {
         // (원래는 플로깅 정산 화면에서 자동 호출됨)
         IconButton(
           tooltip: '뱃지 판정 실행',
-          icon: const Icon(Icons.military_tech_outlined, size: 22),
+          icon: const Icon(TablerIcons.medal, size: 22),
           color: AppColors.textSecondary,
           onPressed: () => _run(() async {
             final fresh = await BadgeService.checkAndSave();
@@ -1826,7 +1828,7 @@ class _EmptyRecords extends StatelessWidget {
       ),
       child: Column(
         children: const [
-          Icon(Icons.directions_walk, size: 48, color: AppColors.textSecondary),
+          Icon(TablerIcons.walk, size: 48, color: AppColors.textSecondary),
           SizedBox(height: 12),
           Text(
             '아직 플로깅 기록이 없어요',
@@ -1864,7 +1866,7 @@ class _ErrorBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(Icons.cloud_off, size: 44, color: AppColors.textSecondary),
+          const Icon(TablerIcons.cloudOff, size: 44, color: AppColors.textSecondary),
           const SizedBox(height: 12),
           const Text(
             '기록을 불러오지 못했어요',

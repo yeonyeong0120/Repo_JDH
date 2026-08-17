@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
@@ -182,7 +182,7 @@ class _GroupScreenState extends State<GroupScreen> {
                             last: true,
                             child: _others.isEmpty
                                 ? _EmptyCard(
-                                    icon: Symbols.groups,
+                                    icon: TablerIcons.users,
                                     title: '아직 다른 그룹이 없어요',
                                     body: '첫 번째 그룹을 만들어보세요',
                                   )
@@ -270,25 +270,25 @@ class _Header extends StatelessWidget {
         ? '동네 활동을 불러오는 중이에요'
         : list[phraseIndex % list.length].replaceAll('{N}', '$todayTotal');
 
-    return Container(
+    // 초록 워시는 홈처럼 위→아래로 차오르고(HeaderWashPour), 안쪽 글자는 떠오른다.
+    return HeaderWashPour(
+      child: Container(
       width: double.infinity,
-      // 초록 헤더 제거 — 배경색으로 통일 (홈만 초록 유지)
-      color: AppColors.bg,
       padding: const EdgeInsets.fromLTRB(
         Gap.screenPad,
         Gap.lg, // 검색·만들기 버튼이 너무 위에 붙지 않게 아래로
         Gap.screenPad,
-        Gap.xl2,
+        Gap.xl4, // 워시가 아바타 줄 아래까지 내려오도록 헤더를 키운다
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 위치줄 — 위치 좌표/버튼 모두 애니메이션 제외(정적).
           Row(
             children: [
               const Icon(
-                Symbols.location_on,
+                TablerIcons.mapPinFilled,
                 size: 15,
-                fill: 1,
                 color: AppColors.neutral500,
               ),
               const SizedBox(width: 3),
@@ -301,31 +301,40 @@ class _Header extends StatelessWidget {
                   ),
                 ),
               ),
-              _IconButton(icon: Symbols.search, onTap: onSearch),
+              _IconButton(icon: TablerIcons.search, onTap: onSearch),
               Gap.w8,
-              _IconButton(icon: Symbols.add, onTap: onCreate),
+              _IconButton(icon: TablerIcons.plus, onTap: onCreate),
               // ⚠️ 개발용 임시 버튼 — 배포 전 이 두 개와 dev_seed import 삭제
               Gap.w8,
-              _IconButton(icon: Symbols.science, onTap: onSeed, dev: true),
+              _IconButton(icon: TablerIcons.flask, onTap: onSeed, dev: true),
               Gap.w8,
-              _IconButton(icon: Symbols.delete, onTap: onClear, dev: true),
+              _IconButton(icon: TablerIcons.trash, onTap: onClear, dev: true),
             ],
           ),
           Gap.h16,
-          Text('같이 주우면\n두 배로 재밌어요', style: AppType.title1),
-          Gap.h8,
-          // 문구와 같은 가로줄에 오늘 활동한 사람 프로필(3명 + N)
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // 제목·서브텍스트만 떠오름/커짐 애니메이션 (프로필은 제외)
               Expanded(
-                child: Text(
-                  subtitle,
-                  style: AppType.label.copyWith(
-                    color: AppColors.textSecondary,
+                child: HeaderRise(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('같이 주우면\n두 배로 재밌어요', style: AppType.title1),
+                      Gap.h8,
+                      Text(
+                        subtitle,
+                        style: AppType.label.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
+              // 프로필 나열 — 애니메이션 적용 안 함
               if (!loading && todayTotal > 0) ...[
                 Gap.w12,
                 _TodayFaces(count: todayTotal),
@@ -333,6 +342,7 @@ class _Header extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }
@@ -367,7 +377,7 @@ class _TodayFaces extends StatelessWidget {
               left: i * _overlap,
               child: _face(_tones[i % _tones.length]),
             ),
-          // 나머지 인원 — 마지막 원에 '+N명'
+          // 나머지 인원 — 마지막 원에 '+N' (단위는 넣지 않는다: 두 자리부터 넘침)
           if (extra > 0)
             Positioned(
               left: faces * _overlap,
@@ -381,9 +391,9 @@ class _TodayFaces extends StatelessWidget {
                   border: Border.all(color: AppColors.surface, width: 2),
                 ),
                 child: Text(
-                  '+$extra명',
+                  '+$extra',
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: AppColors.green500,
                   ),
@@ -405,7 +415,7 @@ class _TodayFaces extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.surface, width: 2),
       ),
-      child: Icon(Symbols.person, size: 25, fill: 1, color: tone),
+      child: Icon(TablerIcons.userFilled, size: 25,  color: tone),
     );
   }
 }
@@ -495,9 +505,8 @@ class _MyGroupCard extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  active ? Symbols.directions_walk : Symbols.schedule,
+                  active ? TablerIcons.walk : TablerIcons.clock,
                   size: 20,
-                  fill: 1,
                   color: active
                       ? AppColors.textBrandOnLight
                       : AppColors.neutral500,
@@ -523,7 +532,7 @@ class _MyGroupCard extends StatelessWidget {
                   ),
                 ),
                 const Icon(
-                  Icons.chevron_right_rounded,
+                  TablerIcons.chevronRight,
                   size: 20,
                   color: AppColors.textBrandOnLight,
                 ),
@@ -558,7 +567,7 @@ class _NoGroupCard extends StatelessWidget {
                   borderRadius: Radii.tileR,
                 ),
                 child: const Icon(
-                  Symbols.person_add,
+                  TablerIcons.userPlus,
                   size: 26,
                   color: AppColors.textBrandOnLight,
                 ),
@@ -657,7 +666,7 @@ class _OtherGroupCard extends StatelessWidget {
           ),
           Gap.w8,
           const Icon(
-            Icons.chevron_right_rounded,
+            TablerIcons.chevronRight,
             size: Touch.icon,
             color: AppColors.neutral400,
           ),
@@ -683,7 +692,7 @@ class _GroupThumb extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: group.imageUrl == null
-          ? Icon(Symbols.groups, size: size * 0.42, color: AppColors.neutral400)
+          ? Icon(TablerIcons.users, size: size * 0.42, color: AppColors.neutral400)
           : Image.network(group.imageUrl!, fit: BoxFit.cover),
     );
   }

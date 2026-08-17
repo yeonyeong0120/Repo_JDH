@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
@@ -178,8 +179,8 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                         tooltip: wheel ? '달력으로' : '휠로 입력',
                         icon: Icon(
                           wheel
-                              ? Icons.calendar_today_outlined
-                              : Icons.edit_outlined,
+                              ? TablerIcons.calendar
+                              : TablerIcons.pencil,
                           size: 20,
                           color: AppColors.textSecondary,
                         ),
@@ -288,7 +289,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -329,7 +330,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                       child: Row(
                         children: [
                           const Icon(
-                            Icons.calendar_today_outlined,
+                            TablerIcons.calendar,
                             size: 19,
                             color: AppColors.textSecondary,
                           ),
@@ -353,7 +354,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                                 _rangeEnd = null;
                               }),
                               child: const Icon(
-                                Icons.close,
+                                TablerIcons.x,
                                 size: 18,
                                 color: AppColors.textSecondary,
                               ),
@@ -490,7 +491,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        Icons.add_a_photo,
+                        TablerIcons.cameraPlus,
                         size: 13,
                         color: AppColors.textSecondary,
                       ),

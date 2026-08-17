@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
@@ -106,20 +106,20 @@ class ActivityDetailScreen extends StatelessWidget {
                       // 2x2 통계 타일
                       Row(
                         children: [
-                          _statTile(Symbols.route, AppColors.dataDistance, '거리',
+                          _statTile(TablerIcons.route, AppColors.dataDistance, '거리',
                               distance),
                           const SizedBox(width: 12),
-                          _statTile(Symbols.schedule, AppColors.dataTime, '시간',
+                          _statTile(TablerIcons.clock, AppColors.dataTime, '시간',
                               time),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          _statTile(Symbols.footprint, AppColors.dataSteps, '걸음',
+                          _statTile(TablerIcons.shoe, AppColors.dataSteps, '걸음',
                               '${_comma(steps)}걸음'),
                           const SizedBox(width: 12),
-                          _statTile(Symbols.local_fire_department,
+                          _statTile(TablerIcons.flame,
                               AppColors.dataCalorie, '칼로리', '${kcal}kcal'),
                         ],
                       ),
@@ -143,8 +143,8 @@ class ActivityDetailScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _glassBtn(Icons.chevron_left, () => Navigator.pop(context)),
-                  _glassBtn(Icons.more_horiz, () => _showMenu(context)),
+                  _glassBtn(TablerIcons.chevronLeft, () => Navigator.pop(context)),
+                  _glassBtn(TablerIcons.dots, () => _showMenu(context)),
                 ],
               ),
             ),
@@ -192,7 +192,7 @@ class ActivityDetailScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, size: 18, fill: 1, color: color),
+                Icon(icon, size: 18, color: color),
                 const SizedBox(width: 6),
                 Text(
                   label,
@@ -286,11 +286,11 @@ class ActivityDetailScreen extends StatelessWidget {
 
   Widget _trashCard(int total) {
     const cats = [
-      ('plastic', '플라스틱', Symbols.water_bottle, Color(0xFF5F9EE8)),
-      ('can', '캔', Symbols.local_drink, Color(0xFFE07B2E)),
-      ('paper', '종이', Symbols.description, Color(0xFF31C88B)),
-      ('glass', '유리', Symbols.wine_bar, Color(0xFF8E7EC4)),
-      ('trash', '일반', Symbols.delete, Color(0xFF9AA3A0)),
+      ('plastic', '플라스틱', TablerIcons.bottle, Color(0xFF5F9EE8)),
+      ('can', '캔', TablerIcons.cup, Color(0xFFE07B2E)),
+      ('paper', '종이', TablerIcons.fileDescription, Color(0xFF31C88B)),
+      ('glass', '유리', TablerIcons.glassFull, Color(0xFF8E7EC4)),
+      ('trash', '일반', TablerIcons.trash, Color(0xFF9AA3A0)),
     ];
     return _card(
       title: '수거한 쓰레기',
@@ -298,7 +298,7 @@ class ActivityDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: AppColors.neutral100,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           '총 $total개',
@@ -345,8 +345,7 @@ class ActivityDetailScreen extends StatelessWidget {
             // 안 모은 종류(0)는 아이콘도 회색
             child: Icon(
               icon,
-              size: 20,
-              fill: 1,
+              size: 20,
               color: active ? color : AppColors.neutral400,
             ),
           ),
@@ -393,7 +392,7 @@ class ActivityDetailScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            _hasPhoto ? Icons.image_outlined : Icons.add_a_photo_outlined,
+            _hasPhoto ? TablerIcons.photo : TablerIcons.cameraPlus,
             size: 34,
             color: AppColors.neutral400,
           ),
@@ -434,7 +433,7 @@ class ActivityDetailScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Symbols.diversity_1, size: 18, fill: 1,
+                const Icon(TablerIcons.usersGroup, size: 18,
                     color: AppColors.textBrandOnLight),
                 const SizedBox(width: 8),
                 const Text(
@@ -474,9 +473,9 @@ class ActivityDetailScreen extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          _rewardPill(Symbols.eco, '+$rewardPoints P', AppColors.dataDistance),
+          _rewardPill(TablerIcons.leaf, '+$rewardPoints P', AppColors.dataDistance),
           const SizedBox(width: 8),
-          _rewardPill(Symbols.star, '+$rewardXp XP', AppColors.dataTime),
+          _rewardPill(TablerIcons.starFilled, '+$rewardXp XP', AppColors.dataTime),
         ],
       ),
     );
@@ -487,12 +486,12 @@ class ActivityDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: AppColors.tint(color, 0.14),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, fill: 1, color: color),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 5),
           Text(
             value,
@@ -520,7 +519,7 @@ class ActivityDetailScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.delete_outline,
+              leading: const Icon(TablerIcons.trash,
                   color: AppColors.actionDanger),
               title: const Text(
                 '활동 삭제',
@@ -588,8 +587,8 @@ class _DetailMapPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round,
     );
     // 시작(사람)·도착(깃발) 핀
-    _pin(canvas, Offset(w * 0.18, h * 0.6), Icons.person);
-    _pin(canvas, Offset(w * 0.82, h * 0.28), Icons.flag_rounded);
+    _pin(canvas, Offset(w * 0.18, h * 0.6), TablerIcons.userFilled);
+    _pin(canvas, Offset(w * 0.82, h * 0.28), TablerIcons.flagFilled);
   }
 
   void _pin(Canvas canvas, Offset pos, IconData icon) {
