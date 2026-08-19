@@ -39,21 +39,21 @@ class AppColors {
   static const Color green900 = Color(0xFF073725);
 
   // ========================================================
-  // NEUTRAL — 차가운 라이트 그레이(쿨 뉴트럴). 초록기·따뜻함 모두 제거.
+  // NEUTRAL — v6. 레퍼런스 캡처에서 추출한 완전 중립 회색(#F5F5F5 계열).
   // (초록은 SEMANTIC 의 accent/action 에만 남긴다 — 지운 게 아님)
   // ========================================================
 
   static const Color neutral0 = Color(0xFFFFFFFF);
-  static const Color neutral50 = Color(0xFFFBFCFD);
-  static const Color neutral75 = Color(0xFFF6F8F9); // 앱 배경 전용 (밝은 쿨 오프화이트)
-  static const Color neutral100 = Color(0xFFF0F3F4);
-  static const Color neutral200 = Color(0xFFE6E9EC);
-  static const Color neutral300 = Color(0xFFCDD1D5);
-  static const Color neutral400 = Color(0xFF979CA1);
-  static const Color neutral500 = Color(0xFF747A7E);
-  static const Color neutral600 = Color(0xFF565B5F); // 텍스트 하한 (흰 위 6.4:1)
-  static const Color neutral700 = Color(0xFF3C4145);
-  static const Color neutral900 = Color(0xFF212528);
+  static const Color neutral50 = Color(0xFFFAFAFA);
+  static const Color neutral75 = Color(0xFFF5F5F5); // 앱 배경 전용 (밝은 쿨 오프화이트)
+  static const Color neutral100 = Color(0xFFF2F2F2);
+  static const Color neutral200 = Color(0xFFE5E5E5);
+  static const Color neutral300 = Color(0xFFC4C4C4);
+  static const Color neutral400 = Color(0xFF9E9E9E);
+  static const Color neutral500 = Color(0xFF7D7D7D);
+  static const Color neutral600 = Color(0xFF5A5A5A); // 텍스트 하한 (흰 위 6.4:1)
+  static const Color neutral700 = Color(0xFF3D3D3D);
+  static const Color neutral900 = Color(0xFF1A1A1A);
 
   // ========================================================
   // CORAL — 유일한 액센트 (연속 기록, 수거 핫스팟)
@@ -72,6 +72,33 @@ class AppColors {
   static const Color bg = neutral75;
   static const Color surface = neutral0;
   static const Color surfaceBrand = green200; // 틴트 헤더. 화면당 1곳
+  /// 아이콘 타일·칩의 기본 면. 예전엔 연초록이었으나 중립 회색으로 통일.
+  static const Color surfaceMuted = neutral100;
+
+  // ── 헤더 페이드 워시 (그룹·내 활동 상단) ──
+  // 위에서 아래로 사라지는 연초록. 경계선이 안 생기게 3-스톱으로 깐다.
+  static const Color washTop = Color(0xFFCDE7DA);
+  static const Color washMid = Color(0xFFDFEEE7);
+  static const Color washEnd = neutral75;
+
+  // ── 하단 네비게이션 ──
+  // 선택 상태에 초록을 쓰지 않는다. 연회색 → 진회색으로만 구분.
+  static const Color navActive = neutral700;
+  static const Color navInactive = Color(0xFFB0B0B0);
+
+  // ── 서브 컬러(주황) ──
+  // 챌린지 필터 칩·달성 체크·연속 기록처럼 "포인트" 자리에만 쓴다.
+  // 항목 자체의 색은 dataXxx 를 그대로 유지한다.
+  static const Color subPoint = Color(0xFFF5891F);
+  static const Color subPointBg = Color(0xFFFFF3E4);
+  static const Color subPointText = Color(0xFFA85706);
+
+  // ── 날씨 아이콘 ──
+  // 흰 톤을 해치지 않게 채도를 낮춘 4색. 미세먼지는 등급 색(점)으로 따로 표시한다.
+  static const Color wxSunny = Color(0xFFE8A33D); // 맑음 — 따뜻한 황금색
+  static const Color wxCloudy = Color(0xFF8A93A0); // 구름 조금 — 회청색
+  static const Color wxOvercast = Color(0xFF6E7681); // 흐림 — 진한 회색
+  static const Color wxRain = Color(0xFF4A81B8); // 비 — 차분한 파랑
   // green100 은 흰 배경에서 거의 안 보여 배경으로 쓰지 않는다 (테두리·구분용만)
   static const Color border = neutral200;
 

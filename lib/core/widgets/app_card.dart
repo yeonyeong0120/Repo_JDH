@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 
@@ -120,7 +121,7 @@ class AppListCard extends StatelessWidget {
           if (chevron) ...[
             Gap.w8,
             const Icon(
-              Icons.chevron_right_rounded,
+              TablerIcons.chevronRight,
               size: Touch.icon,
               color: AppColors.neutral400,
             ),

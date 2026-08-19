@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter/rendering.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
@@ -122,7 +123,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                        icon: const Icon(TablerIcons.chevronLeft, size: 20),
                         color: AppColors.textPrimary,
                         onPressed: () => Navigator.pop(context),
                       ),
@@ -156,7 +157,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                         children: [
                           Expanded(
                             child: _outlinedAction(
-                              Icons.ios_share,
+                              TablerIcons.share,
                               '공유',
                               _share,
                             ),
@@ -164,7 +165,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _outlinedAction(
-                              Icons.download_outlined,
+                              TablerIcons.download,
                               '저장',
                               _save,
                             ),
@@ -205,7 +206,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               child: Row(
                 children: const [
-                  Icon(Icons.eco, size: 18, color: Colors.white),
+                  Icon(TablerIcons.leaf, size: 18, color: Colors.white),
                   SizedBox(width: 8),
                   Text(
                     '플로고 에코포인트 쿠폰',

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 /// 상점 카테고리
 enum ShopCategory { eco, cafe, food, convenience, culture }
@@ -14,11 +15,11 @@ extension ShopCategoryX on ShopCategory {
   };
 
   IconData get icon => switch (this) {
-    ShopCategory.eco => Icons.eco_outlined,
-    ShopCategory.cafe => Icons.local_cafe_outlined,
-    ShopCategory.food => Icons.restaurant_outlined,
-    ShopCategory.convenience => Icons.storefront_outlined,
-    ShopCategory.culture => Icons.card_giftcard_outlined,
+    ShopCategory.eco => TablerIcons.leaf,
+    ShopCategory.cafe => TablerIcons.coffee,
+    ShopCategory.food => TablerIcons.toolsKitchen2,
+    ShopCategory.convenience => TablerIcons.buildingStore,
+    ShopCategory.culture => TablerIcons.gift,
   };
 }
 

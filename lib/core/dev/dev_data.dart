@@ -22,8 +22,7 @@ class DevData {
     email: 'ploggo@example.com',
     gender: '여',
     age: 27,
-    height: 162,
-    weight: 57,
+    height: 162,
     region: '인천 부평구',
     points: 5000,
     xp: 100, // 활동 5회 × 20 → Lv.2

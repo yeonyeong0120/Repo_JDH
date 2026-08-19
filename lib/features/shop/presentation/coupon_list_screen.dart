@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
@@ -54,7 +55,7 @@ class _CouponListScreenState extends State<CouponListScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),

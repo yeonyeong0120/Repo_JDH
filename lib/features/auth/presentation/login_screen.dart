@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -262,8 +263,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 suffix: IconButton(
                   icon: Icon(
                     _obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+                        ? TablerIcons.eyeOff
+                        : TablerIcons.eye,
                     color: AppColors.textSecondary,
                     size: 21,
                   ),
@@ -329,7 +330,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                           SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, size: 20),
+                          Icon(TablerIcons.arrowRight, size: 20),
                         ],
                       ),
               ),

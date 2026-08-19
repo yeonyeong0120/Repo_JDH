@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
@@ -176,7 +177,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.arrow_back, size: 20,
+              child: const Icon(TablerIcons.arrowLeft, size: 20,
                   color: AppColors.textPrimary),
             ),
           ),
@@ -298,8 +299,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               suffix: IconButton(
                 icon: Icon(
                   _obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
+                      ? TablerIcons.eyeOff
+                      : TablerIcons.eye,
                   color: AppColors.textSecondary,
                   size: 21,
                 ),
@@ -319,7 +320,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Icon(Icons.shield_outlined, size: 18,
+                Icon(TablerIcons.shield, size: 18,
                     color: AppColors.textBrandOnLight),
                 SizedBox(width: 8),
                 Expanded(
@@ -360,7 +361,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
           const SizedBox(height: 20),
           _pickerRow(
-            icon: Icons.cake_outlined,
+            icon: TablerIcons.cake,
             label: '나이',
             valueText: _age == null ? null : '$_age세',
             onTap: () => _showNumberSheet(
@@ -375,7 +376,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
           _divider(),
           _pickerRow(
-            icon: Icons.straighten,
+            icon: TablerIcons.ruler2,
             label: '키',
             valueText: _height == null ? null : '${_height}cm',
             onTap: () => _showNumberSheet(
@@ -390,7 +391,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
           _divider(),
           _pickerRow(
-            icon: Icons.monitor_weight_outlined,
+            icon: TablerIcons.scale,
             label: '몸무게',
             valueText: _weight == null ? null : '${_weight}kg',
             onTap: () => _showNumberSheet(
@@ -414,7 +415,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.my_location, size: 20,
+                const Icon(TablerIcons.currentLocation, size: 20,
                     color: AppColors.textBrandOnLight),
                 const SizedBox(width: 12),
                 Expanded(
@@ -527,7 +528,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, size: 20,
+            const Icon(TablerIcons.chevronRight, size: 20,
                 color: AppColors.textSecondary),
           ],
         ),
@@ -577,7 +578,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           const SizedBox(height: 8),
           Row(
             children: const [
-              Icon(Icons.info_outline, size: 15, color: AppColors.neutral400),
+              Icon(TablerIcons.infoCircle, size: 15, color: AppColors.neutral400),
               SizedBox(width: 5),
               Text(
                 '한글·영문·숫자를 쓸 수 있어요',
@@ -621,7 +622,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           color: AppColors.surfaceBrand,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.person, size: 22,
+                        child: const Icon(TablerIcons.userFilled, size: 22,
                             color: AppColors.textSecondary),
                       ),
                       const SizedBox(width: 12),
@@ -769,11 +770,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                   if (arrow) ...[
                     const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward, size: 20),
+                    const Icon(TablerIcons.arrowRight, size: 20),
                   ],
                   if (check) ...[
                     const SizedBox(width: 8),
-                    const Icon(Icons.check, size: 20),
+                    const Icon(TablerIcons.check, size: 20),
                   ],
                 ],
               ),
@@ -891,7 +892,7 @@ class _NumberSheetState extends State<_NumberSheet> {
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.close, size: 22,
+                child: const Icon(TablerIcons.x, size: 22,
                     color: AppColors.textSecondary),
               ),
             ],
@@ -905,7 +906,7 @@ class _NumberSheetState extends State<_NumberSheet> {
           // − [숫자(키패드)] +
           Row(
             children: [
-              _roundBtn(Icons.remove, () => _set(_val - 1)),
+              _roundBtn(TablerIcons.minus, () => _set(_val - 1)),
               Expanded(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -953,7 +954,7 @@ class _NumberSheetState extends State<_NumberSheet> {
                   ],
                 ),
               ),
-              _roundBtn(Icons.add, () => _set(_val + 1)),
+              _roundBtn(TablerIcons.plus, () => _set(_val + 1)),
             ],
           ),
           const SizedBox(height: 16),
@@ -1025,7 +1026,7 @@ class _NumberSheetState extends State<_NumberSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.surface, // 하양 통일
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(13),
           border: Border.all(color: AppColors.neutral300),
         ),
         child: Text(

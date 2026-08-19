@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
@@ -299,7 +300,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 22),
+                    icon: const Icon(TablerIcons.x, size: 22),
                     color: AppColors.textSecondary,
                     onPressed: () =>
                         _scaffoldKey.currentState?.closeEndDrawer(),
@@ -320,7 +321,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                       radius: 18,
                       backgroundColor: AppColors.surfaceBrand,
                       child: Icon(
-                        Icons.person,
+                        TablerIcons.userFilled,
                         size: 20,
                         color: AppColors.textSecondary,
                       ),
@@ -373,7 +374,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.logout, size: 20, color: Colors.white),
+                      Icon(TablerIcons.logout, size: 20, color: Colors.white),
                       SizedBox(width: 7),
                       Text(
                         '탈퇴하기',
@@ -584,7 +585,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                 ),
               ),
               child: selected
-                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  ? const Icon(TablerIcons.check, size: 14, color: Colors.white)
                   : null,
             ),
             const SizedBox(width: 10),
@@ -778,7 +779,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: const Icon(TablerIcons.chevronLeft, size: 20),
             color: AppColors.textPrimary,
             onPressed: () =>
                 context.canPop() ? context.pop() : context.go('/home'),
@@ -807,24 +808,24 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
           ),
           // 그룹 정보 (가입 전에 봤던 소개·동네·인원)
           IconButton(
-            icon: const Icon(Icons.info_outline),
+            icon: const Icon(TablerIcons.infoCircle),
             color: AppColors.textSecondary,
             onPressed: _showGroupInfo,
           ),
           // ⚠️ 개발용 임시 버튼 — 가짜 피드 글 심기/지우기 (배포 전 삭제)
           IconButton(
-            icon: const Icon(Icons.science_outlined),
+            icon: const Icon(TablerIcons.flask),
             color: AppColors.textSecondary,
             onPressed: () => _runSeed(seed: true),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(TablerIcons.trash),
             color: AppColors.textSecondary,
             onPressed: () => _runSeed(seed: false),
           ),
           // 오른쪽 위 ≡ → 오른쪽 멤버 드로어 열기
           IconButton(
-            icon: const Icon(Icons.menu),
+            icon: const Icon(TablerIcons.menu2),
             color: AppColors.textSecondary,
             onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
@@ -843,7 +844,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
           decoration: BoxDecoration(
             color: AppColors.neutral900.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             text,
@@ -871,7 +872,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
           : null,
       child: (photo != null && photo.isNotEmpty)
           ? null
-          : const Icon(Icons.person, size: 16, color: AppColors.textSecondary),
+          : const Icon(TablerIcons.userFilled, size: 16, color: AppColors.textSecondary),
     );
 
     final bubble = Container(
@@ -951,7 +952,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _showReport(item),
                           child: const Icon(
-                            Icons.outlined_flag,
+                            TablerIcons.flag,
                             size: 15,
                             color: AppColors.neutral400,
                           ),
@@ -1051,7 +1052,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                         ),
                       )
                     : const Icon(
-                        Icons.arrow_upward,
+                        TablerIcons.arrowUp,
                         color: AppColors.textBrandOnLight,
                         size: 24,
                       ),
@@ -1079,7 +1080,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
           : null,
       child: (photo != null && photo.isNotEmpty)
           ? null
-          : const Icon(Icons.person, size: 20, color: AppColors.textSecondary),
+          : const Icon(TablerIcons.userFilled, size: 20, color: AppColors.textSecondary),
     );
     // 기록: 흰 바탕에 컴팩트하게 (왼쪽 밑)
     final record = Row(
@@ -1117,13 +1118,13 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => const Icon(
-                          Icons.photo_camera_outlined,
+                          TablerIcons.camera,
                           size: 36,
                           color: AppColors.textSecondary,
                         ),
                       )
                     : const Icon(
-                        Icons.photo_camera_outlined,
+                        TablerIcons.camera,
                         size: 36,
                         color: AppColors.textSecondary,
                       ),
@@ -1236,7 +1237,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       child: const Padding(
         padding: EdgeInsets.all(4),
         child: Icon(
-          Icons.flag_outlined,
+          TablerIcons.flag,
           size: 18,
           color: AppColors.textSecondary,
         ),
@@ -1252,8 +1253,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
         Icon(
           // 내 글: 채워진 회색 하트(받은 수 표시) / 남의 글: 눌렀으면 빨강, 아니면 빈 하트
           mine
-              ? Icons.favorite
-              : (item.liked ? Icons.favorite : Icons.favorite_border),
+              ? TablerIcons.heartFilled
+              : (item.liked ? TablerIcons.heartFilled : TablerIcons.heart),
           size: 18,
           color: mine
               ? AppColors.textSecondary

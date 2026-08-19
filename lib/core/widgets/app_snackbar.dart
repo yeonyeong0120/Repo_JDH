@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
@@ -36,10 +37,10 @@ class AppSnackBar {
         icon = null;
       case SnackKind.success:
         bg = AppColors.green800;
-        icon = Icons.check_circle_rounded;
+        icon = TablerIcons.circleCheckFilled;
       case SnackKind.error:
         bg = AppColors.actionDanger;
-        icon = Icons.error_rounded;
+        icon = TablerIcons.alertCircleFilled;
     }
 
     _show(
