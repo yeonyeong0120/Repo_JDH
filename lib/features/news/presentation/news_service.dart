@@ -58,7 +58,7 @@ class NewsService {
 
   /// 서버 응답 1건 → NewsArticle 로 변환
   ///
-  /// 서버는 title/summary/category/link/pubDate 를 주고,
+  /// 서버는 title/summary/category/link/pubDate/imageUrl 을 주고,
   /// Gemini 보강이 성공하면 aiSummary(3줄 요약) · press(언론사 한글명)도 함께 준다.
   static NewsArticle _toArticle(Map<String, dynamic> json) {
     final title = (json['title'] as String?) ?? '';
@@ -67,6 +67,10 @@ class NewsService {
     final pubDate = (json['pubDate'] as String?) ?? '';
     // 서버가 분류한 카테고리 (없으면 '환경')
     final category = (json['category'] as String?) ?? '환경';
+
+    // 기사 대표 이미지 (서버가 원문의 og:image 로 채운다)
+    // 없거나 수집 실패면 빈 문자열 → 화면 3곳이 이미지 자리를 통째로 생략한다
+    final imageUrl = (json['imageUrl'] as String?) ?? '';
 
     // Gemini 3줄 요약 (실패 시 빈 배열 → 화면이 알아서 summary 로 대체)
     final aiSummary =
@@ -87,6 +91,7 @@ class NewsService {
       sourceName: sourceName,
       sourceUrl: link, // 원문 보기용 링크
       aiSummary: aiSummary, // 있으면 상세 화면이 3줄로 표시
+      imageUrl: imageUrl, // 있으면 목록·상세·홈 카드가 사진 표시
     );
   }
 
