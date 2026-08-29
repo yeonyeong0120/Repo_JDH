@@ -59,7 +59,7 @@ class DetectionResponse {
 }
 
 class GarbageDetector {
-  static const String SERVER_URL = 'http://54.201.182.250:8000';
+  static const String SERVER_URL = 'http://52.13.42.252:8000';
 
   Future<DetectionResponse> detect(Uint8List imageBytes) async {
     final uri = Uri.parse('$SERVER_URL/detect');
