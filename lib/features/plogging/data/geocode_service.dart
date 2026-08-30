@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:repo_jdh/core/constants/api_config.dart';
 
 /// 좌표 → 장소명 변환 (FastAPI 서버의 /reverse-geocode 경유).
 ///
@@ -11,7 +11,7 @@ class GeocodeService {
   GeocodeService._();
 
   // 서버 주소는 .env 의 FASTAPI_BASE_URL 사용 (뉴스/detect 와 동일 서버)
-  static String get _baseUrl => dotenv.env['FASTAPI_BASE_URL'] ?? '';
+  static String get _baseUrl => ApiConfig.baseUrl;
 
   /// 활동 저장을 막지 않도록 짧게 끊는다. (뉴스는 30초지만 여기는 저장 경로다)
   static const Duration _timeout = Duration(seconds: 3);

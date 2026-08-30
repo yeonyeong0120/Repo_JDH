@@ -3,8 +3,8 @@
 // 가이드라인 9-3: Tmap·Geocoding은 FastAPI 프록시 경유. 앱은 백엔드만 호출한다.
 
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:repo_jdh/core/constants/api_config.dart';
 
 import '../domain/route_models.dart';
 
@@ -12,7 +12,7 @@ import '../domain/route_models.dart';
 // 주의: core/providers에 공용 Dio Provider가 이미 있다면 그것을 watch하도록 바꾸고
 // 아래 정의는 제거한다(전역 Provider 중복 방지).
 final dioProvider = Provider<Dio>((ref) {
-  final baseUrl = _normalizeBaseUrl(dotenv.env['FASTAPI_BASE_URL']);
+  final baseUrl = ApiConfig.baseUrl;
   return Dio(
     BaseOptions(
       baseUrl: baseUrl,
@@ -23,29 +23,6 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 });
-
-// FASTAPI_BASE_URL 값을 유효한 URL로 보정한다.
-// - 값에 섞인 따옴표/공백 제거
-// - http/https 스킴이 없으면 http:// 를 붙인다 (IP만 온 경우 방어)
-// - 호스트에 포트가 없으면 기본 포트(8000)를 붙인다
-// 빈 값이면 빈 문자열을 반환한다(경로 요청 시 예외로 처리됨).
-String _normalizeBaseUrl(String? raw) {
-  var v = (raw ?? '').trim().replaceAll('"', '').replaceAll("'", '');
-  if (v.isEmpty) return '';
-
-  // 스킴 보정
-  if (!v.startsWith('http://') && !v.startsWith('https://')) {
-    v = 'http://$v';
-  }
-
-  // 포트 보정: host 부분에 ':포트'가 없으면 :8000 추가
-  final uri = Uri.tryParse(v);
-  if (uri != null && uri.host.isNotEmpty && !uri.hasPort) {
-    v = '${uri.scheme}://${uri.host}:8000${uri.path}';
-  }
-
-  return v;
-}
 
 // 경로 추천 실패를 사용자 메시지로 감싸는 예외.
 class RouteException implements Exception {
