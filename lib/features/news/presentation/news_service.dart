@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:repo_jdh/core/constants/api_config.dart';
 import 'news_detail_screen.dart'; // NewsArticle 모델 재사용
 
 /// 환경 뉴스 서비스 — FastAPI 서버(/news)를 호출한다.
@@ -10,7 +10,7 @@ import 'news_detail_screen.dart'; // NewsArticle 모델 재사용
 /// (네이버 키는 서버에만 있고 앱은 모른다 → 안전)
 class NewsService {
   // 서버 주소는 .env 의 FASTAPI_BASE_URL 사용 (지도/detect 와 동일 서버)
-  static String get _baseUrl => dotenv.env['FASTAPI_BASE_URL'] ?? '';
+  static String get _baseUrl => ApiConfig.baseUrl;
 
   /// 환경 뉴스 목록을 가져온다.
   /// 실패 시 예외를 던진다 → 화면에서 에러 상태로 처리.
