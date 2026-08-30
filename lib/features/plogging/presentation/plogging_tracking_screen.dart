@@ -159,6 +159,11 @@ class _PloggingTrackingScreenState
   }
 
   void _handleCameraTap() {
+    // 일시정지 중에는 촬영 불가 (기록 중에만 촬영하는 규칙과 동일선상)
+    if (ref.read(trackingProvider).paused) {
+      AppSnackBar.show(context, '일시정지 중에는 촬영할 수 없어요. 먼저 이어하기를 눌러주세요.');
+      return;
+    }
     if (_selectedButton == 'camera') {
       // 이미 카메라가 선택(armed)된 상태면 탭 한 번으로 바로 촬영 (선택 유지)
       _openCamera();
@@ -485,26 +490,44 @@ class _PloggingTrackingScreenState
             ],
           ),
         ),
-        // GPS 상태 칩 — 카드 상단 경계에 걸침
+        // GPS 상태 칩 — 카드 상단 경계에 걸침 (원래 위치 그대로)
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          child: Center(child: _gpsChip(gpsGood)),
+          child: Center(
+            child: _gpsChip(gpsGood, tracking.paused, tracking.pausedText),
+          ),
+        ),
+        // 일시정지 알약 — 카드 안쪽 오른쪽에 겹쳐 얹어 박스 높이는 그대로 유지
+        Positioned(
+          top: 22,
+          right: 16,
+          child: _pauseChip(tracking.paused),
         ),
       ],
     );
   }
 
-  Widget _gpsChip(bool gpsGood) {
-    final Color dot = gpsGood ? const Color(0xFF34AE77) : AppColors.neutral400;
-    final String label = gpsGood ? 'GPS 양호 · 기록 중' : 'GPS 확인 중…';
+  Widget _gpsChip(bool gpsGood, bool paused, String pausedText) {
+    // 멈추면 파란색(dataSteps) 톤으로 '일시정지 중 · mm:ss'
+    final Color dot = paused
+        ? AppColors.dataSteps
+        : (gpsGood ? const Color(0xFF34AE77) : AppColors.neutral400);
+    final Color border = paused
+        ? AppColors.dataSteps.withValues(alpha: 0.28)
+        : const Color(0xFFE0E8E3);
+    final Color textColor =
+        paused ? AppColors.dataSteps : AppColors.neutral700;
+    final String label = paused
+        ? '일시정지 중 · $pausedText'
+        : (gpsGood ? 'GPS 양호 · 기록 중' : 'GPS 확인 중…');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0E8E3)),
+        border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
             color: AppColors.neutral900.withValues(alpha: 0.10),
@@ -526,10 +549,48 @@ class _PloggingTrackingScreenState
             label,
             style: AppType.caption.copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.neutral700,
+              color: textColor,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // 일시정지 / 이어하기 칩 (GPS 칩 오른쪽) — 높이 40, radius 20
+  Widget _pauseChip(bool paused) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        final n = ref.read(trackingProvider.notifier);
+        paused ? n.unpause() : n.pause();
+      },
+      // 아이콘만 있는 동그란 버튼 (GPS 칩과 겹치지 않게 컴팩트하게)
+      child: Container(
+        width: 34,
+        height: 34,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          // 기록 중: 옅은 파랑 면 / 멈춤: 파랑 채움 + 그림자
+          color: paused
+              ? AppColors.dataSteps
+              : AppColors.dataSteps.withValues(alpha: 0.12),
+          shape: BoxShape.circle,
+          boxShadow: paused
+              ? [
+                  BoxShadow(
+                    color: AppColors.dataSteps.withValues(alpha: 0.32),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          paused ? TablerIcons.playerPlayFilled : TablerIcons.playerPauseFilled,
+          size: 18,
+          color: paused ? Colors.white : AppColors.dataSteps,
+        ),
       ),
     );
   }
@@ -541,7 +602,12 @@ class _PloggingTrackingScreenState
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _threeTiles(tracking, collected),
+        // 멈춘 동안은 값이 안 쌓이므로 흐리게
+        AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: tracking.paused ? 0.5 : 1,
+          child: _threeTiles(tracking, collected),
+        ),
         SizeTransition(
           sizeFactor: _expandAnim,
           axisAlignment: -1.0, // 위 경계를 고정하고 아래로 펼쳐짐

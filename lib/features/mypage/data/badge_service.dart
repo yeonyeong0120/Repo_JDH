@@ -70,6 +70,7 @@ class BadgeService {
     add('steps_10k', s.totalSteps >= 10000);
     add('steps_30k', s.totalSteps >= 30000);
     add('distance_10km', s.totalDistanceKm >= 10);
+    add('distance_30km', s.totalDistanceKm >= 30);
     add('weight_5kg', s.totalWeightKg >= 5);
     add('weight_20kg', s.totalWeightKg >= 20);
     add('plastic_50', s.plasticCount >= 50);
@@ -205,6 +206,8 @@ class BadgeService {
         return (s.totalSteps.clamp(0, 30000), 30000);
       case 'distance_10km':
         return (s.totalDistanceKm.round().clamp(0, 10), 10);
+      case 'distance_30km':
+        return (s.totalDistanceKm.round().clamp(0, 30), 30);
       case 'weight_5kg':
         return (s.totalWeightKg.round().clamp(0, 5), 5);
       case 'weight_20kg':

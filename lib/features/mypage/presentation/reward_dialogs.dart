@@ -11,6 +11,7 @@ import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
+import 'package:repo_jdh/core/widgets/badge_medal.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 /// 획득 뱃지들에 대해 퀘스트 완료 → 뱃지 획득 팝업을 순서대로 띄운다.
@@ -408,21 +409,13 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
   }
 
   Widget _badgeTile(BadgeData b) {
-    return Container(
-      width: 84,
-      height: 84,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.green100, AppColors.green300],
-        ),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: usesTrashBagIcon(b)
-          ? const TrashBagIcon(size: 40, color: AppColors.green750)
-          : Icon(b.icon, size: 40, color: AppColors.green750), // 봉지 뱃지는 쓰레기봉투
+    // 뱃지함 타일과 같은 메달 도형으로 통일.
+    return BadgeMedal(
+      size: 84,
+      color: badgeColor(b),
+      icon: usesTrashBagIcon(b)
+          ? TrashBagIcon(size: 38, color: badgeColor(b)) // 봉지 뱃지
+          : Icon(b.icon, size: 38, color: badgeColor(b)),
     );
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/mypage/domain/profile_detail.dart';
@@ -109,67 +108,6 @@ class _MenuScreenState extends State<MenuScreen> {
               _profileCard(),
               const SizedBox(height: 14),
               _pointsCard(),
-              const SizedBox(height: 12),
-              // 쿠폰함은 상점 안으로 이동. 여기선 포인트 내역을 전체 폭으로.
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _push(const PointHistoryScreen()),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: AppColors.cardShadow,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppColors.green50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          TablerIcons.receipt,
-                          size: 21,
-                          color: AppColors.textBrandOnLight,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '포인트 내역',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              '적립·사용 기록',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        TablerIcons.chevronRight,
-                        size: 20,
-                        color: AppColors.textSecondary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
               const SizedBox(height: 26),
               const Text(
                 '이용 안내',
@@ -397,70 +335,143 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  // ── 포인트 카드 ──
+  // ── 포인트 카드 (흰 박스: 보유 포인트 + 하단 분할 액션: 포인트 내역 | 상점 가기) ──
   Widget _pointsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        children: [
+          // 상단: 보유 포인트 표시
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 화폐 아이콘: 초록 배경 + 진한 초록 아이콘
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: AppColors.green100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    TablerIcons.coin,
+                    size: 24,
+                    color: AppColors.textBrandOnLight,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '사용 가능한 포인트',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text.rich(
+                        TextSpan(
+                          text: _comma(_profile.points),
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                          children: const [
+                            TextSpan(
+                              text: ' P',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.border,
+          ),
+          // 하단: 포인트 내역(기본) | 상점 가기(초록)
+          Row(
+            children: [
+              Expanded(
+                child: _pointsAction(
+                  TablerIcons.receipt,
+                  '포인트 내역',
+                  AppColors.textSecondary,
+                  () => _push(const PointHistoryScreen()),
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 24,
+                color: AppColors.border,
+              ),
+              Expanded(
+                child: _pointsAction(
+                  TablerIcons.buildingStore,
+                  '상점 가기',
+                  AppColors.textBrandOnLight,
+                  () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ShopScreen()),
+                    );
+                    _loadProfile();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 포인트 카드 하단 분할 버튼 한 칸
+  Widget _pointsAction(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ShopScreen()),
-        );
-        _loadProfile();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-        decoration: BoxDecoration(
-          color: AppColors.green100,
-          borderRadius: BorderRadius.circular(18),
-        ),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '사용 가능한 포인트',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textOnTint,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text.rich(
-                    TextSpan(
-                      text: _comma(_profile.points),
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textBrandOnLight,
-                      ),
-                      children: const [
-                        TextSpan(
-                          text: ' P',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Text(
-              '상점 가기',
+            Icon(icon, size: 19, color: color),
+            const SizedBox(width: 7),
+            Text(
+              label,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textBrandOnLight,
+                color: color,
               ),
             ),
-            const Icon(TablerIcons.chevronRight, size: 20,
-                color: AppColors.textBrandOnLight),
           ],
         ),
       ),
