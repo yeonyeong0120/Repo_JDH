@@ -8,6 +8,7 @@ import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/core/widgets/app_section.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
+import 'package:repo_jdh/core/widgets/badge_medal.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
@@ -867,7 +868,7 @@ class _BadgesTabState extends State<_BadgesTab> {
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: Gap.sm,
       crossAxisSpacing: Gap.md,
-      childAspectRatio: 0.84,
+      childAspectRatio: 0.78, // 메달 꼬리가 들어와 칸이 조금 높아졌다
       children: [
         for (final b in list) _BadgeTile(badge: b, stats: _stats),
       ],
@@ -1045,34 +1046,14 @@ class _BadgeTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 아이콘 칩 — 획득: 카테고리 배경색 / 미획득: 회색 링
-            SizedBox(
-              width: 52,
-              height: 52,
-              child: earned
-                  ? DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.tint(color, 0.16),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Center(child: iconOf(color, 26)),
-                    )
-                  : Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: BadgeRingPainter(
-                              progress,
-                              AppColors.neutral400,
-                              stroke: 5,
-                              radius: 15,
-                            ),
-                          ),
-                        ),
-                        iconOf(AppColors.neutral400, 24),
-                      ],
-                    ),
+            // 메달 뱃지 — 획득: 카테고리 색 코인 + 꼬리 / 미획득: 달성률 링
+            BadgeMedal(
+              size: 44,
+              color: color,
+              earned: earned,
+              progress: progress,
+              // 파스텔 코인 위에서 보이도록 획득 아이콘은 카테고리 색
+              icon: iconOf(earned ? color : AppColors.neutral400, 22),
             ),
             const SizedBox(height: 8),
             Text(

@@ -100,52 +100,49 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
         title: '표시할 뉴스가 없어요',
       );
     }
-    // ④ 데이터
+    // ④ 데이터 — 카테고리+이미지+제목 항목을 선으로 구분해 나열
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
       itemCount: _articles!.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 14),
-      itemBuilder: (context, i) => _newsCard(context, _articles![i]),
+      separatorBuilder: (_, __) =>
+          const Divider(height: 1, thickness: 0.7, color: AppColors.border),
+      itemBuilder: (context, i) => _newsItem(context, _articles![i]),
     );
   }
 
-  Widget _newsCard(BuildContext context, NewsArticle a) {
+  // 상세로 이동 (관련 뉴스 3개: 같은 카테고리 우선)
+  void _openDetail(BuildContext context, NewsArticle a) {
+    final sameCategory =
+        _articles!.where((x) => x != a && x.category == a.category).toList();
+    final others =
+        _articles!.where((x) => x != a && x.category != a.category).toList();
+    final related = [...sameCategory, ...others].take(3).toList();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewsDetailScreen(article: a, related: related),
+      ),
+    );
+  }
+
+  // ── 뉴스 항목: 카테고리 + 제목 (왼쪽) · 이미지(오른쪽) ──
+  Widget _newsItem(BuildContext context, NewsArticle a) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        // 관련 뉴스: 같은 카테고리 기사를 우선, 부족하면 나머지로 채워 3개
-        final sameCategory = _articles!
-            .where((x) => x != a && x.category == a.category)
-            .toList();
-        final others = _articles!
-            .where((x) => x != a && x.category != a.category)
-            .toList();
-        final related = [...sameCategory, ...others].take(3).toList();
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => NewsDetailScreen(article: a, related: related),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppColors.cardShadow,
-        ),
+      onTap: () => _openDetail(context, a),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 원본 기사 사진이 있으면 왼쪽에 표시, 없으면 생략
             if (a.imageUrl.isNotEmpty) ...[
               ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
                 child: Image.network(
                   a.imageUrl,
-                  width: 66,
-                  height: 66,
+                  width: 78,
+                  height: 78,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
@@ -164,41 +161,17 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                       color: AppColors.green800,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     a.title,
-                    maxLines: 2,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      height: 1.25,
+                      height: 1.3,
                       color: AppColors.textPrimary,
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          a.reporter,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        a.date,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

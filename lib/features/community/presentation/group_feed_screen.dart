@@ -85,6 +85,10 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   // 실시간 피드 구독 (메시지가 오면 즉시 반영)
   StreamSubscription<List<GroupPost>>? _postsSub;
 
+  // 채팅 스크롤 — 첫 진입 시 최신(맨 아래) 메시지로 한 번 이동
+  final ScrollController _feedScroll = ScrollController();
+  bool _didInitialScroll = false;
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +100,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
   void dispose() {
     _postsSub?.cancel(); // 구독 해제 (안 하면 메모리 누수)
     _msgController.dispose();
+    _feedScroll.dispose();
     super.dispose();
   }
 
@@ -106,11 +111,24 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       (posts) {
         if (!mounted) return;
         setState(() => _items = posts.map(_fromPost).toList());
+        _maybeInitialScroll(); // 첫 실데이터 도착 시 최신(하단)으로
       },
       onError: (_) {
         // 실패해도 기존 목록 유지 (화면이 비어버리지 않게)
       },
     );
+  }
+
+  // 첫 진입 시 한 번만 맨 아래(최신 메시지)로 점프
+  void _maybeInitialScroll() {
+    if (_didInitialScroll) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _didInitialScroll) return;
+      if (_feedScroll.hasClients) {
+        _feedScroll.jumpTo(_feedScroll.position.maxScrollExtent);
+        _didInitialScroll = true;
+      }
+    });
   }
 
   // 채팅 메시지 전송
@@ -243,14 +261,17 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
         widgets.add(const SizedBox(height: 12));
         lastLabel = label;
       }
-      // 내 것은 오른쪽으로(왼쪽 여백), 남의 것은 왼쪽으로(오른쪽 여백) — 카드 위치만
+      // 내 것은 오른쪽으로(왼쪽 여백), 남의 것은 왼쪽으로(오른쪽 여백) — 카드 위치만.
+      // 단, 가입 등 시스템 알림은 좌우 여백 없이 전체 폭에서 가운데 정렬한다.
       widgets.add(
-        Padding(
-          padding: it.isMine
-              ? const EdgeInsets.only(left: 80)
-              : const EdgeInsets.only(right: 80),
-          child: _feedCard(it),
-        ),
+        it.isSystem
+            ? _feedCard(it)
+            : Padding(
+                padding: it.isMine
+                    ? const EdgeInsets.only(left: 80)
+                    : const EdgeInsets.only(right: 80),
+                child: _feedCard(it),
+              ),
       );
       widgets.add(const SizedBox(height: 14)); // 카드 사이 간격(더 촘촘하게)
     }
@@ -758,6 +779,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
             _buildTopBar(),
             Expanded(
               child: ListView(
+                controller: _feedScroll,
                 // 입력창이 아래를 차지하므로 여백을 줄임
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
                 children: _buildFeed(),
@@ -899,10 +921,11 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
       ),
       child: Text(
         item.text,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 15,
           height: 1.5,
-          color: mine ? const Color(0xFF153A2B) : AppColors.textPrimary,
+          // 채팅 글씨는 검정으로 통일 (내 말풍선도 동일)
+          color: AppColors.textPrimary,
         ),
       ),
     );

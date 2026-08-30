@@ -4,6 +4,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
+import 'package:repo_jdh/core/widgets/badge_medal.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 /// ACT-08 뱃지 상세 모달
@@ -142,26 +143,28 @@ class _BadgeMedal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const d = 76.0;
-    if (earned) {
-      return SizedBox(
-        width: d,
-        height: d,
-        child: Stack(
-          children: [
-            Container(
-              width: d,
-              height: d,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.tint(color, 0.16),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: _icon(color, 34),
+    const d = 72.0;
+    // 메달 본체는 그리드 타일과 같은 도형(BadgeMedal). 획득 체크·달성률 알약만 겹친다.
+    return SizedBox(
+      width: d,
+      height: BadgeMedal.heightFor(d),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          BadgeMedal(
+            size: d,
+            color: color,
+            earned: earned,
+            progress: progress,
+            icon: _icon(
+              earned ? color : AppColors.neutral400,
+              earned ? 32 : 28,
             ),
+          ),
+          if (earned)
             Positioned(
               right: 0,
-              bottom: 0,
+              top: d - 24,
               child: Container(
                 width: 24,
                 height: 24,
@@ -174,50 +177,28 @@ class _BadgeMedal extends StatelessWidget {
                 child: const Icon(TablerIcons.check, size: 14,
                     color: AppColors.textOnBrand),
               ),
-            ),
-          ],
-        ),
-      );
-    }
-    // 미획득: 은은한 초록 바탕 + 두꺼운 회색 링, 아이콘은 가운데,
-    // 달성도(%)는 오른쪽 아래 흰 알약으로.
-    return SizedBox(
-      width: d,
-      height: d,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(
-            child: CustomPaint(
-              painter: BadgeRingPainter(
-                progress,
-                AppColors.neutral400,
-                stroke: 7, // 미리보기 타일 링과 같은 두께
-              ),
-            ),
-          ),
-          _icon(AppColors.neutral400, 28),
-          Positioned(
-            right: -5,
-            bottom: -3,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(13),
-                boxShadow: AppColors.cardShadow,
-              ),
-              child: Text(
-                '$pct%',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textSecondary,
+            )
+          else
+            Positioned(
+              right: -6,
+              top: d - 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(13),
+                  boxShadow: AppColors.cardShadow,
+                ),
+                child: Text(
+                  '$pct%',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -459,7 +440,7 @@ Future<void> showBadgeEarned(
                 children: [
                   const Icon(
                     TablerIcons.leaf,
-                    size: 20,
+                    size: 20,
                     color: AppColors.textBrandOnLight,
                   ),
                   Gap.w8,

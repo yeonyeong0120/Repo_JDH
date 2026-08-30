@@ -18,6 +18,8 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/core/widgets/app_section.dart';
 import 'package:repo_jdh/core/widgets/app_stat.dart';
+import 'package:repo_jdh/features/plogging/data/location_repository.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 
 // ============================================================
 // 홈 (v2)
@@ -97,14 +99,7 @@ class _HomeBody extends ConsumerWidget {
                               )
                           : null,
                       child: v.hasNews
-                          ? Column(
-                              children: [
-                                for (final n in v.news.take(2)) ...[
-                                  _NewsCard(item: n),
-                                  if (n != v.news.take(2).last) Gap.h12,
-                                ],
-                              ],
-                            )
+                          ? _NewsPreview(items: v.news)
                           : _NewsUnavailable(
                               onRetry: () => ref.invalidate(homeViewProvider),
                             ),
@@ -179,20 +174,40 @@ class _TintHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 인사말(하단) — 날씨는 헤더 상단 오른쪽에 별도 배치.
+    // 인사말과 날씨를 같은 줄(Row)에 나란히 둔다.
     final Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${v.userName} 님,\n오늘도 한 바퀴 어떠세요?',
-          style: AppType.title1.copyWith(fontSize: 23),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                '${v.userName} 님,\n오늘도 한 바퀴 어떠세요?',
+                // 사진 위라 흰 글씨 + 얇은 그림자로 대비를 잡는다.
+                style: AppType.title1.copyWith(
+                  fontSize: 23,
+                  color: Colors.white,
+                  shadows: const [
+                    Shadow(
+                      color: Color(0x73000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Gap.w12,
+            _weatherBlock(),
+          ],
         ),
         Gap.h12,
         _streakChip(),
       ],
     );
 
-    // 진입: 초록 면이 위→아래로 채워지고(pour), 글씨는 뒤이어 떠오른다(focus).
+    // 진입: 사진 헤더가 커튼처럼 위→아래로 잘려 내려오고(pour), 글씨는 뒤이어 떠오른다(focus).
     const totalMs = 2600;
     const pourEnd = 0.62;
     const focusStart = 0.36;
@@ -218,16 +233,41 @@ class _TintHeader extends StatelessWidget {
         return Stack(
           children: [
             Positioned.fill(
-              child: Transform(
-                alignment: Alignment.topCenter,
-                transform: Matrix4.diagonal3Values(1, pour.clamp(0.0001, 1.0), 1),
-                child: const DecoratedBox(
-                  decoration: BoxDecoration(
-                    // 홈만 선명한 단색 상단바. 진하기는 워시 최상단(washTop)과 동일.
-                    color: AppColors.washTop,
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(Radii.sheet),
-                    ),
+              // 커튼: 사진을 찌그러뜨리지 않고 위에서부터 잘라 내려온다.
+              child: ClipRect(
+                clipper: _HeaderCurtain(pour),
+                child: const ClipRRect(
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(Radii.sheet),
+                  ),
+                  // 사진 위에 초록 스크림. 스크림 없이 쓰면 인사말(진한 회색)이
+                  // 아스팔트 사진과 대비가 안 나 읽히지 않는다.
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image(
+                        image: AssetImage('assets/images/home_header.png'),
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                      ),
+                      // 사진 위 흰 글씨(로고·인사말·날씨) 대비 4.5:1 확보용 그늘.
+                      // 사진에 흰 비닐봉투(휘도 255) 구간이 있어 52% 이하로는
+                      // 글씨가 사라진다 — 아래로 갈수록 조금 더 진해진다.
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0x85000000), // 52%
+                              Color(0x80000000), // 50%
+                              Color(0xA8000000), // 66%
+                            ],
+                            stops: [0.0, 0.45, 1.0],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -236,17 +276,46 @@ class _TintHeader extends StatelessWidget {
               // 텍스트를 상단바 하단쪽으로 (위 여백 크게 · 아래 작게)
               padding: const EdgeInsets.fromLTRB(
                 Gap.screenPad,
-                130,
+                66, // 텍스트를 위로 (상단바가 그만큼 짧아짐)
                 Gap.screenPad,
-                28,
+                20,
               ),
               child: faded,
             ),
-            // 날씨·온도 — 헤더 상단 오른쪽(인사말보다 위)
+            // 워드마크 로고 — 헤더 맨 위 왼쪽
             Positioned(
-              top: 62, // 인사말 첫 줄과 눈높이를 맞춘다
+              top: 16,
+              left: Gap.screenPad,
+              child: Opacity(
+                opacity: focus,
+                // 사진 위에서는 컬러 로고가 묻혀, 흰 단색 로고(logo_white)를 그림자와 함께 얹는다.
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.neutral900.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/images/logo_white.png',
+                    height: 40,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            ),
+            // 위치 새로고침 — 헤더 맨 위 오른쪽
+            Positioned(
+              top: 10,
               right: Gap.screenPad,
-              child: Opacity(opacity: focus, child: _weatherBlock()),
+              child: Opacity(
+                opacity: focus,
+                child: const _LocationRefreshButton(),
+              ),
             ),
           ],
         );
@@ -259,8 +328,8 @@ class _TintHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        // 연속 기록은 서브 컬러(주황) 자리 — 초록은 CTA·핵심 수치에만 남긴다.
-        color: AppColors.subPointBg,
+        // 사진 상단바 위에서는 흰 알약이 가장 잘 읽힌다.
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -269,13 +338,13 @@ class _TintHeader extends StatelessWidget {
           const Icon(
             TablerIcons.flame,
             size: 16,
-            color: AppColors.subPointText,
+            color: AppColors.subPoint,
           ),
           Gap.w4,
           Text(
             v.isFirstDay ? '첫 걸음을 기다리고 있어요' : '${v.streakDays}일 연속 기록 중',
             style: AppType.label.copyWith(
-              color: AppColors.subPointText,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -318,10 +387,10 @@ class _TintHeader extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              _wxIcon,
+            const Icon(
+              TablerIcons.cloud,
               size: 30,
-              color: _wxColor,
+              color: Colors.white,
             ),
             Gap.w4,
             Text(
@@ -330,6 +399,14 @@ class _TintHeader extends StatelessWidget {
                 fontSize: 36,
                 fontWeight: FontWeight.w800,
                 height: 1.0,
+                color: Colors.white,
+                shadows: const [
+                  Shadow(
+                    color: Color(0x73000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 1),
+                  ),
+                ],
               ),
             ),
           ],
@@ -337,7 +414,7 @@ class _TintHeader extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           _wxLabel,
-          style: AppType.body.copyWith(color: AppColors.textOnTint),
+          style: AppType.body.copyWith(color: Colors.white),
         ),
         const SizedBox(height: 5),
         Row(
@@ -354,13 +431,26 @@ class _TintHeader extends StatelessWidget {
             Gap.w4,
             Text(
               '미세 좋음',
-              style: AppType.body.copyWith(color: AppColors.textOnTint),
+              style: AppType.body.copyWith(color: Colors.white),
             ),
           ],
         ),
       ],
     );
   }
+}
+
+/// 상단바 커튼 등장용 클리퍼 — 위에서부터 t 비율만큼만 보여준다(사진 왜곡 없음).
+class _HeaderCurtain extends CustomClipper<Rect> {
+  final double t; // 0~1
+  const _HeaderCurtain(this.t);
+
+  @override
+  Rect getClip(Size size) =>
+      Rect.fromLTWH(0, 0, size.width, size.height * t.clamp(0.0001, 1.0));
+
+  @override
+  bool shouldReclip(_HeaderCurtain old) => old.t != t;
 }
 
 // ── 이번 주 화분 ─────────────────────────────────────────
@@ -407,7 +497,8 @@ class _PotDay extends StatelessWidget {
             log.weekdayLabel,
             style: AppType.caption.copyWith(
               fontWeight: today ? FontWeight.w800 : FontWeight.w600,
-              color: today ? AppColors.textBrandOnLight : AppColors.textSecondary,
+              // 오늘도 글씨는 검정(테두리·화분만 초록)
+              color: today ? AppColors.textPrimary : AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
@@ -745,63 +836,86 @@ class _IllustrationSlot extends StatelessWidget {
 
 // ── 뉴스 ────────────────────────────────────────────────
 
-/// 뉴스 서버는 썸네일을 주지 않는다(네이버 검색 API에 이미지가 없음).
-/// 그래서 이미지 자리를 비우는 대신 카테고리 배지로 시각적 구분을 준다.
-class _NewsCard extends StatelessWidget {
-  final NewsArticle item;
-  const _NewsCard({required this.item});
+/// 홈 환경뉴스 미리보기 — 환경뉴스 화면과 같은 형식.
+/// 카테고리 + 이미지 + 제목 항목을 선으로 구분해 나열(최대 3개).
+class _NewsPreview extends StatelessWidget {
+  final List<NewsArticle> items;
+  const _NewsPreview({required this.items});
 
   @override
   Widget build(BuildContext context) {
+    final list = items.take(3).toList();
     return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: Gap.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < list.length; i++) ...[
+            if (i > 0)
+              const Divider(height: 1, thickness: 0.7, color: AppColors.border),
+            _newsItem(context, list[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 카테고리 + 이미지(왼쪽) + 제목
+  Widget _newsItem(BuildContext context, NewsArticle a) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => NewsDetailScreen(article: item),
+          builder: (_) => NewsDetailScreen(article: a),
         ),
       ),
-      padding: const EdgeInsets.all(Gap.lg),
-      // 원본 기사 사진이 있으면 왼쪽에 표시, 없으면 줄글만
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (item.imageUrl.isNotEmpty) ...[
-            ClipRRect(
-              borderRadius: Radii.tileR,
-              child: Image.network(
-                item.imageUrl,
-                width: 64,
-                height: 64,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (a.imageUrl.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  a.imageUrl,
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+              Gap.w16,
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    a.category,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.green800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    a.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Gap.w16,
           ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  style: AppType.title3,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Gap.h8,
-                Text(
-                  [
-                    item.category,
-                    item.sourceName,
-                    if (item.date.isNotEmpty) item.date,
-                  ].join(' · '),
-                  style: AppType.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1336,3 +1450,79 @@ String _comma(int n) => n.toString().replaceAllMapped(
   RegExp(r'(\d)(?=(\d{3})+$)'),
   (m) => '${m[1]},',
 );
+
+
+/// 위치 새로고침 — 현재 GPS 로 지역을 다시 잡고 홈을 갱신한다.
+/// 헤더 오른쪽 맨 위. 실패해도 화면은 그대로 두고 안내만 띄운다.
+class _LocationRefreshButton extends ConsumerStatefulWidget {
+  const _LocationRefreshButton();
+
+  @override
+  ConsumerState<_LocationRefreshButton> createState() =>
+      _LocationRefreshButtonState();
+}
+
+class _LocationRefreshButtonState
+    extends ConsumerState<_LocationRefreshButton> {
+  bool _busy = false;
+
+  Future<void> _run() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final loc = await LocationRepository().getCurrentLocation();
+    final address = ((loc?['address'] as String?) ?? '').trim();
+    if (!mounted) return;
+    if (address.isEmpty) {
+      setState(() => _busy = false);
+      AppSnackBar.show(context, '위치를 가져오지 못했어요. 위치 권한을 확인해 주세요');
+      return;
+    }
+    try {
+      await UserService.updateRegion(
+        region: address,
+        lat: (loc?['latitude'] as num?)?.toDouble(),
+        lng: (loc?['longitude'] as num?)?.toDouble(),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      AppSnackBar.show(context, '위치를 저장하지 못했어요');
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _busy = false);
+    ref.invalidate(homeViewProvider);
+    AppSnackBar.show(context, '현재 위치로 새로 잡았어요');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _run,
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: 0.86),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: _busy
+            ? const SizedBox(
+                width: 17,
+                height: 17,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: AppColors.actionPrimary,
+                ),
+              )
+            : const Icon(
+                TablerIcons.currentLocation,
+                size: 21,
+                color: AppColors.textBrandOnLight,
+              ),
+      ),
+    );
+  }
+}

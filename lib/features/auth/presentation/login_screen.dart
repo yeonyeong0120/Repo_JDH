@@ -114,9 +114,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final illoH = w * 0.56;
-
     return Scaffold(
       backgroundColor: _sky,
       resizeToAvoidBottomInset: true,
@@ -129,48 +126,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ── 위쪽 배경: 일러스트 + 아래로 초록 그라데이션(좁게) ──
+              // 일러스트가 남는 공간을 꽉 채운다(위 여백 제거, 이미지는 좀 잘려도 됨).
               Expanded(
-                child: SingleChildScrollView(
-                  reverse: true,
-                  physics: const ClampingScrollPhysics(),
-                  child: SizedBox(
-                    height: illoH,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.asset(
-                          'assets/images/login_bg.png',
-                          fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
-                          errorBuilder: (_, __, ___) =>
-                              ColoredBox(color: _sky),
-                        ),
-                        // 좁은 범위(아래 30%)만 배경 초록으로 페이드
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: Container(
-                            height: illoH * 0.3,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [_sky.withValues(alpha: 0), _sky],
-                              ),
-                            ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      'assets/images/login_bg.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      errorBuilder: (_, __, ___) => ColoredBox(color: _sky),
+                    ),
+                    // 아래 끝만 배경색으로 페이드
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        height: 80,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [_sky.withValues(alpha: 0), _sky],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
               // ── 슬로건 + 타이틀 (박스 위, 카드와 동시에 떠오름) ──
               Padding(
                 padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
+                // 슬로건 아래에 큰 플로고 로고. 슬로건-로고 간격은 최소로.
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       '걷는 만큼 깨끗해지는 동네',
                       style: TextStyle(
                         fontSize: 16,
@@ -178,14 +169,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    SizedBox(height: 6),
-                    Text(
-                      '플로고',
-                      style: TextStyle(
-                        fontSize: 40,
-                        height: 1.0,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                    const SizedBox(height: 2),
+                    // 워드마크 로고. 파일이 없으면 글자로 대체한다.
+                    Image.asset(
+                      'assets/images/logo.png',
+                      height: 88,
+                      alignment: Alignment.centerLeft,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Text(
+                        '플로고',
+                        style: TextStyle(
+                          fontSize: 48,
+                          height: 1.0,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                   ],

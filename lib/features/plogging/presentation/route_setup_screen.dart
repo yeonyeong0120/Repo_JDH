@@ -75,6 +75,12 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
 
   NaverMapController? _controller;
   bool _dragging = false; // 지도를 움직이는 중인지 (중앙 깃발 살짝 뜸)
+  // 경로를 계산한 도착지. 지도를 움직여도 이 지점의 핀과 경로는 지우지 않는다
+  // (지도를 움직이면 경로가 사라지던 문제).
+  (double lat, double lon)? _routedDest;
+  // 경로를 받은 뒤 지도를 움직였는지. true 면 하단 버튼이 다시
+  // '이 위치로 도착지 설정'이 되어, 누르면 새 지점으로 경로를 다시 계산한다.
+  bool _moved = false;
   // GPS 위치를 받아 지도를 처음 한 번만 출발지로 이동시키기 위한 플래그.
   bool _centeredOnOrigin = false;
 
@@ -104,7 +110,9 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
     // 추천 결과가 갱신되면 지도에 다시 그린다.
     ref.listen(routeNotifierProvider, (prev, next) {
       next.whenData((result) {
-        if (result != null) _render();
+        if (result == null) return;
+        setState(() => _moved = false);
+        _render();
       });
     });
 
@@ -143,7 +151,10 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
               child: Transform.translate(
                 // 꼬리 끝(하단)이 중앙 타깃 점에 오도록 위로 올린다. 말풍선 슬롯 포함 총높이의 절반.
                 offset: const Offset(0, -46),
-                child: _CenterFlag(etaLabel: _etaLabel(routeState)),
+                // 지도를 움직인 뒤의 ETA 는 옛 경로 값이라 숨긴다.
+                child: _CenterFlag(
+                  etaLabel: _moved ? null : _etaLabel(routeState),
+                ),
               ),
             ),
           ),
@@ -220,10 +231,13 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
   // 지도를 움직이는 중: 깃발을 살짝 띄우고, 이전 추천 경로는 비운다.
   void _onCameraChange(NCameraUpdateReason reason, bool animated) {
     if (reason != NCameraUpdateReason.gesture) return;
-    if (!_dragging) {
-      setState(() => _dragging = true);
-      ref.read(routeNotifierProvider.notifier).reset();
-      _render(); // 경로 폴리라인 제거 (출발 마커만 남김)
+    // 경로와 도착지 핀은 그대로 둔다. 버튼만 '이 위치로 도착지 설정'으로 되돌려,
+    // 누르면 새 중앙 지점으로 경로가 바뀌게 한다.
+    if (!_dragging || !_moved) {
+      setState(() {
+        _dragging = true;
+        _moved = true;
+      });
     }
   }
 
@@ -340,7 +354,21 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
       );
     }
 
-    // 도착지는 화면 중앙 고정 깃발이 대신한다(지도 마커 없음).
+    // 경로를 받은 도착지는 지도에 핀으로 박아둔다 — 지도를 움직여도 남는다.
+    final routed = _routedDest;
+    if (routed != null) {
+      final destIcon = await _buildDestMarkerIcon();
+      if (!mounted) return;
+      overlays.add(
+        NMarker(
+          id: 'dest',
+          position: NLatLng(routed.$1, routed.$2),
+          icon: destIcon,
+          size: const NSize(46, 55),
+          anchor: const NPoint(0.5, 1.0),
+        ),
+      );
+    }
 
     // 추천 경로 + 정화 거점(핫스팟) 마커
     final result = ref.read(routeNotifierProvider).valueOrNull;
@@ -404,6 +432,18 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
     );
   }
 
+  // 경로가 걸린 도착지 핀: 중앙 깃발과 같은 도형.
+  Future<NOverlayImage> _buildDestMarkerIcon() {
+    return NOverlayImage.fromWidget(
+      context: context,
+      size: const Size(46, 55),
+      widget: const Directionality(
+        textDirection: TextDirection.ltr,
+        child: _DestPin(),
+      ),
+    );
+  }
+
   // 정화 거점 핀: 흰 물방울 + 초록 재활용 아이콘.
   Future<NOverlayImage> _buildHotspotIcon() {
     return NOverlayImage.fromWidget(
@@ -430,6 +470,7 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
       return;
     }
 
+    _routedDest = dest; // 이 지점의 핀·경로는 지도를 움직여도 남는다
     ref
         .read(routeNotifierProvider.notifier)
         .recommend(
@@ -455,7 +496,9 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
     final result = routeState.valueOrNull;
     final bool loading = routeState.isLoading;
     final bool hasError = routeState.hasError && !loading;
-    final bool ready = result != null && !loading;
+    // 지도를 움직인 뒤에는 경로가 남아 있어도 '계산 완료'로 보지 않는다
+    // (버튼이 '이 위치로 도착지 설정'으로 돌아가 새 경로를 받는다).
+    final bool ready = result != null && !loading && !_moved;
 
     return Container(
       decoration: BoxDecoration(
@@ -506,7 +549,11 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen> {
                       // TODO: Geocoding 프록시 연결 시 실제 주소로 대체.
                       _dragging
                           ? '도착지를 맞추는 중'
-                          : (loading ? '경로를 계산하고 있어요' : '지도 중앙 지점'),
+                          : (loading
+                                ? '경로를 계산하고 있어요'
+                                : (_moved || _routedDest == null
+                                      ? '지도 중앙 지점'
+                                      : '선택한 도착지')),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -735,6 +782,38 @@ class _HotspotPin extends StatelessWidget {
             top: 9,
             child: Center(
               child: Icon(TablerIcons.recycle, color: AppColors.primary, size: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 지도에 박히는 도착지 핀 (중앙 깃발과 같은 도형·크기).
+class _DestPin extends StatelessWidget {
+  const _DestPin();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 46,
+      height: 55,
+      child: Stack(
+        children: [
+          const Positioned.fill(
+            child: CustomPaint(painter: _PinShapePainter()),
+          ),
+          const Positioned(
+            left: 0,
+            right: 0,
+            top: 11,
+            child: Center(
+              child: Icon(
+                TablerIcons.flagFilled,
+                color: AppColors.primary,
+                size: 23,
+              ),
             ),
           ),
         ],

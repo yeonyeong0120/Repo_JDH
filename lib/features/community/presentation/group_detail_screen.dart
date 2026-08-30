@@ -11,9 +11,9 @@ import 'package:repo_jdh/features/community/data/group_service.dart';
 /// Ploggo - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
 /// 목업 Group Detail.dc.html 기준: 초록 헤더 + 소개/기록/멤버 카드 + 하단 고정 가입바.
 /// 채팅방(멤버 인증샷)은 가입 전엔 보여주지 않고, 소개 + 가입만.
-class GroupDetailScreen extends StatelessWidget {
+class GroupDetailScreen extends StatefulWidget {
   final Group group;
-  // 이미 다른 그룹에 소속돼 있는지 (1인 1그룹 판단용)
+  // 넘겨받은 소속 여부(힌트). 실제 판단은 화면에서 다시 조회한다.
   final bool alreadyInGroup;
 
   const GroupDetailScreen({
@@ -21,6 +21,35 @@ class GroupDetailScreen extends StatelessWidget {
     required this.group,
     this.alreadyInGroup = false,
   });
+
+  @override
+  State<GroupDetailScreen> createState() => _GroupDetailScreenState();
+}
+
+class _GroupDetailScreenState extends State<GroupDetailScreen> {
+  // 서버에서 다시 확인한 소속 여부. null 이면 아직 확인 중 → 넘겨받은 힌트를 쓴다.
+  bool? _inGroup;
+
+  Group get group => widget.group;
+  // 그룹이 없는데도 '이미 가입되어 있어요'가 뜨던 문제 때문에, 넘겨받은 값보다
+  // 서버 재조회 결과를 우선한다. 지금 보고 있는 그룹은 '다른 그룹'이 아니다.
+  bool get alreadyInGroup => _inGroup ?? widget.alreadyInGroup;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveMembership();
+  }
+
+  Future<void> _resolveMembership() async {
+    try {
+      final id = await GroupService.myGroupId();
+      if (!mounted) return;
+      setState(() => _inGroup = id != null && id != widget.group.id);
+    } catch (_) {
+      // 조회 실패 → 넘겨받은 힌트 유지
+    }
+  }
 
   // 가입하기 → 확인 팝업 → 예 → (이미 그룹 있으면) 차단 / (없으면) 가입
   Future<void> _join(BuildContext context) async {
@@ -32,7 +61,17 @@ class GroupDetailScreen extends StatelessWidget {
       confirmText: '가입하기',
     );
     if (ok != true) return;
-    if (alreadyInGroup) {
+    // 확인 직후 한 번 더 조회 — 낡은 값으로 잘못 막지 않도록.
+    bool blocked = alreadyInGroup;
+    try {
+      final mineId = await GroupService.myGroupId();
+      blocked = mineId != null && mineId != group.id;
+    } catch (_) {
+      // 조회 실패 → 직전 판단 유지
+    }
+    if (!context.mounted) return;
+    if (mounted) setState(() => _inGroup = blocked);
+    if (blocked) {
       if (context.mounted) {
         AppDialog.showInfo(
           context,
@@ -380,19 +419,21 @@ class GroupDetailScreen extends StatelessWidget {
         color: AppColors.neutral100,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
+          const Icon(
             TablerIcons.infoCircleFilled,
-            size: 19,
+            size: 19,
             color: AppColors.textSecondary,
           ),
-          SizedBox(width: 9),
+          const SizedBox(width: 9),
           Expanded(
             child: Text(
-              '그룹은 한 번에 하나만 가입할 수 있어요. 다른 그룹으로 옮기려면 지금 그룹에서 먼저 탈퇴해 주세요.',
-              style: TextStyle(
+              alreadyInGroup
+                  ? '그룹은 한 번에 하나만 가입할 수 있어요. 다른 그룹으로 옮기려면 지금 그룹에서 먼저 탈퇴해 주세요.'
+                  : '그룹은 한 번에 하나만 가입할 수 있어요. 가입하면 채팅방에서 멤버들과 바로 이야기할 수 있어요.',
+              style: const TextStyle(
                 fontSize: 13.5,
                 height: 1.55,
                 color: AppColors.textSecondary,

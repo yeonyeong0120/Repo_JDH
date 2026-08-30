@@ -59,6 +59,17 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
+      // 모든 폰에 자동으로 맞추기 — 화면 폭(390 기준)에 비례해 글자·간격을
+      // 자동 확대/축소한다. 작은 폰은 줄여 넘침을 막고, 큰 폰은 소폭 키운다.
+      // 넘침 위험을 막기 위해 0.88~1.08 로 제한한다.
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        final scale = (mq.size.width / 390).clamp(0.88, 1.08);
+        return MediaQuery(
+          data: mq.copyWith(textScaler: TextScaler.linear(scale)),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       // 한글 로케일 — 달력·날짜 선택 등 Material 위젯을 한국어로
       locale: const Locale('ko'),
       localizationsDelegates: const [

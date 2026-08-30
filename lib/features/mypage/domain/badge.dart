@@ -36,7 +36,7 @@ class BadgeData {
   });
 }
 
-/// 전체 뱃지 20개 정의
+/// 전체 뱃지 21개 정의
 /// TODO: 뱃지 아트 완성되면 icon → Image.asset 으로 교체
 const List<BadgeData> kBadges = [
   // ── 씨앗 (입문) ──
@@ -104,6 +104,15 @@ const List<BadgeData> kBadges = [
     points: 300,
     tier: BadgeTier.sprout,
     icon: TablerIcons.route,
+  ),
+  BadgeData(
+    id: 'distance_30km',
+    quest: '누적 30km 플로깅',
+    name: '삼십 킬로 정복',
+    condition: '누적 이동거리 30km',
+    points: 300,
+    tier: BadgeTier.sprout,
+    icon: TablerIcons.flag,
   ),
   BadgeData(
     id: 'weight_5kg',

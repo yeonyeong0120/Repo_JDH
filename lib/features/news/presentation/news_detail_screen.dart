@@ -90,7 +90,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,12 +105,14 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     color: AppColors.textPrimary,
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      '환경뉴스',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                      article.sourceName.isEmpty ? '환경뉴스' : article.sourceName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -129,46 +131,80 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 분류 칩
-                    _categoryChip(article.category),
-                    const SizedBox(height: 14),
-                    // 제목
-                    Text(
-                      article.title,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        height: 1.3,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // 기자 · 날짜 (프로필 사진 없이 텍스트만)
+                    // 언론사 · 분류 (신문 기사 머리)
                     Row(
                       children: [
                         Text(
-                          article.reporter,
+                          article.sourceName.isEmpty
+                              ? '환경뉴스'
+                              : article.sourceName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 1,
+                          height: 11,
+                          color: AppColors.border,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          article.category,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          article.date,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    // 제목 — 기사 제목처럼 크고 촘촘하게
+                    Text(
+                      article.title,
+                      style: const TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.w800,
+                        height: 1.4,
+                        letterSpacing: -0.3,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // 기자 · 날짜 — 얇은 선 사이에 끼운 바이라인
+                    Container(height: 1, color: AppColors.neutral100),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      child: Row(
+                        children: [
+                          Text(
+                            article.reporter,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            article.date,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: AppColors.neutral500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(height: 1, color: AppColors.neutral100),
                     // 대표 이미지 — 있으면 원본 비율로 보여주고, 없으면 자리 없이 글만.
                     if (article.imageUrl.isNotEmpty) ...[
                       const SizedBox(height: 18),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(6),
                         child: Image.network(
                           article.imageUrl,
                           width: double.infinity,
@@ -188,9 +224,9 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         child: Text(
                           p,
                           style: const TextStyle(
-                            fontSize: 15,
-                            height: 1.7,
-                            color: AppColors.textSecondary,
+                            fontSize: 16.5,
+                            height: 1.9,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -221,9 +257,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
         // 하양 배경 + 은은한 그림자(테두리 없음)
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
+        color: AppColors.bg,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,26 +424,24 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: AppColors.cardShadow,
+                  color: AppColors.bg,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceBrand,
-                        borderRadius: BorderRadius.circular(12),
+                    if (a.imageUrl.isNotEmpty) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          a.imageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
                       ),
-                      child: Text(
-                        a.emoji,
-                        style: const TextStyle(fontSize: 26),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,21 +477,4 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     );
   }
 
-  Widget _categoryChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceBrand,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: AppColors.green800,
-        ),
-      ),
-    );
-  }
 }

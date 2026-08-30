@@ -313,7 +313,8 @@ class _Header extends StatelessWidget {
           ),
           Gap.h16,
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            // 프로필을 제목 두 줄 사이 높이에 맞춘다(윗쪽 정렬 + 소폭 내림).
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 제목·서브텍스트만 떠오름/커짐 애니메이션 (프로필은 제외)
               Expanded(
@@ -334,10 +335,13 @@ class _Header extends StatelessWidget {
                   ),
                 ),
               ),
-              // 프로필 나열 — 애니메이션 적용 안 함
+              // 프로필 나열 — 애니메이션 적용 안 함. 제목 두 줄 사이 높이로 올림.
               if (!loading && todayTotal > 0) ...[
                 Gap.w12,
-                _TodayFaces(count: todayTotal),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: _TodayFaces(count: todayTotal),
+                ),
               ],
             ],
           ),

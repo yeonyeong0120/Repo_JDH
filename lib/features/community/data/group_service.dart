@@ -170,7 +170,7 @@ class GroupService {
 
     await ref.collection('members').doc(uid).set({
       'joinedAt': FieldValue.serverTimestamp(),
-      'role': 'owner',
+      'role': 'owner', // 개설자
       'userName': await _resolveUserName(),
     });
     await _userDoc()!.set({'groupId': ref.id}, SetOptions(merge: true));
