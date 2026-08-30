@@ -12,7 +12,6 @@ class UserProfile {
   final double? regionLng;
   final int ecoPoints;
   final List<String> badges;
-  final String? joinedGroupId;
   final bool darkMode;
   final String? fcmToken;
   final DateTime createdAt;
@@ -28,7 +27,6 @@ class UserProfile {
     this.regionLng,
     this.ecoPoints = 0,
     this.badges = const [],
-    this.joinedGroupId,
     this.darkMode = false,
     this.fcmToken,
     required this.createdAt,
@@ -47,7 +45,6 @@ class UserProfile {
       regionLng: (json['regionLng'] as num?)?.toDouble(),
       ecoPoints: (json['ecoPoints'] as num?)?.toInt() ?? 0,
       badges: (json['badges'] as List?)?.cast<String>() ?? const [],
-      joinedGroupId: json['joinedGroupId'] as String?,
       darkMode: (json['darkMode'] as bool?) ?? false,
       fcmToken: json['fcmToken'] as String?,
       createdAt: _toDateTime(json['createdAt']) ?? DateTime.now(),
@@ -67,7 +64,8 @@ class UserProfile {
       'regionLng': regionLng,
       'ecoPoints': ecoPoints,
       'badges': badges,
-      'joinedGroupId': joinedGroupId,
+      // 그룹 소속은 users/{uid}.groupId 가 단일 기준이다 (GroupService 가 관리).
+      // 예전에 있던 joinedGroupId 는 쓰는 곳이 없어 제거했다.
       'darkMode': darkMode,
       'fcmToken': fcmToken,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -84,7 +82,6 @@ class UserProfile {
     double? regionLng,
     int? ecoPoints,
     List<String>? badges,
-    String? joinedGroupId,
     bool? darkMode,
     String? fcmToken,
     DateTime? lastActiveAt,
@@ -99,7 +96,6 @@ class UserProfile {
       regionLng: regionLng ?? this.regionLng,
       ecoPoints: ecoPoints ?? this.ecoPoints,
       badges: badges ?? this.badges,
-      joinedGroupId: joinedGroupId ?? this.joinedGroupId,
       darkMode: darkMode ?? this.darkMode,
       fcmToken: fcmToken ?? this.fcmToken,
       createdAt: createdAt,

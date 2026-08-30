@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/core/dev/dev_user.dart';
 import 'package:repo_jdh/core/dev/dev_data.dart';
@@ -52,12 +53,29 @@ class GroupService {
   // ───────────────────────── 소속 조회 ─────────────────────────
 
   /// 내가 속한 그룹 id (없으면 null) — 1인 1그룹
+  ///
+  /// users/{uid}.groupId 가 이미 삭제된 그룹을 가리키는 경우(유령 groupId)가 있다.
+  /// 값만 보고 판단하면 화면은 '미가입'인데 가입·생성은 막히는 상태가 된다.
+  /// 그룹 문서가 실제로 있는지까지 확인하고, 유령이면 그 자리에서 값을 비운다.
   static Future<String?> myGroupId() async {
     if (_useDummy) return DevData.myGroup?.id;
     final doc = _userDoc();
     if (doc == null) return null;
     final snap = await doc.get();
-    return snap.data()?['groupId'] as String?;
+    final id = snap.data()?['groupId'] as String?;
+    if (id == null) return null;
+
+    if ((await _groups.doc(id).get()).exists) return id;
+
+    // 가리키는 그룹이 없다 → 미가입으로 보고 유령 값을 정리한다.
+    // 정리에 실패해도 '미가입' 판단은 그대로 유지한다.
+    debugPrint('[그룹] 유령 groupId 정리: $id');
+    try {
+      await doc.set({'groupId': null}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('[그룹] 유령 groupId 정리 실패: $e');
+    }
+    return null;
   }
 
   static Future<bool> isInGroup() async => (await myGroupId()) != null;
@@ -220,6 +238,10 @@ class GroupService {
   }
 
   /// 그룹 탈퇴
+  ///
+  /// 마지막 멤버가 나가면 빈 그룹이 남지 않도록 그룹까지 정리한다.
+  /// 그룹 정리에 실패하더라도 내 소속은 반드시 비운다 — 실패로 인해
+  /// 사용자가 유령 그룹에 갇히는 상황을 만들지 않기 위해서다.
   static Future<void> leaveGroup(String groupId) async {
     if (_useDummy) {
       final g = DevData.myGroup;
@@ -231,11 +253,52 @@ class GroupService {
     if (uid == null) return;
 
     final ref = _groups.doc(groupId);
-    final batch = _db.batch();
-    batch.delete(ref.collection('members').doc(uid));
-    batch.update(ref, {'memberCount': FieldValue.increment(-1)});
-    batch.set(_userDoc()!, {'groupId': null}, SetOptions(merge: true));
-    await batch.commit();
+    try {
+      await ref.collection('members').doc(uid).delete();
+
+      // 그룹 문서가 이미 없으면(유령) 더 볼 것이 없다.
+      // 예전 코드는 여기서 batch.update 가 실패해 탈퇴 자체가 막혔다.
+      if ((await ref.get()).exists) {
+        final remaining = await ref.collection('members').limit(1).get();
+        if (remaining.docs.isEmpty) {
+          await deleteGroupDeep(ref); // 마지막 멤버 → 그룹째 정리
+        } else {
+          await ref.update({'memberCount': FieldValue.increment(-1)});
+        }
+      }
+    } catch (e) {
+      debugPrint('[그룹] 탈퇴 중 그룹 정리 실패: $e');
+    }
+
+    await _userDoc()!.set({'groupId': null}, SetOptions(merge: true));
+  }
+
+  /// 그룹 문서 + 하위 컬렉션(members/posts) 삭제
+  ///
+  /// Firestore 는 문서를 지워도 하위 컬렉션이 남아, '존재하지 않는 문서' 아래에
+  /// 데이터만 떠 있는 상태가 된다. 하위부터 비우고 마지막에 문서를 지운다.
+  static Future<void> deleteGroupDeep(
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    await _deleteCollection(ref.collection('members'));
+    await _deleteCollection(ref.collection('posts'));
+    await ref.delete();
+  }
+
+  /// 컬렉션을 300건씩 끊어 비운다 (배치 상한 500 아래로 여유를 둔다)
+  static Future<void> _deleteCollection(
+    CollectionReference<Map<String, dynamic>> col,
+  ) async {
+    while (true) {
+      final snap = await col.limit(300).get();
+      if (snap.docs.isEmpty) return;
+      final batch = _db.batch();
+      for (final d in snap.docs) {
+        batch.delete(d.reference);
+      }
+      await batch.commit();
+      if (snap.docs.length < 300) return;
+    }
   }
 
   /// 멤버 목록 (미리보기용)
@@ -388,7 +451,8 @@ class GroupService {
     if (doc == null) return (joined: false, shareCount: 0);
     final data = (await doc.get()).data() ?? {};
     return (
-      joined: data['groupId'] != null,
+      // 값 존재가 아니라 실제 소속 여부로 판정 (유령 groupId 제외)
+      joined: (await myGroupId()) != null,
       shareCount: (data['shareCount'] as num?)?.toInt() ?? 0,
     );
   }

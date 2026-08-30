@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 
 /// ⚠️ 개발용 — 그래프/화면 테스트를 위한 가짜 활동 기록 심기
 ///
@@ -144,12 +145,24 @@ class DevSeed {
   }
 
   /// 심은 가짜 그룹(isSeed == true)만 삭제
+  ///
+  /// 그룹 문서만 지우면 members/posts 하위 컬렉션이 '존재하지 않는 문서' 아래에
+  /// 유령으로 남는다. deleteGroupDeep 으로 하위까지 함께 비운다.
+  ///
+  /// ⚠️ users/{uid}.groupId 는 여기서 정리하지 못한다.
+  ///   지운 그룹을 가리키는 사용자를 찾으려면 users 컬렉션을 groupId 로 쿼리해야
+  ///   하는데, 보안 규칙이 본인 문서만 허용하므로 permission-denied 가 난다.
+  ///   (규칙을 여는 것은 보안상 불가 — 남의 프로필이 전부 열린다)
+  ///
+  ///   실제 영향은 없다. GroupService.myGroupId() 가 그룹 문서 존재를 확인해
+  ///   유령 groupId 를 만나면 자동으로 비우기 때문이다. 콘솔에서 즉시 정리하고
+  ///   싶다면 Firebase 콘솔에서 해당 users 문서의 groupId 를 직접 지우면 된다.
   static Future<int> clearGroups() async {
     final snap =
         await _db.collection('groups').where('isSeed', isEqualTo: true).get();
     int deleted = 0;
     for (final doc in snap.docs) {
-      await doc.reference.delete();
+      await GroupService.deleteGroupDeep(doc.reference);
       deleted++;
     }
     return deleted;

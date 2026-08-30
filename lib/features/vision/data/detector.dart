@@ -1,6 +1,8 @@
 import 'dart:convert';
-import 'dart:typed_data';
+// Uint8List·debugPrint 를 함께 제공하므로 dart:typed_data 는 따로 import 하지 않는다
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:repo_jdh/core/constants/api_config.dart';
 
 class DetectionResult {
   final String className;
@@ -59,10 +61,16 @@ class DetectionResponse {
 }
 
 class GarbageDetector {
-  static const String SERVER_URL = 'http://52.13.42.252:8000';
+  // 서버 주소는 .env 의 FASTAPI_BASE_URL 사용 (뉴스·역지오코딩과 동일 서버)
+  static String get _baseUrl => ApiConfig.baseUrl;
 
   Future<DetectionResponse> detect(Uint8List imageBytes) async {
-    final uri = Uri.parse('$SERVER_URL/detect');
+    // 하드코딩 시절과 달리 주소가 비어 있을 수 있다.
+    // 그대로 두면 잘못된 URL 로 요청이 나가 원인을 알기 어려운 실패가 된다.
+    if (_baseUrl.isEmpty) {
+      throw Exception('서버 주소(FASTAPI_BASE_URL)가 설정되지 않았습니다');
+    }
+    final uri = Uri.parse('$_baseUrl/detect');
     final request = http.MultipartRequest('POST', uri);
     request.files.add(
       http.MultipartFile.fromBytes('file', imageBytes, filename: 'image.jpg'),
@@ -78,9 +86,13 @@ class GarbageDetector {
   }
 
   Future<bool> healthCheck() async {
+    if (_baseUrl.isEmpty) {
+      debugPrint('[객체인식] FASTAPI_BASE_URL 미설정 — 서버 연결 안 됨으로 처리');
+      return false;
+    }
     try {
       final response = await http
-          .get(Uri.parse('$SERVER_URL/health'))
+          .get(Uri.parse('$_baseUrl/health'))
           .timeout(const Duration(seconds: 3));
       return response.statusCode == 200;
     } catch (_) {
