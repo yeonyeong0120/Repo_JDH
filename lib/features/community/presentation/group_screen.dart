@@ -1,4 +1,3 @@
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -35,7 +34,6 @@ class _GroupScreenState extends State<GroupScreen> {
   List<Group> _others = [];
   bool _loading = true;
   // 헤더 문구는 새로고침할 때마다 5개 중 하나가 무작위로 뽑힌다.
-  int _phraseIndex = 0;
 
   @override
   void initState() {
@@ -63,7 +61,6 @@ class _GroupScreenState extends State<GroupScreen> {
       _myGroup = mine;
       _others = others;
       _loading = false;
-      _phraseIndex = Random().nextInt(5);
     });
   }
 
@@ -95,13 +92,19 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Future<void> _openSearch() async {
-    await Navigator.push(
+    final joined = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => GroupSearchScreen(alreadyInGroup: _myGroup != null),
       ),
     );
-    _load();
+    if (!mounted) return;
+    await _load();
+    // 검색→상세에서 가입했다면 그룹 홈을 백스택에 두고 채팅방으로 이동
+    if (joined == true && mounted && _myGroup != null) {
+      context.push('/group/feed',
+          extra: {'id': _myGroup!.id, 'name': _myGroup!.name});
+    }
   }
 
   Future<void> _openCreate() async {
@@ -126,7 +129,6 @@ class _GroupScreenState extends State<GroupScreen> {
               todayTotal: _todayTotalOrDemo, // ⚠️ 개발용 더미 포함
               region: _myGroup?.region ?? '',
               loading: _loading,
-              phraseIndex: _phraseIndex,
               onSearch: _openSearch,
               onCreate: _openCreate,
               onSeed: () => _runSeed(seed: true),
@@ -167,18 +169,23 @@ class _GroupScreenState extends State<GroupScreen> {
                                 ? _NoGroupCard(onSearch: _openSearch)
                                 : _MyGroupCard(
                                     group: _myGroup!,
-                                    onTap: () => context.push(
-                                      '/group/feed',
-                                      extra: {
-                                        'id': _myGroup!.id,
-                                        'name': _myGroup!.name,
-                                      },
-                                    ),
+                                    onTap: () async {
+                                      // 피드에서 탈퇴하고 돌아오면 즉시 반영되도록 재로드
+                                      await context.push(
+                                        '/group/feed',
+                                        extra: {
+                                          'id': _myGroup!.id,
+                                          'name': _myGroup!.name,
+                                        },
+                                      );
+                                      if (mounted) _load();
+                                    },
                                   ),
                           ),
                           AppSection(
-                            title: '다른 동네 그룹',
-                            caption: _others.isEmpty ? null : '오늘 활동이 많은 순이에요',
+                            title: '이런 그룹 어때요?',
+                            caption: _others.isEmpty ? null : '최근 활동순 정렬',
+                            captionInline: true,
                             last: true,
                             child: _others.isEmpty
                                 ? _EmptyCard(
@@ -209,7 +216,7 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Future<void> _openDetail(Group g) async {
-    await Navigator.push(
+    final joined = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => GroupDetailScreen(
@@ -218,7 +225,13 @@ class _GroupScreenState extends State<GroupScreen> {
         ),
       ),
     );
+    if (!mounted) return;
     _load();
+    // 가입 직후엔 그룹 홈(여기)을 백스택에 두고 채팅방으로 이동
+    // → 채팅방에서 뒤로가기 시 그룹 홈으로 나온다.
+    if (joined == true) {
+      context.push('/group/feed', extra: {'id': g.id, 'name': g.name});
+    }
   }
 }
 
@@ -228,7 +241,6 @@ class _Header extends StatelessWidget {
   final int todayTotal;
   final String region;
   final bool loading;
-  final int phraseIndex;
   final VoidCallback onSearch;
   final VoidCallback onCreate;
   final VoidCallback onSeed;
@@ -238,37 +250,20 @@ class _Header extends StatelessWidget {
     required this.todayTotal,
     required this.region,
     required this.loading,
-    required this.phraseIndex,
     required this.onSearch,
     required this.onCreate,
     required this.onSeed,
     required this.onClear,
   });
 
-  // 왼쪽 문구: 활동한 사람이 있을 때 / 없을 때 각각 5개 중 하나를 무작위로.
-  // {N}에는 오늘 우리 동에서 활동한 실제 인원수가 들어간다.
-  static const List<String> _activePhrases = [
-    '오늘 벌써 {N}명 출동!',
-    '우리 동 {N}명이 먼저 나섰어요',
-    '{N}명이 벌써 줍고 있어요',
-    '오늘의 줍깅러 {N}명 발견!',
-    '{N}명 뒤를 이어볼까요?',
-  ];
-  static const List<String> _emptyPhrases = [
-    '오늘 1번 타자 되어볼래요?',
-    '아직 조용해요. 첫 걸음 어때요?',
-    '오늘은 아무도 안 나섰어요',
-    '우리 동 첫 줍깅러가 되어볼까요?',
-    '지금 나가면 오늘의 1등이에요',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final list = todayTotal > 0 ? _activePhrases : _emptyPhrases;
     // 로딩 중에는 0명이라고 단정하지 않는다.
     final subtitle = loading
         ? '동네 활동을 불러오는 중이에요'
-        : list[phraseIndex % list.length].replaceAll('{N}', '$todayTotal');
+        : (todayTotal > 0
+            ? '현재 $todayTotal명이 활동중이에요'
+            : '지금 나가면 오늘의 1등이에요');
 
     // 초록 워시는 홈처럼 위→아래로 차오르고(HeaderWashPour), 안쪽 글자는 떠오른다.
     return HeaderWashPour(

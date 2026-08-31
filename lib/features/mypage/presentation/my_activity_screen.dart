@@ -372,6 +372,7 @@ class _RecordsTabState extends State<_RecordsTab> {
   // (걸음·칼로리·무게는 ActivityMetrics 로 계산, 장소명은 아직 없어 임시 표시)
   _Activity _toDisplay(Activity a) {
     return _Activity(
+      a.id,
       ActivityMetrics.dateTimeLabel(a.startedAt),
       ActivityMetrics.placeLabel(placeName: a.placeName, groupId: a.groupId),
       ActivityMetrics.estimateSteps(a.distanceMeters),
@@ -541,6 +542,7 @@ class _RecordsTabState extends State<_RecordsTab> {
             time: a.time,
             trashCounts: a.trashCounts,
             imageUrls: a.imageUrls,
+            activityId: a.id,
           ),
         ),
       ),
@@ -1865,6 +1867,7 @@ class _ErrorBox extends StatelessWidget {
 }
 
 class _Activity {
+  final String id;
   final String dateTime;
   final String title;
   final int steps;
@@ -1880,6 +1883,7 @@ class _Activity {
   final List<String> imageUrls;
 
   const _Activity(
+    this.id,
     this.dateTime,
     this.title,
     this.steps,

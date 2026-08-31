@@ -310,7 +310,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
   Widget _groupCard(Group g) {
     return GestureDetector(
       onTap: () async {
-        await Navigator.push(
+        final joined = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (_) => GroupDetailScreen(
@@ -319,7 +319,13 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
             ),
           ),
         );
-        _load();
+        if (!mounted) return;
+        // 가입했다면 검색 화면도 닫아 그룹 홈이 채팅방으로 이동하게 한다
+        if (joined == true) {
+          Navigator.pop(context, true);
+        } else {
+          _load();
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(14),

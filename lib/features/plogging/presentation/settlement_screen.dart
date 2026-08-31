@@ -18,6 +18,7 @@ import 'package:repo_jdh/features/plogging/data/photo_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/data/geocode_service.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
+import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 
 /// Ploggo - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
@@ -181,7 +182,8 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     await _saveActivity(imageUrl: imageUrl);
 
     // ② 내 그룹 피드에 활동 카드 게시 (공유 횟수도 누적 → 'share_10' 뱃지)
-    String myGroupName = '우리 동네 그룹';
+    //    가입한 그룹이 없으면 어디에도 공유하지 않는다.
+    String? myGroupName;
     String? myGroupId;
     try {
       final myGroup = await GroupService.myGroup();
@@ -211,16 +213,31 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
     // ③ 뱃지 판정·저장 (팝업은 화면 이동 뒤에 띄운다)
     final badges = await _earnedBadges();
     if (!mounted) return;
-    // ④ 공유 완료 시트 (홈으로 / 피드 보기) → 선택 후 이동
-    final goFeed = await _showSharedSheet(myGroupName);
+
+    final bool shared = myGroupId != null;
     ref.read(trackingProvider.notifier).reset();
-    if (!mounted) return;
-    if (goFeed == true) {
-      context.go(
-        AppRoutes.groupFeed,
-        extra: {'id': myGroupId ?? '', 'name': myGroupName},
-      );
+
+    if (shared) {
+      // ④ 그룹이 있을 때만 공유 완료 시트 (홈으로 / 피드 보기)
+      final goFeed = await _showSharedSheet(myGroupName!);
+      if (!mounted) return;
+      if (goFeed == true) {
+        context.go(
+          AppRoutes.groupFeed,
+          extra: {'id': myGroupId, 'name': myGroupName},
+        );
+      } else {
+        context.go('/home');
+      }
     } else {
+      // 그룹이 없으면 공유 없이 곧장 홈으로 — 대신 저장됐다는 안내 토스트
+      if (imageUrl != null) {
+        AppSnackBar.show(
+          context,
+          '인증샷을 기록에 저장했습니다',
+          kind: SnackKind.success,
+        );
+      }
       context.go('/home');
     }
     // ⑤ 이동한 화면(홈/피드) 위에 퀘스트·뱃지 팝업을 띄운다
