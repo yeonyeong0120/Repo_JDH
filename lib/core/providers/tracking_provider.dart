@@ -11,6 +11,8 @@ class TrackingState {
   final int elapsedSeconds; // 경과 시간(초)
   final double distanceMeters; // 누적 이동 거리(m)
   final List<TrackPoint> path; // 지나온 경로 (지도 Polyline 용)
+  final bool paused;
+  final int pausedSeconds; // 이번 일시정지가 시작된 후 흐른 시간(초)
 
   const TrackingState({
     this.running = false,
@@ -18,6 +20,8 @@ class TrackingState {
     this.elapsedSeconds = 0,
     this.distanceMeters = 0,
     this.path = const [],
+    this.paused = false,
+    this.pausedSeconds = 0,
   });
 
   TrackingState copyWith({
@@ -26,6 +30,8 @@ class TrackingState {
     int? elapsedSeconds,
     double? distanceMeters,
     List<TrackPoint>? path,
+    bool? paused,
+    int? pausedSeconds,
   }) {
     return TrackingState(
       running: running ?? this.running,
@@ -33,6 +39,8 @@ class TrackingState {
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       distanceMeters: distanceMeters ?? this.distanceMeters,
       path: path ?? this.path,
+      paused: paused ?? this.paused,
+      pausedSeconds: pausedSeconds ?? this.pausedSeconds,
     );
   }
 
@@ -58,10 +66,16 @@ class TrackingState {
   int get kcal => ActivityMetrics.estimateKcal(distanceMeters);
 
   /// '06:12' 형식 (분:초) — 1시간 넘으면 '1:02:33'
-  String get durationText {
-    final h = elapsedSeconds ~/ 3600;
-    final m = (elapsedSeconds % 3600) ~/ 60;
-    final s = elapsedSeconds % 60;
+  String get durationText => _formatSeconds(elapsedSeconds);
+
+  /// 일시정지 경과 시간 — durationText 와 동일한 mm:ss 포맷
+  /// (이번 일시정지가 시작된 후 흐른 시간, 이어하기 누르면 0으로 리셋)
+  String get pausedText => _formatSeconds(pausedSeconds);
+
+  static String _formatSeconds(int totalSeconds) {
+    final h = totalSeconds ~/ 3600;
+    final m = (totalSeconds % 3600) ~/ 60;
+    final s = totalSeconds % 60;
     final mm = m.toString().padLeft(2, '0');
     final ss = s.toString().padLeft(2, '0');
     return h > 0 ? '$h:$mm:$ss' : '$mm:$ss';
@@ -135,6 +149,11 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
   /// 1초마다 호출 — 경과 시간 갱신
   void tick() {
     if (!state.running) return;
+    if (state.paused) {
+      // 일시정지 중엔 경과 시간을 올리지 않고, 정지 시간만 카운트업
+      state = state.copyWith(pausedSeconds: state.pausedSeconds + 1);
+      return;
+    }
     state = state.copyWith(elapsedSeconds: state.elapsedSeconds + 1);
     // 매초 디스크에 쓰면 부담이라 10초에 한 번만 저장
     if (++_ticksSinceSave >= 10) {
@@ -145,7 +164,7 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
 
   /// 위치 이동분 누적 (m)
   void addDistance(double meters) {
-    if (!state.running || meters <= 0) return;
+    if (!state.running || state.paused || meters <= 0) return;
     state = state.copyWith(distanceMeters: state.distanceMeters + meters);
     _persist();
   }
@@ -154,12 +173,26 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
   ///
   /// (addDistance 와 중복 호출하지 말 것. 이 함수 하나로 둘 다 처리됨)
   void addTrackPoint(TrackPoint p) {
-    if (!state.running) return;
+    if (!state.running || state.paused) return;
     state = state.copyWith(
       path: [...state.path, p],
       distanceMeters: state.distanceMeters + p.moveMeters,
     );
     _persist();
+  }
+
+  /// 일시정지 — 경과 시간·거리·경로 갱신을 멈춘다.
+  /// paused 는 로컬 저장(SharedPreferences) 대상이 아님 — 앱 강제 종료 후
+  /// 이어하기 시에는 항상 진행 중 상태로 복원된다 (resume() 참고).
+  void pause() {
+    if (!state.running || state.paused) return;
+    state = state.copyWith(paused: true, pausedSeconds: 0);
+  }
+
+  /// 일시정지 해제 — 다음 일시정지를 위해 pausedSeconds 는 0으로 리셋.
+  void unpause() {
+    if (!state.paused) return;
+    state = state.copyWith(paused: false, pausedSeconds: 0);
   }
 
   /// 트래킹 종료 (값은 정산 화면에서 읽을 수 있게 유지)

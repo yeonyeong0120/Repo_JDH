@@ -13,10 +13,9 @@ class NewsArticle {
   final String reporter;
   final String date;
   final String emoji; // 썸네일 자리 (실제 이미지 생기면 교체)
-  final List<String> body; // 본문 문단들
   final String sourceName; // 출처 언론사
   final String sourceUrl; // 원문 링크
-  final List<String> aiSummary; // AI 3줄 요약 (없으면 summary 로 대체)
+  final List<String> aiSummary; // AI 3줄 요약 (없으면 요약 박스 자체를 숨김)
   final String imageUrl; // 대표 이미지 URL (없으면 빈 문자열 → 이미지 미표시)
 
   const NewsArticle({
@@ -26,15 +25,26 @@ class NewsArticle {
     required this.reporter,
     required this.date,
     required this.emoji,
-    required this.body,
     this.sourceName = '',
     this.sourceUrl = '',
     this.aiSummary = const [],
     this.imageUrl = '',
   });
 
-  /// 요약 줄 목록 — AI 요약이 없으면 기존 한 줄 요약 사용
-  List<String> get summaryLines => aiSummary.isNotEmpty ? aiSummary : [summary];
+  /// 관련 뉴스 후보 — 같은 카테고리 우선, 최대 3개.
+  /// 진입 경로(피드/홈)가 달라도 같은 기준으로 계산하도록 공용화.
+  static List<NewsArticle> relatedFrom(
+    List<NewsArticle> pool,
+    NewsArticle current,
+  ) {
+    final sameCategory = pool
+        .where((x) => x != current && x.category == current.category)
+        .toList();
+    final others = pool
+        .where((x) => x != current && x.category != current.category)
+        .toList();
+    return [...sameCategory, ...others].take(3).toList();
+  }
 }
 
 /// 뉴스 상세 화면
@@ -214,24 +224,12 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       ),
                     ],
                     const SizedBox(height: 20),
-                    // AI 요약 토글
-                    _summaryCard(),
-                    const SizedBox(height: 20),
-                    // 본문
-                    ...article.body.map(
-                      (p) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(
-                          p,
-                          style: const TextStyle(
-                            fontSize: 16.5,
-                            height: 1.9,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                    // AI 요약 토글 — Gemini 요약이 없으면 원본 발췌를 대신
+                    // 보여주지 않고 통째로 숨긴다 (요약인 척하지 않기 위함).
+                    if (article.aiSummary.isNotEmpty) ...[
+                      _summaryCard(),
+                      const SizedBox(height: 20),
+                    ],
                     // 출처 · 원문 보기
                     _sourceBox(),
                     if (widget.related.isNotEmpty) ...[
@@ -251,7 +249,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   // ── AI 3줄 요약 (접기/펼치기) ──
   // TODO: 요약문은 뉴스 수집 시 서버에서 생성해 Firestore 에 저장해두고 내려받는 방식 권장
   Widget _summaryCard() {
-    final lines = article.summaryLines;
+    final lines = article.aiSummary;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
@@ -276,7 +274,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'AI 세 줄 요약',
+                    'AI 요약',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,

@@ -866,7 +866,10 @@ class _NewsPreview extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => NewsDetailScreen(article: a),
+          builder: (_) => NewsDetailScreen(
+            article: a,
+            related: NewsArticle.relatedFrom(items, a),
+          ),
         ),
       ),
       child: Padding(
