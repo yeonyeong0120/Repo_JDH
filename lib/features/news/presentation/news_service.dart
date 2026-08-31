@@ -31,8 +31,8 @@ class NewsService {
     debugPrint('[뉴스] 요청: $uri');
 
     try {
-      // 서버가 네이버 호출 + Gemini 요약까지 하므로 응답이 느릴 수 있다.
-      // (Gemini 보강이 붙으면서 8초로는 부족해 타임아웃이 발생했음)
+      // 서버가 네이버 호출 + Gemini 요약까지 하므로 캐시 미스 시엔 느릴 수 있다.
+      // (서버가 Gemini 응답을 2시간 캐싱하므로, 대부분은 캐시 적중으로 빠르다)
       final resp = await http.get(uri).timeout(const Duration(seconds: 30));
 
       debugPrint('[뉴스] 응답 코드: ${resp.statusCode}');
@@ -87,7 +87,6 @@ class NewsService {
       reporter: sourceName,
       date: _formatDate(pubDate), // 'Wed, 29 Jul 2026 ...' → '2026.07.29'
       emoji: _emojiFor(category), // 카테고리에 맞는 아이콘
-      body: summary.isEmpty ? const [] : [summary],
       sourceName: sourceName,
       sourceUrl: link, // 원문 보기용 링크
       aiSummary: aiSummary, // 있으면 상세 화면이 3줄로 표시

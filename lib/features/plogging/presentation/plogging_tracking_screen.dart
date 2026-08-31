@@ -500,8 +500,9 @@ class _PloggingTrackingScreenState
           ),
         ),
         // 일시정지 알약 — 카드 안쪽 오른쪽에 겹쳐 얹어 박스 높이는 그대로 유지
+        // 상단 여백(32)은 우측 여백(16)의 2배로 맞춘다.
         Positioned(
-          top: 22,
+          top: 32,
           right: 16,
           child: _pauseChip(tracking.paused),
         ),
@@ -557,7 +558,7 @@ class _PloggingTrackingScreenState
     );
   }
 
-  // 일시정지 / 이어하기 칩 (GPS 칩 오른쪽) — 높이 40, radius 20
+  // 일시정지 / 이어하기 칩 (GPS 칩 오른쪽) — 지름 51 (기존 34의 1.5배)
   Widget _pauseChip(bool paused) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -567,8 +568,8 @@ class _PloggingTrackingScreenState
       },
       // 아이콘만 있는 동그란 버튼 (GPS 칩과 겹치지 않게 컴팩트하게)
       child: Container(
-        width: 34,
-        height: 34,
+        width: 51,
+        height: 51,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           // 기록 중: 옅은 파랑 면 / 멈춤: 파랑 채움 + 그림자
@@ -588,7 +589,7 @@ class _PloggingTrackingScreenState
         ),
         child: Icon(
           paused ? TablerIcons.playerPlayFilled : TablerIcons.playerPauseFilled,
-          size: 18,
+          size: 27,
           color: paused ? Colors.white : AppColors.dataSteps,
         ),
       ),

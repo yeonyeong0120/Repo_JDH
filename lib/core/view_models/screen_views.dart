@@ -123,7 +123,7 @@ class HomeView {
 /// 5개를 병렬로 불러 첫 페인트를 늦추지 않는다.
 ///
 /// 뉴스는 실패해도 화면 전체를 막지 않는다 — 빈 목록으로 넘긴다.
-/// (FastAPI 서버가 Gemini 요약까지 하므로 최대 30초까지 걸릴 수 있음)
+/// (FastAPI 서버가 Gemini 응답을 2시간 캐싱 — 캐시 미스일 때만 오래 걸릴 수 있음)
 final homeViewProvider = FutureProvider<HomeView>((ref) async {
   // 로그인 사용자(uid)가 바뀌면 홈을 처음부터 다시 로드한다.
   // (안 그러면 이전 사용자 프로필이 캐시돼 닉네임이 '가나디' 등으로 고정된다)
