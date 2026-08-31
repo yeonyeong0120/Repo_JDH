@@ -53,6 +53,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   // (걸음·칼로리·무게는 ActivityMetrics 로 추정, 장소명은 아직 없어 임시 표시)
   _Act _toAct(Activity a) {
     return _Act(
+      a.id,
       a.startedAt,
       ActivityMetrics.placeLabel(placeName: a.placeName, groupId: a.groupId),
       ActivityMetrics.estimateSteps(a.distanceMeters),
@@ -480,6 +481,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
             distance: '${a.distanceKm.toStringAsFixed(1)}km',
             trashCounts: a.trashCounts,
             imageUrls: a.imageUrls,
+            activityId: a.id,
           ),
         ),
       ),
@@ -623,6 +625,7 @@ class _RouteThumbPainter extends CustomPainter {
 }
 
 class _Act {
+  final String id;
   final DateTime date;
   final String title;
   final int steps;
@@ -639,6 +642,7 @@ class _Act {
   final List<String> imageUrls;
 
   const _Act(
+    this.id,
     this.date,
     this.title,
     this.steps,

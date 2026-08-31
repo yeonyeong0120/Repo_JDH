@@ -93,6 +93,27 @@ class LocationRepository {
     };
   }
 
+  /// 임의 좌표 → 한국어 주소 (기기 내장 geocoding). 실패하면 null.
+  /// 출발지 주소 변환과 동일한 방식이라 서버(FastAPI) 없이도 동작한다.
+  Future<String?> addressOf(double lat, double lon) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lon);
+      if (placemarks.isEmpty) return null;
+      final p = placemarks.first;
+      final parts = [
+        p.administrativeArea,
+        p.subAdministrativeArea,
+        p.locality,
+        p.subLocality,
+        p.thoroughfare,
+      ].where((s) => s != null && s.isNotEmpty).toList();
+      final addr = parts.join(' ');
+      return addr.isEmpty ? null : addr;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 트래킹용 이동 거리 스트림 — 직전 위치와의 이동분(m)을 흘려보낸다.
   /// distanceFilter 만큼 움직여야 이벤트가 오므로 배터리 부담이 적다.
   Stream<double> watchDistanceMeters({int distanceFilter = 5}) async* {

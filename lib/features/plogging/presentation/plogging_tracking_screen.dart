@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -67,9 +68,38 @@ class _PloggingTrackingScreenState
     // GPS 좌표를 경로로 쌓으면서 거리도 함께 누적
     // (경로는 정산 화면의 활동 경로 지도에 쓰인다)
     _pointSub = LocationRepository().watchTrackPoints().listen(
-      (p) => ref.read(trackingProvider.notifier).addTrackPoint(p),
+      (p) {
+        ref.read(trackingProvider.notifier).addTrackPoint(p);
+        _updateMyLocation(p.lat, p.lng); // 내 위치 점을 새 좌표로 이동
+        _checkOffRoute(p.lat, p.lng); // 경로 이탈 감지 → 자동 재추천
+      },
       onError: (_) {}, // 위치 실패해도 시간은 계속 측정
     );
+    // 목적지 주소를 역지오코딩해 상단 카드에 표시
+    _resolveDestName();
+  }
+
+  // 목적지(도착지) 좌표 → 장소명. 상단 목적지 카드에 표시한다.
+  // 도착지 좌표는 추천 경로의 끝점(polyline.last)에서 가져온다.
+  // (destinationProvider 는 autoDispose 라 트래킹 화면에선 신뢰할 수 없음)
+  String? _destName;
+  Future<void> _resolveDestName() async {
+    if (_destName != null) return;
+    final dest = _destLatLng();
+    if (dest == null) return;
+    // 출발지·도착지와 동일한 기기 내장 geocoding (서버 불필요)
+    final name = await LocationRepository().addressOf(dest.$1, dest.$2);
+    if (mounted && name != null && name.isNotEmpty) {
+      setState(() => _destName = name);
+    }
+  }
+
+  // 추천 경로의 끝점 = 도착지 좌표
+  (double, double)? _destLatLng() {
+    final result = ref.read(routeNotifierProvider).valueOrNull;
+    if (result == null || result.polyline.isEmpty) return null;
+    final end = result.polyline.last;
+    return (end[0], end[1]);
   }
 
   String? _selectedButton = 'camera';
@@ -87,6 +117,15 @@ class _PloggingTrackingScreenState
   bool _mapCentered = false;
   static const _fallback = NLatLng(37.5074, 126.7218); // GPS 전 기본 위치
   static const _routeColor = Color(0xFF1D9E75);
+
+  // ── 경로 이탈 자동 재추천 ──
+  // 추천 경로에서 100m 이상 벗어난 상태가 30초 이상 지속되면 자동으로 재추천한다.
+  static const double _offRouteMeters = 100;
+  static const Duration _offRouteHold = Duration(seconds: 30);
+  DateTime? _offRouteSince; // 벗어나기 시작한 시각
+  bool _rerouting = false; // 재추천 요청 중(중복 트리거 방지)
+  bool _showOffRouteCard = false; // 이탈 안내 카드 표시
+  Timer? _offRouteCardTimer; // 4초 뒤 카드 자동 숨김
 
   // PLOG-04 플로깅 활동 규칙 — 사용자의 '제일 첫 플로깅'에만 자동 1회 노출.
   // 기기 로컬(SharedPreferences)로 확실히 게이트하고, Firestore 는 보조 확인.
@@ -124,29 +163,115 @@ class _PloggingTrackingScreenState
     );
   }
 
-  // 지도를 현재 GPS로 최초 1회 이동
+  // 지도를 현재 GPS로 최초 1회 이동 + 내 위치 오버레이 갱신
   void _centerOnGps(Map<String, dynamic>? loc) {
-    if (_mapCentered) return;
     final c = _mapController;
     if (c == null || loc == null) return;
     final lat = (loc['latitude'] as num?)?.toDouble();
     final lon = (loc['longitude'] as num?)?.toDouble();
     if (lat == null || lon == null) return;
+    // 내 위치 점은 트래킹 내내 갱신(카메라 이동은 최초 1회만)
+    _updateMyLocation(lat, lon);
+    if (_mapCentered) return;
     _mapCentered = true;
     c.updateCamera(
       NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
     );
   }
 
-  // 추천 경로가 있으면 polyline으로 그린다.
-  // TODO: 트래킹 중 "지나온 자취(GPS 경로)"는 세션 경로 데이터가 붙으면 추가로 그리기
-  void _renderRoute() {
+  // 내 위치(네이버 내장 위치 오버레이) — 도착지 설정 화면과 같은 아이콘으로 통일.
+  // clearOverlays 로도 지워지지 않아 트래킹 중 계속 유지된다.
+  void _updateMyLocation(double lat, double lon) {
+    final c = _mapController;
+    if (c == null) return;
+    final overlay = c.getLocationOverlay();
+    overlay.setIsVisible(true);
+    overlay.setPosition(NLatLng(lat, lon));
+  }
+
+  // 현재 위치가 추천 경로에서 100m 이상 벗어났고 30초 이상 지속되면 재추천.
+  void _checkOffRoute(double lat, double lon) {
+    if (_rerouting) return;
+    // 멈춘 동안은 이탈 판정하지 않는다
+    if (ref.read(trackingProvider).paused) {
+      _offRouteSince = null;
+      return;
+    }
+    final result = ref.read(routeNotifierProvider).valueOrNull;
+    if (result == null || result.polyline.length < 2) return;
+
+    final dist = _distanceToPolyline(lat, lon, result.polyline);
+    final now = DateTime.now();
+    if (dist > _offRouteMeters) {
+      _offRouteSince ??= now;
+      if (now.difference(_offRouteSince!) >= _offRouteHold) {
+        _triggerReroute(lat, lon);
+      }
+    } else {
+      _offRouteSince = null; // 경로로 복귀 → 타이머 리셋
+    }
+  }
+
+  // 사용자 컨펌 없이 현재 위치→목적지로 새 경로를 자동 요청하고 안내 카드를 띄운다.
+  void _triggerReroute(double lat, double lon) {
+    final dest = _destLatLng(); // 도착지 = 추천 경로 끝점
+    if (dest == null) return;
+    _rerouting = true;
+    _offRouteSince = null;
+
+    // 이탈 안내 카드 4초 노출
+    _offRouteCardTimer?.cancel();
+    setState(() => _showOffRouteCard = true);
+    _offRouteCardTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _showOffRouteCard = false);
+    });
+
+    ref.read(routeNotifierProvider.notifier).recommend(
+          originLat: lat,
+          originLon: lon,
+          destLat: dest.$1,
+          destLon: dest.$2,
+        );
+  }
+
+  // 점(lat,lon)에서 폴리라인까지의 최단 거리(m). 짧은 거리라 평면 근사로 충분.
+  double _distanceToPolyline(double lat, double lon, List<List<double>> poly) {
+    double best = double.infinity;
+    for (int i = 0; i < poly.length - 1; i++) {
+      final d = _distToSegment(
+        lat, lon, poly[i][0], poly[i][1], poly[i + 1][0], poly[i + 1][1],
+      );
+      if (d < best) best = d;
+    }
+    return best;
+  }
+
+  // 점~선분 최단거리(m). 위경도를 기준 위도로 미터 환산 후 계산.
+  double _distToSegment(double plat, double plon, double alat, double alon,
+      double blat, double blon) {
+    final double latRef = (alat + blat) / 2 * math.pi / 180;
+    final double mLon = 111320 * math.cos(latRef); // 경도 1도의 미터
+    const double mLat = 110540; // 위도 1도의 미터
+    final double px = plon * mLon, py = plat * mLat;
+    final double ax = alon * mLon, ay = alat * mLat;
+    final double bx = blon * mLon, by = blat * mLat;
+    final double dx = bx - ax, dy = by - ay;
+    final double len2 = dx * dx + dy * dy;
+    double t = len2 == 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
+    t = t.clamp(0.0, 1.0);
+    final double cx = ax + t * dx, cy = ay + t * dy;
+    final double ex = px - cx, ey = py - cy;
+    return math.sqrt(ex * ex + ey * ey);
+  }
+
+  // 추천 경로(polyline) + 정화 거점(핫스팟) 핀을 그린다.
+  Future<void> _renderRoute() async {
     final c = _mapController;
     if (c == null) return;
     final result = ref.read(routeNotifierProvider).valueOrNull;
     if (result == null || result.polyline.length < 2) return;
-    c.clearOverlays();
-    c.addOverlayAll({
+
+    final overlays = <NAddableOverlay>{
       NPathOverlay(
         id: 'route',
         coords: result.polyline.map((p) => NLatLng(p[0], p[1])).toList(),
@@ -155,7 +280,35 @@ class _PloggingTrackingScreenState
         outlineWidth: 2,
         outlineColor: Colors.white,
       ),
-    });
+    };
+
+    // 정화 거점: 흰 핀 + 초록 재활용 아이콘 (도착지 설정 화면과 동일)
+    if (result.k3Hotspots.isNotEmpty) {
+      final hotspotIcon = await NOverlayImage.fromWidget(
+        context: context,
+        size: const Size(34, 42),
+        widget: const Directionality(
+          textDirection: TextDirection.ltr,
+          child: _HotspotPin(),
+        ),
+      );
+      if (!mounted) return;
+      for (int i = 0; i < result.k3Hotspots.length; i++) {
+        final h = result.k3Hotspots[i];
+        overlays.add(
+          NMarker(
+            id: 'hotspot_$i',
+            position: NLatLng(h.latitude, h.longitude),
+            icon: hotspotIcon,
+            size: const NSize(34, 42),
+            anchor: const NPoint(0.5, 1.0),
+          ),
+        );
+      }
+    }
+
+    c.clearOverlays();
+    c.addOverlayAll(overlays);
   }
 
   void _handleCameraTap() {
@@ -245,6 +398,7 @@ class _PloggingTrackingScreenState
   void dispose() {
     _ticker?.cancel();
     _pointSub?.cancel();
+    _offRouteCardTimer?.cancel();
     _expandCtrl.dispose();
     super.dispose();
   }
@@ -293,7 +447,11 @@ class _PloggingTrackingScreenState
     });
     ref.listen(routeNotifierProvider, (prev, next) {
       next.whenData((r) {
-        if (r != null) _renderRoute();
+        if (r != null) {
+          _rerouting = false; // 새 경로 도착 → 재추천 완료
+          _renderRoute();
+          _resolveDestName(); // 목적지 장소명 (아직 없으면)
+        }
       });
     });
 
@@ -356,6 +514,21 @@ class _PloggingTrackingScreenState
             ),
           ),
 
+          // 경로 이탈 안내 카드 (상단 카드 아래, 4초 후 자동 사라짐)
+          if (_showOffRouteCard)
+            Positioned(
+              left: 12,
+              right: 12,
+              top: 0,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 60),
+                  child: _offRouteCard(),
+                ),
+              ),
+            ),
+
           // 하단: 기록 카드 (GPS 칩 + 타이머 + 타일 + 버튼)
           Positioned(
             left: 12,
@@ -403,6 +576,57 @@ class _PloggingTrackingScreenState
               fontWeight: FontWeight.w700,
               letterSpacing: 0.2,
               color: AppColors.textPrimary,
+            ),
+          ),
+          // 역지오코딩으로 얻은 목적지 위치명
+          if (_destName != null && _destName!.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                _destName!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 경로 이탈 안내 카드 — 파란 톤, 4초 후 자동 사라짐
+  Widget _offRouteCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.dataSteps.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.neutral900.withValues(alpha: 0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(TablerIcons.route, size: 20, color: AppColors.dataSteps),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              '경로를 벗어나 새 경로로 다시 안내할게요',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -1175,4 +1399,59 @@ class _Span {
   final String text;
   final bool danger;
   const _Span(this.text, {this.danger = false});
+}
+
+// 정화 거점 핀: 흰 물방울 + 초록 재활용 아이콘 (도착지 설정 화면과 동일 도형).
+class _HotspotPin extends StatelessWidget {
+  const _HotspotPin();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 34,
+      height: 42,
+      child: Stack(
+        children: [
+          const Positioned.fill(
+            child: CustomPaint(painter: _PinShapePainter()),
+          ),
+          const Positioned(
+            left: 0,
+            right: 0,
+            top: 9,
+            child: Center(
+              child: Icon(TablerIcons.recycle,
+                  color: AppColors.primary, size: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 핀 도형(원 + 아래 삼각형)을 흰색으로 그린다.
+class _PinShapePainter extends CustomPainter {
+  const _PinShapePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final double r = w / 2;
+    final double cy = r;
+    final circle = Path()
+      ..addOval(Rect.fromCircle(center: Offset(w / 2, cy), radius: r));
+    final tri = Path()
+      ..moveTo(w / 2 - r * 0.64, cy + r * 0.52)
+      ..lineTo(w / 2 + r * 0.64, cy + r * 0.52)
+      ..lineTo(w / 2, h)
+      ..close();
+    final pin = Path.combine(PathOperation.union, circle, tri);
+    canvas.drawShadow(pin, Colors.black.withValues(alpha: 0.4), 4, false);
+    canvas.drawPath(pin, Paint()..color = Colors.white..isAntiAlias = true);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PinShapePainter oldDelegate) => false;
 }

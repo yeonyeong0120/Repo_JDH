@@ -16,6 +16,9 @@ class SectionHeader extends StatelessWidget {
   final VoidCallback? onMore;
   final String moreLabel;
 
+  /// "더보기" 색 (기본: 브랜드 초록). 지정 시 그 색으로.
+  final Color? moreColor;
+
   /// true면 caption을 제목 아래가 아니라 제목 오른쪽에 나란히 붙인다.
   final bool captionInline;
 
@@ -25,6 +28,7 @@ class SectionHeader extends StatelessWidget {
     this.caption,
     this.onMore,
     this.moreLabel = '더보기',
+    this.moreColor,
     this.captionInline = false,
   });
 
@@ -89,13 +93,13 @@ class SectionHeader extends StatelessWidget {
                       moreLabel,
                       style: AppType.caption.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textBrandOnLight,
+                        color: moreColor ?? AppColors.textBrandOnLight,
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       TablerIcons.chevronRight,
                       size: 20,
-                      color: AppColors.textBrandOnLight,
+                      color: moreColor ?? AppColors.textBrandOnLight,
                     ),
                   ],
                 ),
@@ -114,6 +118,7 @@ class AppSection extends StatelessWidget {
   final String? caption;
   final VoidCallback? onMore;
   final String moreLabel;
+  final Color? moreColor;
   final Widget child;
 
   /// true면 caption을 제목 오른쪽에 나란히 붙인다.
@@ -129,6 +134,7 @@ class AppSection extends StatelessWidget {
     this.caption,
     this.onMore,
     this.moreLabel = '더보기',
+    this.moreColor,
     this.captionInline = false,
     this.last = false,
   });
@@ -146,6 +152,7 @@ class AppSection extends StatelessWidget {
             caption: caption,
             onMore: onMore,
             moreLabel: moreLabel,
+            moreColor: moreColor,
             captionInline: captionInline,
           ),
           child,

@@ -110,8 +110,14 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     _postsSub = GroupService.watchPosts(widget.groupId).listen(
       (posts) {
         if (!mounted) return;
+        final wasNearBottom = _isNearBottom();
         setState(() => _items = posts.map(_fromPost).toList());
-        _maybeInitialScroll(); // 첫 실데이터 도착 시 최신(하단)으로
+        if (!_didInitialScroll) {
+          _maybeInitialScroll(); // 첫 실데이터 도착 시 최신(하단)으로
+        } else if (wasNearBottom) {
+          // 이미 최신을 보고 있었다면 새 메시지에 맞춰 계속 하단 유지
+          WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToBottom());
+        }
       },
       onError: (_) {
         // 실패해도 기존 목록 유지 (화면이 비어버리지 않게)
@@ -119,16 +125,28 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     );
   }
 
-  // 첫 진입 시 한 번만 맨 아래(최신 메시지)로 점프
+  // 첫 진입 시 맨 아래(최신 메시지)로 점프.
+  // 이미지·아바타가 늦게 로드되며 높이가 커질 수 있어 여러 번 나눠 점프한다.
   void _maybeInitialScroll() {
     if (_didInitialScroll) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _didInitialScroll) return;
-      if (_feedScroll.hasClients) {
-        _feedScroll.jumpTo(_feedScroll.position.maxScrollExtent);
-        _didInitialScroll = true;
-      }
-    });
+    _didInitialScroll = true;
+    for (final ms in const [0, 150, 350, 700]) {
+      Future.delayed(Duration(milliseconds: ms), () {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToBottom());
+      });
+    }
+  }
+
+  void _jumpToBottom() {
+    if (!mounted || !_feedScroll.hasClients) return;
+    _feedScroll.jumpTo(_feedScroll.position.maxScrollExtent);
+  }
+
+  // 사용자가 최신(맨 아래) 근처를 보고 있는지
+  bool _isNearBottom() {
+    if (!_feedScroll.hasClients) return true; // 아직 안 그려졌으면 하단으로 간주
+    final p = _feedScroll.position;
+    return (p.maxScrollExtent - p.pixels) < 120;
   }
 
   // 채팅 메시지 전송
@@ -1076,7 +1094,7 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
                       )
                     : const Icon(
                         TablerIcons.arrowUp,
-                        color: AppColors.textBrandOnLight,
+                        color: AppColors.textPrimary, // 검정 화살표
                         size: 24,
                       ),
               ),

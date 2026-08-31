@@ -60,12 +60,16 @@ class HomeView {
 
   final List<NewsArticle> news;
 
+  /// '오늘의 한컷' — 그룹의 최신 인증샷(사진 있는 활동 카드) 최대 5개.
+  final List<GroupPost> photos;
+
   const HomeView({
     required this.profile,
     required this.stats,
     required this.week,
     required this.groups,
     required this.news,
+    this.photos = const [],
   });
 
   // ── 인사 영역 ──
@@ -115,6 +119,7 @@ class HomeView {
 
   bool get hasNews => news.isNotEmpty;
   bool get hasGroups => groups.isNotEmpty;
+  bool get hasPhotos => photos.isNotEmpty;
 }
 
 /// 홈이 watch 하는 단 하나의 provider.
@@ -123,7 +128,7 @@ class HomeView {
 /// 5개를 병렬로 불러 첫 페인트를 늦추지 않는다.
 ///
 /// 뉴스는 실패해도 화면 전체를 막지 않는다 — 빈 목록으로 넘긴다.
-/// (FastAPI 서버가 Gemini 응답을 2시간 캐싱 — 캐시 미스일 때만 오래 걸릴 수 있음)
+/// (FastAPI 서버가 Gemini 요약까지 하므로 최대 30초까지 걸릴 수 있음)
 final homeViewProvider = FutureProvider<HomeView>((ref) async {
   // 로그인 사용자(uid)가 바뀌면 홈을 처음부터 다시 로드한다.
   // (안 그러면 이전 사용자 프로필이 캐시돼 닉네임이 '가나디' 등으로 고정된다)
@@ -142,13 +147,28 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
 
   final profile = results[0] as ProfileDetail;
   final stats = results[1] as UserStats;
-  // results[2] = 내 그룹. 홈 '지금 우리 동네는'에는 쓰지 않으므로 받지 않는다.
+  final myGroup = results[2] as Group?;
   final others = results[3] as List<Group>;
   final activities = results[4] as List<Activity>;
   final news = results[5] as List<NewsArticle>;
 
   final sorted = [...others]
     ..sort((a, b) => b.todayActiveCount.compareTo(a.todayActiveCount));
+
+  // '오늘의 한컷' — 내 그룹(없으면 가장 활발한 다른 그룹)의 최신 인증샷 5개.
+  final photoGroupId = myGroup?.id ?? (sorted.isNotEmpty ? sorted.first.id : null);
+  List<GroupPost> photos = const [];
+  if (photoGroupId != null) {
+    try {
+      final posts = await GroupService.posts(photoGroupId, limit: 30);
+      photos = posts
+          .where((p) => (p.imageUrl ?? '').isNotEmpty)
+          .take(5)
+          .toList();
+    } catch (_) {
+      // 인증샷 실패는 홈을 막지 않는다
+    }
+  }
 
   return HomeView(
     profile: profile,
@@ -157,6 +177,7 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
     // '지금 우리 동네는'은 내 그룹을 빼고 다른 동네 그룹만 보여준다.
     groups: sorted,
     news: news,
+    photos: photos,
   );
 });
 

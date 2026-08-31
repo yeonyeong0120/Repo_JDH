@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
+import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 
 /// Ploggo - 개별 활동 상세 (ACT-05)
 /// 상단 경로 지도 + 기록/수거/인증샷/보상.
@@ -26,6 +30,9 @@ class ActivityDetailScreen extends StatelessWidget {
   final int rewardPoints;
   final int rewardXp;
 
+  /// 활동 문서 ID (users/{uid}/activities/{id}). 있으면 인증샷을 나중에 추가할 수 있다.
+  final String activityId;
+
   const ActivityDetailScreen({
     super.key,
     required this.dateTime,
@@ -39,6 +46,7 @@ class ActivityDetailScreen extends StatelessWidget {
     this.trashCounts = const {},
     this.rewardPoints = 330,
     this.rewardXp = 20,
+    this.activityId = '',
   });
 
   static String _comma(int n) {
@@ -56,19 +64,33 @@ class ActivityDetailScreen extends StatelessWidget {
     final total = trashCounts.values.fold<int>(0, (s, v) => s + v);
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: Stack(
+      body: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          // 스크롤 본문 (상단에 지도 헤더)
-          ListView(
-            padding: EdgeInsets.zero,
+          // 경로 지도 헤더 + 뒤로/더보기 버튼 (본문과 함께 스크롤됨)
+          Stack(
             children: [
-              // 경로 지도 헤더
               const SizedBox(
                 height: 250,
                 width: double.infinity,
                 child: CustomPaint(painter: _DetailMapPainter()),
               ),
-              Transform.translate(
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 6,
+                left: 12,
+                right: 12,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _glassBtn(
+                        TablerIcons.chevronLeft, () => Navigator.pop(context)),
+                    _glassBtn(TablerIcons.dots, () => _showMenu(context)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Transform.translate(
                 offset: const Offset(0, -24),
                 child: Container(
                   decoration: const BoxDecoration(
@@ -135,23 +157,7 @@ class ActivityDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          // 뒤로 + 더보기 (지도 위 글래스)
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _glassBtn(TablerIcons.chevronLeft, () => Navigator.pop(context)),
-                  _glassBtn(TablerIcons.dots, () => _showMenu(context)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+        );
   }
 
   Widget _glassBtn(IconData icon, VoidCallback onTap) {
@@ -345,7 +351,7 @@ class ActivityDetailScreen extends StatelessWidget {
             // 안 모은 종류(0)는 아이콘도 회색
             child: Icon(
               icon,
-              size: 20,
+              size: 20,
               color: active ? color : AppColors.neutral400,
             ),
           ),
@@ -375,79 +381,12 @@ class ActivityDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 인증샷 유무는 URL 목록으로만 판단한다.
-  bool get _hasPhoto => imageUrls.isNotEmpty;
-
-  /// 사진이 없거나 불러오지 못했을 때 보여줄 자리.
-  Widget _photoPlaceholder() {
-    return Container(
-      height: 170,
-      width: double.infinity,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.green50,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            _hasPhoto ? TablerIcons.photo : TablerIcons.cameraPlus,
-            size: 34,
-            color: AppColors.neutral400,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _hasPhoto ? '인증샷을 불러오지 못했어요' : '인증샷 추가하기',
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _photoCard() {
     return _card(
       title: '인증샷',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 여러 장을 저장하게 되면 여기서 가로 목록으로 바꾼다 (지금은 1장).
-          if (_hasPhoto)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Image.network(
-                imageUrls.first,
-                height: 170,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _photoPlaceholder(),
-              ),
-            )
-          else
-            _photoPlaceholder(),
-          if (_hasPhoto) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(TablerIcons.usersGroup, size: 18,
-                    color: AppColors.textBrandOnLight),
-                const SizedBox(width: 8),
-                const Text(
-                  '그룹에 공유했어요',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
+      child: _PhotoSection(
+        activityId: activityId,
+        initialUrls: imageUrls,
       ),
     );
   }
@@ -618,4 +557,145 @@ class _DetailMapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DetailMapPainter oldDelegate) => false;
+}
+
+// ── 인증샷 섹션 (없으면 '추가하기' 탭 → 촬영·업로드) ────────────
+class _PhotoSection extends StatefulWidget {
+  final String activityId;
+  final List<String> initialUrls;
+  const _PhotoSection({required this.activityId, required this.initialUrls});
+
+  @override
+  State<_PhotoSection> createState() => _PhotoSectionState();
+}
+
+class _PhotoSectionState extends State<_PhotoSection> {
+  late List<String> _urls = [...widget.initialUrls];
+  bool _uploading = false;
+
+  bool get _hasPhoto => _urls.isNotEmpty;
+
+  Future<void> _addPhoto() async {
+    if (_uploading) return;
+    if (widget.activityId.isEmpty) {
+      AppSnackBar.show(context, '이 활동에는 인증샷을 추가할 수 없어요');
+      return;
+    }
+    XFile? shot;
+    try {
+      shot = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+    } catch (_) {
+      if (mounted) AppSnackBar.show(context, '카메라를 열지 못했어요');
+      return;
+    }
+    if (shot == null || !mounted) return;
+
+    setState(() => _uploading = true);
+    try {
+      final url = await StorageRepository.uploadImage(File(shot.path));
+      if (url == null) {
+        if (mounted) {
+          AppSnackBar.show(context, '업로드에 실패했어요', kind: SnackKind.error);
+        }
+        return;
+      }
+      await ActivityService.addPhoto(
+        activityId: widget.activityId,
+        imageUrl: url,
+      );
+      if (!mounted) return;
+      setState(() => _urls = [..._urls, url]);
+      AppSnackBar.show(context, '인증샷을 추가했어요', kind: SnackKind.success);
+    } catch (_) {
+      if (mounted) {
+        AppSnackBar.show(context, '인증샷을 추가하지 못했어요', kind: SnackKind.error);
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_hasPhoto)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.network(
+              _urls.first,
+              height: 170,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _placeholder(loadFailed: true),
+            ),
+          )
+        else
+          _placeholder(loadFailed: false),
+        if (_hasPhoto) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(TablerIcons.usersGroup, size: 18,
+                  color: AppColors.textBrandOnLight),
+              const SizedBox(width: 8),
+              const Text(
+                '그룹에 공유했어요',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  // 사진 없음(추가하기) / 로딩 실패 자리. 없을 때만 탭하면 촬영.
+  Widget _placeholder({required bool loadFailed}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: loadFailed ? null : _addPhoto,
+      child: Container(
+        height: 170,
+        width: double.infinity,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.green50,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: _uploading
+            ? const SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    loadFailed ? TablerIcons.photo : TablerIcons.cameraPlus,
+                    size: 34,
+                    color: AppColors.neutral400,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    loadFailed ? '인증샷을 불러오지 못했어요' : '인증샷 추가하기',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
 }

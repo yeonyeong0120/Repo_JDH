@@ -100,6 +100,19 @@ class ActivityService {
     });
   }
 
+  /// 완료된 활동에 인증샷 URL을 추가한다 (내 활동 상세에서 나중에 첨부).
+  static Future<void> addPhoto({
+    required String activityId,
+    required String imageUrl,
+  }) async {
+    final col = _activitiesCol();
+    if (col == null) return;
+
+    await col.doc(activityId).update({
+      'imageUrls': FieldValue.arrayUnion([imageUrl]),
+    });
+  }
+
   /// 활동 종료 (정상 완료)
   static Future<void> endActivity({
     required String activityId,

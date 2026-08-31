@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +10,10 @@ import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/features/home/domain/eco_math.dart';
 import 'package:repo_jdh/core/view_models/screen_views.dart';
-import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 // NewsArticle 타입. screen_views.dart 의 import 와 같은 경로를 쓴다.
 import 'package:repo_jdh/features/news/presentation/news_detail_screen.dart';
 import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
-import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/core/widgets/app_section.dart';
@@ -90,6 +90,7 @@ class _HomeBody extends ConsumerWidget {
                     // 못 불러왔을 때도 섹션은 남기고 재시도를 제공한다.
                     AppSection(
                       title: '오늘의 환경 뉴스',
+                      moreColor: AppColors.textPrimary, // 더보기 검정
                       onMore: v.hasNews
                           ? () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(
@@ -104,12 +105,9 @@ class _HomeBody extends ConsumerWidget {
                             ),
                     ),
                     AppSection(
-                      title: '${v.userDistrict} 그룹',
-                      // 지역명 없이 오늘 활동 인원만. 제목 오른쪽에 나란히. 더보기 없음.
-                      caption: '같은 구에서 오늘 ${v.regionActiveTodayCount}명이 활동했어요',
-                      captionInline: true,
+                      title: '인증샷 모음집',
                       last: true,
-                      child: _NeighborBlock(v: v),
+                      child: _TodayShots(photos: v.photos),
                     ),
                   ],
                 ),
@@ -835,89 +833,230 @@ class _IllustrationSlot extends StatelessWidget {
 
 // ── 뉴스 ────────────────────────────────────────────────
 
-/// 홈 환경뉴스 미리보기 — 환경뉴스 화면과 같은 형식.
-/// 카테고리 + 이미지 + 제목 항목을 선으로 구분해 나열(최대 3개).
-class _NewsPreview extends StatelessWidget {
+/// 홈 환경뉴스 미리보기 — 한 칸씩 자동으로 롤링되는 뉴스.
+/// 대표기사(이미지 + 굵고 큰 제목)를 강조하고, 아래에 다음 기사 제목을 얹는다.
+/// 몇 초마다 한 칸씩 위로 밀려 올라가며 다음 기사를 보여준다.
+class _NewsPreview extends StatefulWidget {
   final List<NewsArticle> items;
   const _NewsPreview({required this.items});
 
   @override
+  State<_NewsPreview> createState() => _NewsPreviewState();
+}
+
+class _NewsPreviewState extends State<_NewsPreview>
+    with SingleTickerProviderStateMixin {
+  // 각 줄은 넉넉한 밴드로 잡고 내용은 상하 가운데 정렬한다.
+  // → 텍스트가 밴드 중앙에 오고, 남는 높이가 위아래로 나뉘어 기사 사이 여백이 된다.
+  static const double _leadH = 104; // 대표 줄(사진+제목) 밴드 높이
+  static const double _hlH = 74; // 헤드라인 줄 밴드 높이
+
+  int _page = 0;
+  late final AnimationController _shift;
+  Timer? _dwell;
+
+  @override
+  void initState() {
+    super.initState();
+    _shift = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 620),
+    )..addStatusListener((s) {
+        if (s == AnimationStatus.completed) {
+          setState(() => _page = (_page + 1) % widget.items.length);
+          _shift.value = 0;
+          _scheduleNext();
+        }
+      });
+    if (widget.items.length >= 4) _scheduleNext();
+  }
+
+  void _scheduleNext() {
+    _dwell?.cancel();
+    _dwell = Timer(const Duration(milliseconds: 3500), () {
+      if (mounted) _shift.forward(from: 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _dwell?.cancel();
+    _shift.dispose();
+    super.dispose();
+  }
+
+  NewsArticle _art(int k) => widget.items[(_page + k) % widget.items.length];
+
+  void _open(NewsArticle a) => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => NewsDetailScreen(
+            article: a,
+            related: NewsArticle.relatedFrom(widget.items, a),
+          ),
+        ),
+      );
+
+  Widget _divider() => Container(height: 0.7, color: AppColors.border);
+
+  // 고정 높이 슬롯 (내용이 넘쳐도 오버플로우 에러 없이 잘라냄)
+  Widget _staticSlot(double height, Widget child) => SizedBox(
+        height: height,
+        child: ClipRect(
+          child: OverflowBox(
+            minHeight: 0,
+            maxHeight: double.infinity,
+            alignment: Alignment.center, // 슬롯 안에서 상하 가운데
+            child: child,
+          ),
+        ),
+      );
+
+  @override
   Widget build(BuildContext context) {
-    final list = items.take(3).toList();
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (int i = 0; i < list.length; i++) ...[
-            if (i > 0)
-              const Divider(height: 1, thickness: 0.7, color: AppColors.border),
-            _newsItem(context, list[i]),
+    final n = widget.items.length;
+    if (n < 4) {
+      return AppCard(
+        padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _staticSlot(_leadH, _row(_art(0), 1)),
+            for (int k = 1; k < n; k++) ...[
+              _divider(),
+              _staticSlot(_hlH, _row(_art(k), 0)),
+            ],
           ],
-        ],
+        ),
+      );
+    }
+
+    final double h = _leadH + 2 * _hlH; // 대표 + 헤드라인 2줄
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.sm),
+      child: SizedBox(
+        height: h,
+        child: ClipRect(
+          child: AnimatedBuilder(
+            animation: _shift,
+            builder: (context, _) {
+              final double t = Curves.easeInOut.transform(_shift.value);
+              double lerp(double a, double b) => a + (b - a) * t;
+
+              final a0 = _art(0);
+              final a1 = _art(1);
+              final a2 = _art(2);
+              final a3 = _art(3);
+
+              // 고정 높이 슬롯. 내용은 상하 가운데 정렬, 넘치면 잘라낸다.
+              Widget slot(double top, double height, Widget child) => Positioned(
+                    top: top,
+                    left: 0,
+                    right: 0,
+                    height: height,
+                    child: ClipRect(
+                      child: OverflowBox(
+                        minHeight: 0,
+                        maxHeight: double.infinity,
+                        alignment: Alignment.center,
+                        child: child,
+                      ),
+                    ),
+                  );
+
+              return Stack(
+                children: [
+                  // 슬롯 사이 구분선 (기본 위치)
+                  Positioned(top: _leadH, left: 0, right: 0, child: _divider()),
+                  Positioned(
+                      top: _leadH + _hlH, left: 0, right: 0, child: _divider()),
+                  // 대표 → 위로 사라짐
+                  slot(lerp(0, -_leadH), _leadH, _row(a0, 1)),
+                  // 헤드라인1 → 대표로 승격 (높이·글씨가 함께 커짐)
+                  slot(lerp(_leadH, 0), lerp(_hlH, _leadH), _row(a1, t)),
+                  // 헤드라인2 → 헤드라인1
+                  slot(lerp(_leadH + _hlH, _leadH), _hlH, _row(a2, 0)),
+                  // 대기 → 헤드라인2 진입
+                  slot(lerp(_leadH + 2 * _hlH, _leadH + _hlH), _hlH,
+                      Opacity(opacity: t, child: _row(a3, 0))),
+                ],
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 
-  // 카테고리 + 이미지(왼쪽) + 제목
-  Widget _newsItem(BuildContext context, NewsArticle a) {
+  // 한 줄. prominence(0~1): 0=헤드라인, 1=대표(사진+굵은 큰 제목).
+  // 글자는 대표 크기로 그리고 Transform.scale 로 부드럽게 줄여 카테고리·제목이 함께 커진다.
+  static const double _imgCol = 76; // 대표 사진 크기
+  static const double _indent = 12; // 사진 없는 기사(헤드라인)의 살짝 들여쓰기
+
+  Widget _row(NewsArticle a, double prom) {
+    prom = prom.clamp(0.0, 1.0);
+    final double scale = 0.9 + 0.1 * prom; // 0.9(헤드라인) → 1.0(대표)
+    final bool showImg = a.imageUrl.isNotEmpty && prom > 0.02;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => NewsDetailScreen(
-            article: a,
-            related: NewsArticle.relatedFrom(items, a),
-          ),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (a.imageUrl.isNotEmpty) ...[
-              ClipRRect(
+      onTap: () => _open(a),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 사진이 있으면 사진(크기는 prominence에 비례), 없으면 작은 들여쓰기만
+          if (showImg) ...[
+            Opacity(
+              opacity: prom,
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Image.network(
                   a.imageUrl,
-                  width: 72,
-                  height: 72,
+                  width: _imgCol * prom,
+                  height: _imgCol * prom,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
-              Gap.w16,
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    a.category,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.green800,
+            ),
+            SizedBox(width: 2 + 12 * prom),
+          ] else
+            const SizedBox(width: _indent),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Transform.scale(
+                scale: scale,
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      a.category,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.green800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    a.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
-                      color: AppColors.textPrimary,
+                    const SizedBox(height: 3),
+                    Text(
+                      a.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 17.5,
+                        fontWeight: FontWeight.w800,
+                        height: 1.25,
+                        letterSpacing: -0.2,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -972,477 +1111,138 @@ class _NewsUnavailable extends StatelessWidget {
   }
 }
 
-// ── 지금 우리 동네는 ─────────────────────────────────────
-
-class _NeighborBlock extends StatelessWidget {
-  final HomeView v;
-  const _NeighborBlock({required this.v});
+// ── 인증샷 모음집 (그룹 최신 인증샷 가로 갤러리) ─────────────
+class _TodayShots extends StatelessWidget {
+  final List<GroupPost> photos;
+  const _TodayShots({required this.photos});
 
   @override
   Widget build(BuildContext context) {
-    if (!v.hasGroups) {
+    // 인증샷이 없으면 안내 카드
+    if (photos.isEmpty) {
       return AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text('아직 우리 동네 그룹이 없어요', style: AppType.title3),
-            Gap.h4,
-            Text(
-              '그룹을 만들면 이웃과 함께 걸을 수 있어요',
-              style: AppType.body.copyWith(color: AppColors.textSecondary),
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.green50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                TablerIcons.photo,
+                size: 22,
+                color: AppColors.textBrandOnLight,
+              ),
+            ),
+            Gap.w16,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('아직 인증샷이 없어요', style: AppType.title3),
+                  Gap.h4,
+                  Text(
+                    '그룹 활동에서 첫 인증샷을 남겨보세요',
+                    style: AppType.body.copyWith(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final g in v.groups.take(3)) ...[
-          _GroupCard(group: g),
-          if (g != v.groups.take(3).last) Gap.h12,
-        ],
-      ],
+    // 가로로 넘기는 인증샷 (최대 5개)
+    return SizedBox(
+      height: 174,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        physics: const BouncingScrollPhysics(),
+        itemCount: photos.length,
+        separatorBuilder: (_, __) => Gap.w12,
+        itemBuilder: (context, i) => _shot(photos[i]),
+      ),
     );
   }
-}
 
-// ── 그룹 소개 시트 · 가입 팝업 (목업 Home.dc.html groupOpen / joinOpen) ──
-
-/// 그룹 카드를 누르면 아래에서 올라오는 소개 시트.
-void _showGroupSheet(BuildContext context, WidgetRef ref, Group group) {
-  showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: AppColors.surface,
-    barrierColor: Colors.black.withValues(alpha: 0.45),
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
-    ),
-    builder: (ctx) => _GroupSheet(
-      group: group,
-      onClose: () => Navigator.pop(ctx),
-      onJoin: () {
-        Navigator.pop(ctx); // 시트 닫고 (시트 컨텍스트로 pop)
-        _confirmJoin(context, ref, group); // 살아있는 페이지 컨텍스트로 팝업
-      },
-    ),
-  );
-}
-
-/// 가입 실패 사유를 사용자 문구로 바꾼다.
-/// GroupService.joinGroup 이 던지는, 그대로 보여줘도 되는 메시지만 통과시킨다.
-/// 그 외(Firebase 예외 등)는 내부 메시지가 새지 않도록 일반 문구로 덮는다.
-String _joinErrorMessage(Object e) {
-  const prefix = 'Exception: ';
-  const shown = {'이미 그룹에 가입되어 있습니다', '로그인이 필요합니다'};
-  final raw = e.toString();
-  if (!raw.startsWith(prefix)) return '가입하지 못했어요';
-  final msg = raw.substring(prefix.length).trim();
-  return shown.contains(msg) ? msg : '가입하지 못했어요';
-}
-
-/// 가입 확인 팝업. "가입하기"를 누르면 실제로 GroupService.joinGroup 을 호출한다.
-void _confirmJoin(BuildContext context, WidgetRef ref, Group group) {
-  showDialog<void>(
-    context: context,
-    builder: (ctx) => Dialog(
-      backgroundColor: AppColors.surface,
-      insetPadding: const EdgeInsets.all(28),
-      shape: RoundedRectangleBorder(borderRadius: Radii.cardR),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _shot(GroupPost p) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        width: 130,
+        height: 174,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Container(
-              width: 46,
-              height: 46,
-              alignment: Alignment.center,
+            Image.network(
+              p.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: AppColors.neutral200,
+                alignment: Alignment.center,
+                child: const Icon(
+                  TablerIcons.photo,
+                  color: AppColors.neutral400,
+                ),
+              ),
+            ),
+            // 하단 어둠 그라데이션 (글씨 대비)
+            const DecoratedBox(
               decoration: BoxDecoration(
-                color: const Color(0xFFDCEDE3), // 목업 아이콘 타일
-                borderRadius: BorderRadius.circular(Radii.inner),
-              ),
-              child: const Icon(
-                TablerIcons.heartHandshake,
-                size: 24,
-                color: AppColors.textBrand,
-              ),
-            ),
-            Gap.h16,
-            Text(
-              '${group.name}에 가입할까요?',
-              style: AppType.title2.copyWith(fontWeight: FontWeight.w800),
-            ),
-            Gap.h8,
-            Text(
-              '가입하면 채팅방에 바로 들어가요. 한 번에 한 그룹만 가입할 수 있어요.',
-              style: AppType.body.copyWith(color: AppColors.textSecondary),
-            ),
-            Gap.h24,
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: '아니오',
-                    type: AppButtonType.secondary,
-                    onTap: () => Navigator.pop(ctx),
-                  ),
-                ),
-                Gap.w8,
-                Expanded(
-                  child: AppButton(
-                    label: '가입하기',
-                    onTap: () async {
-                      Navigator.pop(ctx);
-                      if (group.id.isEmpty) {
-                        AppSnackBar.show(
-                          context,
-                          '가입하지 못했어요',
-                          kind: SnackKind.error,
-                        );
-                        return;
-                      }
-                      try {
-                        await GroupService.joinGroup(group.id);
-                      } catch (e) {
-                        if (!context.mounted) return;
-                        AppSnackBar.show(
-                          context,
-                          _joinErrorMessage(e),
-                          kind: SnackKind.error,
-                        );
-                        return;
-                      }
-                      if (!context.mounted) return;
-                      AppSnackBar.show(
-                        context,
-                        '그룹에 가입했어요',
-                        kind: SnackKind.success,
-                      );
-                      // 홈의 '지금 우리 동네는' 목록에서 가입한 그룹이 빠지도록
-                      // 새로고침한다. 스낵바보다 뒤에 둬야 한다 — 이 호출로
-                      // _GroupCard 가 사라지면서 context 가 unmount 되기 때문.
-                      ref.invalidate(homeViewProvider);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _GroupSheet extends StatelessWidget {
-  final Group group;
-  final VoidCallback onClose;
-  final VoidCallback onJoin;
-  const _GroupSheet({
-    required this.group,
-    required this.onClose,
-    required this.onJoin,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool activeToday = group.todayActiveCount > 0;
-    final String created =
-        '${group.createdAt.year}.${group.createdAt.month.toString().padLeft(2, '0')}';
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.md, Gap.xl, Gap.xl2),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 손잡이 바
-            Center(
-              child: Container(
-                width: 44,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: Gap.lg),
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(3),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0x99000000)],
+                  stops: [0.45, 1],
                 ),
               ),
             ),
-            Row(
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.neutral100,
-                    borderRadius: Radii.innerR,
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 10,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.userName.isEmpty ? '플로거' : p.userName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-                  child: const Icon(
-                    TablerIcons.users,
-                    size: 27,
-                    color: AppColors.neutral400,
-                  ),
-                ),
-                Gap.w16,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 2),
+                  Row(
                     children: [
-                      Text(
-                        group.name,
-                        style: AppType.title2.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      const Icon(
+                        TablerIcons.trash,
+                        size: 12,
+                        color: Colors.white,
                       ),
-                      Gap.h4,
+                      const SizedBox(width: 3),
                       Text(
-                        group.region,
-                        style: AppType.caption.copyWith(
-                          color: AppColors.textSecondary,
+                        '${p.trash}개',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.95),
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            ),
-            if (group.intro.isNotEmpty) ...[
-              Gap.h16,
-              Text(
-                group.intro,
-                style: AppType.body.copyWith(
-                  height: 1.6,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-            Gap.h16,
-            // 멤버 요약 박스
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Gap.md,
-                vertical: Gap.md,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.bg,
-                borderRadius: Radii.innerR,
-              ),
-              child: Row(
-                children: [
-                  _AvatarStack(count: group.memberCount),
-                  Gap.w12,
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '멤버 ${group.memberCount}명',
-                          style: AppType.body.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Gap.h4,
-                        Text(
-                          activeToday
-                              ? '오늘 ${group.todayActiveCount}명이 활동했어요'
-                              : '오늘은 아직 활동이 없어요',
-                          style: AppType.caption.copyWith(
-                            color: activeToday
-                                ? AppColors.textBrandOnLight
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                 ],
               ),
             ),
-            Gap.h12,
-            Row(
-              children: [
-                const Icon(
-                  TablerIcons.calendarMonth,
-                  size: 17,
-                  color: AppColors.neutral400,
-                ),
-                Gap.w4,
-                Text(
-                  '$created 개설',
-                  style: AppType.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-            Gap.h20,
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: '닫기',
-                    type: AppButtonType.secondary,
-                    onTap: onClose,
-                  ),
-                ),
-                Gap.w8,
-                Expanded(
-                  child: AppButton(
-                    label: '가입하기',
-                    onTap: onJoin,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// 겹쳐 놓인 멤버 아바타(최대 5 + 나머지 수).
-class _AvatarStack extends StatelessWidget {
-  final int count;
-  const _AvatarStack({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    const double d = 34; // 지름
-    const double step = 25; // 겹침 간격
-    final int shown = count > 5 ? 5 : count;
-    final int extra = count - shown;
-    final int chips = shown + (extra > 0 ? 1 : 0);
-    if (chips == 0) return const SizedBox.shrink();
-
-    return SizedBox(
-      width: d + (chips - 1) * step,
-      height: d,
-      child: Stack(
-        children: [
-          for (int i = 0; i < shown; i++)
-            Positioned(
-              left: i * step,
-              child: Container(
-                width: d,
-                height: d,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceBrand,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.bg, width: 2),
-                ),
-                child: const Icon(
-                  TablerIcons.userFilled,
-                  size: 19,
-                  color: AppColors.textBrandOnLight,
-                ),
-              ),
-            ),
-          if (extra > 0)
-            Positioned(
-              left: shown * step,
-              child: Container(
-                width: d,
-                height: d,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.bg, width: 2),
-                ),
-                child: Text(
-                  '+$extra',
-                  style: AppType.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-// 가입 처리 후 홈을 새로고침해야 해서 ref 가 필요하다.
-class _GroupCard extends ConsumerWidget {
-  final Group group;
-  const _GroupCard({required this.group});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return AppCard(
-      onTap: () => _showGroupSheet(context, ref, group),
-      padding: const EdgeInsets.all(Gap.lg),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.neutral100,
-              borderRadius: Radii.tileR,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: group.imageUrl == null
-                ? const Icon(
-                    TablerIcons.users,
-                    size: Touch.icon,
-                    color: AppColors.neutral400,
-                  )
-                : Image.network(group.imageUrl!, fit: BoxFit.cover),
-          ),
-          Gap.w16,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(group.name, style: AppType.title3),
-                Gap.h4,
-                Text.rich(
-                  TextSpan(
-                    text: '멤버 ${group.memberCount}명 · ',
-                    children: [
-                      TextSpan(
-                        text: (group.todayActiveCount > 0)
-                            ? '오늘 ${group.todayActiveCount}명'
-                            : '오늘 활동 없음',
-                        style: TextStyle(
-                          fontWeight: (group.todayActiveCount > 0)
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: (group.todayActiveCount > 0)
-                              ? AppColors.textBrand
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  style: AppType.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Gap.w8,
-          const Icon(
-            TablerIcons.chevronRight,
-            size: Touch.icon,
-            color: AppColors.neutral400,
-          ),
-        ],
       ),
     );
   }

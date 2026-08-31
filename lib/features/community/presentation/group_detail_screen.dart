@@ -93,7 +93,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     }
     if (!context.mounted) return;
     AppSnackBar.show(context, '가입했어요. 채팅방으로 이동할게요');
-    context.push('/group/feed', extra: {'id': group.id, 'name': group.name});
+    // 상세 화면을 닫으면서 '가입됨'을 알린다. 호출한 그룹 홈이 재로드 후
+    // 채팅방으로 이동시키므로, 채팅방에서 뒤로가기 시 그룹 홈으로 나온다.
+    Navigator.pop(context, true);
   }
 
   @override
@@ -187,7 +189,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                 ),
                 child: const Icon(
                   TablerIcons.users,
-                  size: 34,
+                  size: 34,
                   color: AppColors.neutral400,
                 ),
               ),
@@ -463,7 +465,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   children: [
                     const Icon(
                       TablerIcons.alertCircleFilled,
-                      size: 18,
+                      size: 18,
                       color: AppColors.actionDanger,
                     ),
                     const SizedBox(width: 8),
@@ -560,7 +562,7 @@ class _AvatarRow extends StatelessWidget {
                 ),
                 child: const Icon(
                   TablerIcons.userFilled,
-                  size: 21,
+                  size: 21,
                   color: AppColors.textBrandOnLight,
                 ),
               ),
