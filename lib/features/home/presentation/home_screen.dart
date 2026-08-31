@@ -18,8 +18,7 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/core/widgets/app_section.dart';
 import 'package:repo_jdh/core/widgets/app_stat.dart';
-import 'package:repo_jdh/features/plogging/data/location_repository.dart';
-import 'package:repo_jdh/features/auth/data/user_service.dart';
+import 'package:repo_jdh/core/location/region_updater.dart';
 
 // ============================================================
 // 홈 (v2)
@@ -1472,30 +1471,29 @@ class _LocationRefreshButtonState
   Future<void> _run() async {
     if (_busy) return;
     setState(() => _busy = true);
-    final loc = await LocationRepository().getCurrentLocation();
-    final address = ((loc?['address'] as String?) ?? '').trim();
+    final result = await RegionUpdater.refreshFromGps();
     if (!mounted) return;
-    if (address.isEmpty) {
+    if (!result.isSuccess) {
       setState(() => _busy = false);
-      AppSnackBar.show(context, '위치를 가져오지 못했어요. 위치 권한을 확인해 주세요');
+      AppSnackBar.show(context, _errorMessage(result.error));
       return;
     }
-    try {
-      await UserService.updateRegion(
-        region: address,
-        lat: (loc?['latitude'] as num?)?.toDouble(),
-        lng: (loc?['longitude'] as num?)?.toDouble(),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _busy = false);
-      AppSnackBar.show(context, '위치를 저장하지 못했어요');
-      return;
-    }
-    if (!mounted) return;
     setState(() => _busy = false);
     ref.invalidate(homeViewProvider);
     AppSnackBar.show(context, '현재 위치로 새로 잡았어요');
+  }
+
+  String _errorMessage(RegionRefreshError? error) {
+    switch (error) {
+      case RegionRefreshError.locationUnavailable:
+        return '위치를 가져오지 못했어요. 위치 권한을 확인해 주세요';
+      case RegionRefreshError.geocodeUnavailable:
+        return '지역 이름을 가져오지 못했어요. 잠시 후 다시 시도해 주세요';
+      case RegionRefreshError.saveFailed:
+        return '위치를 저장하지 못했어요';
+      case null:
+        return '위치를 갱신하지 못했어요';
+    }
   }
 
   @override
