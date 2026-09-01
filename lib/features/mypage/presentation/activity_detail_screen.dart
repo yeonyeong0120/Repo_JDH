@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/core/widgets/route_pin.dart';
 import 'package:repo_jdh/features/plogging/data/photo_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 
@@ -32,6 +34,9 @@ class ActivityDetailScreen extends StatelessWidget {
   /// 활동 문서 ID (users/{uid}/activities/{id}). 있으면 인증샷을 나중에 추가할 수 있다.
   final String activityId;
 
+  /// GPS 경로 ([{lat, lng, t}, ...]). 없으면 헤더에 '경로 없음' 표시.
+  final List<Map<String, dynamic>> path;
+
   const ActivityDetailScreen({
     super.key,
     required this.dateTime,
@@ -46,6 +51,7 @@ class ActivityDetailScreen extends StatelessWidget {
     this.rewardPoints = 330,
     this.rewardXp = 20,
     this.activityId = '',
+    this.path = const [],
   });
 
   static String _comma(int n) {
@@ -69,10 +75,10 @@ class ActivityDetailScreen extends StatelessWidget {
           // 경로 지도 헤더 + 뒤로/더보기 버튼 (본문과 함께 스크롤됨)
           Stack(
             children: [
-              const SizedBox(
+              SizedBox(
                 height: 250,
                 width: double.infinity,
-                child: CustomPaint(painter: _DetailMapPainter()),
+                child: _ActivityRouteMap(path: path),
               ),
               Positioned(
                 top: MediaQuery.of(context).padding.top + 6,
@@ -487,75 +493,117 @@ class ActivityDetailScreen extends StatelessWidget {
   }
 }
 
-// 상세 화면 경로 지도 헤더 (회색 격자 + 초록 경로 + 시작·도착 핀).
-class _DetailMapPainter extends CustomPainter {
-  const _DetailMapPainter();
+// ── 상단 경로 지도 (네이버 지도 + 실제 GPS 경로) ────────────
+// path 가 2개 미만이면 지도 대신 안내만 — 정산 화면과 동일한 원칙.
+class _ActivityRouteMap extends StatefulWidget {
+  final List<Map<String, dynamic>> path;
+  const _ActivityRouteMap({required this.path});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width, h = size.height;
-    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFFE7EFE9));
-    // 옅은 블록 몇 개
-    final block = Paint()..color = const Color(0xFFDDE8DF);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.55, h * 0.5, w * 0.4, h * 0.35),
-        const Radius.circular(16),
-      ),
-      block,
-    );
-    // 격자
-    final grid = Paint()
-      ..color = const Color(0xFFF4F8F5)
-      ..strokeWidth = 14;
-    canvas.drawLine(Offset(0, h * 0.5), Offset(w, h * 0.5), grid);
-    canvas.drawLine(Offset(w * 0.32, 0), Offset(w * 0.32, h), grid);
-    canvas.drawLine(Offset(w * 0.72, 0), Offset(w * 0.72, h), grid);
-    // 경로
-    final path = Path()
-      ..moveTo(w * 0.18, h * 0.6)
-      ..cubicTo(w * 0.28, h * 0.42, w * 0.34, h * 0.36, w * 0.46, h * 0.4)
-      ..cubicTo(w * 0.58, h * 0.44, w * 0.6, h * 0.24, w * 0.82, h * 0.28);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = AppColors.routeLine
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5
-        ..strokeCap = StrokeCap.round,
-    );
-    // 시작(사람)·도착(깃발) 핀
-    _pin(canvas, Offset(w * 0.18, h * 0.6), TablerIcons.userFilled);
-    _pin(canvas, Offset(w * 0.82, h * 0.28), TablerIcons.flagFilled);
+  State<_ActivityRouteMap> createState() => _ActivityRouteMapState();
+}
+
+class _ActivityRouteMapState extends State<_ActivityRouteMap> {
+  late final List<NLatLng>? _coords = _toCoords(widget.path);
+
+  static List<NLatLng>? _toCoords(List<Map<String, dynamic>> path) {
+    final coords = <NLatLng>[];
+    for (final p in path) {
+      final lat = (p['lat'] as num?)?.toDouble();
+      final lng = (p['lng'] as num?)?.toDouble();
+      if (lat == null || lng == null) continue;
+      coords.add(NLatLng(lat, lng));
+    }
+    return coords.length < 2 ? null : coords;
   }
 
-  void _pin(Canvas canvas, Offset pos, IconData icon) {
-    // 흰 원 + 초록 아이콘
-    canvas.drawCircle(
-      pos,
-      15,
-      Paint()
-        ..color = Colors.white
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0),
-    );
-    canvas.drawCircle(pos, 15, Paint()..color = Colors.white);
-    final tp = TextPainter(
-      text: TextSpan(
-        text: String.fromCharCode(icon.codePoint),
-        style: TextStyle(
-          fontSize: 18,
-          fontFamily: icon.fontFamily,
-          package: icon.fontPackage,
-          color: AppColors.green600,
+  @override
+  Widget build(BuildContext context) {
+    final coords = _coords;
+    if (coords == null) {
+      return Container(
+        color: AppColors.surfaceBrand,
+        alignment: Alignment.center,
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(TablerIcons.map, size: 36, color: AppColors.textSecondary),
+            SizedBox(height: 8),
+            Text(
+              '기록된 경로가 없어요',
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            ),
+          ],
         ),
+      );
+    }
+
+    return NaverMap(
+      // 제스처는 기본값(전부 true) 그대로 둔다 — 지난 기록을 되짚어보는
+      // 화면이라 정산 화면(보기 전용)과 달리 확대·이동이 가능해야 자연스럽다.
+      options: NaverMapViewOptions(
+        initialCameraPosition: NCameraPosition(target: coords.first, zoom: 15),
       ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, pos - Offset(tp.width / 2, tp.height / 2));
+      onMapReady: (controller) => _drawRoute(controller, coords),
+    );
   }
 
-  @override
-  bool shouldRepaint(covariant _DetailMapPainter oldDelegate) => false;
+  Future<void> _drawRoute(
+    NaverMapController controller,
+    List<NLatLng> coords,
+  ) async {
+    try {
+      await controller.addOverlay(
+        NPolylineOverlay(
+          id: 'activity_route',
+          coords: coords,
+          color: AppColors.routeLine,
+          width: 6,
+        ),
+      );
+
+      if (!mounted) return;
+      final startIcon = await _pinIcon(TablerIcons.userFilled);
+      final endIcon = await _pinIcon(TablerIcons.flagFilled);
+      if (!mounted) return;
+      await controller.addOverlay(
+        NMarker(
+          id: 'route_start',
+          position: coords.first,
+          icon: startIcon,
+          size: const NSize(40, 50),
+          anchor: const NPoint(0.5, 1.0),
+        ),
+      );
+      await controller.addOverlay(
+        NMarker(
+          id: 'route_end',
+          position: coords.last,
+          icon: endIcon,
+          size: const NSize(40, 50),
+          anchor: const NPoint(0.5, 1.0),
+        ),
+      );
+
+      final bounds = NLatLngBounds.from(coords);
+      await controller.updateCamera(
+        NCameraUpdate.fitBounds(bounds, padding: const EdgeInsets.all(32)),
+      );
+    } catch (e) {
+      debugPrint('[활동 상세] 경로 지도 그리기 실패: $e');
+    }
+  }
+
+  Future<NOverlayImage> _pinIcon(IconData icon) {
+    return NOverlayImage.fromWidget(
+      context: context,
+      size: const Size(40, 50),
+      widget: Directionality(
+        textDirection: TextDirection.ltr,
+        child: RoutePin(icon: icon),
+      ),
+    );
+  }
 }
 
 // ── 인증샷 섹션 (없으면 '추가하기' 탭 → 촬영·업로드) ────────────
@@ -635,24 +683,6 @@ class _PhotoSectionState extends State<_PhotoSection> {
           )
         else
           _placeholder(loadFailed: false),
-        if (_hasPhoto) ...[
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(TablerIcons.usersGroup, size: 18,
-                  color: AppColors.textBrandOnLight),
-              const SizedBox(width: 8),
-              const Text(
-                '그룹에 공유했어요',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ],
       ],
     );
   }

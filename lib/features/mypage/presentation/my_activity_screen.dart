@@ -9,6 +9,7 @@ import 'package:repo_jdh/core/widgets/app_section.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/core/widgets/badge_medal.dart';
+import 'package:repo_jdh/core/widgets/route_thumbnail.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
@@ -381,6 +382,7 @@ class _RecordsTabState extends State<_RecordsTab> {
       ActivityMetrics.durationLabel(a.durationSeconds),
       a.trashCounts, // 상세 화면에서 활동별 수거 개수를 그대로 쓴다
       a.imageUrls, // 인증샷도 원본 그대로 (없으면 빈 목록)
+      a.path, // 경로 썸네일용 원본 좌표
     );
   }
 
@@ -543,6 +545,7 @@ class _RecordsTabState extends State<_RecordsTab> {
             trashCounts: a.trashCounts,
             imageUrls: a.imageUrls,
             activityId: a.id,
+            path: a.path,
           ),
         ),
       ),
@@ -558,10 +561,10 @@ class _RecordsTabState extends State<_RecordsTab> {
             // 경로 미니 지도 썸네일
             ClipRRect(
               borderRadius: BorderRadius.circular(14),
-              child: const SizedBox(
+              child: SizedBox(
                 width: 84,
                 height: 84,
-                child: CustomPaint(painter: _RouteThumbPainter()),
+                child: CustomPaint(painter: RoutePainter(path: a.path)),
               ),
             ),
             const SizedBox(width: 14),
@@ -703,59 +706,6 @@ class _RecordsTabState extends State<_RecordsTab> {
       ),
     );
   }
-}
-
-// 활동 카드 경로 미니 지도 썸네일 (회색 격자 + 초록 곡선 + 시작·도착 점).
-class _RouteThumbPainter extends CustomPainter {
-  const _RouteThumbPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width, h = size.height;
-    // 배경
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFFE7EFE9),
-    );
-    // 격자
-    final grid = Paint()
-      ..color = const Color(0xFFF4F8F5)
-      ..strokeWidth = 7;
-    canvas.drawLine(Offset(0, h * 0.42), Offset(w, h * 0.42), grid);
-    canvas.drawLine(Offset(w * 0.5, 0), Offset(w * 0.5, h), grid);
-    // 경로 (초록 곡선)
-    final path = Path()
-      ..moveTo(w * 0.22, h * 0.78)
-      ..cubicTo(w * 0.30, h * 0.55, w * 0.34, h * 0.5, w * 0.5, h * 0.5)
-      ..cubicTo(w * 0.66, h * 0.5, w * 0.68, h * 0.34, w * 0.78, h * 0.3);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = AppColors.routeLine
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..strokeCap = StrokeCap.round,
-    );
-    // 시작·도착 점
-    canvas.drawCircle(
-      Offset(w * 0.22, h * 0.78),
-      4.5,
-      Paint()..color = AppColors.green700,
-    );
-    canvas.drawCircle(
-      Offset(w * 0.78, h * 0.3),
-      5,
-      Paint()..color = Colors.white,
-    );
-    canvas.drawCircle(
-      Offset(w * 0.78, h * 0.3),
-      3,
-      Paint()..color = AppColors.green600,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _RouteThumbPainter oldDelegate) => false;
 }
 
 // ════════════════════════════ 뱃지 탭 ════════════════════════════
@@ -1882,6 +1832,9 @@ class _Activity {
   /// 인증샷 URL (서버 Activity.imageUrls 원본). 상세 화면이 실제 사진을 그린다.
   final List<String> imageUrls;
 
+  /// GPS 경로 ([{lat, lng, t}, ...]). 없으면 썸네일에 '경로 없음' 표시.
+  final List<Map<String, dynamic>> path;
+
   const _Activity(
     this.id,
     this.dateTime,
@@ -1892,6 +1845,7 @@ class _Activity {
     this.time,
     this.trashCounts,
     this.imageUrls,
+    this.path,
   );
 }
 

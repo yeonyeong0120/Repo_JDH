@@ -64,8 +64,6 @@ class NewsDetailScreen extends StatefulWidget {
 }
 
 class _NewsDetailScreenState extends State<NewsDetailScreen> {
-  bool _summaryOpen = true; // AI 요약 기본 펼침
-
   NewsArticle get article => widget.article;
 
   // 원문 보기 — 외부 브라우저로 이동
@@ -261,83 +259,68 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => setState(() => _summaryOpen = !_summaryOpen),
-            child: Row(
-              children: [
-                const Icon(
-                  TablerIcons.sparkles,
-                  size: 18,
-                  color: AppColors.actionPrimary,
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'AI 요약',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
+          Row(
+            children: [
+              const Icon(
+                TablerIcons.sparkles,
+                size: 18,
+                color: AppColors.actionPrimary,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'AI 요약',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
                   ),
-                ),
-                AnimatedRotation(
-                  duration: const Duration(milliseconds: 180),
-                  turns: _summaryOpen ? 0.5 : 0,
-                  child: const Icon(
-                    TablerIcons.chevronDown,
-                    size: 22,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_summaryOpen) ...[
-            const SizedBox(height: 14),
-            for (int i = 0; i < lines.length; i++)
-              Padding(
-                padding: EdgeInsets.only(
-                  bottom: i == lines.length - 1 ? 0 : 12,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 번호 원형 뱃지 (1 · 2 · 3)
-                    Container(
-                      width: 22,
-                      height: 22,
-                      margin: const EdgeInsets.only(top: 1, right: 10),
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: AppColors.green200,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        '${i + 1}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.green750,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        lines[i],
-                        // 본문과 동일한 크기·굵기
-                        style: const TextStyle(
-                          fontSize: 15,
-                          height: 1.55,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
-          ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          for (int i = 0; i < lines.length; i++)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: i == lines.length - 1 ? 0 : 12,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 번호 원형 뱃지 (1 · 2 · 3)
+                  Container(
+                    width: 22,
+                    height: 22,
+                    margin: const EdgeInsets.only(top: 1, right: 10),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: AppColors.green200,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${i + 1}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.green750,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      lines[i],
+                      // 본문과 동일한 크기·굵기
+                      style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.55,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

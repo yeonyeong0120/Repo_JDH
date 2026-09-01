@@ -8,6 +8,7 @@ import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/core/providers/tracking_provider.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
+import 'package:repo_jdh/core/widgets/route_pin.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/presentation/reward_dialogs.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
@@ -529,7 +530,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
       size: const Size(40, 50),
       widget: Directionality(
         textDirection: TextDirection.ltr,
-        child: _SettlePin(icon: icon),
+        child: RoutePin(icon: icon),
       ),
     );
   }
@@ -909,58 +910,4 @@ class _TrashDef {
   final Color color; // 카테고리 색
   final String key; // ploggingProvider totalCounts 키
   const _TrashDef(this.label, this.icon, this.color, this.key);
-}
-
-// 활동 경로 지도 핀: 흰 원 + 초록 아이콘 + 아래 삼각 꼬리.
-class _SettlePin extends StatelessWidget {
-  final IconData icon;
-  const _SettlePin({required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.neutral900.withValues(alpha: 0.22),
-                blurRadius: 7,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 20),
-        ),
-        SizedBox(
-          width: 14,
-          height: 8,
-          child: CustomPaint(painter: _PinTailPainter()),
-        ),
-      ],
-    );
-  }
-}
-
-class _PinTailPainter extends CustomPainter {
-  const _PinTailPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width / 2, size.height)
-      ..close();
-    canvas.drawPath(path, Paint()..color = Colors.white);
-  }
-
-  @override
-  bool shouldRepaint(covariant _PinTailPainter oldDelegate) => false;
 }

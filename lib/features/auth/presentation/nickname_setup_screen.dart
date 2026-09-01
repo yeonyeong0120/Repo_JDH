@@ -70,8 +70,7 @@ class _NicknameSetupScreenState extends ConsumerState<NicknameSetupScreen> {
       if (!mounted) return;
       setState(() {
         _isAvailable = !taken;
-        _availabilityMessage =
-            taken ? '이미 사용 중인 닉네임이에요' : '사용 가능한 닉네임입니다';
+        _availabilityMessage = taken ? '이미 사용 중인 닉네임이에요' : '사용 가능한 닉네임입니다';
       });
     } catch (e) {
       if (!mounted) return;
@@ -96,9 +95,9 @@ class _NicknameSetupScreenState extends ConsumerState<NicknameSetupScreen> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_isAvailable == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('다른 닉네임을 사용해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('다른 닉네임을 사용해주세요')));
       return;
     }
 
@@ -132,10 +131,7 @@ class _NicknameSetupScreenState extends ConsumerState<NicknameSetupScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('저장 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('저장 실패: $e'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -147,103 +143,125 @@ class _NicknameSetupScreenState extends ConsumerState<NicknameSetupScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
-                Text(
-                  '닉네임을 정해주세요',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '그룹과 리더보드에서 사용됩니다',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-                const SizedBox(height: 40),
-                TextFormField(
-                  controller: _controller,
-                  maxLength: _maxLength,
-                  enabled: !_isSubmitting,
-                  textInputAction: TextInputAction.done,
-                  validator: _validate,
-                  onFieldSubmitted: (_) => _submit(),
-                  decoration: InputDecoration(
-                    labelText: '닉네임',
-                    hintText: '$_minLength~$_maxLength자',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: _isChecking
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              // 키보드가 올라와 공간이 부족할 때만 스크롤된다.
+              // 공간이 충분하면 ConstrainedBox 의 minHeight 로 지금 레이아웃 그대로 유지.
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 24),
+                          Text(
+                            '닉네임을 정해주세요',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '그룹과 리더보드에서 사용됩니다',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.grey[600]),
+                          ),
+                          const SizedBox(height: 40),
+                          TextFormField(
+                            controller: _controller,
+                            maxLength: _maxLength,
+                            enabled: !_isSubmitting,
+                            textInputAction: TextInputAction.done,
+                            validator: _validate,
+                            onFieldSubmitted: (_) => _submit(),
+                            decoration: InputDecoration(
+                              labelText: '닉네임',
+                              hintText: '$_minLength~$_maxLength자',
+                              border: const OutlineInputBorder(),
+                              suffixIcon: _isChecking
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    )
+                                  : _isAvailable == true
+                                  ? const Icon(
+                                      TablerIcons.circleCheckFilled,
+                                      color: Colors.green,
+                                    )
+                                  : _isAvailable == false
+                                  ? const Icon(
+                                      TablerIcons.circleX,
+                                      color: Colors.red,
+                                    )
+                                  : null,
                             ),
-                          )
-                        : _isAvailable == true
-                            ? const Icon(TablerIcons.circleCheckFilled,
-                                color: Colors.green)
-                            : _isAvailable == false
-                                ? const Icon(TablerIcons.circleX, color: Colors.red)
-                                : null,
-                  ),
-                ),
-                if (_availabilityMessage != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    _availabilityMessage!,
-                    style: TextStyle(
-                      color: _isAvailable == true
-                          ? Colors.green
-                          : _isAvailable == false
-                              ? Colors.red
-                              : Colors.grey,
-                      fontSize: 13,
+                          ),
+                          if (_availabilityMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _availabilityMessage!,
+                              style: TextStyle(
+                                color: _isAvailable == true
+                                    ? Colors.green
+                                    : _isAvailable == false
+                                    ? Colors.red
+                                    : Colors.grey,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                          const Spacer(),
+                          ElevatedButton(
+                            onPressed: _isSubmitting ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[600],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const Text(
+                                    '시작하기',
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          '시작하기',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                 ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
