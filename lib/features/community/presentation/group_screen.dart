@@ -104,8 +104,9 @@ class _GroupScreenState extends State<GroupScreen> {
     await _load();
     // 검색→상세에서 가입했다면 그룹 홈을 백스택에 두고 채팅방으로 이동
     if (joined == true && mounted && _myGroup != null) {
-      context.push('/group/feed',
+      await context.push('/group/feed',
           extra: {'id': _myGroup!.id, 'name': _myGroup!.name});
+      if (mounted) _load();
     }
   }
 
@@ -232,7 +233,8 @@ class _GroupScreenState extends State<GroupScreen> {
     // 가입 직후엔 그룹 홈(여기)을 백스택에 두고 채팅방으로 이동
     // → 채팅방에서 뒤로가기 시 그룹 홈으로 나온다.
     if (joined == true) {
-      context.push('/group/feed', extra: {'id': g.id, 'name': g.name});
+      await context.push('/group/feed', extra: {'id': g.id, 'name': g.name});
+      if (mounted) _load();
     }
   }
 }

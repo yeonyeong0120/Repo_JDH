@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
+import 'package:repo_jdh/core/view_models/screen_views.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
@@ -13,7 +15,7 @@ import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포
 /// Ploggo - 그룹 세부 화면 (활동 공유 피드)
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
 /// 위치 권장: lib/features/community/presentation/group_feed_screen.dart
-class GroupFeedScreen extends StatefulWidget {
+class GroupFeedScreen extends ConsumerStatefulWidget {
   final String groupId;
   final String groupName;
   final int memberCount;
@@ -26,10 +28,10 @@ class GroupFeedScreen extends StatefulWidget {
   });
 
   @override
-  State<GroupFeedScreen> createState() => _GroupFeedScreenState();
+  ConsumerState<GroupFeedScreen> createState() => _GroupFeedScreenState();
 }
 
-class _GroupFeedScreenState extends State<GroupFeedScreen> {
+class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   // 피드 데이터 (placeholder — 실제 그룹 활동 공유로 교체)
   // date = 게시(=활동) 시각. TODO: 실제 활동 데이터의 DateTime으로 교체
   // groupId 가 있으면 Firestore 피드로 교체됨 (없으면 아래 더미 유지)
@@ -781,7 +783,8 @@ class _GroupFeedScreenState extends State<GroupFeedScreen> {
     }
     if (!mounted) return;
     AppSnackBar.show(context, '그룹에서 탈퇴했어요');
-    context.go('/group');
+    ref.invalidate(homeViewProvider); // 홈 '우리 동네 그룹'도 같이 갱신
+    context.pop(); // push로 들어온 화면이므로 go 대신 pop — group_screen의 재로드가 이걸 기다리고 있음
   }
 
   @override
