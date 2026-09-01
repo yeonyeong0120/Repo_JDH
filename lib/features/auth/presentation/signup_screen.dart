@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import '../data/auth_repository.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
+import 'package:repo_jdh/core/location/region_updater.dart';
 
 /// 회원가입 온보딩 (3단계) — 플로고
 ///  1) 이메일·비밀번호  2) 성별·나이·키·몸무게·지역(선택)  3) 닉네임
@@ -28,8 +29,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   int? _age;
   int? _height;
   int? _weight;
-  // TODO: 실제 현재 위치(역지오코딩)로 자동 설정
-  final String _region = '인천 남동구 만수동';
 
   bool _isLoading = false;
 
@@ -122,8 +121,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         age: _age,
         height: _height,
         weight: _weight,
-        region: _region,
       );
+      // 실패해도 가입 자체는 계속 진행 — 지역은 나중에 홈 버튼/메뉴에서 채울 수 있음
+      final regionResult = await RegionUpdater.refreshFromGps();
+      if (!regionResult.isSuccess) {
+        debugPrint('[회원가입] 지역 갱신 실패: ${regionResult.error}');
+      }
     } catch (_) {
       // 프로필 저장 실패해도 가입은 완료된 상태 — 나중에 메뉴에서 채움
     }
@@ -430,22 +433,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        _region,
-                        style: const TextStyle(
+                      const Text(
+                        '가입을 마치면 자동으로 설정돼요',
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const Text(
-                  '자동',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
