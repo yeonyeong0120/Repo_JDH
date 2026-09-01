@@ -22,6 +22,9 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   final _nameController = TextEditingController();
   final _introController = TextEditingController();
 
+  // null: 확인 중 / '': 미설정 / 그 외: 실제 지역
+  String? _region;
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +32,12 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     if (widget.alreadyInGroup) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showBlocked());
     }
+    _loadRegion();
+  }
+
+  Future<void> _loadRegion() async {
+    final region = await GroupService.myRegion();
+    if (mounted) setState(() => _region = region);
   }
 
   @override
@@ -165,24 +174,27 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
-                        children: const [
-                          Icon(
+                        children: [
+                          const Icon(
                             TablerIcons.mapPin,
                             size: 19,
                             color: AppColors.textSecondary,
                           ),
-                          SizedBox(width: 8),
-                          // TODO: 실제 현재 위치(동네)로 자동 설정
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '00구 00동',
-                              style: TextStyle(
+                              _region == null
+                                  ? '확인하는 중…'
+                                  : (_region!.isEmpty
+                                      ? '홈에서 위치를 설정해주세요'
+                                      : _region!),
+                              style: const TextStyle(
                                 fontSize: 15,
                                 color: AppColors.textOnTint,
                               ),
                             ),
                           ),
-                          Text(
+                          const Text(
                             '현재 위치',
                             style: TextStyle(
                               fontSize: 13,

@@ -293,7 +293,7 @@ class _Header extends StatelessWidget {
               const SizedBox(width: 3),
               Expanded(
                 child: Text(
-                  region.isEmpty ? '위치 좌표가 불명확합니다' : region,
+                  region.isEmpty ? '소속된 그룹이 없습니다' : region,
                   style: AppType.caption.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppColors.neutral500,

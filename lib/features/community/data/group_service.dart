@@ -56,6 +56,10 @@ class GroupService {
     }
   }
 
+  /// 내(로그인된 사용자)의 지역 — users/{uid}.region.
+  /// 프레젠테이션 레이어(그룹 만들기 미리보기 등)에서 쓰기 위한 공개 래퍼.
+  static Future<String> myRegion() => _resolveUserRegion();
+
   static CollectionReference<Map<String, dynamic>> get _groups =>
       _db.collection('groups');
   static DocumentReference<Map<String, dynamic>>? _userDoc() {

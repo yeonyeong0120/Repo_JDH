@@ -4,7 +4,6 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'group_detail_screen.dart';
-import 'group_create_screen.dart';
 
 /// Ploggo - 그룹 검색 화면 (GRP-02)
 /// 검색바 + 필터 드롭다운(지역/정렬) + 결과 리스트. 결과 카드 → 소개/가입 화면.
@@ -222,16 +221,6 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     );
   }
 
-  Future<void> _openCreate() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => GroupCreateScreen(alreadyInGroup: widget.alreadyInGroup),
-      ),
-    );
-    _load();
-  }
-
   Widget _empty() {
     return SingleChildScrollView(
       child: Padding(
@@ -264,41 +253,12 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              '다른 이름으로 찾아보거나\n직접 그룹을 만들어보세요',
+              '다른 이름으로 찾아보세요',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
                 height: 1.6,
                 color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _openCreate,
-              child: Container(
-                height: 52,
-                padding: const EdgeInsets.symmetric(horizontal: 22),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.actionPrimary, width: 1.5),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(TablerIcons.plus, size: 20, color: AppColors.textBrandOnLight),
-                    SizedBox(width: 7),
-                    Text(
-                      '그룹 만들기',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textBrandOnLight,
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ],

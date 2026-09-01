@@ -41,8 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
       final frame = await codec.getNextFrame();
       final image = frame.image;
-      final bytes =
-          await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
       if (bytes != null && image.width > 0) {
         final x = image.width ~/ 2;
         const y = 3;
@@ -90,9 +89,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     FocusScope.of(context).unfocus();
     final email = await showDialog<String>(
       context: context,
-      builder: (_) => _PasswordResetDialog(
-        initialEmail: _emailController.text.trim(),
-      ),
+      builder: (_) =>
+          _PasswordResetDialog(initialEmail: _emailController.text.trim()),
     );
     if (email == null || !mounted) return; // 취소/닫기
     if (email.isEmpty) {
@@ -106,8 +104,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(error ?? '비밀번호 재설정 이메일을 전송했습니다.'),
-        backgroundColor:
-            error != null ? AppColors.actionDanger : AppColors.actionPrimary,
+        backgroundColor: error != null
+            ? AppColors.actionDanger
+            : AppColors.actionPrimary,
       ),
     );
   }
@@ -122,93 +121,107 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         behavior: HitTestBehavior.opaque,
         child: SafeArea(
           bottom: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── 위쪽 배경: 일러스트 + 아래로 초록 그라데이션(좁게) ──
-              // 일러스트가 남는 공간을 꽉 채운다(위 여백 제거, 이미지는 좀 잘려도 됨).
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset(
-                      'assets/images/login_bg.png',
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      errorBuilder: (_, __, ___) => ColoredBox(color: _sky),
-                    ),
-                    // 아래 끝만 배경색으로 페이드
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        height: 80,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [_sky.withValues(alpha: 0), _sky],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                // 키보드가 올라와 공간이 부족할 때만 스크롤된다.
+                // 공간이 충분하면 ConstrainedBox 의 minHeight 로 지금 레이아웃 그대로 유지.
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ── 위쪽 배경: 일러스트 + 아래로 초록 그라데이션(좁게) ──
+                        // 일러스트가 남는 공간을 꽉 채운다(위 여백 제거, 이미지는 좀 잘려도 됨).
+                        Expanded(
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(
+                                'assets/images/login_bg.png',
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                                errorBuilder: (_, __, ___) =>
+                                    ColoredBox(color: _sky),
+                              ),
+                              // 아래 끝만 배경색으로 페이드
+                              Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Container(
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [_sky.withValues(alpha: 0), _sky],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                        // ── 슬로건 + 타이틀 (박스 위, 카드와 동시에 떠오름) ──
+                        Padding(
+                              padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
+                              // 슬로건 아래에 큰 플로고 로고. 슬로건-로고 간격은 최소로.
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '걷는 만큼 깨끗해지는 동네',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  // 워드마크 로고. 파일이 없으면 글자로 대체한다.
+                                  Image.asset(
+                                    'assets/images/logo.png',
+                                    height: 88,
+                                    alignment: Alignment.centerLeft,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const Text(
+                                      '플로고',
+                                      style: TextStyle(
+                                        fontSize: 48,
+                                        height: 1.0,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                            .animate()
+                            .fadeIn(duration: 1300.ms, curve: Curves.easeOut)
+                            .slideY(
+                              begin: 0.45,
+                              end: 0,
+                              duration: 1500.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
+                        const SizedBox(height: 20),
+                        // ── 로그인 시트 (글씨와 동시에 떠오름) ──
+                        _loginCard(context)
+                            .animate()
+                            .fadeIn(duration: 1300.ms, curve: Curves.easeOut)
+                            .slideY(
+                              begin: 0.45,
+                              end: 0,
+                              duration: 1500.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              // ── 슬로건 + 타이틀 (박스 위, 카드와 동시에 떠오름) ──
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
-                // 슬로건 아래에 큰 플로고 로고. 슬로건-로고 간격은 최소로.
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '걷는 만큼 깨끗해지는 동네',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    // 워드마크 로고. 파일이 없으면 글자로 대체한다.
-                    Image.asset(
-                      'assets/images/logo.png',
-                      height: 88,
-                      alignment: Alignment.centerLeft,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Text(
-                        '플로고',
-                        style: TextStyle(
-                          fontSize: 48,
-                          height: 1.0,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-                  .animate()
-                  .fadeIn(duration: 1300.ms, curve: Curves.easeOut)
-                  .slideY(
-                    begin: 0.45,
-                    end: 0,
-                    duration: 1500.ms,
-                    curve: Curves.easeOutCubic,
                   ),
-              const SizedBox(height: 20),
-              // ── 로그인 시트 (글씨와 동시에 떠오름) ──
-              _loginCard(context)
-                  .animate()
-                  .fadeIn(duration: 1300.ms, curve: Curves.easeOut)
-                  .slideY(
-                    begin: 0.45,
-                    end: 0,
-                    duration: 1500.ms,
-                    curve: Curves.easeOutCubic,
-                  ),
-            ],
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -260,9 +273,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 '비밀번호',
                 suffix: IconButton(
                   icon: Icon(
-                    _obscurePassword
-                        ? TablerIcons.eyeOff
-                        : TablerIcons.eye,
+                    _obscurePassword ? TablerIcons.eyeOff : TablerIcons.eye,
                     color: AppColors.textSecondary,
                     size: 21,
                   ),
@@ -339,7 +350,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const Text(
                   '아직 계정이 없나요? ',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                  ),
                 ),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -382,7 +396,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   InputDecoration _underline(String hint, {Widget? suffix}) {
     UnderlineInputBorder line(Color c, [double wdt = 1]) =>
-        UnderlineInputBorder(borderSide: BorderSide(color: c, width: wdt));
+        UnderlineInputBorder(
+          borderSide: BorderSide(color: c, width: wdt),
+        );
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: AppColors.textDisabled, fontSize: 17),
@@ -410,8 +426,9 @@ class _PasswordResetDialog extends StatefulWidget {
 }
 
 class _PasswordResetDialogState extends State<_PasswordResetDialog> {
-  late final TextEditingController _c =
-      TextEditingController(text: widget.initialEmail);
+  late final TextEditingController _c = TextEditingController(
+    text: widget.initialEmail,
+  );
 
   @override
   void dispose() {
@@ -422,7 +439,9 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
   @override
   Widget build(BuildContext context) {
     UnderlineInputBorder line(Color col, [double w = 1]) =>
-        UnderlineInputBorder(borderSide: BorderSide(color: col, width: w));
+        UnderlineInputBorder(
+          borderSide: BorderSide(color: col, width: w),
+        );
     return Dialog(
       backgroundColor: AppColors.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
@@ -465,8 +484,10 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
               style: const TextStyle(fontSize: 17),
               decoration: InputDecoration(
                 hintText: 'name@example.com',
-                hintStyle:
-                    const TextStyle(color: AppColors.textDisabled, fontSize: 17),
+                hintStyle: const TextStyle(
+                  color: AppColors.textDisabled,
+                  fontSize: 17,
+                ),
                 isDense: true,
                 filled: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -504,8 +525,7 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
                   child: SizedBox(
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () =>
-                          Navigator.pop(context, _c.text.trim()),
+                      onPressed: () => Navigator.pop(context, _c.text.trim()),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.actionPrimary,
                         foregroundColor: Colors.white,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/widgets/route_thumbnail.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
@@ -64,6 +65,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
       a.imageUrls.isNotEmpty,
       a.trashCounts,
       a.imageUrls,
+      a.path,
     );
   }
 
@@ -482,6 +484,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
             trashCounts: a.trashCounts,
             imageUrls: a.imageUrls,
             activityId: a.id,
+            path: a.path,
           ),
         ),
       ),
@@ -499,10 +502,10 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(14),
-                  child: const SizedBox(
+                  child: SizedBox(
                     width: 84,
                     height: 84,
-                    child: CustomPaint(painter: _RouteThumbPainter()),
+                    child: CustomPaint(painter: RoutePainter(path: a.path)),
                   ),
                 ),
                 // 인증샷을 첨부하지 않은 기록: 카메라+ 배지 (우하단)
@@ -575,55 +578,6 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   }
 }
 
-// 경로 미니 지도 썸네일 (회색 격자 + 초록 곡선 + 시작·도착 점).
-class _RouteThumbPainter extends CustomPainter {
-  const _RouteThumbPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width, h = size.height;
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFFE7EFE9),
-    );
-    final grid = Paint()
-      ..color = const Color(0xFFF4F8F5)
-      ..strokeWidth = 7;
-    canvas.drawLine(Offset(0, h * 0.42), Offset(w, h * 0.42), grid);
-    canvas.drawLine(Offset(w * 0.5, 0), Offset(w * 0.5, h), grid);
-    final path = Path()
-      ..moveTo(w * 0.22, h * 0.78)
-      ..cubicTo(w * 0.30, h * 0.55, w * 0.34, h * 0.5, w * 0.5, h * 0.5)
-      ..cubicTo(w * 0.66, h * 0.5, w * 0.68, h * 0.34, w * 0.78, h * 0.3);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = AppColors.routeLine
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.drawCircle(
-      Offset(w * 0.22, h * 0.78),
-      4.5,
-      Paint()..color = AppColors.green700,
-    );
-    canvas.drawCircle(
-      Offset(w * 0.78, h * 0.3),
-      5,
-      Paint()..color = Colors.white,
-    );
-    canvas.drawCircle(
-      Offset(w * 0.78, h * 0.3),
-      3,
-      Paint()..color = AppColors.green600,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _RouteThumbPainter oldDelegate) => false;
-}
-
 class _Act {
   final String id;
   final DateTime date;
@@ -641,6 +595,9 @@ class _Act {
   /// 인증샷 URL (서버 Activity.imageUrls 원본). 상세 화면이 실제 사진을 그린다.
   final List<String> imageUrls;
 
+  /// GPS 경로 ([{lat, lng, t}, ...]). 없으면 썸네일에 '경로 없음' 표시.
+  final List<Map<String, dynamic>> path;
+
   const _Act(
     this.id,
     this.date,
@@ -653,5 +610,6 @@ class _Act {
     this.hasPhoto,
     this.trashCounts,
     this.imageUrls,
+    this.path,
   );
 }
