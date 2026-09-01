@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
-import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
+import 'package:repo_jdh/features/plogging/data/photo_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 
 /// Ploggo - 개별 활동 상세 (ACT-05)
@@ -595,7 +594,7 @@ class _PhotoSectionState extends State<_PhotoSection> {
 
     setState(() => _uploading = true);
     try {
-      final url = await StorageRepository.uploadImage(File(shot.path));
+      final url = await PhotoService.uploadActivityPhoto(shot);
       if (url == null) {
         if (mounted) {
           AppSnackBar.show(context, '업로드에 실패했어요', kind: SnackKind.error);
