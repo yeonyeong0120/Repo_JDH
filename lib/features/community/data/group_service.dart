@@ -43,6 +43,19 @@ class GroupService {
     return '플로거'; // 최후 대체값 (빈칸으로 저장되지 않게)
   }
 
+  /// 생성자/조회자의 지역 — Firestore users/{uid}.region 을 그대로 쓴다.
+  /// (그룹 region과 같은 형식이어야 매칭되므로 별도로 가공하지 않는다)
+  static Future<String> _resolveUserRegion() async {
+    final doc = _userDoc();
+    if (doc == null) return '';
+    try {
+      final region = (await doc.get()).data()?['region'] as String?;
+      return region?.trim() ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
   static CollectionReference<Map<String, dynamic>> get _groups =>
       _db.collection('groups');
   static DocumentReference<Map<String, dynamic>>? _userDoc() {
@@ -106,13 +119,22 @@ class GroupService {
   // ───────────────────────── 목록 / 검색 ─────────────────────────
 
   /// 내 그룹을 제외한 다른 그룹들 (최신순)
+  /// 내 region이 있으면 같은 region 그룹만, 없으면(미설정) 전체를 보여준다.
   static Future<List<Group>> otherGroups({int limit = 20}) async {
     if (_useDummy) return DevData.otherGroups;
     final mine = await myGroupId();
+    final myRegion = await _resolveUserRegion();
+
+    // where('region')+orderBy('createdAt') 조합은 Firestore 복합 색인이 필요.
+    // (Firebase 콘솔 > Firestore > 색인에 region ASC + createdAt DESC 등록)
+    Query<Map<String, dynamic>> q = _groups;
+    if (myRegion.isNotEmpty) {
+      q = q.where('region', isEqualTo: myRegion);
+    }
     // 내 그룹 제외를 클라이언트에서 하므로, 그게 상위 limit 개 안에 있으면
     // 결과가 limit-1 개로 줄어든다. 한 개 더 받아 두고 제외한 뒤 잘라낸다.
     // (쿼리에서 isNotEqualTo 로 거르는 방식은 orderBy 조합 제약·색인 문제가 있음)
-    final query = await _groups
+    final query = await q
         .orderBy('createdAt', descending: true)
         .limit(limit + 1)
         .get();
@@ -159,11 +181,13 @@ class GroupService {
     String intro = '',
     String? imageUrl,
   }) async {
+    final resolvedRegion =
+        region.isNotEmpty ? region : await _resolveUserRegion();
     if (_useDummy) {
       DevData.myGroup = Group(
         id: 'g_new',
         name: name,
-        region: region,
+        region: resolvedRegion,
         intro: intro,
         memberCount: 1,
         ownerUid: 'dev_user',
@@ -177,7 +201,7 @@ class GroupService {
 
     final ref = await _groups.add({
       'name': name,
-      'region': region,
+      'region': resolvedRegion,
       'intro': intro,
       'imageUrl': imageUrl,
       'memberCount': 1,

@@ -60,10 +60,11 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     if (_creating) return;
     setState(() => _creating = true);
     try {
-      // TODO: 대표 사진 업로드 후 imageUrl 전달, 동네는 실제 위치로
+      // TODO: 대표 사진 업로드 후 imageUrl 전달
+      // region은 비워서 넘긴다 — GroupService.createGroup이 생성자의
+      // users/{uid}.region을 자동으로 채운다.
       await GroupService.createGroup(
         name: name,
-        region: '00구 00동',
         intro: _introController.text.trim(),
       );
       if (!mounted) return;

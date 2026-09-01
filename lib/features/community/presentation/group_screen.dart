@@ -48,8 +48,10 @@ class _GroupScreenState extends State<GroupScreen> {
     try {
       mine = await GroupService.myGroup();
       others = await GroupService.otherGroups(limit: 5); // 그룹탭: 최대 5개
-    } catch (_) {
-      // 네트워크/로그인 문제 → 빈 목록으로 표시
+    } catch (e) {
+      // 네트워크/로그인 문제, 혹은 region 필터 복합 색인 누락(FAILED_PRECONDITION) 등
+      // → 화면은 빈 목록으로 조용히 넘어가되, 원인은 로그로 남긴다.
+      debugPrint('[그룹] 목록 로드 실패: $e');
     }
     if (!mounted) return;
     // 오늘 활동 많은 순 (같으면 멤버 많은 순)

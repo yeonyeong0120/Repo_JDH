@@ -12,7 +12,7 @@ enum RegionRefreshError {
 
 /// GPS 좌표 → 서버 역지오코딩 → 프로필 region 저장까지의 결과.
 class RegionRefreshResult {
-  final String? region; // 성공 시 갱신된 지역명 (서버 형식 그대로, 예: '남동구 논현고잔동')
+  final String? region; // 성공 시 갱신된 지역명 (그룹 매칭용, 예: '인천 남동구')
   final RegionRefreshError? error; // 실패 시 사유. 성공이면 null.
 
   const RegionRefreshResult.success(this.region) : error = null;
@@ -37,7 +37,7 @@ class RegionUpdater {
       );
     }
 
-    final region = await GeocodeService.placeNameOf(
+    final region = await GeocodeService.regionOf(
       lat: coords.lat,
       lng: coords.lng,
     );

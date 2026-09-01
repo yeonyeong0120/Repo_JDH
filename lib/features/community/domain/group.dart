@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Group {
   final String id;
   final String name;
-  final String region; // '00구 00동'
+  final String region; // 그룹 매칭 기준 지역, 예: '인천 남동구' (사용자 region과 같은 형식)
   final String intro;
   final String? imageUrl;
   final int memberCount;
