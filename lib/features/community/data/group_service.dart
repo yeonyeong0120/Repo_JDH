@@ -5,8 +5,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
-import 'package:repo_jdh/core/dev/dev_user.dart';
-import 'package:repo_jdh/core/dev/dev_data.dart';
 
 /// 그룹 CRUD + 피드
 /// Firestore 구조
@@ -18,12 +16,7 @@ import 'package:repo_jdh/core/dev/dev_data.dart';
 class GroupService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  /// ⚠️ 이 파일 전용 더미 스위치.
-  /// 그룹 기능은 실제 Firestore 연동이 완료되어 false 로 둔다.
-  /// 다시 더미로 보고 싶으면 이 한 줄만 `DevData.enabled` 로 바꾸면 된다.
-  static const bool _useDummy = false;
-
-  static String? get _uid => DevUser.resolve();
+  static String? get _uid => FirebaseAuth.instance.currentUser?.uid;
   static String? get _userPhoto => FirebaseAuth.instance.currentUser?.photoURL;
 
   /// 표시 이름 — Firestore 의 실제 닉네임을 우선 사용한다.
@@ -78,7 +71,6 @@ class GroupService {
   /// 값만 보고 판단하면 화면은 '미가입'인데 가입·생성은 막히는 상태가 된다.
   /// 그룹 문서가 실제로 있는지까지 확인하고, 유령이면 그 자리에서 값을 비운다.
   static Future<String?> myGroupId() async {
-    if (_useDummy) return DevData.myGroup?.id;
     final doc = _userDoc();
     if (doc == null) return null;
     final snap = await doc.get();
@@ -102,20 +94,12 @@ class GroupService {
 
   /// 내 그룹 정보
   static Future<Group?> myGroup() async {
-    if (_useDummy) return DevData.myGroup;
     final id = await myGroupId();
     if (id == null) return null;
     return getGroup(id);
   }
 
   static Future<Group?> getGroup(String groupId) async {
-    if (_useDummy) {
-      if (DevData.myGroup?.id == groupId) return DevData.myGroup;
-      for (final x in DevData.otherGroups) {
-        if (x.id == groupId) return x;
-      }
-      return null;
-    }
     final snap = await _groups.doc(groupId).get();
     if (!snap.exists) return null;
     final data = snap.data()!;
@@ -128,7 +112,6 @@ class GroupService {
   /// 내 그룹을 제외한 다른 그룹들 (최신순)
   /// 내 region이 있으면 같은 region 그룹만, 없으면(미설정) 전체를 보여준다.
   static Future<List<Group>> otherGroups({int limit = 20}) async {
-    if (_useDummy) return DevData.otherGroups;
     final mine = await myGroupId();
     final myRegion = await _resolveUserRegion();
 
@@ -162,9 +145,6 @@ class GroupService {
   static Future<List<Group>> search(String keyword) async {
     final k = keyword.trim();
     if (k.isEmpty) return [];
-    if (_useDummy) {
-      return DevData.otherGroups.where((x) => x.name.contains(k)).toList();
-    }
     final query = await _groups
         .orderBy('name')
         .startAt([k])
@@ -214,18 +194,6 @@ class GroupService {
   }) async {
     final resolvedRegion =
         region.isNotEmpty ? region : await _resolveUserRegion();
-    if (_useDummy) {
-      DevData.myGroup = Group(
-        id: 'g_new',
-        name: name,
-        region: resolvedRegion,
-        intro: intro,
-        memberCount: 1,
-        ownerUid: 'dev_user',
-        createdAt: DateTime.now(),
-      );
-      return 'g_new';
-    }
     final uid = _uid;
     if (uid == null) throw Exception('로그인이 필요합니다');
     if (await isInGroup()) throw Exception('이미 그룹에 가입되어 있습니다');
@@ -253,13 +221,6 @@ class GroupService {
 
   /// 그룹 가입. 이미 다른 그룹 소속이면 예외 (GRP-04 차단과 동일 규칙).
   static Future<void> joinGroup(String groupId) async {
-    if (_useDummy) {
-      final i = DevData.otherGroups.indexWhere((x) => x.id == groupId);
-      if (i >= 0) {
-        DevData.myGroup = DevData.otherGroups.removeAt(i);
-      }
-      return;
-    }
     final uid = _uid;
     if (uid == null) throw Exception('로그인이 필요합니다');
     if (await isInGroup()) throw Exception('이미 그룹에 가입되어 있습니다');
@@ -298,12 +259,6 @@ class GroupService {
   /// 그룹 정리에 실패하더라도 내 소속은 반드시 비운다 — 실패로 인해
   /// 사용자가 유령 그룹에 갇히는 상황을 만들지 않기 위해서다.
   static Future<void> leaveGroup(String groupId) async {
-    if (_useDummy) {
-      final g = DevData.myGroup;
-      if (g != null) DevData.otherGroups.insert(0, g);
-      DevData.myGroup = null;
-      return;
-    }
     final uid = _uid;
     if (uid == null) return;
 
@@ -361,7 +316,6 @@ class GroupService {
     String groupId, {
     int limit = 8,
   }) async {
-    if (_useDummy) return DevData.memberNames;
     final snap = await _groups
         .doc(groupId)
         .collection('members')
@@ -376,7 +330,6 @@ class GroupService {
 
   /// 피드 글 목록 (최신순)
   static Future<List<GroupPost>> posts(String groupId, {int limit = 30}) async {
-    if (_useDummy) return DevData.posts;
     final uid = _uid ?? '';
     final snap = await _groups
         .doc(groupId)
@@ -418,7 +371,6 @@ class GroupService {
     required int trash,
     required String duration,
   }) async {
-    if (_useDummy) return;
     final uid = _uid;
     if (uid == null) return;
 
@@ -454,7 +406,6 @@ class GroupService {
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return; // 빈 메시지 방지
-    if (_useDummy) return;
 
     final uid = _uid;
     if (uid == null) throw Exception('로그인이 필요합니다');
@@ -483,7 +434,6 @@ class GroupService {
     required String postId,
     required bool liked, // 현재 상태
   }) async {
-    if (_useDummy) return; // 화면 상태만 바뀜
     final uid = _uid;
     if (uid == null) return;
 
@@ -499,9 +449,6 @@ class GroupService {
 
   /// (그룹 가입 여부, 인증샷 공유 횟수)
   static Future<({bool joined, int shareCount})> badgeCounters() async {
-    if (_useDummy) {
-      return (joined: DevData.myGroup != null, shareCount: 3);
-    }
     final doc = _userDoc();
     if (doc == null) return (joined: false, shareCount: 0);
     final data = (await doc.get()).data() ?? {};

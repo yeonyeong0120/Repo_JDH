@@ -10,7 +10,7 @@ import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/features/home/domain/eco_math.dart';
 import 'package:repo_jdh/core/view_models/screen_views.dart';
-import 'package:repo_jdh/features/community/domain/group.dart';
+import 'package:repo_jdh/features/plogging/domain/activity.dart';
 // NewsArticle 타입. screen_views.dart 의 import 와 같은 경로를 쓴다.
 import 'package:repo_jdh/features/news/presentation/news_detail_screen.dart';
 import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
@@ -1111,9 +1111,9 @@ class _NewsUnavailable extends StatelessWidget {
   }
 }
 
-// ── 인증샷 모음집 (그룹 최신 인증샷 가로 갤러리) ─────────────
+// ── 인증샷 모음집 (사진 있는 내 최근 활동 가로 갤러리) ─────────────
 class _TodayShots extends StatelessWidget {
-  final List<GroupPost> photos;
+  final List<Activity> photos;
   const _TodayShots({required this.photos});
 
   @override
@@ -1145,7 +1145,7 @@ class _TodayShots extends StatelessWidget {
                   Text('아직 인증샷이 없어요', style: AppType.title3),
                   Gap.h4,
                   Text(
-                    '그룹 활동에서 첫 인증샷을 남겨보세요',
+                    '첫 인증샷을 남겨보세요',
                     style: AppType.body.copyWith(color: AppColors.textSecondary),
                   ),
                 ],
@@ -1170,7 +1170,14 @@ class _TodayShots extends StatelessWidget {
     );
   }
 
-  Widget _shot(GroupPost p) {
+  Widget _shot(Activity a) {
+    // 장소가 있으면 장소, 없으면(역지오코딩 이전 활동) 날짜로 대체
+    final place = a.placeName;
+    final date = a.endedAt ?? a.startedAt;
+    final caption = (place != null && place.isNotEmpty)
+        ? place
+        : '${date.month}월 ${date.day}일';
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
@@ -1180,7 +1187,7 @@ class _TodayShots extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Image.network(
-              p.imageUrl!,
+              a.imageUrls.first,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                 color: AppColors.neutral200,
@@ -1210,7 +1217,7 @@ class _TodayShots extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    p.userName.isEmpty ? '플로거' : p.userName,
+                    caption,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1229,7 +1236,7 @@ class _TodayShots extends StatelessWidget {
                       ),
                       const SizedBox(width: 3),
                       Text(
-                        '${p.trash}개',
+                        '${a.totalTrash}개',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

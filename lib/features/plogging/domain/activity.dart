@@ -24,9 +24,13 @@ class Activity {
   final List<String> detectionIds;
   final String? groupId;
 
-  /// 역지오코딩된 장소명 (startLocation 기준).
+  /// 역지오코딩된 장소명 (endLocation 기준).
   /// 이 필드가 생기기 전에 저장된 문서에는 없으므로 nullable.
   final String? placeName;
+
+  /// 번지 포함 상세 장소명. placeName 보다 나중에 추가된 필드라
+  /// 옛 문서에는 없다 — 화면에서는 placeDetail ?? placeName 으로 폴백한다.
+  final String? placeDetail;
 
   final int pointsEarned;
   final String status;
@@ -46,6 +50,7 @@ class Activity {
     this.detectionIds = const [],
     this.groupId,
     this.placeName,
+    this.placeDetail,
     this.pointsEarned = 0,
     this.status = ActivityStatus.ongoing,
   });
@@ -71,6 +76,7 @@ class Activity {
           .cast<String>(),
       groupId: json['groupId'] as String?,
       placeName: json['placeName'] as String?,
+      placeDetail: json['placeDetail'] as String?,
       pointsEarned: (json['pointsEarned'] as num?)?.toInt() ?? 0,
       status: (json['status'] as String?) ?? ActivityStatus.ongoing,
     );
@@ -92,6 +98,7 @@ class Activity {
       'detectionIds': detectionIds,
       'groupId': groupId,
       'placeName': placeName,
+      'placeDetail': placeDetail,
       'pointsEarned': pointsEarned,
       'status': status,
     };

@@ -20,7 +20,6 @@ import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_stats.dart';
-import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
 
 /// Ploggo - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
@@ -185,26 +184,17 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 큰 제목 (내 활동 → 발자취 확인 문구) + 개발용 버튼
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Expanded(
-                child: HeaderRise(
-                  child: Text(
-                    '지금까지의 발자취를\n확인해볼까요?',
-                    style: TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w800,
-                      height: 1.28,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
+          // 큰 제목 (내 활동 → 발자취 확인 문구)
+          const HeaderRise(
+            child: Text(
+              '지금까지의 발자취를\n확인해볼까요?',
+              style: TextStyle(
+                fontSize: 23,
+                fontWeight: FontWeight.w800,
+                height: 1.28,
+                color: AppColors.textPrimary,
               ),
-              // ⚠️ 개발용 임시 버튼 — 배포 전 _DevSeedButtons() 삭제
-              const _DevSeedButtons(),
-            ],
+            ),
           ),
           const SizedBox(height: 16),
           // 3분할 세그먼트 — 둥근 네모 트랙 + 부드럽게 미끄러지는 흰 알약
@@ -330,7 +320,7 @@ class _RecordsTab extends StatefulWidget {
 
 class _RecordsTabState extends State<_RecordsTab> {
   // 기록 탭에 보여줄 최근 활동 개수.
-  // TODO: 팀 논의 후 조정 가능 (심는 개수(dev_seed)와는 별개)
+  // TODO: 팀 논의 후 조정 가능
   static const int _displayLimit = 3;
 
   // ── 실제 활동 기록 ──
@@ -375,7 +365,10 @@ class _RecordsTabState extends State<_RecordsTab> {
     return _Activity(
       a.id,
       ActivityMetrics.dateTimeLabel(a.startedAt),
-      ActivityMetrics.placeLabel(placeName: a.placeName, groupId: a.groupId),
+      ActivityMetrics.placeLabel(
+        placeName: a.placeDetail ?? a.placeName,
+        groupId: a.groupId,
+      ),
       ActivityMetrics.estimateSteps(a.distanceMeters),
       ActivityMetrics.weightLabel(a.trashCounts),
       ActivityMetrics.estimateKcal(a.distanceMeters),
@@ -1669,80 +1662,6 @@ class _DonutPainter extends CustomPainter {
 }
 
 // ──────────────── 데이터 모델 ────────────────
-
-// ⚠️ 개발용 임시 버튼 — 배포 전 삭제
-// 가짜 활동 심기 / 지우기. 결과는 스낵바로 알림.
-class _DevSeedButtons extends StatefulWidget {
-  const _DevSeedButtons();
-
-  @override
-  State<_DevSeedButtons> createState() => _DevSeedButtonsState();
-}
-
-class _DevSeedButtonsState extends State<_DevSeedButtons> {
-  bool _busy = false; // 중복 탭 방지
-
-  Future<void> _run(Future<int> Function() action, String verb) async {
-    if (_busy) return;
-    setState(() => _busy = true);
-    try {
-      final n = await action();
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('$verb $n건 완료 — 앱을 다시 열면 반영돼요')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('실패: $e')));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_busy) {
-      return const Padding(
-        padding: EdgeInsets.all(8),
-        child: SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          tooltip: '가짜 데이터 심기',
-          icon: const Icon(TablerIcons.circlePlus, size: 22),
-          color: AppColors.textSecondary,
-          onPressed: () => _run(() => DevSeed.seedActivities(), '심기'),
-        ),
-        IconButton(
-          tooltip: '가짜 데이터 지우기',
-          icon: const Icon(TablerIcons.trash, size: 22),
-          color: AppColors.textSecondary,
-          onPressed: () => _run(() => DevSeed.clearActivities(), '삭제'),
-        ),
-        // 뱃지 판정 실행 — 조건 충족한 뱃지를 저장하고 포인트를 적립한다.
-        // (원래는 플로깅 정산 화면에서 자동 호출됨)
-        IconButton(
-          tooltip: '뱃지 판정 실행',
-          icon: const Icon(TablerIcons.medal, size: 22),
-          color: AppColors.textSecondary,
-          onPressed: () => _run(() async {
-            final fresh = await BadgeService.checkAndSave();
-            return fresh.length; // 새로 딴 뱃지 개수
-          }, '뱃지 획득'),
-        ),
-      ],
-    );
-  }
-}
 
 // 기록이 0건일 때 보여주는 빈 화면
 class _EmptyRecords extends StatelessWidget {

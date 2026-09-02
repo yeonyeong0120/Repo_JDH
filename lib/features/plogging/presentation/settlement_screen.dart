@@ -21,6 +21,9 @@ import 'package:repo_jdh/features/plogging/data/geocode_service.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_points.dart';
+import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 
 /// Ploggo - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
 class SettlementScreen extends ConsumerStatefulWidget {
@@ -38,10 +41,29 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
   static const Color _routeColor = AppColors.routeLine;
 
   // 보상 카운트업: 획득 보상 카드가 스크롤로 처음 보일 때 1회만 숫자가 올라간다.
-  static const int _rewardPoints = 330;
   static const int _rewardXp = 20;
   final ScrollController _scroll = ScrollController();
   bool _rewardShown = false;
+
+  // 실제 계산된 포인트. 표시(_rewardCard)와 저장(_saveActivity)이 같은 값을 쓴다.
+  late final ({int total, int base, int trashPoints, int completionBonus}) _points =
+      _computePoints();
+
+  ({int total, int base, int trashPoints, int completionBonus}) _computePoints() {
+    final counts = ref.read(ploggingProvider).totalCounts;
+    final totalTrash = counts.values.fold<int>(0, (s, v) => s + v);
+    final t = ref.read(trackingProvider);
+    final end = t.endLocation;
+    final polyline = ref.read(routeNotifierProvider).valueOrNull?.polyline;
+    final dest = (polyline != null && polyline.isNotEmpty) ? polyline.last : null;
+    final reached = ActivityPoints.reachedDestination(
+      endLat: end?['lat'],
+      endLng: end?['lng'],
+      destLat: dest?[0],
+      destLng: dest?[1],
+    );
+    return ActivityPoints.calculate(totalTrash: totalTrash, reachedDestination: reached);
+  }
 
   @override
   void dispose() {
@@ -93,17 +115,21 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         if (v > 0) trashCounts[k] = v;
       });
 
-      // 좌표 → 장소명. GeocodeService 가 실패를 null 로 흡수하므로
+      // 좌표 → 장소명(도착지 기준). GeocodeService 가 실패를 null 로 흡수하므로
       // 서버가 죽어 있거나 느려도 아래 저장은 그대로 진행된다.
-      // GPS 를 못 잡아 startLocation 이 없으면 서버를 아예 부르지 않는다.
-      final start = t.startLocation;
-      final lat = start?['lat'];
-      final lng = start?['lng'];
-      final placeName = (lat == null || lng == null)
-          ? null
-          : await GeocodeService.placeNameOf(lat: lat, lng: lng);
+      // GPS 를 못 잡아 endLocation 이 없으면 서버를 아예 부르지 않는다.
+      final end = t.endLocation;
+      final lat = end?['lat'];
+      final lng = end?['lng'];
+      String? placeName;
+      String? placeDetail;
+      if (lat != null && lng != null) {
+        final info = await GeocodeService.placeInfoOf(lat: lat, lng: lng);
+        placeName = info.placeName;
+        placeDetail = info.placeDetail;
+      }
 
-      await ActivityService.saveCompleted(
+      final activityId = await ActivityService.saveCompleted(
         startedAt: startedAt,
         endedAt: endedAt,
         durationSeconds: t.elapsedSeconds,
@@ -114,9 +140,20 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         startLocation: t.startLocation,
         endLocation: t.endLocation,
         placeName: placeName, // 역지오코딩된 장소명 (없으면 null)
+        placeDetail: placeDetail, // 번지 포함 상세 (없으면 null)
         // 그룹 피드뿐 아니라 활동 기록에도 인증샷을 남긴다
         imageUrls: imageUrl == null ? const [] : [imageUrl],
+        pointsEarned: _points.total,
       );
+
+      // 포인트 적립은 활동 저장과 분리 — 실패해도 활동 저장 자체는 막지 않는다.
+      if (activityId != null) {
+        try {
+          await UserService.addPoints(_points.total);
+        } catch (e) {
+          debugPrint('[정산] 포인트 적립 실패: $e');
+        }
+      }
     } catch (e) {
       debugPrint('[정산] 활동 저장 실패: $e');
       // 저장 실패해도 화면 흐름은 계속 (사용자를 가두지 않음)
@@ -732,7 +769,6 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
   }
 
   // ───────────────────────── 획득 보상 (스크롤 진입 시 카운트업) ─────────────────────────
-  // TODO: 포인트/경험치 값은 보상 로직 생기면 provider 값으로 교체.
   // 획득 보상 — '획득 보상' 라벨 오른쪽에 작은 알약 두 개(포인트/경험치).
   // 스크롤로 처음 보일 때 숫자가 카운트업된다.
   Widget _rewardCard() {
@@ -744,21 +780,37 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '획득 보상',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+          Row(
+            children: [
+              const Text(
+                '획득 보상',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              // 포인트는 느리게, 경험치는 빠르게 올라간다.
+              _rewardPill(TablerIcons.leaf, 'P', _points.total, AppColors.dataDistance, 2000),
+              const SizedBox(width: 8),
+              _rewardPill(TablerIcons.starFilled, 'XP', _rewardXp, AppColors.dataTime, 1100),
+            ],
           ),
-          const Spacer(),
-          // 포인트는 느리게, 경험치는 빠르게 올라간다.
-          _rewardPill(TablerIcons.leaf, 'P', _rewardPoints, AppColors.dataDistance, 2000),
-          const SizedBox(width: 8),
-          _rewardPill(TablerIcons.starFilled, 'XP', _rewardXp, AppColors.dataTime, 1100),
+          if (_points.completionBonus > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              '완주 보너스 +${_points.completionBonus}P',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textBrandOnLight,
+              ),
+            ),
+          ],
         ],
       ),
     );

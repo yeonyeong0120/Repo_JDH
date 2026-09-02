@@ -60,8 +60,8 @@ class HomeView {
 
   final List<NewsArticle> news;
 
-  /// '오늘의 한컷' — 그룹의 최신 인증샷(사진 있는 활동 카드) 최대 5개.
-  final List<GroupPost> photos;
+  /// '인증샷 모음집' — 사진이 있는 내 최근 활동 최대 5개. 그룹 가입 여부와 무관.
+  final List<Activity> photos;
 
   const HomeView({
     required this.profile,
@@ -137,7 +137,6 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
   final results = await Future.wait([
     UserService.loadProfileDetail(),
     BadgeService.loadStats(),
-    GroupService.myGroup(),
     GroupService.otherGroups(limit: 3), // 홈 '지금 우리 동네는': 최대 3개
     ActivityService.getRecentCompleted(limit: 30),
     NewsService.fetchNews(display: 5).catchError(
@@ -147,28 +146,15 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
 
   final profile = results[0] as ProfileDetail;
   final stats = results[1] as UserStats;
-  final myGroup = results[2] as Group?;
-  final others = results[3] as List<Group>;
-  final activities = results[4] as List<Activity>;
-  final news = results[5] as List<NewsArticle>;
+  final others = results[2] as List<Group>;
+  final activities = results[3] as List<Activity>;
+  final news = results[4] as List<NewsArticle>;
 
   final sorted = [...others]
     ..sort((a, b) => b.todayActiveCount.compareTo(a.todayActiveCount));
 
-  // '오늘의 한컷' — 내 그룹(없으면 가장 활발한 다른 그룹)의 최신 인증샷 5개.
-  final photoGroupId = myGroup?.id ?? (sorted.isNotEmpty ? sorted.first.id : null);
-  List<GroupPost> photos = const [];
-  if (photoGroupId != null) {
-    try {
-      final posts = await GroupService.posts(photoGroupId, limit: 30);
-      photos = posts
-          .where((p) => (p.imageUrl ?? '').isNotEmpty)
-          .take(5)
-          .toList();
-    } catch (_) {
-      // 인증샷 실패는 홈을 막지 않는다
-    }
-  }
+  // '인증샷 모음집' — getRecentCompleted 가 이미 최신순이라 별도 정렬 불필요.
+  final photos = activities.where((a) => a.imageUrls.isNotEmpty).take(5).toList();
 
   return HomeView(
     profile: profile,
