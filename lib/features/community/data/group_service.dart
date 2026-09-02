@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/core/dev/dev_user.dart';
 import 'package:repo_jdh/core/dev/dev_data.dart';
@@ -177,6 +180,30 @@ class GroupService {
   }
 
   // ───────────────────────── 생성 / 가입 / 탈퇴 ─────────────────────────
+
+  /// 그룹 대표 사진 업로드. 실패해도 null만 반환 — 그룹 생성을 막지 않는다.
+  /// 생성 시점엔 아직 groupId가 없어 activity_photos와 같은 방식으로
+  /// 생성자 uid를 키로 쓴다. 경로: group_photos/{uid}/{fileName}
+  static Future<String?> uploadGroupPhoto(XFile file) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    try {
+      final name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('group_photos')
+          .child(uid)
+          .child(name);
+      await ref.putFile(
+        File(file.path),
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      return await ref.getDownloadURL();
+    } catch (e) {
+      debugPrint('[그룹] 대표 사진 업로드 실패: $e');
+      return null;
+    }
+  }
 
   /// 그룹 생성 + 자동 가입. 이미 그룹이 있으면 예외.
   static Future<String> createGroup({

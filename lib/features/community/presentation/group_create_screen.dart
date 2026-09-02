@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
@@ -21,6 +23,7 @@ class GroupCreateScreen extends StatefulWidget {
 class _GroupCreateScreenState extends State<GroupCreateScreen> {
   final _nameController = TextEditingController();
   final _introController = TextEditingController();
+  XFile? _photo;
 
   // null: 확인 중 / '': 미설정 / 그 외: 실제 지역
   String? _region;
@@ -58,6 +61,18 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     if (mounted) Navigator.pop(context); // 만들기 화면 닫기
   }
 
+  Future<void> _pickPhoto() async {
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (file != null && mounted) setState(() => _photo = file);
+    } catch (_) {
+      if (mounted) AppSnackBar.show(context, '사진을 선택하지 못했어요');
+    }
+  }
+
   bool _creating = false;
 
   Future<void> _create() async {
@@ -69,12 +84,16 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     if (_creating) return;
     setState(() => _creating = true);
     try {
-      // TODO: 대표 사진 업로드 후 imageUrl 전달
+      String? imageUrl;
+      if (_photo != null) {
+        imageUrl = await GroupService.uploadGroupPhoto(_photo!);
+      }
       // region은 비워서 넘긴다 — GroupService.createGroup이 생성자의
       // users/{uid}.region을 자동으로 채운다.
       await GroupService.createGroup(
         name: name,
         intro: _introController.text.trim(),
+        imageUrl: imageUrl,
       );
       if (!mounted) return;
       AppSnackBar.show(context, '\'$name\' 그룹을 만들었어요');
@@ -114,9 +133,10 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                 ],
               ),
             ),
-            // 스크롤 없이 한 화면에 다 보이게 (스크롤 제거)
+            // 평소엔 내용이 화면에 다 들어가 스크롤이 없고,
+            // 키보드로 공간이 부족해질 때만 스크롤된다.
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,8 +144,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                     // 대표 사진 (선택)
                     Center(
                       child: GestureDetector(
-                        // TODO: 이미지 선택 연결
-                        onTap: () {},
+                        onTap: _pickPhoto,
                         child: Container(
                           width: 84,
                           height: 84,
@@ -133,12 +152,20 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFDCEDE3), // 목업 대표사진 배경
                             borderRadius: BorderRadius.circular(22),
+                            image: _photo != null
+                                ? DecorationImage(
+                                    image: FileImage(File(_photo!.path)),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                           ),
-                          child: const Icon(
-                            TablerIcons.cameraPlus,
-                            color: AppColors.textBrandOnLight,
-                            size: 40,
-                          ),
+                          child: _photo == null
+                              ? const Icon(
+                                  TablerIcons.cameraPlus,
+                                  color: AppColors.textBrandOnLight,
+                                  size: 40,
+                                )
+                              : null,
                         ),
                       ),
                     ),
