@@ -10,7 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
-import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
+import 'package:repo_jdh/core/widgets/group_thumb.dart';
 
 /// Ploggo - 그룹 세부 화면 (활동 공유 피드)
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
@@ -18,13 +18,11 @@ import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포
 class GroupFeedScreen extends ConsumerStatefulWidget {
   final String groupId;
   final String groupName;
-  final int memberCount;
 
   const GroupFeedScreen({
     super.key,
     this.groupId = '',
-    this.groupName = '00동 같이 주워봐요',
-    this.memberCount = 12,
+    required this.groupName,
   });
 
   @override
@@ -80,6 +78,10 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   // 오른쪽 멤버 드로어(endDrawer) 열고/닫기용 키
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  // 실제 멤버 수 — null: 확인 중. groups/{id}.memberCount 를 그대로 쓴다
+  // (join/leave 때마다 GroupService 가 이미 정확히 증감시키는 값).
+  int? _memberCount;
+
   // 채팅 입력창
   final TextEditingController _msgController = TextEditingController();
   bool _sending = false; // 중복 전송 방지
@@ -114,6 +116,10 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
         if (!mounted) return;
         final wasNearBottom = _isNearBottom();
         setState(() => _items = posts.map(_fromPost).toList());
+        // 가입 시 시스템 메시지가 함께 올라오므로, 새 글이 도착할 때마다
+        // 멤버 수도 다시 조회한다 (탈퇴는 시스템 메시지가 없어 반영 안 됨 —
+        // 화면을 다시 열면 갱신됨).
+        _loadMemberCount();
         if (!_didInitialScroll) {
           _maybeInitialScroll(); // 첫 실데이터 도착 시 최신(하단)으로
         } else if (wasNearBottom) {
@@ -185,25 +191,17 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     } catch (_) {
       // 실패 시 기존 목록 유지
     }
+    await _loadMemberCount();
   }
 
-  // ⚠️ 개발용 — 가짜 피드 글 심기/지우기 (배포 전 삭제)
-  Future<void> _runSeed({required bool seed}) async {
+  Future<void> _loadMemberCount() async {
     if (widget.groupId.isEmpty) return;
     try {
-      final n = seed
-          ? await DevSeed.seedPosts(widget.groupId)
-          : await DevSeed.clearPosts(widget.groupId);
+      final group = await GroupService.getGroup(widget.groupId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${seed ? "심기" : "삭제"} $n건 완료')),
-      );
-      _load(); // 피드 갱신
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('실패: $e')));
+      setState(() => _memberCount = group?.memberCount ?? 0);
+    } catch (_) {
+      if (mounted) setState(() => _memberCount = 0);
     }
   }
 
@@ -672,17 +670,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // TODO: 그룹 대표 이미지로 교체
-              Container(
-                width: 76,
-                height: 76,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceBrand,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text('🌱', style: TextStyle(fontSize: 36)),
-              ),
+              GroupThumb(imageUrl: g?.imageUrl, size: 76),
               const SizedBox(height: 14),
               Text(
                 g?.name ?? widget.groupName,
@@ -840,7 +828,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                   ),
                 ),
                 Text(
-                  '멤버 ${widget.memberCount}명',
+                  _memberCount == null ? '멤버 확인 중…' : '멤버 $_memberCount명',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -854,17 +842,6 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
             icon: const Icon(TablerIcons.infoCircle),
             color: AppColors.textSecondary,
             onPressed: _showGroupInfo,
-          ),
-          // ⚠️ 개발용 임시 버튼 — 가짜 피드 글 심기/지우기 (배포 전 삭제)
-          IconButton(
-            icon: const Icon(TablerIcons.flask),
-            color: AppColors.textSecondary,
-            onPressed: () => _runSeed(seed: true),
-          ),
-          IconButton(
-            icon: const Icon(TablerIcons.trash),
-            color: AppColors.textSecondary,
-            onPressed: () => _runSeed(seed: false),
           ),
           // 오른쪽 위 ≡ → 오른쪽 멤버 드로어 열기
           IconButton(

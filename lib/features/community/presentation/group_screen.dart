@@ -8,9 +8,9 @@ import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/core/widgets/app_card.dart';
 import 'package:repo_jdh/core/widgets/app_section.dart';
+import 'package:repo_jdh/core/widgets/group_thumb.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
-import 'package:repo_jdh/core/dev/dev_seed.dart'; // ⚠️ 개발용 — 배포 전 이 줄과 버튼 삭제
 import 'group_detail_screen.dart';
 import 'group_search_screen.dart';
 import 'group_create_screen.dart';
@@ -71,28 +71,6 @@ class _GroupScreenState extends State<GroupScreen> {
       (_myGroup?.todayActiveCount ?? 0) +
       _others.fold<int>(0, (a, g) => a + g.todayActiveCount);
 
-  // ⚠️ 개발용 더미 — 아직 실제로 활동한 사람이 없을 때도 프로필 미리보기를
-  // 보여주기 위한 값. 실데이터 연동되면 이 상수와 아래 사용처를 삭제한다.
-  static const int _demoTodayTotal = 7;
-  int get _todayTotalOrDemo => _todayTotal > 0 ? _todayTotal : _demoTodayTotal;
-
-  // ⚠️ 개발용 — 가짜 그룹 심기/지우기 (배포 전 삭제)
-  Future<void> _runSeed({required bool seed}) async {
-    try {
-      final n = seed ? await DevSeed.seedGroups() : await DevSeed.clearGroups();
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('${seed ? "심기" : "삭제"} $n건 완료')));
-      _load();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('실패: $e')));
-    }
-  }
-
   Future<void> _openSearch() async {
     final joined = await Navigator.push<bool>(
       context,
@@ -129,13 +107,11 @@ class _GroupScreenState extends State<GroupScreen> {
         child: Column(
           children: [
             _Header(
-              todayTotal: _todayTotalOrDemo, // ⚠️ 개발용 더미 포함
+              todayTotal: _todayTotal,
               region: _myGroup?.region ?? '',
               loading: _loading,
               onSearch: _openSearch,
               onCreate: _openCreate,
-              onSeed: () => _runSeed(seed: true),
-              onClear: () => _runSeed(seed: false),
             ),
             Expanded(
               child: _loading
@@ -247,8 +223,6 @@ class _Header extends StatelessWidget {
   final bool loading;
   final VoidCallback onSearch;
   final VoidCallback onCreate;
-  final VoidCallback onSeed;
-  final VoidCallback onClear;
 
   const _Header({
     required this.todayTotal,
@@ -256,8 +230,6 @@ class _Header extends StatelessWidget {
     required this.loading,
     required this.onSearch,
     required this.onCreate,
-    required this.onSeed,
-    required this.onClear,
   });
 
   @override
@@ -303,11 +275,6 @@ class _Header extends StatelessWidget {
               _IconButton(icon: TablerIcons.search, onTap: onSearch),
               Gap.w8,
               _IconButton(icon: TablerIcons.plus, onTap: onCreate),
-              // ⚠️ 개발용 임시 버튼 — 배포 전 이 두 개와 dev_seed import 삭제
-              Gap.w8,
-              _IconButton(icon: TablerIcons.flask, onTap: onSeed, dev: true),
-              Gap.w8,
-              _IconButton(icon: TablerIcons.trash, onTap: onClear, dev: true),
             ],
           ),
           Gap.h16,
@@ -426,12 +393,10 @@ class _TodayFaces extends StatelessWidget {
 class _IconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-  final bool dev;
 
   const _IconButton({
     required this.icon,
     required this.onTap,
-    this.dev = false,
   });
 
   @override
@@ -451,7 +416,7 @@ class _IconButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 21,
-          color: dev ? AppColors.neutral400 : AppColors.textBrandOnLight,
+          color: AppColors.textBrandOnLight,
         ),
       ),
     );
@@ -476,7 +441,7 @@ class _MyGroupCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _GroupThumb(group: group, size: 64),
+              GroupThumb(imageUrl: group.imageUrl, size: 64),
               Gap.w16,
               Expanded(
                 child: Column(
@@ -623,7 +588,7 @@ class _OtherGroupCard extends StatelessWidget {
       padding: const EdgeInsets.all(Gap.lg),
       child: Row(
         children: [
-          _GroupThumb(group: group, size: 56),
+          GroupThumb(imageUrl: group.imageUrl, size: 56),
           Gap.w16,
           Expanded(
             child: Column(
@@ -675,28 +640,6 @@ class _OtherGroupCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _GroupThumb extends StatelessWidget {
-  final Group group;
-  final double size;
-  const _GroupThumb({required this.group, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: AppColors.neutral100,
-        borderRadius: Radii.tileR,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: group.imageUrl == null
-          ? Icon(TablerIcons.users, size: size * 0.42, color: AppColors.neutral400)
-          : Image.network(group.imageUrl!, fit: BoxFit.cover),
     );
   }
 }

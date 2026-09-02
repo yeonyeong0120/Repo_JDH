@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 class AuthRepository {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -56,6 +57,7 @@ class AuthRepository {
       print('[Auth] Google signOut 스킵: $e');
     }
     await _auth.signOut();
+    BadgeRepo.clear();
     print('[Auth] 로그아웃 완료');
   }
 

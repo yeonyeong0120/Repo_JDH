@@ -56,7 +56,10 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
     return _Act(
       a.id,
       a.startedAt,
-      ActivityMetrics.placeLabel(placeName: a.placeName, groupId: a.groupId),
+      ActivityMetrics.placeLabel(
+        placeName: a.placeDetail ?? a.placeName,
+        groupId: a.groupId,
+      ),
       ActivityMetrics.estimateSteps(a.distanceMeters),
       ActivityMetrics.durationLabel(a.durationSeconds),
       ActivityMetrics.weightGrams(a.trashCounts) / 1000.0,

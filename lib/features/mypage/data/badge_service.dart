@@ -1,12 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/features/plogging/data/firestore_repository.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
-import 'package:repo_jdh/core/dev/dev_user.dart';
-// ignore: unused_import
-// 더미 스위치를 다시 켤 때 필요 (현재 해당 블록들은 주석 처리됨)
 
 /// 뱃지 판정에 쓰는 누적 통계
 class UserStats {
@@ -44,7 +42,7 @@ class UserStats {
 /// 뱃지 획득 판정 · 저장
 class BadgeService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
-  static String? get _uid => DevUser.resolve();
+  static String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   static CollectionReference<Map<String, dynamic>>? _badgeCol() {
     final uid = _uid;
@@ -105,9 +103,6 @@ class BadgeService {
   ///   activities : 활동 1건마다 시간 · 거리        → 시간 · 거리 · 걸음 · 칼로리
   /// (totals/main 은 정산 때 reset 되는 세션값이라 누적에는 쓰지 않음)
   static Future<UserStats> loadStats() async {
-    // ⚠️ 더미 전환: 실제 데이터를 쓰려면 아래 줄을 주석 처리한 상태로 둔다.
-    //    (DevData.enabled 가 true 면 아래 계산을 건너뛰고 가짜 통계를 반환함)
-    // if (DevData.enabled) return DevData.stats; // 개발용 로컬 더미
     final counters = await GroupService.badgeCounters();
     final rows = await FirestoreRepository().getAllDetections();
     final acts = await ActivityService.getRecentCompleted(limit: 500);
@@ -242,15 +237,16 @@ class BadgeService {
 
   /// 획득 현황을 Firestore 에서 읽어 BadgeRepo 에 채움 (앱 시작/내 활동 진입 시)
   static Future<void> loadEarned() async {
-    // ⚠️ 더미 전환: 실제 획득 현황을 쓰려면 아래 블록을 주석 처리한 상태로 둔다.
-    // if (DevData.enabled) {
-    //   BadgeRepo.earned = Map.of(DevData.earnedBadges);
-    //   return;
-    // }
     final col = _badgeCol();
-    if (col == null) return;
+    if (col == null) {
+      BadgeRepo.clear();
+      return;
+    }
     final snap = await col.get();
-    if (snap.docs.isEmpty) return;
+    if (snap.docs.isEmpty) {
+      BadgeRepo.clear();
+      return;
+    }
     BadgeRepo.earned = {
       for (final d in snap.docs) d.id: (d.data()['earnedAt'] as String?) ?? '',
     };
@@ -258,15 +254,6 @@ class BadgeService {
 
   /// 새로 딴 뱃지 저장 + 포인트 적립
   static Future<void> saveEarned(List<BadgeData> badges) async {
-    // ⚠️ 더미 전환: 실제 저장(+포인트 적립)을 하려면 아래 블록을 주석 처리한 상태로 둔다.
-    //    (loadEarned 만 해제하고 이 줄이 켜져 있으면 뱃지를 따도 저장되지 않는다)
-    // if (DevData.enabled) {
-    //   for (final x in badges) {
-    //     DevData.earnedBadges[x.id] = '오늘';
-    //     BadgeRepo.earned[x.id] = '오늘';
-    //   }
-    //   return;
-    // }
     final col = _badgeCol();
     if (col == null || badges.isEmpty) return;
 

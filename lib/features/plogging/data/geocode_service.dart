@@ -16,14 +16,17 @@ class GeocodeService {
   /// 활동 저장을 막지 않도록 짧게 끊는다. (뉴스는 30초지만 여기는 저장 경로다)
   static const Duration _timeout = Duration(seconds: 3);
 
-  /// 좌표에 해당하는 장소명(활동 기록용, 예: '남동구 논현고잔동'). 실패하면 null.
-  /// 호출부가 활동 저장 직전에 쓰므로 예외를 던지지 않는다.
-  static Future<String?> placeNameOf({
+  /// 좌표 → 장소명 + 번지 포함 상세 장소명 (활동 저장용). _fetch 한 번으로 둘 다 받는다.
+  /// 실패하면 둘 다 null. 호출부가 활동 저장 직전에 쓰므로 예외를 던지지 않는다.
+  static Future<({String? placeName, String? placeDetail})> placeInfoOf({
     required double lat,
     required double lng,
   }) async {
     final data = await _fetch(lat: lat, lng: lng);
-    return _stringField(data, 'placeName');
+    return (
+      placeName: _stringField(data, 'placeName'),
+      placeDetail: _stringField(data, 'placeDetail'),
+    );
   }
 
   /// 좌표에 해당하는 지역(그룹 매칭용, 예: '인천 남동구'). 실패하면 null.

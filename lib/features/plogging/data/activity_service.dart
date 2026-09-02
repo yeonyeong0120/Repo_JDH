@@ -1,19 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
-import 'package:repo_jdh/core/dev/dev_user.dart';
-import 'package:repo_jdh/core/dev/dev_data.dart';
 
 /// 활동 세션 CRUD
 /// Firestore 경로: users/{uid}/activities/{activityId}
 class ActivityService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  /// ⚠️ 이 파일 전용 더미 스위치.
-  /// 활동 기록은 실제 Firestore 연동이 완료되어 false 로 둔다.
-  /// 다시 더미로 보고 싶으면 이 한 줄만 `DevData.enabled` 로 바꾸면 된다.
-  static const bool _useDummy = false;
-
-  static String? get _uid => DevUser.resolve();
+  static String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   static CollectionReference<Map<String, dynamic>>? _activitiesCol() {
     final uid = _uid;
@@ -189,8 +183,8 @@ class ActivityService {
     Map<String, double>? endLocation,
     List<String> imageUrls = const [], // 인증샷 URL (없으면 빈 배열)
     String? placeName, // 역지오코딩 결과 (좌표가 없거나 실패했으면 null)
+    String? placeDetail, // 번지 포함 상세 장소명 (없으면 null)
   }) async {
-    if (_useDummy) return 'dev_activity';
     final col = _activitiesCol();
     if (col == null) return null;
 
@@ -211,13 +205,13 @@ class ActivityService {
       'status': ActivityStatus.completed,
       if (groupId != null) 'groupId': groupId,
       if (placeName != null) 'placeName': placeName,
+      if (placeDetail != null) 'placeDetail': placeDetail,
     });
     return doc.id;
   }
 
   /// 완료된 활동 최근 N개 (내 활동 화면용)
   static Future<List<Activity>> getRecentCompleted({int limit = 20}) async {
-    if (_useDummy) return DevData.activities; // 개발용 로컬 더미
     final col = _activitiesCol();
     if (col == null) return [];
 

@@ -3,20 +3,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:repo_jdh/features/auth/domain/user_profile.dart';
+import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/domain/profile_detail.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
-import 'package:repo_jdh/core/dev/dev_user.dart';
-import 'package:repo_jdh/core/dev/dev_data.dart';
 
 /// 사용자 프로필 CRUD
 /// Firestore 경로: users/{uid}
 class UserService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // 로그인 전이면 개발용 uid 사용 (DevUser.enabled=false 로 끄기)
-  // 참고: DevUser.resolve() 는 이미 "실제 로그인 있으면 그걸 먼저" 쓰므로,
-  //      로그인 흐름만 살아나면 자동으로 실제 uid 를 사용한다.
-  static String? get _uid => DevUser.resolve();
+  static String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   static User? get _user => FirebaseAuth.instance.currentUser;
 
@@ -140,10 +136,6 @@ class UserService {
 
   /// 프로필 상세 (Firestore + 계정 정보 + 활동 기반 XP)
   static Future<ProfileDetail> loadProfileDetail() async {
-    // ⚠️ 더미 전환: 실제 프로필을 쓰려면 아래 줄을 주석 처리한 상태로 둔다.
-    //    (켜져 있으면 아래 계산을 건너뛰고 가짜 프로필 '김연영/Lv.2/5,000P' 반환)
-    // if (DevData.enabled) return DevData.profile; // 개발용 로컬 더미
-
     final uid = _uid;
     // [문제 ③ 관련] 조용히 빈 값을 반환하면 UI 가 "데이터 없음"인지
     //   "로그인 안 됨"인지 구분 못 한다. 예외를 던지고 UI 에서 처리하게 한다.
@@ -169,14 +161,11 @@ class UserService {
     }
 
     return base.copyWith(
-      // [문제 ③] DevUser.* → 실제 계정 정보로 교체.
-      //   기존엔 이 줄들이 if(DevData.enabled) 바깥이라, 더미를 꺼도
-      //   프로필에 개발용 이메일/이름이 계속 표시됐다.
       nickname: base.nickname.isEmpty
           ? (user?.displayName ?? '플로거')
           : base.nickname,
       photoUrl: base.photoUrl ?? user?.photoURL,
-      email: user?.email ?? '', // ★ DevUser.email 제거
+      email: user?.email ?? '',
       xp: xp,
       joinedAt: user?.metadata.creationTime,
     );
@@ -192,17 +181,6 @@ class UserService {
     int? weight,
     String? region,
   }) async {
-    if (DevData.enabled) {
-      DevData.profile = DevData.profile.copyWith(
-        nickname: nickname,
-        gender: gender,
-        age: age,
-        height: height,
-        weight: weight,
-        region: region,
-      );
-      return;
-    }
     final uid = _uid;
     if (uid == null) return;
 
@@ -240,7 +218,6 @@ class UserService {
 
   /// 플로깅 가이드 모달을 이미 봤는지 (첫 1회만 노출)
   static Future<bool> hasSeenPloggingGuide() async {
-    if (DevData.enabled) return false; // 더미 모드에서는 매번 확인 가능
     final uid = _uid;
     if (uid == null) return true; // 비로그인 상태면 굳이 띄우지 않음
     final snap = await _db.collection('users').doc(uid).get();
@@ -248,7 +225,6 @@ class UserService {
   }
 
   static Future<void> markPloggingGuideSeen() async {
-    if (DevData.enabled) return;
     final uid = _uid;
     if (uid == null) return;
     await _db.collection('users').doc(uid).set({
@@ -256,7 +232,20 @@ class UserService {
     }, SetOptions(merge: true));
   }
 
-  static Future<void> signOut() => FirebaseAuth.instance.signOut();
+  static Future<void> signOut() {
+    BadgeRepo.clear();
+    return FirebaseAuth.instance.signOut();
+  }
+
+  /// 포인트 적립 (뱃지·활동 등 여러 출처가 공통으로 씀). amount 는 항상 양수로 호출한다.
+  static Future<void> addPoints(int amount) async {
+    if (amount <= 0) return;
+    final uid = _uid;
+    if (uid == null) return;
+    await _db.collection('users').doc(uid).set({
+      'points': FieldValue.increment(amount),
+    }, SetOptions(merge: true));
+  }
 
   /// 회원 탈퇴 — 프로필 문서 삭제 후 계정 삭제
   /// 마지막 로그인이 오래됐으면 재인증이 필요해 실패할 수 있음

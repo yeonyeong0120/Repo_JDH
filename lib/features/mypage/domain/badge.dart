@@ -247,6 +247,9 @@ class BadgeRepo {
   static bool isEarned(String id) => earned.containsKey(id);
   static String? dateOf(String id) => earned[id];
 
+  /// 로그아웃 시 이전 계정의 획득 현황이 남지 않도록 비운다
+  static void clear() => earned = {};
+
   static BadgeData byId(String id) => kBadges.firstWhere((b) => b.id == id);
 
   /// 획득한 뱃지만 (등급별 목록 · 정산 화면에서 사용)
