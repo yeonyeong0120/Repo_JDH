@@ -364,10 +364,8 @@ class _GroupRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = group.todayActiveCount > 0;
-    // 활동 중이면 '지금 N명 활동 중 · 멤버 N명', 아니면 멤버·지역.
-    final meta = active
-        ? '지금 ${group.todayActiveCount}명 활동 중 · 멤버 ${group.memberCount}명'
-        : '멤버 ${group.memberCount}명${group.region.isEmpty ? '' : ' · ${group.region}'}';
+    // 부제 통일(SEARCH_PACE_FILTER §5): 항상 '강도 · 멤버 N명' (활동 여부는 앞 점으로만).
+    final meta = '${group.intensity} · 멤버 ${group.memberCount}명';
 
     return GestureDetector(
       onTap: onTap,

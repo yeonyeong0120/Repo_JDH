@@ -50,6 +50,16 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
   static const List<String> _sortLabels = ['활동순', '인기순', '최신순'];
   static const List<String> _sortHints = ['오늘 활동 많은 순', '멤버 많은 순', '개설 최신순'];
 
+  // 활동 강도 필터 (null = 전체). 알약은 짧은 라벨, 매칭·메타는 원문을 쓴다.
+  int? _pace;
+  static const List<String> _paceLabels = ['산책', '가볍게', '러닝']; // 알약 전용(짧게)
+  static const List<String> _paceFull = ['산책', '가볍게 뛰기', '러닝']; // 매칭·메타
+  static const List<IconData> _paceIcons = [
+    TablerIcons.shoe,
+    TablerIcons.run,
+    TablerIcons.flame,
+  ];
+
   List<Group> _results = [];
   bool _loading = true;
 
@@ -84,9 +94,12 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     });
   }
 
-  // 현재 정렬 기준으로 결과를 정렬한 사본
+  // 검색어 매칭 결과 → 강도 필터 → 정렬 (순서 중요: 필터를 정렬 앞에서 적용).
   List<Group> _sorted() {
-    final list = [..._results];
+    // 강도 필터 (pf != null 로 검사 — 0(산책)이 무시되지 않게)
+    final list = _pace == null
+        ? [..._results]
+        : _results.where((g) => g.intensity == _paceFull[_pace!]).toList();
     switch (_sort) {
       case 0: // 활동순 (같으면 멤버 많은 순)
         list.sort((a, b) {
@@ -383,6 +396,18 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                 ],
               ),
             ),
+            // 활동 강도 필터 알약 — 결과 헤더 아래(결과에 걸리는 조건임을 분명히).
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 14, 22, 0),
+              child: Row(
+                children: [
+                  for (int i = 0; i < _paceLabels.length; i++) ...[
+                    _paceChip(i),
+                    if (i < _paceLabels.length - 1) const SizedBox(width: 7),
+                  ],
+                ],
+              ),
+            ),
             const SizedBox(height: 14),
             // 결과
             Expanded(
@@ -424,6 +449,43 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
               child: _empty(),
             ),
         ],
+      ),
+    );
+  }
+
+  // 활동 강도 필터 알약 — 선택 시 다크 면 + 라임 아이콘(보더 제거), 미선택은 흰 면 + 보더.
+  Widget _paceChip(int i) {
+    final on = _pace == i;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      // 같은 알약을 다시 누르면 해제(null) — '전체' 알약이 따로 없는 이유.
+      onTap: () => setState(() => _pace = on ? null : i),
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: on ? AppColors.ink : AppColors.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: on
+              ? null
+              : Border.all(color: AppColors.gray200, width: 1.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_paceIcons[i],
+                size: 15, color: on ? AppColors.lime : AppColors.gray700),
+            const SizedBox(width: 5),
+            Text(
+              _paceLabels[i],
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: on ? FontWeight.w800 : FontWeight.w600,
+                color: on ? Colors.white : AppColors.gray700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -500,9 +562,9 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
   // 라인 보더 결과 카드 → 상세/가입
   Widget _groupCard(Group g) {
     final active = g.todayActiveCount > 0;
-    final meta = active
-        ? '지금 ${g.todayActiveCount}명 활동 중 · 멤버 ${g.memberCount}명'
-        : '멤버 ${g.memberCount}명${g.region.isEmpty ? '' : ' · ${g.region}'}';
+    // 부제 통일(SEARCH_PACE_FILTER §5): 항상 '강도 · 멤버 N명' (활동 여부는 앞의 점으로만).
+    // 거리(N.Nkm)는 모델에 값이 없어 생략.
+    final meta = '${g.intensity} · 멤버 ${g.memberCount}명';
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
