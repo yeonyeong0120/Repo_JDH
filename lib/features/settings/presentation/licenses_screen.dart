@@ -37,24 +37,33 @@ class LicensesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              padding: const EdgeInsets.fromLTRB(16, 8, 22, 12),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        TablerIcons.chevronLeft,
+                        size: 24,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
                   const Text(
                     '오픈소스 및 출처',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -63,14 +72,14 @@ class LicensesScreen extends StatelessWidget {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
                 children: [
                   const Text(
                     '플로고는 아래 리소스를 사용하고 있으며, 제작자분들께 감사드립니다.',
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.6,
-                      color: AppColors.textSecondary,
+                      color: AppColors.gray500,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -95,9 +104,8 @@ class LicensesScreen extends StatelessWidget {
                         vertical: 18,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: AppColors.cardShadow,
+                        color: AppColors.surfaceSoft,
+                        borderRadius: BorderRadius.circular(22),
                       ),
                       child: Row(
                         children: [
@@ -132,9 +140,8 @@ class LicensesScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,7 +165,7 @@ class LicensesScreen extends StatelessWidget {
                     ? null
                     : const Border(
                         bottom: BorderSide(
-                          color: AppColors.border,
+                          color: AppColors.line100,
                           width: 0.8,
                         ),
                       ),

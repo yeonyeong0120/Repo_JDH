@@ -134,10 +134,18 @@ class _QuestListScreenState extends State<QuestListScreen> {
               padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        TablerIcons.chevronLeft,
+                        size: 24,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
                   const Text(
                     '챌린지',
@@ -168,20 +176,22 @@ class _QuestListScreenState extends State<QuestListScreen> {
     );
   }
 
+  // 목업: 오른쪽 정렬 '점 + 라벨' 라디오 (진행 중 / 달성)
   Widget _tabBar() {
     const labels = ['진행 중', '달성'];
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
         for (int i = 0; i < labels.length; i++) ...[
-          _pill(labels[i], i),
-          if (i < labels.length - 1) const SizedBox(width: 8),
+          _tabDot(labels[i], i),
+          if (i < labels.length - 1) const SizedBox(width: 16),
         ],
       ],
     );
   }
 
-  Widget _pill(String label, int i) {
-    final selected = _tab == i;
+  Widget _tabDot(String label, int i) {
+    final on = _tab == i;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _pageController.animateToPage(
@@ -189,22 +199,27 @@ class _QuestListScreenState extends State<QuestListScreen> {
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
       ),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.subPoint : AppColors.surface,
-          borderRadius: BorderRadius.circular(13),
-          border: selected ? null : Border.all(color: AppColors.border),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : AppColors.textSecondary,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: on ? AppColors.ink : AppColors.gray300,
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: on ? FontWeight.w800 : FontWeight.w600,
+              color: on ? AppColors.textPrimary : AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -219,34 +234,45 @@ class _QuestListScreenState extends State<QuestListScreen> {
     return b.toString();
   }
 
+  // 진행 수치 축약 — 1000 이상은 k 로 (8200 -> 8.2k, 10000 -> 10k)
+  static String _fmtCount(int n) {
+    if (n < 1000) return '$n';
+    final v = n / 1000.0;
+    final s = v.toStringAsFixed(1);
+    return '${s.endsWith('.0') ? s.substring(0, s.length - 2) : s}k';
+  }
+
+  // 목업: 소프트 그레이 카드 한 줄 — 아이콘 타일 | (이름 + 진행바/달성문구) | %·체크
   Widget _questCard(_Q q) {
     final done = q.done;
     final progress = (q.current / q.total).clamp(0.0, 1.0);
-    final pct = (progress * 100).round();
 
+    // 아이콘: 달성은 라임 위 잉크, 진행 중은 카테고리 색
+    final Color iconFg = done ? AppColors.limeOn : q.color;
     final Widget iconWidget = q.isCollect
-        ? TrashBagIcon(size: 24, color: q.color)
-        : Icon(q.icon, color: q.color, size: 24);
+        ? TrashBagIcon(size: 20, color: iconFg)
+        : Icon(q.icon, color: iconFg, size: 20);
 
-    final header = Row(
-      children: [
-        Opacity(
-          opacity: done ? 0.45 : 1,
-          child: Container(
-            width: 48,
-            height: 48,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: q.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
+              color: done ? AppColors.lime : q.color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(15),
             ),
             child: iconWidget,
           ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Opacity(
-            opacity: done ? 0.5 : 1,
+          const SizedBox(width: 12),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -256,67 +282,52 @@ class _QuestListScreenState extends State<QuestListScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  done
-                      ? '달성 · ${q.title} 뱃지 획득'
-                      : '${_comma(q.current)} / ${_comma(q.total)} · 달성 시 ${q.points}P',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                const SizedBox(height: 8),
+                if (done)
+                  Text(
+                    '달성 · ${_comma(q.points)}P 획득',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  )
+                else
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor: AppColors.line100,
+                      color: q.color,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-        ),
-        const SizedBox(width: 10),
-        if (done)
-          const Icon(TablerIcons.circleCheckFilled, color: AppColors.subPoint, size: 24)
-        else
-          Text(
-            '$pct%',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: q.color,
+          const SizedBox(width: 12),
+          if (done)
+            const Icon(
+              TablerIcons.circleCheckFilled,
+              color: AppColors.ink,
+              size: 21,
+            )
+          else
+            Text(
+              '${_fmtCount(q.current)}/${_fmtCount(q.total)}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-      ],
-    );
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
+        ],
       ),
-      child: done
-          ? header
-          : Column(
-              children: [
-                header,
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 9,
-                    backgroundColor: AppColors.neutral200,
-                    color: q.color,
-                  ),
-                ),
-              ],
-            ),
     );
   }
 }
