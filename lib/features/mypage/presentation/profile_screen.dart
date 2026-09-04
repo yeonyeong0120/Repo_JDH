@@ -98,8 +98,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 목업(Startline): 프로필은 흰 배경 + 밑줄/칩 구성.
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: _loading
             ? const Center(
@@ -113,20 +114,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _topBar(),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                      padding: const EdgeInsets.fromLTRB(22, 8, 22, 32),
                       children: [
-                        const SizedBox(height: 6),
                         _avatar(),
                         const SizedBox(height: 22),
-                        _nicknameCard(),
-                        const SizedBox(height: 24),
-                        _sectionLabel('기본 정보', '칼로리 계산에 사용해요'),
-                        const SizedBox(height: 10),
-                        _basicInfoCard(),
-                        const SizedBox(height: 24),
-                        _sectionLabel('계정', null),
-                        const SizedBox(height: 10),
-                        _accountCard(),
+                        _nicknameField(),
+                        const SizedBox(height: 26),
+                        _infoSection(),
+                        const SizedBox(height: 26),
+                        _readOnlySection(),
                       ],
                     ),
                   ),
@@ -142,10 +138,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(TablerIcons.chevronLeft, size: 20),
-            color: AppColors.textPrimary,
-            onPressed: () => Navigator.pop(context),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.pop(context),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                TablerIcons.chevronLeft,
+                size: 24,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
           const Text(
             '프로필',
@@ -181,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── 프로필 사진(둥근 네모) + 카메라 뱃지 ──
+  // ── 라임 원형 아바타 96 + 카메라 뱃지 (목업) ──
   Widget _avatar() {
     final url = _p.photoUrl;
     return Center(
@@ -192,13 +196,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           clipBehavior: Clip.none,
           children: [
             Container(
-              width: 104,
-              height: 104,
+              width: 96,
+              height: 96,
               alignment: Alignment.center,
               clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceBrand,
-                borderRadius: BorderRadius.circular(28),
+              decoration: const BoxDecoration(
+                color: AppColors.lime, // 라임 아바타
+                shape: BoxShape.circle,
               ),
               child: _uploading
                   ? const CircularProgressIndicator(
@@ -206,39 +210,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       strokeWidth: 2,
                     )
                   : (url == null || url.isEmpty)
-                  ? const Icon(
-                      TablerIcons.userFilled,
-                      size: 56,
-                      color: AppColors.textSecondary,
-                    )
+                  ? _avatarInitial()
                   : Image.network(
                       url,
-                      width: 104,
-                      height: 104,
+                      width: 96,
+                      height: 96,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        TablerIcons.userFilled,
-                        size: 56,
-                        color: AppColors.textSecondary,
-                      ),
+                      errorBuilder: (_, __, ___) => _avatarInitial(),
                     ),
             ),
+            // 카메라 뱃지 — 차콜 원 + 흰 테두리 + 라임 카메라
             Positioned(
               right: -2,
               bottom: -2,
               child: Container(
-                width: 34,
-                height: 34,
+                width: 30,
+                height: 30,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.actionPrimary,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.bg, width: 3),
+                  color: AppColors.ink,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surface, width: 3),
                 ),
                 child: const Icon(
-                  TablerIcons.cameraFilled,
-                  size: 16,
-                  color: Colors.white,
+                  TablerIcons.camera,
+                  size: 14,
+                  color: AppColors.lime,
                 ),
               ),
             ),
@@ -248,29 +245,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── 닉네임: 라벨은 박스 위, 입력칸은 단색(초록 없음) ──
-  Widget _nicknameCard() {
+  // ── 아바타 폴백 — 닉네임 첫 글자 (사진 없을 때) ──
+  Widget _avatarInitial() {
+    final nick = _nickCtrl.text.trim().isEmpty
+        ? _p.nickname
+        : _nickCtrl.text.trim();
+    final ch = nick.characters.isEmpty ? '' : nick.characters.first;
+    return Text(
+      ch,
+      style: const TextStyle(
+        fontSize: 42,
+        fontWeight: FontWeight.w800,
+        color: AppColors.limeOn,
+      ),
+    );
+  }
+
+  // ── 폼 섹션 마이크로 라벨 (대문자 트래킹 느낌) ──
+  Widget _microLabel(String title, {String? sub}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.4,
+              color: AppColors.gray500,
+            ),
+          ),
+          if (sub != null) ...[
+            const SizedBox(height: 5),
+            Text(
+              sub,
+              style: const TextStyle(
+                fontSize: 12.5,
+                height: 1.6,
+                color: AppColors.gray350,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── 닉네임: 마이크로 라벨 + 2px 잉크 밑줄 인풋 + n/10 ──
+  Widget _nicknameField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            '닉네임',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
+        _microLabel('닉네임'),
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 2, 14, 2),
-          decoration: BoxDecoration(
-            // 아래 기본 정보 카드와 동일한 하양 + 테두리
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: AppColors.ink, width: 2)),
           ),
           child: Row(
             children: [
@@ -278,7 +310,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: TextField(
                   controller: _nickCtrl,
                   maxLength: 10,
-                  cursorColor: AppColors.textPrimary, // 초록 커서 제거
+                  cursorColor: AppColors.textPrimary,
                   buildCounter:
                       (
                         _, {
@@ -290,8 +322,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                   onChanged: (_) => setState(() {}),
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
                   decoration: const InputDecoration(
@@ -300,6 +332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
                     hintText: '닉네임',
                     hintStyle: TextStyle(color: AppColors.textDisabled),
                   ),
@@ -309,9 +342,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 '${_nickCtrl.text.characters.length}/10',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  color: AppColors.gray350,
                 ),
               ),
             ],
@@ -321,137 +354,143 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── 섹션 라벨 ('기본 정보' + 보조설명) ──
-  Widget _sectionLabel(String title, String? sub) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
+  // ── 내 정보: 성별 칩(라임 선택) + 나이/키/몸무게 스테퍼 행 ──
+  Widget _infoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _microLabel('내 정보', sub: '걸음수와 칼로리를 계산하는 데 쓰여요'),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            _genderChip('남성'),
+            const SizedBox(width: 9),
+            _genderChip('여성'),
+          ],
+        ),
+        const SizedBox(height: 6),
+        _numRow(
+          TablerIcons.cake,
+          '나이',
+          _p.age == null ? null : '${_p.age}세',
+          () => _pickNumber(
+            '나이',
+            '세',
+            _p.age ?? 25,
+            10,
+            100,
+            (v) => setState(() => _p = _p.copyWith(age: v)),
+          ),
+        ),
+        _numRow(
+          TablerIcons.ruler2,
+          '키',
+          _p.height == null ? null : '${_p.height}cm',
+          () => _pickNumber(
+            '키',
+            'cm',
+            _p.height ?? 165,
+            100,
+            220,
+            (v) => setState(() => _p = _p.copyWith(height: v)),
+          ),
+        ),
+        _numRow(
+          TablerIcons.scale,
+          '몸무게',
+          _p.weight == null ? null : '${_p.weight}kg',
+          () => _pickNumber(
+            '몸무게',
+            'kg',
+            _p.weight ?? 60,
+            30,
+            150,
+            (v) => setState(() => _p = _p.copyWith(weight: v)),
+          ),
+          last: true,
+        ),
+      ],
+    );
+  }
+
+  // 성별 칩 — 선택 시 라임 면 + 잉크 보더 (회원가입 2단계와 동일 스타일)
+  Widget _genderChip(String g) {
+    final on = _p.gender == g;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _p = _p.copyWith(gender: g)),
+        child: Container(
+          height: 50,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: on ? AppColors.lime : AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: on ? AppColors.ink : AppColors.gray200,
+              width: 1.5,
+            ),
+          ),
+          child: Text(
+            g,
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: on ? AppColors.limeOn : AppColors.textPrimary,
             ),
           ),
-          if (sub != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              sub,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
 
-  // ── 기본 정보 카드 ──
-  Widget _basicInfoCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          _editRow('성별', _p.gender ?? '선택 안 함', _editGender),
-          _editRow(
-            '나이',
-            _p.age == null ? '입력 안 함' : '${_p.age}세',
-            () => _pickNumber(
-              '나이',
-              '세',
-              _p.age ?? 25,
-              10,
-              100,
-              (v) => setState(() => _p = _p.copyWith(age: v)),
-            ),
-          ),
-          _editRow(
-            '키',
-            _p.height == null ? '입력 안 함' : '${_p.height}cm',
-            () => _pickNumber(
-              '키',
-              'cm',
-              _p.height ?? 165,
-              100,
-              220,
-              (v) => setState(() => _p = _p.copyWith(height: v)),
-            ),
-          ),
-          _editRow(
-            '몸무게',
-            _p.weight == null ? '입력 안 함' : '${_p.weight}kg',
-            () => _pickNumber(
-              '몸무게',
-              'kg',
-              _p.weight ?? 60,
-              30,
-              150,
-              (v) => setState(() => _p = _p.copyWith(weight: v)),
-            ),
-          ),
-          _editRow(
-            '지역',
-            _p.region.isEmpty ? '입력 안 함' : _p.region,
-            _editRegion,
-            last: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _editRow(
+  // 스테퍼 행 (아이콘 + 라벨 + 값 + 셰브론). 미설정은 '선택'.
+  Widget _numRow(
+    IconData icon,
     String label,
-    String value,
+    String? value,
     VoidCallback onTap, {
     bool last = false,
   }) {
     return GestureDetector(
-      onTap: onTap,
       behavior: HitTestBehavior.opaque,
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 15),
+        height: 56,
         decoration: BoxDecoration(
           border: last
               ? null
               : const Border(
-                  bottom: BorderSide(color: AppColors.border, width: 0.8),
+                  bottom: BorderSide(color: AppColors.line100, width: 1.5),
                 ),
         ),
         child: Row(
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+            Icon(icon, size: 20, color: AppColors.gray700),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
-            const Spacer(),
             Text(
-              value,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
+              value ?? '선택',
+              style: TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w800,
+                color: value == null ? AppColors.gray400 : AppColors.textPrimary,
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             const Icon(
               TablerIcons.chevronRight,
-              size: 20,
-              color: AppColors.neutral400,
+              size: 19,
+              color: AppColors.gray300,
             ),
           ],
         ),
@@ -459,124 +498,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── 계정 카드 (읽기 전용) ──
-  Widget _accountCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: AppColors.border, width: 0.8),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Text(
-                  '접속 중인 계정',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                Flexible(
-                  child: Text(
-                    _p.email.isEmpty ? '-' : _maskEmail(_p.email),
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                if (_providerLabel != null) ...[
-                  const SizedBox(width: 8),
-                  _providerChip(_providerLabel!),
-                ],
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            child: Row(
-              children: [
-                const Text(
-                  '가입일',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  _p.joinedText,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                if (_daysSinceJoin != null) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    '+$_daysSinceJoin일',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textBrand,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+  // ── 읽기 전용: 동네(수정 가능) / 접속 계정 / 가입일 ──
+  Widget _readOnlySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _roRow(
+          TablerIcons.mapPin,
+          '동네',
+          _p.region.isEmpty ? '미설정' : _p.region,
+          onTap: _editRegion,
+        ),
+        _roRow(
+          TablerIcons.userFilled,
+          '접속 계정',
+          _p.email.isEmpty ? '-' : _maskEmail(_p.email),
+        ),
+        _roRow(TablerIcons.calendar, '가입일', _joinedDot),
+      ],
     );
   }
 
-  Widget _providerChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.green100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textBrandOnLight,
+  Widget _roRow(
+    IconData icon,
+    String label,
+    String value, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.line100)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppColors.gray700),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            Flexible(
+              child: Text(
+                value,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gray500,
+                ),
+              ),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(width: 6),
+              const Icon(
+                TablerIcons.chevronRight,
+                size: 18,
+                color: AppColors.gray300,
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
 
-  // 이메일 도메인으로 추정한 로그인 수단 라벨 (표시용)
-  String? get _providerLabel {
-    final e = _p.email.toLowerCase();
-    if (e.isEmpty) return null;
-    if (e.endsWith('@gmail.com')) return 'Google';
-    if (e.endsWith('@naver.com')) return 'Naver';
-    if (e.endsWith('@kakao.com')) return 'Kakao';
-    return '이메일';
-  }
-
-  int? get _daysSinceJoin {
+  // 가입일 — '2026. 4. 18.' 형식 (목업과 동일)
+  String get _joinedDot {
     final d = _p.joinedAt;
-    if (d == null) return null;
-    final days = DateTime.now().difference(d).inDays;
-    return days < 0 ? 0 : days;
+    if (d == null) return _p.joinedText;
+    return '${d.year}. ${d.month}. ${d.day}.';
   }
 
   // kim****@gmail.com 형태로 로컬파트 일부 마스킹
@@ -642,36 +642,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => _uploading = false);
       AppSnackBar.show(context, '사진을 올리지 못했어요');
     }
-  }
-
-  // ── 성별 선택 시트 ──
-  Future<void> _editGender() async {
-    FocusScope.of(context).unfocus();
-    final picked = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            for (final g in ['남성', '여성'])
-              ListTile(
-                title: Text(g),
-                trailing: _p.gender == g
-                    ? const Icon(TablerIcons.check, color: AppColors.actionPrimary)
-                    : null,
-                onTap: () => Navigator.pop(ctx, g),
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-    if (picked != null) setState(() => _p = _p.copyWith(gender: picked));
   }
 
   // ── 지역 입력 다이얼로그 ──

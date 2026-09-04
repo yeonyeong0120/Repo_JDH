@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 
-/// 공지사항 목록 (EXTRA-03) → 카드 탭 → 상세 (EXTRA-04)
+/// 공지사항 목록 → 카드 탭 → 상세 (Startline 리스트 구조)
 /// 위치 권장: lib/features/settings/presentation/notice_screen.dart
 class NoticeListScreen extends StatelessWidget {
   const NoticeListScreen({super.key});
@@ -16,7 +16,7 @@ class NoticeListScreen extends StatelessWidget {
           '안녕하세요, 플로고입니다.\n\n'
           '우리 동네를 함께 깨끗하게 만드는 플로깅 앱 플로고가 정식으로 문을 열었습니다.\n\n'
           '걷고 주우면 활동이 기록되고, 퀘스트를 달성하면 뱃지와 에코 포인트를 드려요. '
-          '모은 포인트는 에코포인트 상점에서 사용할 수 있습니다.\n\n'
+          '모은 포인트는 포인트 샵에서 사용할 수 있습니다.\n\n'
           '앞으로도 더 나은 서비스로 찾아뵙겠습니다. 감사합니다.',
     ),
     Notice(
@@ -42,17 +42,16 @@ class NoticeListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
             const _TopBar(title: '공지사항'),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
                 itemCount: _notices.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, i) => _card(context, _notices[i]),
+                itemBuilder: (_, i) => _row(context, _notices[i]),
               ),
             ),
           ],
@@ -61,7 +60,7 @@ class NoticeListScreen extends StatelessWidget {
     );
   }
 
-  Widget _card(BuildContext context, Notice n) {
+  Widget _row(BuildContext context, Notice n) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.push(
@@ -69,11 +68,10 @@ class NoticeListScreen extends StatelessWidget {
         MaterialPageRoute(builder: (_) => NoticeDetailScreen(notice: n)),
       ),
       child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppColors.cardShadow,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: const BoxDecoration(
+          border:
+              Border(bottom: BorderSide(color: AppColors.line100, width: 1)),
         ),
         child: Row(
           children: [
@@ -89,30 +87,30 @@ class NoticeListScreen extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 17,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
                         ),
                       ),
-                      // 최근 7일 이내면 새글 표시
+                      // 최근 7일 이내면 라임 NEW 뱃지
                       if (n.isNew) ...[
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 7),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                            horizontal: 8,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceBrand,
-                            borderRadius: BorderRadius.circular(8),
+                            color: AppColors.lime,
+                            borderRadius: BorderRadius.circular(999),
                           ),
                           child: const Text(
                             'NEW',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.green800,
+                              color: AppColors.limeOn,
                             ),
                           ),
                         ),
@@ -123,14 +121,19 @@ class NoticeListScreen extends StatelessWidget {
                   Text(
                     n.dateText,
                     style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.gray500,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(TablerIcons.chevronRight, color: AppColors.textSecondary),
+            const Icon(
+              TablerIcons.chevronRight,
+              size: 20,
+              color: AppColors.gray400,
+            ),
           ],
         ),
       ),
@@ -145,33 +148,36 @@ class NoticeDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
             const _TopBar(title: '공지사항'),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                padding: const EdgeInsets.fromLTRB(22, 8, 22, 28),
                 children: [
                   Text(
                     notice.title,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 23,
                       fontWeight: FontWeight.w800,
+                      height: 1.35,
+                      letterSpacing: -0.5,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
                     notice.dateText,
                     style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.gray500,
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  const Divider(color: AppColors.border, height: 1),
+                  const SizedBox(height: 16),
+                  const Divider(color: AppColors.line100, height: 1),
                   const SizedBox(height: 18),
                   Text(
                     notice.body,
@@ -204,7 +210,7 @@ class Notice {
   bool get isNew => DateTime.now().difference(date).inDays <= 7;
 }
 
-/// 공지/FAQ/약관 공통 상단 바
+/// 공지/약관 공통 상단 바
 class _TopBar extends StatelessWidget {
   final String title;
   const _TopBar({required this.title});
@@ -212,19 +218,28 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      padding: const EdgeInsets.fromLTRB(16, 8, 22, 12),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(TablerIcons.chevronLeft, size: 20),
-            color: AppColors.textPrimary,
-            onPressed: () => Navigator.pop(context),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.pop(context),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                TablerIcons.chevronLeft,
+                size: 24,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
           Text(
             title,
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
               color: AppColors.textPrimary,
             ),
           ),

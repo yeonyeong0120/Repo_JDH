@@ -29,30 +29,31 @@ class AppSnackBar {
     bool neutral = false,
   }) {
     // neutral: true 는 기본값과 같으므로 무시해도 결과가 같다.
-    late final Color bg;
+    // Startline 스낵바: 면은 항상 잉크(다크 알약), 종류는 리딩 아이콘 색으로만 구분.
     late final IconData? icon;
+    late final Color? iconColor;
     switch (kind) {
       case SnackKind.neutral:
-        bg = AppColors.neutral900;
         icon = null;
+        iconColor = null;
       case SnackKind.success:
-        bg = AppColors.green800;
         icon = TablerIcons.circleCheckFilled;
+        iconColor = AppColors.lime; // 다크 면 위 라임 포인트
       case SnackKind.error:
-        bg = AppColors.actionDanger;
         icon = TablerIcons.alertCircleFilled;
+        iconColor = AppColors.actionDanger;
     }
 
     _show(
       context,
-      bg: bg,
+      bg: AppColors.ink,
       duration: duration,
       actionLabel: actionLabel,
       onAction: onAction,
       content: Row(
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 20, color: AppColors.neutral0),
+            Icon(icon, size: 20, color: iconColor),
             Gap.w12,
           ],
           Expanded(
@@ -76,16 +77,17 @@ class AppSnackBar {
   }) {
     _show(
       context,
-      bg: AppColors.neutral900,
+      bg: AppColors.ink,
       duration: duration,
       content: Row(
         children: [
           const SizedBox(
             width: 18,
             height: 18,
+            // 로딩 스피너는 라임(다크 면 위 포인트).
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.green300),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.lime),
             ),
           ),
           Gap.w12,
@@ -120,7 +122,8 @@ class AppSnackBar {
           behavior: SnackBarBehavior.floating,
           elevation: 0,
           duration: duration,
-          shape: RoundedRectangleBorder(borderRadius: Radii.tileR),
+          // 떠 있는 다크 알약: 완전 둥근 모서리.
+          shape: RoundedRectangleBorder(borderRadius: Radii.fullR),
           margin: const EdgeInsets.fromLTRB(
             Gap.lg,
             0,
@@ -128,13 +131,13 @@ class AppSnackBar {
             Gap.lg,
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: Gap.lg,
-            vertical: Gap.lg,
+            horizontal: Gap.xl,
+            vertical: Gap.md,
           ),
           action: (actionLabel != null && onAction != null)
               ? SnackBarAction(
                   label: actionLabel,
-                  textColor: AppColors.green300,
+                  textColor: AppColors.lime,
                   onPressed: onAction,
                 )
               : null,

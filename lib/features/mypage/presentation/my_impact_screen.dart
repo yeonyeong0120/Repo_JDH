@@ -111,10 +111,18 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        TablerIcons.chevronLeft,
+                        size: 24,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
                   const Text(
                     '나의 환경 영향력',

@@ -3,8 +3,8 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/route_pin.dart';
 import 'package:repo_jdh/features/plogging/data/photo_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
@@ -66,425 +66,176 @@ class ActivityDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = trashCounts.values.fold<int>(0, (s, v) => s + v);
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // 경로 지도 헤더 + 뒤로/더보기 버튼 (본문과 함께 스크롤됨)
-          Stack(
-            children: [
-              SizedBox(
-                height: 250,
-                width: double.infinity,
-                child: _ActivityRouteMap(path: path),
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // 상단 바 — 뒤로 + 활동 기록 + 공유
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 4, 6, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        TablerIcons.chevronLeft,
+                        size: 24,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    '활동 기록',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    // 공유 (D-3): 그룹 공유 물어보기 팝업 → 공유 시 스낵바
+                    onTap: () => _confirmShareToGroup(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        TablerIcons.share2,
+                        size: 21,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 6,
-                left: 12,
-                right: 12,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _glassBtn(
-                        TablerIcons.chevronLeft, () => Navigator.pop(context)),
-                    _glassBtn(TablerIcons.dots, () => _showMenu(context)),
-                  ],
+            ),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  22,
+                  8,
+                  22,
+                  MediaQueryData.fromView(View.of(context)).padding.bottom + 100,
                 ),
-              ),
-            ],
-          ),
-          Transform.translate(
-                offset: const Offset(0, -24),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.bg,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                children: [
+                  // 날짜(헤드라인) + 시간·장소
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  padding: EdgeInsets.fromLTRB(
-                    20,
-                    20,
-                    20,
-                    // 하단 네비바에 마지막 카드가 가리지 않게 넉넉히
-                    MediaQueryData.fromView(View.of(context)).padding.bottom + 100,
+                  const SizedBox(height: 5),
+                  Text(
+                    dateTime,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.gray500,
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 16),
+                  // 경로 지도 (196)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: SizedBox(
+                      height: 196,
+                      width: double.infinity,
+                      child: _ActivityRouteMap(path: path),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // 2x2 통계 — 수거량(잉크/라임 강조) · 거리 · 시간 · 걸음
+                  Row(
                     children: [
-                      Text(
-                        dateTime,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // 2x2 통계 타일
-                      Row(
-                        children: [
-                          _statTile(TablerIcons.route, AppColors.dataDistance, '거리',
-                              distance),
-                          const SizedBox(width: 12),
-                          _statTile(TablerIcons.clock, AppColors.dataTime, '시간',
-                              time),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          _statTile(TablerIcons.shoe, AppColors.dataSteps, '걸음',
-                              '${_comma(steps)}걸음'),
-                          const SizedBox(width: 12),
-                          _statTile(TablerIcons.flame,
-                              AppColors.dataCalorie, '칼로리', '${kcal}kcal'),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      _trashCard(total),
-                      const SizedBox(height: 14),
-                      _photoCard(),
-                      const SizedBox(height: 14),
-                      _rewardCard(),
+                      _statTile('수거량', weight, featured: true),
+                      const SizedBox(width: 10),
+                      _statTile('거리', distance),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _statTile('시간', time),
+                      const SizedBox(width: 10),
+                      _statTile('걸음', _comma(steps)),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  // 인증샷 (없으면 촬영 추가)
+                  _PhotoSection(activityId: activityId, initialUrls: imageUrls),
+                ],
               ),
-            ],
-          ),
-        );
-  }
-
-  Widget _glassBtn(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.neutral900.withValues(alpha: 0.10),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Icon(icon, size: 23, color: AppColors.textPrimary),
       ),
     );
   }
 
-  Widget _statTile(IconData icon, Color color, String label, String value) {
+  // ── 공유 (D-3): 그룹 공유 물어보기 팝업 → 공유 시 스낵바 ──
+  // 실제 그룹 게시 백엔드는 아직 없어 공유 확정 시 스낵바로만 안내한다.
+  Future<void> _confirmShareToGroup(BuildContext context) async {
+    final ok = await AppDialog.show(
+      context,
+      title: '그룹에 공유할까요?',
+      message: '이 활동 기록을 가입한 그룹 채팅에 공유해요.',
+      cancelText: '취소',
+      confirmText: '공유',
+    );
+    if (ok != true || !context.mounted) return;
+    AppSnackBar.show(
+      context,
+      '그룹에 활동 기록을 공유했어요',
+      kind: SnackKind.success,
+    );
+  }
+
+  // 통계 타일 — featured 는 잉크 면 + 라임 값(수거량 강조)
+  Widget _statTile(String label, String value, {bool featured = false}) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: AppColors.cardShadow,
+          color: featured ? AppColors.ink : AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(icon, size: 18, color: color),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+                color: featured ? AppColors.gray400 : AppColors.gray500,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: _valueUnit(value),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // '2.4km' → 숫자(크고 진하게) + 단위(작은 회색)
-  Widget _valueUnit(String v) {
-    int i = 0;
-    while (i < v.length && '0123456789,. '.contains(v[i])) {
-      i++;
-    }
-    final num = v.substring(0, i).trim();
-    final unit = v.substring(i).trim();
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          num,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        if (unit.isNotEmpty) ...[
-          const SizedBox(width: 3),
-          Text(
-            unit,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _card({required String title, Widget? trailing, required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 24,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  letterSpacing: -0.9,
+                  color: featured ? AppColors.lime : AppColors.textPrimary,
                 ),
               ),
-              const Spacer(),
-              if (trailing != null) trailing,
-            ],
-          ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _trashCard(int total) {
-    const cats = [
-      ('plastic', '플라스틱', TablerIcons.bottle, Color(0xFF5F9EE8)),
-      ('can', '캔', TablerIcons.cup, Color(0xFFE07B2E)),
-      ('paper', '종이', TablerIcons.fileDescription, Color(0xFF31C88B)),
-      ('glass', '유리', TablerIcons.glassFull, Color(0xFF8E7EC4)),
-      ('trash', '일반', TablerIcons.trash, Color(0xFF9AA3A0)),
-    ];
-    return _card(
-      title: '수거한 쓰레기',
-      trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.neutral100,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          '총 $total개',
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          for (final c in cats)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: _catCell(c.$3, c.$4, c.$2, trashCounts[c.$1] ?? 0),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _catCell(IconData icon, Color color, String label, int count) {
-    final active = count > 0;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
-      decoration: BoxDecoration(
-        color: AppColors.neutral100, // 쿨 뉴트럴 타일 (정산·다른 화면과 통일)
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            // 안 모은 종류(0)는 아이콘도 회색
-            child: Icon(
-              icon,
-              size: 20,
-              color: active ? color : AppColors.neutral400,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: active ? AppColors.textPrimary : AppColors.neutral400,
-            ),
-          ),
-          const SizedBox(height: 1),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              maxLines: 1,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _photoCard() {
-    return _card(
-      title: '인증샷',
-      child: _PhotoSection(
-        activityId: activityId,
-        initialUrls: imageUrls,
-      ),
-    );
-  }
-
-  // 획득 보상 — '획득 보상' 라벨 오른쪽에 작은 알약 두 개(포인트/경험치).
-  Widget _rewardCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: Row(
-        children: [
-          const Text(
-            '획득 보상',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const Spacer(),
-          _rewardPill(TablerIcons.leaf, '+$rewardPoints P', AppColors.dataDistance),
-          const SizedBox(width: 8),
-          _rewardPill(TablerIcons.starFilled, '+$rewardXp XP', AppColors.dataTime),
-        ],
-      ),
-    );
-  }
-
-  Widget _rewardPill(IconData icon, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.tint(color, 0.14),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 5),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(TablerIcons.trash,
-                  color: AppColors.actionDanger),
-              title: const Text(
-                '활동 삭제',
-                style: TextStyle(color: AppColors.actionDanger),
-              ),
-              onTap: () async {
-                Navigator.pop(ctx);
-                final ok = await AppDialog.show(
-                  context,
-                  title: '활동 삭제',
-                  message: '이 활동 기록을 삭제할까요?\n\n삭제하면 되돌릴 수 없어요.',
-                  cancelText: '취소',
-                  confirmText: '삭제',
-                  danger: true,
-                );
-                if (ok == true && context.mounted) {
-                  // TODO: 실제 삭제 로직 연결
-                  AppSnackBar.show(context, '활동을 삭제했어요');
-                  Navigator.pop(context);
-                }
-              },
             ),
           ],
         ),
@@ -667,64 +418,122 @@ class _PhotoSectionState extends State<_PhotoSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_hasPhoto)
+    // 목업: 74 썸네일(또는 점선 촬영 박스) + 우측 설명 한 줄
+    if (_hasPhoto) {
+      return Row(
+        children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(20),
             child: Image.network(
               _urls.first,
-              height: 170,
-              width: double.infinity,
+              width: 74,
+              height: 74,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _placeholder(loadFailed: true),
+              errorBuilder: (_, __, ___) => _thumbFallback(),
             ),
-          )
-        else
-          _placeholder(loadFailed: false),
-      ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '인증샷 ${_urls.length}장',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                const Text(
+                  '활동 중 남긴 인증샷이에요',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.gray500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    // 인증샷 없음 → 점선 촬영 박스 (탭하면 촬영)
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _addPhoto,
+      child: Row(
+        children: [
+          Container(
+            width: 74,
+            height: 74,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.gray300,
+                width: 1.5,
+                style: BorderStyle.solid,
+              ),
+            ),
+            child: _uploading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(
+                    TablerIcons.cameraPlus,
+                    size: 26,
+                    color: AppColors.gray700,
+                  ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '인증샷을 남기지 않았어요',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  '지금 촬영해 기록에 추가할 수 있어요 (촬영만 가능)',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.gray500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // 사진 없음(추가하기) / 로딩 실패 자리. 없을 때만 탭하면 촬영.
-  Widget _placeholder({required bool loadFailed}) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: loadFailed ? null : _addPhoto,
-      child: Container(
-        height: 170,
-        width: double.infinity,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.green50,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: _uploading
-            ? const SizedBox(
-                width: 26,
-                height: 26,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    loadFailed ? TablerIcons.photo : TablerIcons.cameraPlus,
-                    size: 34,
-                    color: AppColors.neutral400,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    loadFailed ? '인증샷을 불러오지 못했어요' : '인증샷 추가하기',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+  // 썸네일 로딩 실패 자리
+  Widget _thumbFallback() {
+    return Container(
+      width: 74,
+      height: 74,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(20),
       ),
+      child: const Icon(TablerIcons.photo, size: 24, color: AppColors.gray400),
     );
   }
 }

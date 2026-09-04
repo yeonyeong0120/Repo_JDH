@@ -14,6 +14,7 @@ import 'package:repo_jdh/core/providers/plogging_provider.dart';
 import 'package:repo_jdh/features/plogging/data/storage_repository.dart';
 import 'package:repo_jdh/features/plogging/domain/destination_providers.dart';
 import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
+import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
@@ -29,9 +30,8 @@ class PloggingTrackingScreen extends ConsumerStatefulWidget {
       _PloggingTrackingScreenState();
 }
 
-class _PloggingTrackingScreenState
-    extends ConsumerState<PloggingTrackingScreen>
-    with SingleTickerProviderStateMixin {
+class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
+    with TickerProviderStateMixin {
   // 실측값은 trackingProvider 가 보관 (경과 시간 · 이동 거리)
   Timer? _ticker;
   StreamSubscription<TrackPoint>? _pointSub;
@@ -39,6 +39,15 @@ class _PloggingTrackingScreenState
   // 수거 상세 펼침 애니메이션 (접힌 종이 펼치듯). 열림/닫힘 모두 연속.
   late final AnimationController _expandCtrl;
   late final Animation<double> _expandAnim;
+
+  // 하단 패널 접힘 — 접으면 경과 시간만 남긴다(핸들 드래그/탭으로 토글).
+  bool _panelCollapsed = false;
+
+  // 종료 롱프레스: 버튼 내부 채움이 0 → 1.2s 동안 차오르면 종료 확인으로 넘어간다.
+  late final AnimationController _holdCtrl;
+
+  // 채움 수면의 '바다 출렁' 위상 — 누르는 동안 계속 반복해 물결이 흐른다.
+  late final AnimationController _waveCtrl;
 
   @override
   void initState() {
@@ -54,12 +63,28 @@ class _PloggingTrackingScreenState
       curve: Curves.easeInOutCubic,
       reverseCurve: Curves.easeInOutCubic,
     );
+    // 종료 롱프레스 채움(1.2s). 다 차면 종료 확인 다이얼로그로 이어진다.
+    _holdCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _holdCtrl.reset();
+          _endPlogging();
+        }
+      });
+    // 물결 위상: 계속 반복 재생(누르지 않을 땐 화면에 안 보이므로 부담 없음).
+    _waveCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
     // 트래킹 시작 + 1초마다 경과 시간 갱신
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 이어하기로 들어온 경우엔 이미 복원돼 있으므로 새로 시작하지 않음
       if (!ref.read(trackingProvider).running) {
         ref.read(trackingProvider.notifier).start();
       }
+      _resolveDestName(); // 이미 로드된 경로가 있으면 도착지명 해석
     });
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       ref.read(trackingProvider.notifier).tick();
@@ -75,26 +100,10 @@ class _PloggingTrackingScreenState
       },
       onError: (_) {}, // 위치 실패해도 시간은 계속 측정
     );
-    // 목적지 주소를 역지오코딩해 상단 카드에 표시
-    _resolveDestName();
   }
 
-  // 목적지(도착지) 좌표 → 장소명. 상단 목적지 카드에 표시한다.
-  // 도착지 좌표는 추천 경로의 끝점(polyline.last)에서 가져온다.
+  // 추천 경로의 끝점 = 도착지 좌표 (경로 이탈 재추천의 목적지로 쓰인다)
   // (destinationProvider 는 autoDispose 라 트래킹 화면에선 신뢰할 수 없음)
-  String? _destName;
-  Future<void> _resolveDestName() async {
-    if (_destName != null) return;
-    final dest = _destLatLng();
-    if (dest == null) return;
-    // 출발지·도착지와 동일한 기기 내장 geocoding (서버 불필요)
-    final name = await LocationRepository().addressOf(dest.$1, dest.$2);
-    if (mounted && name != null && name.isNotEmpty) {
-      setState(() => _destName = name);
-    }
-  }
-
-  // 추천 경로의 끝점 = 도착지 좌표
   (double, double)? _destLatLng() {
     final result = ref.read(routeNotifierProvider).valueOrNull;
     if (result == null || result.polyline.isEmpty) return null;
@@ -102,8 +111,20 @@ class _PloggingTrackingScreenState
     return (end[0], end[1]);
   }
 
-  String? _selectedButton = 'camera';
   bool _isExpanded = false;
+
+  // 도착지 장소명(역지오코딩 결과) — 상단 도착지 표시에 쓴다. 최초 1회만 해석.
+  String? _destName;
+
+  // 추천 경로 끝점(도착지) 좌표를 장소명으로 변환해 상단 표시에 반영한다.
+  Future<void> _resolveDestName() async {
+    if (_destName != null) return;
+    final dest = _destLatLng();
+    if (dest == null) return;
+    final name = await LocationRepository().addressOf(dest.$1, dest.$2);
+    if (!mounted || name == null || name.isEmpty) return;
+    setState(() => _destName = name);
+  }
 
   // 수거 상세 펼침/접힘 (애니메이션 컨트롤러와 함께 구동)
   void _setExpanded(bool v) {
@@ -116,7 +137,18 @@ class _PloggingTrackingScreenState
   NaverMapController? _mapController;
   bool _mapCentered = false;
   static const _fallback = NLatLng(37.5074, 126.7218); // GPS 전 기본 위치
-  static const _routeColor = Color(0xFF1D9E75);
+  // 계획 경로선(추천 경로) — 연한 회색. 도착지 설정 화면과 톤을 맞춘다.
+  static const _routeColor = AppColors.gray300;
+  // 지나온(걸은) 경로선 — 차콜(ink). 계획 라인 위에 얹어 '걸은 부분'을 보여준다.
+  static const _traveledColor = AppColors.ink;
+
+  // 내 위치 오버레이 아이콘을 최초 1회만 스타일링하기 위한 가드(매 GPS 틱마다
+  // 아이콘을 다시 만들지 않도록 한다).
+  bool _locStyled = false;
+  // 정화 거점 핀 아이콘 캐시 — 매 렌더마다 위젯 이미지를 새로 굽지 않는다.
+  NOverlayImage? _hotspotIcon;
+  // 도착지 핀 아이콘 캐시.
+  NOverlayImage? _destIcon;
 
   // ── 경로 이탈 자동 재추천 ──
   // 추천 경로에서 100m 이상 벗어난 상태가 30초 이상 지속되면 자동으로 재추천한다.
@@ -187,6 +219,36 @@ class _PloggingTrackingScreenState
     final overlay = c.getLocationOverlay();
     overlay.setIsVisible(true);
     overlay.setPosition(NLatLng(lat, lon));
+    // 네이버 기본 파란 점 대신, 도착지 설정 화면과 같은 검정 방향 퍽으로 최초 1회만 교체.
+    if (!_locStyled) {
+      _locStyled = true;
+      _styleMyLocationOverlay(overlay);
+    }
+    // 지나온 경로(차콜)를 새 좌표까지 갱신한다.
+    _renderRoute();
+  }
+
+  // 내 위치 오버레이를 네이버 기본 파란 점에서 검정 방향 포인터로 바꾼다.
+  // 도착지 설정 화면(route_setup_screen.dart)과 완전히 동일한 처리다.
+  // getLocationOverlay / setIcon / setIconSize / setAnchor / setCircleColor /
+  // setCircleRadius 는 flutter_naver_map 의 NLocationOverlay 실제 API다.
+  Future<void> _styleMyLocationOverlay(NLocationOverlay overlay) async {
+    final icon = await NOverlayImage.fromWidget(
+      context: context,
+      size: const Size(34, 36),
+      widget: const Directionality(
+        textDirection: TextDirection.ltr,
+        child: _MyLocationPuck(),
+      ),
+    );
+    if (!mounted) return;
+    overlay.setIcon(icon);
+    overlay.setIconSize(const Size(34, 36));
+    // 삼각형 끝(아래)이 실제 좌표에 오도록 앵커를 하단 뾰족점으로.
+    overlay.setAnchor(const NPoint(0.5, 0.944));
+    // 정확도 원: 파랑 대신 은은한 검정으로.
+    overlay.setCircleColor(AppColors.ink.withValues(alpha: 0.10));
+    overlay.setCircleRadius(0);
   }
 
   // 현재 위치가 추천 경로에서 100m 이상 벗어났고 30초 이상 지속되면 재추천.
@@ -264,27 +326,70 @@ class _PloggingTrackingScreenState
     return math.sqrt(ex * ex + ey * ey);
   }
 
-  // 추천 경로(polyline) + 정화 거점(핫스팟) 핀을 그린다.
+  // 계획 경로(회색) + 지나온 경로(차콜) + 정화 거점(핫스팟) 핀을 그린다.
+  // 계획 라인은 연회색으로 깔고, 내가 걸은 부분(트래킹 누적 좌표)을 그 위에
+  // 차콜(ink)로 얹어 '걸은 부분'이 또렷하게 드러나도록 한다.
   Future<void> _renderRoute() async {
     final c = _mapController;
     if (c == null) return;
     final result = ref.read(routeNotifierProvider).valueOrNull;
-    if (result == null || result.polyline.length < 2) return;
+    final tracking = ref.read(trackingProvider);
 
-    final overlays = <NAddableOverlay>{
-      NPathOverlay(
-        id: 'route',
-        coords: result.polyline.map((p) => NLatLng(p[0], p[1])).toList(),
-        width: 6,
-        color: _routeColor,
-        outlineWidth: 2,
-        outlineColor: Colors.white,
-      ),
-    };
+    final overlays = <NAddableOverlay>{};
 
-    // 정화 거점: 흰 핀 + 초록 재활용 아이콘 (도착지 설정 화면과 동일)
-    if (result.k3Hotspots.isNotEmpty) {
-      final hotspotIcon = await NOverlayImage.fromWidget(
+    // 1) 계획(추천) 경로 — 연회색 라인. 아래에 깐다.
+    if (result != null && result.polyline.length >= 2) {
+      overlays.add(
+        NPathOverlay(
+          id: 'route',
+          coords: result.polyline.map((p) => NLatLng(p[0], p[1])).toList(),
+          width: 7,
+          color: _routeColor,
+          outlineWidth: 0,
+        ),
+      );
+    }
+
+    // 2) 지나온(걸은) 경로 — 차콜(ink) 라인. 계획 위에 얹는다.
+    final path = tracking.path;
+    if (path.length >= 2) {
+      overlays.add(
+        NPathOverlay(
+          id: 'traveled',
+          coords: path.map((p) => NLatLng(p.lat, p.lng)).toList(),
+          width: 7,
+          color: _traveledColor,
+          outlineWidth: 0,
+        ),
+      );
+    }
+
+    // 도착지 핀 — 경로 끝점. 경로가 짧거나 출발지와 가까워도 항상 도착지를 표시한다.
+    if (result != null && result.polyline.isNotEmpty) {
+      final end = result.polyline.last;
+      final destIcon = _destIcon ??= await NOverlayImage.fromWidget(
+        context: context,
+        size: const Size(34, 42),
+        widget: const Directionality(
+          textDirection: TextDirection.ltr,
+          child: _DestFlagPin(),
+        ),
+      );
+      if (!mounted) return;
+      overlays.add(
+        NMarker(
+          id: 'dest',
+          position: NLatLng(end[0], end[1]),
+          icon: destIcon,
+          size: const NSize(34, 42),
+          anchor: const NPoint(0.5, 1.0),
+        ),
+      );
+    }
+
+    // 3) 정화 거점: 흰 핀 + 재활용 아이콘 (도착지 설정 화면과 동일). 아이콘은 1회만 굽는다.
+    if (result != null && result.k3Hotspots.isNotEmpty) {
+      final icon = _hotspotIcon ??= await NOverlayImage.fromWidget(
         context: context,
         size: const Size(34, 42),
         widget: const Directionality(
@@ -292,14 +397,13 @@ class _PloggingTrackingScreenState
           child: _HotspotPin(),
         ),
       );
-      if (!mounted) return;
       for (int i = 0; i < result.k3Hotspots.length; i++) {
         final h = result.k3Hotspots[i];
         overlays.add(
           NMarker(
             id: 'hotspot_$i',
             position: NLatLng(h.latitude, h.longitude),
-            icon: hotspotIcon,
+            icon: icon,
             size: const NSize(34, 42),
             anchor: const NPoint(0.5, 1.0),
           ),
@@ -307,30 +411,20 @@ class _PloggingTrackingScreenState
       }
     }
 
+    if (!mounted) return;
+    // 내 위치(getLocationOverlay)는 clearOverlays 로 지워지지 않아 그대로 유지된다.
     c.clearOverlays();
-    c.addOverlayAll(overlays);
+    if (overlays.isNotEmpty) c.addOverlayAll(overlays);
   }
 
+  // 촬영 버튼 탭 — 기록 중일 때만 촬영 화면으로.
   void _handleCameraTap() {
     // 일시정지 중에는 촬영 불가 (기록 중에만 촬영하는 규칙과 동일선상)
     if (ref.read(trackingProvider).paused) {
       AppSnackBar.show(context, '일시정지 중에는 촬영할 수 없어요. 먼저 이어하기를 눌러주세요.');
       return;
     }
-    if (_selectedButton == 'camera') {
-      // 이미 카메라가 선택(armed)된 상태면 탭 한 번으로 바로 촬영 (선택 유지)
-      _openCamera();
-    } else {
-      setState(() => _selectedButton = 'camera');
-    }
-  }
-
-  void _handleEndTap() {
-    if (_selectedButton == 'end') {
-      _endPlogging(); // null로 안 만듦 → '아무것도 선택 안 함' 상태 없음
-    } else {
-      setState(() => _selectedButton = 'end');
-    }
+    _openCamera();
   }
 
   void _showGuide() => _showRulesSheet(firstRun: false);
@@ -390,7 +484,9 @@ class _PloggingTrackingScreenState
     );
     if (ok == false) {
       await ref.read(ploggingProvider.notifier).reset();
-      if (mounted) context.go('/home');
+      ref.read(trackingProvider.notifier).reset(); // 세션 폐기(이어하기 안 묻게)
+      // 홈이 아니라 목적지 설정 화면으로 이동한다.
+      if (mounted) context.go(AppRoutes.ploggingRoute);
     }
   }
 
@@ -400,20 +496,23 @@ class _PloggingTrackingScreenState
     _pointSub?.cancel();
     _offRouteCardTimer?.cancel();
     _expandCtrl.dispose();
+    _holdCtrl.dispose();
+    _waveCtrl.dispose();
     super.dispose();
   }
 
   // PLOG-07 종료 컨펌 → 정산 화면으로
   Future<void> _endPlogging() async {
     final counts = ref.read(ploggingProvider).totalCounts;
-    final total = counts.values.fold<int>(0, (s, v) => s + v);
+    final t = ref.read(trackingProvider);
+    final weight = ActivityMetrics.weightLabel(counts);
     final ok = await AppDialog.show(
       context,
-      title: '오늘의 활동을 마칠까요?',
-      message: '지금까지 총 $total개를 주웠어요.',
-      cancelText: '계속하기',
-      confirmText: '종료',
-      danger: true, // 종료는 빨강으로 통일
+      title: '플로깅을 마치시겠어요?',
+      message: '${t.distanceText}km · 수거 $weight이 기록되고\n포인트가 적립돼요',
+      cancelText: '계속 뛰기',
+      confirmText: '마치기',
+      icon: TablerIcons.flagFilled, // 라임 스퀘어클 + 검정 깃발
     );
     if (ok != true || !mounted) return;
 
@@ -450,22 +549,26 @@ class _PloggingTrackingScreenState
         if (r != null) {
           _rerouting = false; // 새 경로 도착 → 재추천 완료
           _renderRoute();
-          _resolveDestName(); // 목적지 장소명 (아직 없으면)
+          _resolveDestName(); // 새 경로 끝점 기준 도착지명 해석
         }
       });
     });
 
     if (ploggingState.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: AppColors.darkBg,
+        body: Center(child: CircularProgressIndicator(color: AppColors.lime)),
+      );
     }
 
     final totalCounts = ploggingState.totalCounts;
-    final bool gpsGood = ref.watch(currentLocationProvider).hasValue;
 
+    // 다크 배경 위: 상단 라이브 지도(라임 경로) + 하단 다크 통계/조작 패널.
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.darkBg,
       body: Stack(
         children: [
+          // 라이브 네이버 지도 (전체 배경). 하단 패널이 아래쪽을 덮는다.
           Positioned.fill(
             child: NaverMap(
               options: const NaverMapViewOptions(
@@ -474,6 +577,9 @@ class _PloggingTrackingScreenState
                   zoom: 15,
                 ),
                 locationButtonEnable: false,
+                // 하단 다크 패널 높이만큼 아래쪽 여백을 줘 카메라가 내 위치를
+                // 화면 위쪽에 잡도록 한다(패널에 가려지지 않게).
+                contentPadding: EdgeInsets.only(bottom: 320),
               ),
               onMapReady: (controller) {
                 _mapController = controller;
@@ -483,42 +589,47 @@ class _PloggingTrackingScreenState
             ),
           ),
 
-          // 상단: 뒤로 + 목적지 진행 카드 + 도움말
+          // 상단 헤더: 화면 가로 끝까지 채우는 하나의 흰색 상단바.
+          //   [뒤로] … [중앙: 도착지명] … [도움말]
           Positioned(
-            left: 12,
-            right: 12,
+            left: 0,
+            right: 0,
             top: 0,
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _glassSquareButton(
-                      icon: TablerIcons.chevronLeft,
-                      iconSize: 24,
-                      onTap: _confirmCancel,
+                    // 뒤로가기 (지도 위 잉크 글리프)
+                    _topButton(
+                        TablerIcons.chevronLeft, 27, _confirmCancel),
+                    // 가운데 도착지 — 목적지 설정 화면처럼 하얀 박스로 감쌈.
+                    // 44 높이 안에서 세로 중앙 정렬해 뒤로가기/재설정 버튼과 줄을 맞춘다.
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: Center(
+                          child: _destLatLng() != null
+                              ? _destPill()
+                              : const SizedBox.shrink(),
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(child: _destProgressCard()),
-                    const SizedBox(width: 8),
-                    _glassSquareButton(
-                      icon: TablerIcons.helpCircle,
-                      iconSize: 21,
-                      onTap: _showGuide,
-                    ),
+                    // 도움말(정보) — 상단 오른쪽. 위치 재설정은 하단바 위로 이동.
+                    _topButton(TablerIcons.infoCircle, 24, _showGuide),
                   ],
                 ),
               ),
             ),
           ),
 
-          // 경로 이탈 안내 카드 (상단 카드 아래, 4초 후 자동 사라짐)
+          // 경로 이탈 안내 카드 (상단 버튼 아래, 4초 후 자동 사라짐)
           if (_showOffRouteCard)
             Positioned(
-              left: 12,
-              right: 12,
+              left: 20,
+              right: 20,
               top: 0,
               child: SafeArea(
                 bottom: false,
@@ -529,17 +640,39 @@ class _PloggingTrackingScreenState
               ),
             ),
 
-          // 하단: 기록 카드 (GPS 칩 + 타이머 + 타일 + 버튼)
+          // 하단 다크 패널 + 그 오른쪽 위에 위치 재설정 버튼(목적지 설정 화면과 동일)
           Positioned(
-            left: 12,
-            right: 12,
+            left: 0,
+            right: 0,
             bottom: 0,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _buildRecordCard(tracking, totalCounts, gpsGood),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 하단바 바로 위 줄: (접혔을 때) 가운데 카메라 + 오른쪽 위치 재설정.
+                // 재설정 아이콘이 하단바에 바짝 붙도록 아래 정렬 + 여백 최소화.
+                Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 18, bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const SizedBox(width: 46), // 오른쪽 재설정과 대칭
+                      Expanded(
+                        child: Center(
+                          // 접혔을 때 카메라는 하단바에서 조금 더 띄운다(너무 붙지 않게).
+                          child: _panelCollapsed
+                              ? Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: _captureButton(),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ),
+                      _recenterButton(),
+                    ],
+                  ),
+                ),
+                _bottomPanel(tracking, totalCounts),
+              ],
             ),
           ),
         ],
@@ -547,77 +680,123 @@ class _PloggingTrackingScreenState
     );
   }
 
-  // ── 상단 목적지 카드 (깃발 + '목적지'만) ────────────────
-  Widget _destProgressCard() {
-    return Container(
-      height: 40,
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.neutral900.withValues(alpha: 0.07)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.neutral900.withValues(alpha: 0.10),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  // ── 상단 헤더 아이콘 (뒤로 · 도움말) ──────────────────
+  // 규칙 A: 컨테이너(캡슐·테두리·그림자) 없이 글리프만. 44x44 탭 영역.
+  // 상단은 밝은 지도 위라 흰색이 안 보여서 검정(ink)으로 그린다.
+  Widget _topButton(IconData icon, double iconSize, VoidCallback onTap) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Center(
+          child: Icon(icon, size: iconSize, color: AppColors.ink),
+        ),
       ),
-      child: Row(
-        children: [
-          const Icon(TablerIcons.flagFilled, size: 18, color: AppColors.primary),
-          const SizedBox(width: 8),
-          const Text(
-            '목적지',
-            style: TextStyle(
+    );
+  }
+
+  // 상단 헤더 중앙 도착지 표시 — 깃발 아이콘 + "도착지 · {장소명}".
+  // 장소명 미해석 시 "도착지"만 표시. 별도 pill 없이 헤더 위에 바로 얹는다.
+  Widget _destTitle() {
+    final String name = _destName ?? '';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(TablerIcons.flagFilled, size: 15, color: AppColors.ink),
+        const SizedBox(width: 7),
+        Flexible(
+          child: Text(
+            name.isEmpty ? '도착지' : '도착지 · $name',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+              color: AppColors.ink,
             ),
           ),
-          // 역지오코딩으로 얻은 목적지 위치명
-          if (_destName != null && _destName!.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                _destName!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+        ),
+      ],
+    );
+  }
+
+  // 도착지 — 목적지 설정 화면처럼 하얀 라운드 박스로 감싼 표식(가운데).
+  Widget _destPill() {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 230),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.ink.withValues(alpha: 0.10),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
             ),
           ],
-        ],
+        ),
+        child: _destTitle(),
       ),
     );
   }
 
-  // 경로 이탈 안내 카드 — 파란 톤, 4초 후 자동 사라짐
+  // 위치 재설정 — 목적지 설정 화면과 동일한 흰 바탕 원형 버튼(기본 아이콘).
+  Widget _recenterButton() {
+    // 하얀 바탕 없이 아이콘만(지도 위 잉크 글리프).
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _recenterToGps,
+      child: const SizedBox(
+        width: 46,
+        height: 46,
+        child: Center(
+          child: Icon(
+            TablerIcons.currentLocation,
+            size: 26,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 현재 위치로 지도 카메라 복귀 (버튼용 — 최초 1회 제한 없이 항상 이동)
+  void _recenterToGps() {
+    final c = _mapController;
+    final loc = ref.read(currentLocationProvider).valueOrNull;
+    if (c == null || loc == null) return;
+    final lat = (loc['latitude'] as num?)?.toDouble();
+    final lon = (loc['longitude'] as num?)?.toDouble();
+    if (lat == null || lon == null) return;
+    _updateMyLocation(lat, lon);
+    c.updateCamera(
+      NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
+    );
+  }
+
+  // 경로 이탈 안내 카드 — 다크 칩 톤, 4초 후 자동 사라짐
   Widget _offRouteCard() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.96),
+        color: AppColors.darkSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.dataSteps.withValues(alpha: 0.25)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.neutral900.withValues(alpha: 0.12),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            color: AppColors.ink.withValues(alpha: 0.30),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Row(
         children: [
-          const Icon(TablerIcons.route, size: 20, color: AppColors.dataSteps),
+          const Icon(TablerIcons.route, size: 20, color: AppColors.lime),
           const SizedBox(width: 10),
           const Expanded(
             child: Text(
@@ -625,7 +804,7 @@ class _PloggingTrackingScreenState
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: Colors.white,
               ),
             ),
           ),
@@ -634,204 +813,164 @@ class _PloggingTrackingScreenState
     );
   }
 
-  Widget _glassSquareButton({
-    required IconData icon,
-    required double iconSize,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.86),
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(
-            color: AppColors.neutral900.withValues(alpha: 0.06),
+  // ── 하단 다크 패널 ─────────────────────────────────────
+  Widget _bottomPanel(TrackingState tracking, Map<String, int> totalCounts) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.darkBg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x33191E24),
+            blurRadius: 40,
+            offset: Offset(0, -14),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.neutral900.withValues(alpha: 0.10),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(icon, size: iconSize, color: AppColors.textPrimary),
+        ],
       ),
-    );
-  }
-
-  // ── 하단 기록 카드 ─────────────────────────────────────
-  Widget _buildRecordCard(
-    TrackingState tracking,
-    Map<String, int> totalCounts,
-    bool gpsGood,
-  ) {
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.topCenter,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(top: 15),
-          padding: const EdgeInsets.fromLTRB(20, 26, 20, 20),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.neutral900.withValues(alpha: 0.16),
-                blurRadius: 28,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '활동 시간',
-                style: AppType.caption.copyWith(color: AppColors.textSecondary),
+              // 드래그 영역 = 핸들 + '경과 시간' + 타이머 전체(같은 라인 폭 전부).
+              // 어디를 스와이프해도 접히고 펴진다. 아래 조작부(버튼)는 제외.
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _panelCollapsed = !_panelCollapsed),
+                // 아주 조금만 스와이프해도 접고/펴지도록 임계값을 낮춘다.
+                onVerticalDragUpdate: (d) {
+                  final dy = d.primaryDelta ?? 0;
+                  if (dy > 2 && !_panelCollapsed) {
+                    setState(() => _panelCollapsed = true);
+                  } else if (dy < -2 && _panelCollapsed) {
+                    setState(() => _panelCollapsed = false);
+                  }
+                },
+                onVerticalDragEnd: (d) {
+                  final v = d.primaryVelocity ?? 0;
+                  if (v > 30) {
+                    setState(() => _panelCollapsed = true);
+                  } else if (v < -30) {
+                    setState(() => _panelCollapsed = false);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 핸들 선
+                    Container(
+                      width: double.infinity,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.only(top: 8, bottom: 14),
+                      child: Container(
+                        width: 56,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: AppColors.gray500,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                    // 경과 시간 (접혀도 항상 보인다)
+                    Text(
+                      '경과 시간',
+                      style: AppType.overline.copyWith(
+                        letterSpacing: 0.5,
+                        color: AppColors.gray500,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: tracking.paused ? 0.5 : 1,
+                      child: Text(
+                        tracking.durationText,
+                        style: const TextStyle(
+                          fontSize: 44,
+                          height: 1,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -2,
+                          color: Colors.white,
+                        ).tabular,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                tracking.durationText,
-                style: const TextStyle(
-                  fontSize: 44,
-                  height: 1.15,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1,
-                  color: AppColors.textPrimary,
-                ).tabular,
+              // 접히면 통계·조작부는 부드럽게 사라진다
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 240),
+                sizeCurve: Curves.easeInOut,
+                crossFadeState: _panelCollapsed
+                    ? CrossFadeState.showFirst
+                    : CrossFadeState.showSecond,
+                firstChild: const SizedBox(width: double.infinity, height: 0),
+                secondChild: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 12),
+                    _statCards(tracking, totalCounts),
+                    const SizedBox(height: 14),
+                    _controlBar(tracking),
+                    const SizedBox(height: 8),
+                    Text(
+                      '전원 버튼 길게 눌러 플로깅 종료',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray400,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 18),
-              _statTilesArea(tracking, totalCounts),
-              const SizedBox(height: 16),
-              _actionButtons(),
             ],
           ),
         ),
-        // GPS 상태 칩 — 카드 상단 경계에 걸침 (원래 위치 그대로)
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: _gpsChip(gpsGood, tracking.paused, tracking.pausedText),
-          ),
-        ),
-        // 일시정지 알약 — 카드 안쪽 오른쪽에 겹쳐 얹어 박스 높이는 그대로 유지
-        // 상단 여백(32)은 우측 여백(16)의 2배로 맞춘다.
-        Positioned(
-          top: 32,
-          right: 16,
-          child: _pauseChip(tracking.paused),
-        ),
-      ],
-    );
-  }
-
-  Widget _gpsChip(bool gpsGood, bool paused, String pausedText) {
-    // 멈추면 파란색(dataSteps) 톤으로 '일시정지 중 · mm:ss'
-    final Color dot = paused
-        ? AppColors.dataSteps
-        : (gpsGood ? const Color(0xFF34AE77) : AppColors.neutral400);
-    final Color border = paused
-        ? AppColors.dataSteps.withValues(alpha: 0.28)
-        : const Color(0xFFE0E8E3);
-    final Color textColor =
-        paused ? AppColors.dataSteps : AppColors.neutral700;
-    final String label = paused
-        ? '일시정지 중 · $pausedText'
-        : (gpsGood ? 'GPS 양호 · 기록 중' : 'GPS 확인 중…');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.neutral900.withValues(alpha: 0.10),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: AppType.caption.copyWith(
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  // 일시정지 / 이어하기 칩 (GPS 칩 오른쪽) — 지름 51 (기존 34의 1.5배)
-  Widget _pauseChip(bool paused) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        final n = ref.read(trackingProvider.notifier);
-        paused ? n.unpause() : n.pause();
-      },
-      // 아이콘만 있는 동그란 버튼 (GPS 칩과 겹치지 않게 컴팩트하게)
-      child: Container(
-        width: 51,
-        height: 51,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          // 기록 중: 옅은 파랑 면 / 멈춤: 파랑 채움 + 그림자
-          color: paused
-              ? AppColors.dataSteps
-              : AppColors.dataSteps.withValues(alpha: 0.12),
-          shape: BoxShape.circle,
-          boxShadow: paused
-              ? [
-                  BoxShadow(
-                    color: AppColors.dataSteps.withValues(alpha: 0.32),
-                    blurRadius: 12,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Icon(
-          paused ? TablerIcons.playerPlayFilled : TablerIcons.playerPauseFilled,
-          size: 27,
-          color: paused ? Colors.white : AppColors.dataSteps,
-        ),
-      ),
-    );
-  }
-
-  // 걸음·km·수거 3타일(항상) + 아래로 접힌 종이처럼 펼쳐지는 수거 상세.
-  // 열림/닫힘 모두 SizeTransition 하나로 구동해 끊김 없이 연속으로 움직인다.
-  Widget _statTilesArea(TrackingState tracking, Map<String, int> totalCounts) {
+  // 거리 / 걸음 / 수거(펼침) 3카드 + 아래로 펼쳐지는 수거 상세(5색 칩).
+  Widget _statCards(TrackingState tracking, Map<String, int> totalCounts) {
     final int collected = totalCounts.values.fold<int>(0, (s, v) => s + v);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 멈춘 동안은 값이 안 쌓이므로 흐리게
         AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
           opacity: tracking.paused ? 0.5 : 1,
-          child: _threeTiles(tracking, collected),
+          child: Row(
+            children: [
+              Expanded(
+                child: _statCard(
+                  label: '거리',
+                  value: tracking.distanceText,
+                  unit: 'km',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _statCard(
+                  label: '걸음',
+                  value: _comma(tracking.steps),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _statCard(
+                  label: '수거',
+                  value: '$collected',
+                  unit: '개',
+                  valueColor: AppColors.lime,
+                  expandable: true,
+                  onTap: () => _setExpanded(!_isExpanded),
+                ),
+              ),
+            ],
+          ),
         ),
         SizeTransition(
           sizeFactor: _expandAnim,
@@ -839,8 +978,8 @@ class _PloggingTrackingScreenState
           child: FadeTransition(
             opacity: _expandAnim,
             child: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: _collectedPanel(totalCounts),
+              padding: const EdgeInsets.only(top: 4),
+              child: _haulPanel(totalCounts),
             ),
           ),
         ),
@@ -848,312 +987,77 @@ class _PloggingTrackingScreenState
     );
   }
 
-  Widget _threeTiles(TrackingState tracking, int collected) {
-    return Row(
-      children: [
-        Expanded(
-          child: _statTile(
-            icon: TablerIcons.shoe,
-            iconColor: AppColors.dataSteps,
-            value: _comma(tracking.steps),
-            unit: '걸음',
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _statTile(
-            icon: TablerIcons.route,
-            iconColor: AppColors.dataDistance,
-            value: tracking.distanceText,
-            unit: 'km',
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _statTile(
-            icon: TablerIcons.trash,
-            iconColor: AppColors.green700,
-            value: '$collected',
-            unit: '개',
-            bg: AppColors.green100,
-            trailing: RotationTransition(
-              turns: Tween<double>(begin: 0, end: 0.5).animate(_expandAnim),
-              child: const Icon(
-                TablerIcons.chevronDown,
-                size: 17,
-                color: AppColors.neutral500,
-              ),
-            ),
-            onTap: () => _setExpanded(!_isExpanded),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _statTile({
-    required IconData icon,
-    required Color iconColor,
+  Widget _statCard({
+    required String label,
     required String value,
-    required String unit,
-    Color? bg,
-    Widget? trailing,
+    String? unit,
+    Color valueColor = Colors.white,
+    bool expandable = false,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.topCenter,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 13),
-            height: 52,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.only(top: 8, left: 6, right: 6),
-            decoration: BoxDecoration(
-              color: bg ?? const Color(0xFFF3F8F4),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.darkSurface,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               children: [
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.4,
-                        color: AppColors.textPrimary,
-                      ).tabular,
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                    color: AppColors.gray500,
+                  ),
+                ),
+                if (expandable) ...[
+                  const SizedBox(width: 4),
+                  RotationTransition(
+                    turns:
+                        Tween<double>(begin: 0, end: 0.5).animate(_expandAnim),
+                    child: const Icon(
+                      TablerIcons.chevronDown,
+                      size: 14,
+                      color: AppColors.gray500,
                     ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  unit,
-                  style: AppType.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 2),
-                  trailing,
                 ],
               ],
             ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Center(child: _tileBadge(icon, iconColor)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _tileBadge(IconData icon, Color color) {
-    return Container(
-      width: 30,
-      height: 30,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        shape: BoxShape.circle,
-        boxShadow: [
-          const BoxShadow(
-            color: AppColors.surface,
-            blurRadius: 0,
-            spreadRadius: 3,
-          ),
-          BoxShadow(
-            color: AppColors.neutral900.withValues(alpha: 0.14),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Icon(icon, size: 18, color: color),
-    );
-  }
-
-  Widget _collectedPanel(Map<String, int> totalCounts) {
-    // 목업 픽토그램 그대로 (Material Symbols + 지정 색)
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-      decoration: BoxDecoration(
-        color: AppColors.green100,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          _catCell(TablerIcons.bottle, const Color(0xFF5F9EE8), '플라스틱',
-              totalCounts['plastic'] ?? 0),
-          _catCell(TablerIcons.cup, const Color(0xFFE07B2E), '캔',
-              totalCounts['can'] ?? 0),
-          _catCell(TablerIcons.fileDescription, const Color(0xFF31C88B), '종이',
-              totalCounts['paper'] ?? 0),
-          _catCell(TablerIcons.glassFull, const Color(0xFF8E7EC4), '유리',
-              totalCounts['glass'] ?? 0),
-          _catCell(TablerIcons.trash, const Color(0xFF9AA3A0), '일반',
-              totalCounts['trash'] ?? 0),
-        ],
-      ),
-    );
-  }
-
-  Widget _catCell(IconData icon, Color color, String label, int count) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 3),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 23, color: color),
-              const SizedBox(height: 3),
-              Text(
-                '$count',
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ).tabular,
-              ),
-              const SizedBox(height: 1),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: AppType.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── 카메라 / 종료 2단 버튼 (커진 쪽 1.85 : 1) ──────────
-  Widget _actionButtons() {
-    final bool cameraArmed = _selectedButton == 'camera';
-    final bool endArmed = _selectedButton == 'end';
-    final double cameraRatio = cameraArmed
-        ? 1.85 / 2.85
-        : (endArmed ? 1 / 2.85 : 0.5);
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F8F4),
-        borderRadius: BorderRadius.circular(32),
-      ),
-      child: LayoutBuilder(
-        builder: (context, c) {
-          const double gap = 5;
-          final double innerW = c.maxWidth;
-          return TweenAnimationBuilder<double>(
-            tween: Tween<double>(end: cameraRatio),
-            duration: const Duration(milliseconds: 600),
-            curve: const Cubic(0.32, 0.72, 0, 1),
-            builder: (context, r, _) {
-              final double camW = (innerW - gap) * r;
-              final double endW = (innerW - gap) - camW;
-              return Row(
-                children: [
-                  SizedBox(
-                    width: camW,
-                    height: double.infinity,
-                    child: _cameraButton(cameraArmed),
-                  ),
-                  const SizedBox(width: gap),
-                  SizedBox(
-                    width: endW,
-                    height: double.infinity,
-                    child: _endButton(endArmed),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _cameraButton(bool armed) {
-    // armed(촬영이 큰 상태): 초록 배경 + 흰 글씨 / 종료가 커지면 반전: 흰 배경 + 초록 글씨·아이콘
-    final Color bg = armed ? AppColors.actionPrimary : AppColors.surface;
-    final Color fg = armed ? Colors.white : AppColors.actionPrimary;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _handleCameraTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOut,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(27),
-          boxShadow: armed
-              ? [
-                  BoxShadow(
-                    color: AppColors.actionPrimary.withValues(alpha: 0.32),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(TablerIcons.cameraFilled, size: 26, color: fg),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Column(
+            const SizedBox(height: 7),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    armed ? '촬영하기' : '촬영',
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.clip,
+                    value,
                     style: TextStyle(
-                      fontSize: 18,
-                      height: 1.1, // 부제와의 간격 최소화
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.2,
-                      color: fg,
-                    ),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.8,
+                      color: valueColor,
+                    ).tabular,
                   ),
-                  if (armed)
+                  if (unit != null)
                     Text(
-                      '한 개씩 찍기',
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.clip,
+                      unit,
                       style: TextStyle(
-                        fontSize: 12,
-                        height: 1.1,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: valueColor,
                       ),
                     ),
                 ],
@@ -1165,38 +1069,197 @@ class _PloggingTrackingScreenState
     );
   }
 
-  Widget _endButton(bool armed) {
-    // 눌리기 전: 흰 배경 + 빨간 글씨 / 한 번 터치되면(armed) 반전: 빨간 배경 + 흰 글씨
+  // 인식한 쓰레기 칩 — 5색 고정. 인식된 종류는 분류색, 미인식은 darkChip.
+  Widget _haulPanel(Map<String, int> totalCounts) {
+    // 박스를 칩 내용만큼만 감싸고(왼쪽 빈 여백 제거), 수거 카드 아래(오른쪽)로 붙인다.
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+        decoration: BoxDecoration(
+          color: AppColors.darkSurface,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            for (final cat in _haulCats)
+              _haulChip(
+                cat.$1,
+                cat.$2,
+                cat.$3,
+                totalCounts[cat.$4] ?? 0,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // (라벨, 아이콘, 분류색, ploggingProvider 키)
+  static const List<(String, IconData, Color, String)> _haulCats = [
+    ('플라스틱', TablerIcons.bottle, AppColors.dataPlastic, 'plastic'),
+    ('캔', TablerIcons.cup, AppColors.dataCan, 'can'),
+    ('종이', TablerIcons.fileDescription, AppColors.dataPaper, 'paper'),
+    ('유리', TablerIcons.glassFull, AppColors.dataGlass, 'glass'),
+    ('일반', TablerIcons.trash, AppColors.dataGeneral, 'trash'),
+  ];
+
+  Widget _haulChip(String label, IconData icon, Color color, int count) {
+    final bool on = count > 0;
+    final Color bg = on ? color : AppColors.darkChip;
+    final Color fg = on ? Colors.white : AppColors.gray400;
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 11),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: fg),
+          const SizedBox(width: 6),
+          Text(
+            '$label $count',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: on ? FontWeight.w700 : FontWeight.w600,
+              color: fg,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── 일시정지 / 촬영 / 종료(롱프레스) 조작 바 ──────────────
+  Widget _controlBar(TrackingState tracking) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _pauseButton(tracking.paused),
+        const SizedBox(width: 20),
+        _captureButton(),
+        const SizedBox(width: 20),
+        _endHoldButton(),
+      ],
+    );
+  }
+
+  Widget _pauseButton(bool paused) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: _handleEndTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOut,
+      onTap: () {
+        final n = ref.read(trackingProvider.notifier);
+        paused ? n.unpause() : n.pause();
+      },
+      child: Container(
+        width: 58,
+        height: 58,
         alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: armed ? AppColors.actionDanger : AppColors.surface,
-          borderRadius: BorderRadius.circular(27),
-          boxShadow: armed
-              ? [
-                  BoxShadow(
-                    color: AppColors.actionDanger.withValues(alpha: 0.28),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+        decoration: const BoxDecoration(
+          color: AppColors.darkSurface,
+          shape: BoxShape.circle,
         ),
-        child: Text(
-          armed ? '종료하기' : '종료',
-          maxLines: 1,
-          softWrap: false,
-          overflow: TextOverflow.clip,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.2,
-            color: armed ? Colors.white : AppColors.actionDanger,
+        child: Icon(
+          paused ? TablerIcons.playerPlayFilled : TablerIcons.playerPauseFilled,
+          size: 26,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _captureButton() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _handleCameraTap,
+      child: Container(
+        width: 74,
+        height: 74,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          color: AppColors.lime,
+          shape: BoxShape.circle,
+          // 두 겹(라임 원 + 어두운 라임 링) — 별도 border 없이 링 하나만.
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFFB1C84E),
+              spreadRadius: 4,
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: const Icon(TablerIcons.cameraFilled, size: 30, color: AppColors.ink),
+      ),
+    );
+  }
+
+  // 종료 롱프레스: 누르는 동안 안쪽이 아래→위로 차오름(1.2s), 완료 시 종료 확인.
+  void _cancelHold() {
+    if (_holdCtrl.status != AnimationStatus.completed && _holdCtrl.value > 0) {
+      _holdCtrl.reverse();
+    }
+  }
+
+  Widget _endHoldButton() {
+    const double d = 58; // 버튼 지름
+    const double iconSz = 26;
+    const Color red = Color(0xFFFF6B5A);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => _holdCtrl.forward(),
+      onTapUp: (_) => _cancelHold(),
+      onTapCancel: _cancelHold,
+      child: SizedBox(
+        width: d,
+        height: d,
+        child: ClipOval(
+          child: AnimatedBuilder(
+            // 채움 높이(_holdCtrl) + 물결 위상(_waveCtrl) 둘 다에 반응.
+            animation: Listenable.merge([_holdCtrl, _waveCtrl]),
+            builder: (context, _) {
+              final double level = _holdCtrl.value; // 0~1 (떼면 다시 0으로 내려감)
+              final double phase = _waveCtrl.value * 2 * math.pi;
+              return Stack(
+                children: [
+                  // 바탕: 어두운 원 + 빨간 전원 아이콘(수면 위 부분)
+                  const Positioned.fill(
+                    child: ColoredBox(color: Color(0xFF3A2A28)),
+                  ),
+                  const Center(
+                    child: Icon(TablerIcons.power, size: iconSz, color: red),
+                  ),
+                  // 아래→위로 차오르는 빨간 물결(바다처럼 출렁)
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _WaveFillPainter(
+                        level: level,
+                        phase: phase,
+                        color: red,
+                      ),
+                    ),
+                  ),
+                  // 물결에 덮인 부분만 아이콘을 하양으로 — 같은 물결 경로로 클립.
+                  Positioned.fill(
+                    child: ClipPath(
+                      clipper: _WaveClipper(level: level, phase: phase),
+                      child: const Center(
+                        child: Icon(
+                          TablerIcons.power,
+                          size: iconSz,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -1239,55 +1302,41 @@ class _PloggingRulesSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    firstRun ? '첫 플로깅을 시작할게요' : '플로깅 활동 규칙',
+                    firstRun ? '첫 플로깅을 시작할게요' : '플로깅 이렇게 해요',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    '시작하기 전에 네 가지만 알려드릴게요.',
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
                   _rule(
-                    icon: TablerIcons.map,
-                    title: '활동 범위',
+                    icon: TablerIcons.route,
+                    title: '코스를 따라 걸어요',
                     lines: const [
-                      _Span('인천시 안에서만 플로깅할 수 있어요. 목적지는 300km 이내로 정해주세요.'),
+                      _Span('추천 코스나 직접 정한 목적지까지, 정화지역을 지나며 이동해요'),
                     ],
                   ),
                   _rule(
-                    icon: TablerIcons.recycle,
-                    title: '정화 거점과 위험 구간',
+                    icon: TablerIcons.camera,
+                    lime: true, // 촬영만 라임 강조
+                    title: '주웠으면 바로 촬영',
                     lines: const [
-                      _Span('지도의 초록 핀은 정화 거점이에요. 쓰레기가 많이 나오는 곳이라 여기를 지나면 더 많이 주울 수 있어요.'),
-                      _Span('위험 구간은 공사장·차도처럼 걷기 위험한 곳이에요. 경로는 이곳을 피해서 그려집니다.'),
+                      _Span('갤러리 업로드는 안 되고 활동 중 촬영만 인정돼요. 종류는 자동으로 인식돼요'),
                     ],
                   ),
                   _rule(
-                    icon: TablerIcons.cameraFilled,
-                    title: '쓰레기 촬영',
+                    icon: TablerIcons.scale,
+                    title: '무게는 자동 계산',
                     lines: const [
-                      _Span('주울 때마다 한 개씩 찍어주세요. 종류는 자동으로 나눠 담깁니다.'),
-                      _Span(
-                        '주운 쓰레기는 활동 중에만 촬영할 수 있으며, 종료 후에는 활동 인증샷만 촬영이 가능해요.',
-                        danger: true,
-                      ),
+                      _Span('인식된 품목 수로 수거량이 쌓여요. 화면의 수거 카드를 눌러 항목별로 확인할 수 있어요'),
                     ],
                   ),
                   _rule(
-                    icon: TablerIcons.flagFilled,
-                    title: '활동 종료 및 포인트 획득',
+                    icon: TablerIcons.power,
+                    title: '도착하면 종료',
                     lines: const [
-                      _Span('활동을 종료하면 걸음·거리·수거량으로 포인트와 경험치를 얻을 수 있어요.'),
-                      _Span('정산 화면에서 촬영하는 인증샷은 그룹 채팅방에 올라가며, 선택사항이에요. 나중에 내 활동에서 따로 첨부할 수도 있어요.'),
+                      _Span('화면 오른쪽 전원 버튼을 꾹 누르면 플로깅이 끝나고 기록·포인트가 저장돼요. 중간에 나가면 저장되지 않아요'),
                     ],
                   ),
                 ],
@@ -1314,7 +1363,7 @@ class _PloggingRulesSheet extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  firstRun ? '시작하기' : '알겠어요',
+                  firstRun ? '시작하기' : '확인했어요',
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -1333,29 +1382,25 @@ class _PloggingRulesSheet extends StatelessWidget {
     required IconData icon,
     required String title,
     required List<_Span> lines,
+    bool lime = false,
   }) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F8F4),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 아이콘 타일 — 라운드 스퀘어. 촬영만 라임, 나머지는 연회색.
           Container(
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
+            decoration: BoxDecoration(
+              color: lime ? AppColors.lime : AppColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(13),
             ),
-            child: Icon(icon, size: 19, color: AppColors.green700),
+            child: Icon(icon, size: 20, color: AppColors.ink),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1363,19 +1408,20 @@ class _PloggingRulesSheet extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 3),
                 for (int i = 0; i < lines.length; i++)
                   Padding(
-                    padding: EdgeInsets.only(top: i == 0 ? 2 : 6),
+                    padding: EdgeInsets.only(top: i == 0 ? 0 : 6),
                     child: Text(
                       lines[i].text,
                       style: TextStyle(
-                        fontSize: 14,
-                        height: 1.55,
+                        fontSize: 13.5,
+                        height: 1.5,
                         fontWeight: lines[i].danger
                             ? FontWeight.w600
                             : FontWeight.w400,
@@ -1430,9 +1476,40 @@ class _HotspotPin extends StatelessWidget {
   }
 }
 
-// 핀 도형(원 + 아래 삼각형)을 흰색으로 그린다.
+// 도착지 핀: 흰 핀(원+꼬리) + 라임 깃발. 도착지 설정 화면과 동일 도형.
+class _DestFlagPin extends StatelessWidget {
+  const _DestFlagPin();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 34,
+      height: 42,
+      child: Stack(
+        children: [
+          // 검정 바탕 핀 + 라임 깃발
+          const Positioned.fill(
+            child: CustomPaint(painter: _PinShapePainter(color: AppColors.ink)),
+          ),
+          const Positioned(
+            left: 0,
+            right: 0,
+            top: 8,
+            child: Center(
+              child: Icon(TablerIcons.flagFilled,
+                  color: AppColors.lime, size: 17),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 핀 도형(원 + 아래 삼각형)을 지정 색으로 그린다(기본 흰색).
 class _PinShapePainter extends CustomPainter {
-  const _PinShapePainter();
+  final Color color;
+  const _PinShapePainter({this.color = Colors.white});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1449,9 +1526,133 @@ class _PinShapePainter extends CustomPainter {
       ..close();
     final pin = Path.combine(PathOperation.union, circle, tri);
     canvas.drawShadow(pin, Colors.black.withValues(alpha: 0.4), 4, false);
-    canvas.drawPath(pin, Paint()..color = Colors.white..isAntiAlias = true);
+    canvas.drawPath(pin, Paint()..color = color..isAntiAlias = true);
   }
 
   @override
-  bool shouldRepaint(covariant _PinShapePainter oldDelegate) => false;
+  bool shouldRepaint(covariant _PinShapePainter old) => old.color != color;
+}
+
+// 내 위치 퍽: 검정 방향 포인터(위쪽을 가리키는 뾰족한 검정 원). 네이버 지도 느낌.
+// 도착지 설정 화면(route_setup_screen.dart)과 동일한 도형으로 통일한다.
+// 네이버 내장 위치 오버레이의 setIcon 으로 붙는다(기본 파란 점 대체).
+// 목적지 설정 화면과 완전히 동일한 내 위치 퍽(원 + 짧은 아래 삼각형 + 그림자).
+class _MyLocationPuck extends StatelessWidget {
+  const _MyLocationPuck();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 34,
+      height: 36,
+      child: CustomPaint(painter: _MyLocationPainter()),
+    );
+  }
+}
+
+class _MyLocationPainter extends CustomPainter {
+  const _MyLocationPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cx = size.width / 2;
+    final double r = 9;
+    final double cy = r + 4; // 13
+    final double tipY = size.height - 2;
+
+    final white = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+    final ink = Paint()
+      ..color = AppColors.ink
+      ..isAntiAlias = true;
+    final shadow = Paint()
+      ..color = Colors.black.withValues(alpha: 0.30)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0)
+      ..isAntiAlias = true;
+
+    final tri = Path()
+      ..moveTo(cx - r * 0.5, cy + r * 0.5)
+      ..lineTo(cx + r * 0.5, cy + r * 0.5)
+      ..lineTo(cx, tipY)
+      ..close();
+    final circle = Path()
+      ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
+
+    canvas.drawCircle(Offset(cx, cy + 2), r, shadow);
+    canvas.drawPath(tri, ink);
+    canvas.drawPath(circle, ink);
+    canvas.drawPath(circle, white);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MyLocationPainter oldDelegate) => false;
+}
+
+// ── 종료 버튼 채움 물결(바다 출렁) ─────────────────────────
+// 수면 아래 영역을 하나의 Path 로 만든다. level(0~1)은 채움 높이,
+// phase 는 위상. 페인터와 클리퍼가 같은 경로를 써서 '덮인 부분만 하양'을 만든다.
+Path _waveFillPath(Size size, double level, double phase) {
+  final double w = size.width;
+  final double h = size.height;
+  final double baseY = h * (1 - level.clamp(0.0, 1.0));
+  // 버튼 폭에 파도 한 개가 지나가는 하나의 큰 물결. 다 차오를수록
+  // 진폭을 줄여 매끈하게 마무리한다(바다가 잔잔해지듯).
+  final double amp = 4.5 * (1 - level).clamp(0.0, 1.0) + 0.5;
+  final path = Path()..moveTo(0, baseY);
+  const int steps = 16;
+  for (int i = 0; i <= steps; i++) {
+    final double t = i / steps;
+    final double x = w * t;
+    // 폭당 한 주기(frequency 1.0)의 저주파 사인 — 하나의 큰 물결.
+    final double y = baseY + amp * math.sin(t * 2 * math.pi + phase);
+    path.lineTo(x, y);
+  }
+  path
+    ..lineTo(w, h)
+    ..lineTo(0, h)
+    ..close();
+  return path;
+}
+
+class _WaveFillPainter extends CustomPainter {
+  final double level;
+  final double phase;
+  final Color color;
+  const _WaveFillPainter({
+    required this.level,
+    required this.phase,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (level <= 0) return;
+    canvas.drawPath(
+      _waveFillPath(size, level, phase),
+      Paint()
+        ..color = color
+        ..isAntiAlias = true,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _WaveFillPainter old) =>
+      old.level != level || old.phase != phase || old.color != color;
+}
+
+class _WaveClipper extends CustomClipper<Path> {
+  final double level;
+  final double phase;
+  const _WaveClipper({required this.level, required this.phase});
+
+  @override
+  Path getClip(Size size) => _waveFillPath(size, level, phase);
+
+  @override
+  bool shouldReclip(covariant _WaveClipper old) =>
+      old.level != level || old.phase != phase;
 }

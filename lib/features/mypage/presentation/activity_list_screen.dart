@@ -20,6 +20,9 @@ class ActivityListScreen extends StatefulWidget {
 class _ActivityListScreenState extends State<ActivityListScreen> {
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
+  int _quick = 1; // 빠른 기간 탭 (0 1주 / 1 1개월 / 2 3개월 / 3 전체). -1 = 직접 선택
+
+  static const List<String> _quickLabels = ['1주', '1개월', '3개월', '전체'];
 
   // 다른 화면(뱃지 판정·내 변화)과 맞춘 조회 상한.
   // ⚠️ 기간 필터는 클라이언트에서 거르므로, 이 상한을 넘는 과거 기록은
@@ -33,7 +36,28 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   @override
   void initState() {
     super.initState();
+    // 목업 기본값: '1개월' 선택 상태로 진입
+    final r = _rangeForQuick(_quick);
+    _rangeStart = r.$1;
+    _rangeEnd = r.$2;
     _load();
+  }
+
+  // 빠른 기간 탭 → 조회 범위 계산 (0 1주 / 1 1개월 / 2 3개월 / 3 전체)
+  (DateTime?, DateTime?) _rangeForQuick(int i) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    final start = DateTime(now.year, now.month, now.day);
+    switch (i) {
+      case 0: // 1주
+        return (start.subtract(const Duration(days: 7)), today);
+      case 1: // 1개월
+        return (start.subtract(const Duration(days: 30)), today);
+      case 2: // 3개월
+        return (start.subtract(const Duration(days: 90)), today);
+      default: // 3 전체
+        return (null, null);
+    }
   }
 
   Future<void> _load() async {
@@ -61,7 +85,6 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
         groupId: a.groupId,
       ),
       ActivityMetrics.estimateSteps(a.distanceMeters),
-      ActivityMetrics.durationLabel(a.durationSeconds),
       ActivityMetrics.weightGrams(a.trashCounts) / 1000.0,
       ActivityMetrics.estimateKcal(a.distanceMeters),
       a.distanceMeters / 1000.0,
@@ -69,30 +92,44 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
       a.trashCounts,
       a.imageUrls,
       a.path,
+      a.durationSeconds,
     );
-  }
-
-  static String _comma(int n) {
-    final s = n.toString();
-    final b = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
-      b.write(s[i]);
-    }
-    return b.toString();
-  }
-
-  String _monthLabel(DateTime d) => '${d.year}년 ${d.month}월';
-
-  String _dateTimeLabel(DateTime d) {
-    final ampm = d.hour < 12 ? '오전' : '오후';
-    final h12 = d.hour % 12 == 0 ? 12 : d.hour % 12;
-    final mm = d.minute.toString().padLeft(2, '0');
-    return '${d.month}월 ${d.day}일 $ampm $h12:$mm';
   }
 
   String _fmt(DateTime d) =>
       '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
+
+  // '8월 4일' (연도 없는 한글 날짜 — 목업 요약/행)
+  String _fmtKor(DateTime d) => '${d.month}월 ${d.day}일';
+
+  static const List<String> _weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+
+  // '9월 3일 수요일' (상세 헤드라인)
+  String _dateHeadline(DateTime d) =>
+      '${d.month}월 ${d.day}일 ${_weekdays[d.weekday - 1]}요일';
+
+  // '오전 9:03' (오전/오후 포함)
+  String _ampmTime(DateTime d, {bool withAmpm = true}) {
+    final ampm = d.hour < 12 ? '오전' : '오후';
+    final h12 = d.hour % 12 == 0 ? 12 : d.hour % 12;
+    final mm = d.minute.toString().padLeft(2, '0');
+    return withAmpm ? '$ampm $h12:$mm' : '$h12:$mm';
+  }
+
+  // 개별 활동 수거량 — 그램 표기(1000 이상은 kg). 예: 620g / 1.3kg
+  String _gramLabel(Map<String, int> counts) {
+    final g = ActivityMetrics.weightGrams(counts);
+    if (g >= 1000) return '${(g / 1000.0).toStringAsFixed(1)}kg';
+    return '${g}g';
+  }
+
+  // 활동 소요 시간 — '38분' (분 단위)
+  String _minLabel(int durationSeconds) =>
+      '${(durationSeconds / 60).round()}분';
+
+  // 수거 개수 합계 — '15개'
+  int _itemCount(Map<String, int> counts) =>
+      counts.values.fold<int>(0, (s, v) => s + v);
 
   // 기간(시작~종료) 선택 — 달력/휠, 연필로 전환.
   Future<void> _pickDate() async {
@@ -245,8 +282,19 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
       end = t;
     }
     setState(() {
+      _quick = -1; // 직접 선택 → 빠른 탭 해제
       _rangeStart = DateTime(start.year, start.month, start.day);
       _rangeEnd = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    });
+  }
+
+  // 빠른 기간 탭 선택 → 범위 세팅
+  void _setQuick(int i) {
+    final r = _rangeForQuick(i);
+    setState(() {
+      _quick = i;
+      _rangeStart = r.$1;
+      _rangeEnd = r.$2;
     });
   }
 
@@ -263,213 +311,195 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
               )
               .toList();
 
-    // 월별 그룹 (입력이 시간 역순이라고 가정)
-    final Map<String, List<_Act>> byMonth = {};
-    for (final a in acts) {
-      byMonth.putIfAbsent(_monthLabel(a.date), () => []).add(a);
-    }
-
     final totalKg = acts.fold<double>(0, (s, a) => s + a.weightKg);
     final bool ranged = _rangeStart != null && _rangeEnd != null;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // 상단 바
+            // 상단 바 — 제목 + 전체 건수
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
+              padding: const EdgeInsets.fromLTRB(8, 4, 20, 4),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    '활동 기록',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        TablerIcons.chevronLeft,
+                        size: 24,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
+                  const Expanded(
+                    child: Text(
+                      '전체 활동',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (_acts != null)
+                    Text(
+                      '${acts.length}회',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gray500,
+                      ),
+                    ),
                 ],
               ),
             ),
-            Expanded(
-              child: ListView(
-                // 마지막 카드가 하단 네비바에 가리지 않게 넉넉히
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  6,
-                  20,
-                  MediaQueryData.fromView(View.of(context)).padding.bottom +
-                      120,
-                ),
+            // 빠른 기간 탭
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Row(
                 children: [
-                  // 기간 필터 pill
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _pickDate,
-                    child: Container(
-                      height: 52,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: AppColors.cardShadow,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            TablerIcons.calendar,
-                            size: 19,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              ranged
-                                  ? '${_fmt(_rangeStart!)} ~ ${_fmt(_rangeEnd!)}'
-                                  : '기간 전체',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          if (ranged)
-                            GestureDetector(
-                              onTap: () => setState(() {
-                                _rangeStart = null;
-                                _rangeEnd = null;
-                              }),
-                              child: const Icon(
-                                TablerIcons.x,
-                                size: 18,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  // ── 로딩 / 에러 / 데이터 ──
-                  // 요약(N회·Xkg)도 이 분기 안에 둔다. 밖에 두면 로딩 중
-                  // '0회 · 0.0kg' 이 잠깐 보였다가 실제 값으로 바뀐다.
-                  if (_loadError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 60),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              '기록을 불러오지 못했어요',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: _load,
-                              child: const Text('다시 시도'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else if (_acts == null)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 60),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.progress,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                    )
-                  else ...[
-                    // 전체 활동 요약
-                    Container(
-                      height: 60,
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: AppColors.cardShadow,
-                      ),
-                      child: Row(
-                        children: [
-                          const Text(
-                            '전체 활동',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '${acts.length}회 · ${totalKg.toStringAsFixed(1)}kg',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textBrandOnLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (acts.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 60),
-                        child: Center(
-                          child: Text(
-                            '해당 기간에 활동 기록이 없어요',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
+                  for (int i = 0; i < _quickLabels.length; i++) ...[
+                    _rangeTab(_quickLabels[i], i),
+                    if (i < _quickLabels.length - 1) const SizedBox(width: 7),
                   ],
-                  for (final entry in byMonth.entries) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(2, 14, 0, 12),
+                ],
+              ),
+            ),
+            // 기간·요약 행 (탭하면 상세 기간 선택)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _pickDate,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      TablerIcons.calendar,
+                      size: 17,
+                      color: AppColors.gray700,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
                       child: Text(
-                        entry.key,
+                        ranged
+                            ? '${_fmtKor(_rangeStart!)} ~ ${_fmtKor(_rangeEnd!)}'
+                            : '전체 기간',
                         style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         ),
                       ),
                     ),
-                    ...entry.value.map(
-                      (a) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _activityCard(context, a),
+                    Text(
+                      '수거 ${totalKg.toStringAsFixed(1)}kg',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray500,
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
             ),
+            Expanded(child: _buildBody(acts)),
           ],
         ),
       ),
     );
   }
 
+  // 빠른 기간 탭 pill (선택 시 잉크)
+  Widget _rangeTab(String label, int i) {
+    final on = _quick == i;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _setQuick(i),
+        child: Container(
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: on ? AppColors.ink : AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: on ? FontWeight.w800 : FontWeight.w600,
+              color: on ? AppColors.textOnBrand : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 로딩 / 에러 / 빈 / 목록
+  Widget _buildBody(List<_Act> acts) {
+    if (_loadError != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '기록을 불러오지 못했어요',
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            TextButton(onPressed: _load, child: const Text('다시 시도')),
+          ],
+        ),
+      );
+    }
+    if (_acts == null) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.progress,
+          strokeWidth: 2,
+        ),
+      );
+    }
+    if (acts.isEmpty) {
+      return const Center(
+        child: Text(
+          '해당 기간에 활동 기록이 없어요',
+          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(
+        22,
+        4,
+        22,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 120,
+      ),
+      itemCount: acts.length,
+      separatorBuilder: (_, __) =>
+          const Divider(height: 1, thickness: 1, color: AppColors.line100),
+      itemBuilder: (_, i) => _activityCard(context, acts[i]),
+    );
+  }
+
+  // 목업: 경로 썸네일(54) + 장소 + 날짜·메타 + kg, 행 사이 구분선
   Widget _activityCard(BuildContext context, _Act a) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -477,12 +507,16 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => ActivityDetailScreen(
-            dateTime: _dateTimeLabel(a.date),
-            title: a.title,
+            // 헤드라인 = 날짜+요일, 부제 = 시간대 · 장소 (목업 상세 상단)
+            dateTime:
+                '${_ampmTime(a.date)} ~ '
+                '${_ampmTime(a.date.add(Duration(seconds: a.durationSeconds)), withAmpm: false)}'
+                ' · ${a.title}',
+            title: _dateHeadline(a.date),
             steps: a.steps,
-            weight: '${a.weightKg.toStringAsFixed(1)}kg',
+            weight: _gramLabel(a.trashCounts),
             kcal: a.kcal,
-            time: a.duration,
+            time: _minLabel(a.durationSeconds),
             distance: '${a.distanceKm.toStringAsFixed(1)}km',
             trashCounts: a.trashCounts,
             imageUrls: a.imageUrls,
@@ -491,87 +525,80 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
           ),
         ),
       ),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppColors.cardShadow,
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
-            // 경로 미니 지도 썸네일 (사진 있으면 카메라 배지)
+            // 경로 미니 지도 썸네일 (사진 없으면 카메라+ 배지)
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(17),
                   child: SizedBox(
-                    width: 84,
-                    height: 84,
+                    width: 54,
+                    height: 54,
                     child: CustomPaint(painter: RoutePainter(path: a.path)),
                   ),
                 ),
-                // 인증샷을 첨부하지 않은 기록: 카메라+ 배지 (우하단)
                 if (!a.hasPhoto)
                   Positioned(
-                    right: 6,
-                    bottom: 6,
+                    right: 3,
+                    bottom: 3,
                     child: Container(
-                      width: 24,
-                      height: 24,
+                      width: 18,
+                      height: 18,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.surface.withValues(alpha: 0.92),
-                        shape: BoxShape.circle,
+                        color: AppColors.ink.withValues(alpha: 0.82),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(
                         TablerIcons.cameraPlus,
-                        size: 13,
-                        color: AppColors.textSecondary,
+                        size: 10,
+                        color: Colors.white,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 13),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _dateTimeLabel(a.date),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
                   Text(
                     a.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '${_comma(a.steps)}걸음 · ${a.duration} · '
-                      '${a.weightKg.toStringAsFixed(1)}kg · ${a.kcal}kcal',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
-                      ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${_fmtKor(a.date)} · ${a.distanceKm.toStringAsFixed(1)}km · '
+                    '${_minLabel(a.durationSeconds)} · ${_itemCount(a.trashCounts)}개',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.gray500,
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              _gramLabel(a.trashCounts),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
               ),
             ),
           ],
@@ -586,7 +613,6 @@ class _Act {
   final DateTime date;
   final String title;
   final int steps;
-  final String duration; // '42:30' (분:초) — ActivityMetrics.durationLabel
   final double weightKg; // 1.2
   final int kcal;
   final double distanceKm; // 2.4
@@ -601,12 +627,14 @@ class _Act {
   /// GPS 경로 ([{lat, lng, t}, ...]). 없으면 썸네일에 '경로 없음' 표시.
   final List<Map<String, dynamic>> path;
 
+  /// 소요 시간(초) — 상세 종료시각·'N분' 표기 계산용
+  final int durationSeconds;
+
   const _Act(
     this.id,
     this.date,
     this.title,
     this.steps,
-    this.duration,
     this.weightKg,
     this.kcal,
     this.distanceKm,
@@ -614,5 +642,6 @@ class _Act {
     this.trashCounts,
     this.imageUrls,
     this.path,
+    this.durationSeconds,
   );
 }

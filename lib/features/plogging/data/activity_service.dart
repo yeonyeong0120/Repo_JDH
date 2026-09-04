@@ -140,21 +140,28 @@ class ActivityService {
   }
 
   /// 진행 중인 활동 조회 (앱 재시작 후 이어서 하기 용도)
+  ///
+  /// where('status')+orderBy('startedAt') 조합은 Firestore 복합 색인이 필요해
+  /// 색인이 없으면 failed-precondition 예외로 홈/내활동이 통째로 안 뜬다.
+  /// 단일 필드(startedAt)로만 정렬하고 status 는 클라이언트에서 거른다.
+  /// 진행 중 세션은 보통 0~1개라 최근 몇 건만 봐도 충분하다.
   static Future<Activity?> getOngoingActivity() async {
     final col = _activitiesCol();
     if (col == null) return null;
 
     final query = await col
-        .where('status', isEqualTo: ActivityStatus.ongoing)
         .orderBy('startedAt', descending: true)
-        .limit(1)
+        .limit(10)
         .get();
 
-    if (query.docs.isEmpty) return null;
-    final doc = query.docs.first;
-    final data = doc.data();
-    data['id'] = doc.id;
-    return Activity.fromJson(data);
+    for (final doc in query.docs) {
+      final data = doc.data();
+      if (data['status'] == ActivityStatus.ongoing) {
+        data['id'] = doc.id;
+        return Activity.fromJson(data);
+      }
+    }
+    return null;
   }
 
   /// 단일 활동 조회
@@ -211,20 +218,28 @@ class ActivityService {
   }
 
   /// 완료된 활동 최근 N개 (내 활동 화면용)
+  ///
+  /// where('status')+orderBy('endedAt') 조합은 Firestore 복합 색인이 필요해
+  /// 색인이 없으면 failed-precondition 예외가 나 홈·내활동·임팩트 등
+  /// 이 함수를 쓰는 화면이 전부 "불러오지 못했어요" 상태로 빠진다.
+  /// endedAt 단일 정렬(자동 색인)로 받고 status 는 클라이언트에서 거른다.
+  /// endedAt 이 있는 문서는 완료/취소뿐이라(진행 중은 endedAt 없음) 대상이 좁다.
   static Future<List<Activity>> getRecentCompleted({int limit = 20}) async {
     final col = _activitiesCol();
     if (col == null) return [];
 
     final query = await col
-        .where('status', isEqualTo: ActivityStatus.completed)
         .orderBy('endedAt', descending: true)
         .limit(limit)
         .get();
 
-    return query.docs.map((doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return Activity.fromJson(data);
-    }).toList();
+    return query.docs
+        .map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return Activity.fromJson(data);
+        })
+        .where((a) => a.status == ActivityStatus.completed)
+        .toList();
   }
 }

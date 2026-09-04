@@ -1,15 +1,14 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import '../data/auth_repository.dart';
-import 'signup_screen.dart';
+import 'package:repo_jdh/features/auth/data/auth_repository.dart';
+import 'package:repo_jdh/features/auth/presentation/signup_screen.dart';
 
-/// 로그인(첫 화면) — 상단 마을 일러스트(아래로 초록 그라데이션) + 하단 흰 로그인 시트.
-/// 배경 초록은 일러스트 최상단 픽셀에서 뽑아 완전히 일치시킨다.
+/// 로그인(첫 화면) — Startline 구조.
+/// 흰 배경 · PLOGO 워드마크 · 34/800 헤드라인(라임 하이라이트) · 라임 원 블롭(진입 애니메이션)
+/// · 밑줄 인풋 · 차콜 CTA(라임 arrow).
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -18,47 +17,12 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  // 일러스트 로드 전 임시값 → initState 에서 실제 색으로 교체
-  Color _sky = const Color(0xFFDEE7CC);
-
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSkyColor();
-  }
-
-  // 일러스트 최상단 픽셀 색을 읽어 배경 초록으로 사용 (완전 일치)
-  Future<void> _loadSkyColor() async {
-    try {
-      final data = await rootBundle.load('assets/images/login_bg.png');
-      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      if (bytes != null && image.width > 0) {
-        final x = image.width ~/ 2;
-        const y = 3;
-        final o = (y * image.width + x) * 4;
-        final c = Color.fromARGB(
-          255,
-          bytes.getUint8(o),
-          bytes.getUint8(o + 1),
-          bytes.getUint8(o + 2),
-        );
-        if (mounted) setState(() => _sky = c);
-      }
-      image.dispose();
-    } catch (_) {
-      // 실패 시 기본값 유지
-    }
-  }
 
   @override
   void dispose() {
@@ -113,304 +77,369 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final safeBottom = MediaQuery.of(context).padding.bottom;
     return Scaffold(
-      backgroundColor: _sky,
+      backgroundColor: AppColors.surface,
       resizeToAvoidBottomInset: true,
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        behavior: HitTestBehavior.opaque,
-        child: SafeArea(
-          bottom: false,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                // 키보드가 올라와 공간이 부족할 때만 스크롤된다.
-                // 공간이 충분하면 ConstrainedBox 의 minHeight 로 지금 레이아웃 그대로 유지.
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // ── 위쪽 배경: 일러스트 + 아래로 초록 그라데이션(좁게) ──
-                        // 일러스트가 남는 공간을 꽉 채운다(위 여백 제거, 이미지는 좀 잘려도 됨).
-                        Expanded(
-                          child: Stack(
-                            fit: StackFit.expand,
+      body: Stack(
+        children: [
+          // ── 라임 원 블롭 180×180 (우측, 진입 시 좌로 슬라이드) ──
+          Positioned(
+            right: -56,
+            top: 176,
+            child:
+                Container(
+                      width: 180,
+                      height: 180,
+                      decoration: const BoxDecoration(
+                        color: AppColors.lime,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                    .animate()
+                    .slideX(
+                      begin: 0.72, // 130px ≈ 180 폭의 0.72 (근사)
+                      end: 0,
+                      duration: 4600.ms,
+                      curve: const Cubic(0.12, 0.72, 0.24, 1),
+                    )
+                    .fadeIn(duration: 900.ms),
+          ),
+          SafeArea(
+            bottom: false,
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              behavior: HitTestBehavior.opaque,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    // 키보드가 올라와 공간이 부족할 때만 스크롤된다.
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Image.asset(
-                                'assets/images/login_bg.png',
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
-                                errorBuilder: (_, __, ___) =>
-                                    ColoredBox(color: _sky),
-                              ),
-                              // 아래 끝만 배경색으로 페이드
-                              Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Container(
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [_sky.withValues(alpha: 0), _sky],
+                              const SizedBox(height: 44),
+                              // ── 헤더: PLOGO 워드마크 + 34/800 헤드라인 ──
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(26, 0, 26, 0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'PLOGO',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 6,
+                                        color: AppColors.gray500,
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 14),
+                                    _headline(),
+                                  ],
                                 ),
                               ),
+                              const SizedBox(height: 64),
+                              // ── 폼: 밑줄 인풋 ──
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(26, 0, 26, 0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _fieldLabel('이메일'),
+                                    const SizedBox(height: 2),
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      decoration: _underline('name@example.com'),
+                                      validator: (v) {
+                                        if (v == null || v.trim().isEmpty) {
+                                          return '이메일을 입력해주세요.';
+                                        }
+                                        if (!v.contains('@')) {
+                                          return '올바른 이메일 형식이 아닙니다.';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 20),
+                                    _fieldLabel('비밀번호'),
+                                    const SizedBox(height: 2),
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      decoration: _underline(
+                                        '8자 이상',
+                                        suffix: IconButton(
+                                          icon: Icon(
+                                            _obscurePassword
+                                                ? TablerIcons.eyeOff
+                                                : TablerIcons.eye,
+                                            color: AppColors.gray500,
+                                            size: 20,
+                                          ),
+                                          onPressed: () => setState(
+                                            () => _obscurePassword =
+                                                !_obscurePassword,
+                                          ),
+                                        ),
+                                      ),
+                                      validator: (v) {
+                                        if (v == null || v.isEmpty) {
+                                          return '비밀번호를 입력해주세요.';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 12),
+                                    // "비밀번호를 잊으셨나요?" 우측 정렬
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: _isLoading
+                                            ? null
+                                            : _handlePasswordReset,
+                                        child: const Text(
+                                          '비밀번호를 잊으셨나요?',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.gray500,
+                                            decoration: TextDecoration.underline,
+                                            decorationColor: AppColors.gray500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Spacer(),
+                              // ── 하단 고정 CTA ──
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
+                                child: _loginButton(),
+                              ),
+                              const SizedBox(height: 16),
+                              _signupLink(),
+                              const SizedBox(height: 24),
+                              // ── 약관 문구 ──
+                              const Padding(
+                                padding: EdgeInsets.fromLTRB(26, 0, 26, 0),
+                                child: Text.rich(
+                                  TextSpan(
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      height: 1.6,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF9AA09B),
+                                    ),
+                                    children: [
+                                      TextSpan(text: '계속하면 '),
+                                      TextSpan(
+                                        text: '이용약관',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.ink,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                      TextSpan(text: '과 '),
+                                      TextSpan(
+                                        text: '개인정보 처리방침',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.ink,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                      TextSpan(text: '에\n동의하는 것으로 봅니다'),
+                                    ],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              SizedBox(height: safeBottom + 24),
                             ],
                           ),
                         ),
-                        // ── 슬로건 + 타이틀 (박스 위, 카드와 동시에 떠오름) ──
-                        Padding(
-                              padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
-                              // 슬로건 아래에 큰 플로고 로고. 슬로건-로고 간격은 최소로.
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    '걷는 만큼 깨끗해지는 동네',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  // 워드마크 로고. 파일이 없으면 글자로 대체한다.
-                                  Image.asset(
-                                    'assets/images/logo.png',
-                                    height: 88,
-                                    alignment: Alignment.centerLeft,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => const Text(
-                                      '플로고',
-                                      style: TextStyle(
-                                        fontSize: 48,
-                                        height: 1.0,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                            .animate()
-                            .fadeIn(duration: 1300.ms, curve: Curves.easeOut)
-                            .slideY(
-                              begin: 0.45,
-                              end: 0,
-                              duration: 1500.ms,
-                              curve: Curves.easeOutCubic,
-                            ),
-                        const SizedBox(height: 20),
-                        // ── 로그인 시트 (글씨와 동시에 떠오름) ──
-                        _loginCard(context)
-                            .animate()
-                            .fadeIn(duration: 1300.ms, curve: Curves.easeOut)
-                            .slideY(
-                              begin: 0.45,
-                              end: 0,
-                              duration: 1500.ms,
-                              curve: Curves.easeOutCubic,
-                            ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── 로그인 시트: 흰 배경(윗모서리 둥근, 좌우·아래 끝까지) + 내용은 인셋 ──
-  Widget _loginCard(BuildContext context) {
-    final safeBottom = MediaQuery.of(context).padding.bottom;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.neutral900.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),
-      // 위 여백은 원래대로: 입력 필드는 시트 위쪽에 붙는다(늘어난 길이는 버튼 위 공백으로)
-      padding: EdgeInsets.fromLTRB(26, 24, 26, safeBottom + 28),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _fieldLabel('이메일'),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(fontSize: 17),
-              decoration: _underline('name@example.com'),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return '이메일을 입력해주세요.';
-                if (!v.contains('@')) return '올바른 이메일 형식이 아닙니다.';
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            _fieldLabel('비밀번호'),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              style: const TextStyle(fontSize: 17),
-              decoration: _underline(
-                '비밀번호',
-                suffix: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? TablerIcons.eyeOff : TablerIcons.eye,
-                    color: AppColors.textSecondary,
-                    size: 21,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                ),
-              ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return '비밀번호를 입력해주세요.';
-                return null;
-              },
-            ),
-            const SizedBox(height: 2),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: _isLoading ? null : _handlePasswordReset,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  '비밀번호를 잊으셨나요?',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-            // 비밀번호 찾기 링크와 로그인 버튼 사이 공백
-            // (시트가 길어진 만큼 이 공백이 커져 필드는 위로, 버튼은 하단 고정)
-            const SizedBox(height: 76),
-            SizedBox(
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.actionPrimary,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: AppColors.actionPrimary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Text(
-                            '로그인',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(TablerIcons.arrowRight, size: 20),
-                        ],
-                      ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  '아직 계정이 없나요? ',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                  ),
-                ),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _isLoading
-                      ? null
-                      : () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SignupScreen(),
-                          ),
-                        ),
-                  child: const Text(
-                    '가입하기',
-                    style: TextStyle(
-                      color: AppColors.actionPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+    );
+  }
+
+  // 34/800 헤드라인 — "깨끗"에 라임 하이라이트
+  Widget _headline() {
+    return const Text.rich(
+      TextSpan(
+        style: TextStyle(
+          fontSize: 34,
+          height: 1.2,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -1.4,
+          color: AppColors.ink,
         ),
+        children: [
+          TextSpan(text: '줍고 뛰면\n동네가 '),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: ColoredBox(
+              color: AppColors.lime,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  '깨끗',
+                  style: TextStyle(
+                    fontSize: 34,
+                    height: 1.2,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1.4,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          TextSpan(text: '해져요'),
+        ],
       ),
     );
   }
 
-  Widget _fieldLabel(String t) => Padding(
-    padding: const EdgeInsets.only(bottom: 2, left: 2),
-    child: Text(
-      t,
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textSecondary,
+  // 로그인 버튼 h58 radius18 차콜 + 라임 arrow
+  Widget _loginButton() {
+    return SizedBox(
+      height: 58,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _handleLogin,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.ink,
+          foregroundColor: AppColors.textOnBrand,
+          disabledBackgroundColor: AppColors.ink,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Text(
+                    '로그인',
+                    style: TextStyle(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(TablerIcons.arrowRight, size: 20, color: AppColors.lime),
+                ],
+              ),
       ),
+    );
+  }
+
+  // "아직 계정이 없나요? 가입하기"
+  Widget _signupLink() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text(
+          '아직 계정이 없나요? ',
+          style: TextStyle(
+            color: AppColors.gray500,
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _isLoading
+              ? null
+              : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SignupScreen()),
+                ),
+          child: const Text(
+            '가입하기',
+            style: TextStyle(
+              color: AppColors.ink,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
+              decoration: TextDecoration.underline,
+              decorationColor: AppColors.ink,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 폼 필드 라벨 11.5/800/자간1.4 gray500
+  Widget _fieldLabel(String t) => Text(
+    t,
+    style: const TextStyle(
+      fontSize: 11.5,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 1.4,
+      color: AppColors.gray500,
     ),
   );
 
   InputDecoration _underline(String hint, {Widget? suffix}) {
-    UnderlineInputBorder line(Color c, [double wdt = 1]) =>
-        UnderlineInputBorder(
-          borderSide: BorderSide(color: c, width: wdt),
-        );
+    UnderlineInputBorder line(Color c, [double wdt = 1.5]) =>
+        UnderlineInputBorder(borderSide: BorderSide(color: c, width: wdt));
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.textDisabled, fontSize: 17),
+      hintStyle: const TextStyle(
+        color: AppColors.gray350,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+      ),
       isDense: true,
       filled: false,
       contentPadding: const EdgeInsets.symmetric(vertical: 10),
       suffixIcon: suffix,
-      border: line(AppColors.border),
-      enabledBorder: line(AppColors.border),
-      focusedBorder: line(AppColors.actionPrimary, 1.6),
+      border: line(AppColors.gray200),
+      enabledBorder: line(AppColors.gray200),
+      focusedBorder: line(AppColors.ink),
       errorBorder: line(AppColors.actionDanger),
-      focusedErrorBorder: line(AppColors.actionDanger, 1.6),
+      focusedErrorBorder: line(AppColors.actionDanger),
     );
   }
 }
@@ -438,16 +467,14 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
 
   @override
   Widget build(BuildContext context) {
-    UnderlineInputBorder line(Color col, [double w = 1]) =>
-        UnderlineInputBorder(
-          borderSide: BorderSide(color: col, width: w),
-        );
+    UnderlineInputBorder line(Color col, [double w = 1.5]) =>
+        UnderlineInputBorder(borderSide: BorderSide(color: col, width: w));
     return Dialog(
       backgroundColor: AppColors.surface,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,89 +482,100 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
             const Text(
               '비밀번호를 다시 만들까요?',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
+                height: 1.4,
                 fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 7),
             const Text(
               '가입한 이메일로 재설정 링크를 보내드려요.',
-              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 20),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 2, left: 2),
-              child: Text(
-                '이메일',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray500,
               ),
             ),
+            const SizedBox(height: 20),
+            const Text(
+              '이메일',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.4,
+                color: AppColors.gray500,
+              ),
+            ),
+            const SizedBox(height: 2),
             TextField(
               controller: _c,
               keyboardType: TextInputType.emailAddress,
               autofocus: true,
-              style: const TextStyle(fontSize: 17),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
               decoration: InputDecoration(
                 hintText: 'name@example.com',
                 hintStyle: const TextStyle(
-                  color: AppColors.textDisabled,
-                  fontSize: 17,
+                  color: AppColors.gray350,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
                 isDense: true,
                 filled: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                enabledBorder: line(AppColors.border),
-                focusedBorder: line(AppColors.actionPrimary, 1.6),
+                enabledBorder: line(AppColors.gray200),
+                focusedBorder: line(AppColors.ink),
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: SizedBox(
-                    height: 50,
-                    child: OutlinedButton(
+                    height: 52,
+                    child: TextButton(
                       onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textPrimary,
-                        side: const BorderSide(color: AppColors.border),
+                      style: TextButton.styleFrom(
+                        backgroundColor: AppColors.surfaceSoft,
+                        foregroundColor: AppColors.gray700,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(17),
                         ),
                       ),
                       child: const Text(
                         '취소',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 9),
                 Expanded(
                   child: SizedBox(
-                    height: 50,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, _c.text.trim()),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.actionPrimary,
+                        backgroundColor: AppColors.ink,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(17),
                         ),
                       ),
                       child: const Text(
                         '보내기',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 15.5,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
