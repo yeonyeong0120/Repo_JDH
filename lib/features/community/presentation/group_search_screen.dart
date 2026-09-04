@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/widgets/group_thumb.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'group_detail_screen.dart';
 
-/// Ploggo - 그룹 검색 화면 (GRP-02)
-/// 검색바 + 필터 드롭다운(지역/정렬) + 결과 리스트. 결과 카드 → 소개/가입 화면.
+/// Ploggo - 그룹 검색 화면 (GRP-02, Startline)
+/// 검색바(퍼지 매칭은 GroupService.search) + 정렬 시트 + 라인 보더 결과 카드.
 /// 위치 권장: lib/features/community/presentation/group_search_screen.dart
 class GroupSearchScreen extends StatefulWidget {
   // 이미 다른 그룹 소속인지 (소개/가입 화면 GRP-04 판단용)
@@ -20,12 +21,44 @@ class GroupSearchScreen extends StatefulWidget {
 class _GroupSearchScreenState extends State<GroupSearchScreen> {
   final _controller = TextEditingController();
   String _query = '';
-  int _region = 0; // 0 내 동네 / 1 전체 (기본: 내 동네)
-  int _sort = 0; // 0 인원 많은 순 / 1 최신순 (기본: 인원 많은 순)
-  int? _openFilter; // 0 지역 / 1 정렬 / null 닫힘 (하나만 열림)
 
-  static const List<String> _regionOptions = ['내 동네', '전체'];
-  static const List<String> _sortOptions = ['인원 많은 순', '최신순'];
+  // 최근 검색어(메모리 보관, 최신순, 최대 6개). 저장소 연동은 아직 없다.
+  final List<String> _recent = <String>[];
+
+  // 검색어 제출 시 최근 검색 목록에 추가(중복 제거·최신 우선·6개 제한)
+  void _addRecent(String q) {
+    final t = q.trim();
+    if (t.isEmpty) return;
+    setState(() {
+      _recent.remove(t);
+      _recent.insert(0, t);
+      if (_recent.length > 6) _recent.removeRange(6, _recent.length);
+    });
+  }
+
+  // 최근 검색 칩 탭 → 해당 검색어로 다시 검색
+  void _applyRecent(String q) {
+    _controller.text = q;
+    _controller.selection =
+        TextSelection.fromPosition(TextPosition(offset: q.length));
+    setState(() => _query = q);
+    _load();
+  }
+
+  // 정렬 — 실제 모델 필드(todayActiveCount / memberCount / createdAt)로만 구성.
+  int _sort = 0;
+  static const List<String> _sortLabels = ['활동순', '인기순', '최신순'];
+  static const List<String> _sortHints = ['오늘 활동 많은 순', '멤버 많은 순', '개설 최신순'];
+
+  // 활동 강도 필터 (null = 전체). 알약은 짧은 라벨, 매칭·메타는 원문을 쓴다.
+  int? _pace;
+  static const List<String> _paceLabels = ['산책', '가볍게', '러닝']; // 알약 전용(짧게)
+  static const List<String> _paceFull = ['산책', '가볍게 뛰기', '러닝']; // 매칭·메타
+  static const List<IconData> _paceIcons = [
+    TablerIcons.shoe,
+    TablerIcons.run,
+    TablerIcons.flame,
+  ];
 
   List<Group> _results = [];
   bool _loading = true;
@@ -42,8 +75,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     super.dispose();
   }
 
-  // 검색어 없으면 전체 목록, 있으면 이름 검색
-  // TODO: 지역 필터(_region)·정렬(_sort)도 쿼리에 반영
+  // 검색어 없으면 전체 목록, 있으면 이름 검색(GroupService.search — 퍼지 매칭)
   Future<void> _load() async {
     if (mounted) setState(() => _loading = true);
     List<Group> list = [];
@@ -62,41 +94,184 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     });
   }
 
+  // 검색어 매칭 결과 → 강도 필터 → 정렬 (순서 중요: 필터를 정렬 앞에서 적용).
+  List<Group> _sorted() {
+    // 강도 필터 (pf != null 로 검사 — 0(산책)이 무시되지 않게)
+    final list = _pace == null
+        ? [..._results]
+        : _results.where((g) => g.intensity == _paceFull[_pace!]).toList();
+    switch (_sort) {
+      case 0: // 활동순 (같으면 멤버 많은 순)
+        list.sort((a, b) {
+          final t = b.todayActiveCount.compareTo(a.todayActiveCount);
+          return t != 0 ? t : b.memberCount.compareTo(a.memberCount);
+        });
+        break;
+      case 1: // 인기순 (멤버 많은 순)
+        list.sort((a, b) => b.memberCount.compareTo(a.memberCount));
+        break;
+      case 2: // 최신순 (개설 최신)
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+    }
+    return list;
+  }
+
+  // 정렬 바텀시트
+  void _openSort() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray200,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(10, 0, 10, 6),
+                child: Text(
+                  '정렬',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              for (int i = 0; i < _sortLabels.length; i++)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    setState(() => _sort = i);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 15,
+                    ),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: AppColors.line100),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _sortLabels[i],
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight:
+                                  _sort == i ? FontWeight.w800 : FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _sortHints[i],
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.gray350,
+                          ),
+                        ),
+                        if (_sort == i) ...[
+                          const SizedBox(width: 10),
+                          const Icon(TablerIcons.check,
+                              size: 20, color: AppColors.ink),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  height: 56,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceSoft,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Text(
+                    '닫기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final results = _results;
+    final results = _sorted();
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
+      backgroundColor: AppColors.surface,
+      // 키보드가 떠도 레이아웃을 밀지 않아 '찾는 그룹이 없어요'가 고정된다.
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        children: [
+          SafeArea(
         bottom: false,
         child: Column(
           children: [
             // 상단: 뒤로가기 + 검색바
             Padding(
-              padding: const EdgeInsets.fromLTRB(6, 6, 16, 8),
+              padding: const EdgeInsets.fromLTRB(12, 12, 18, 0),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(TablerIcons.chevronLeft,
+                          size: 24, color: AppColors.ink),
+                    ),
                   ),
+                  const SizedBox(width: 9),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: AppColors.cardShadow,
+                        color: AppColors.surfaceSoft,
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            TablerIcons.search,
-                            size: 20,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 8),
+                          const Icon(TablerIcons.search,
+                              size: 19, color: AppColors.gray500),
+                          const SizedBox(width: 9),
                           Expanded(
                             child: TextField(
                               controller: _controller,
@@ -106,22 +281,26 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                                 setState(() => _query = v);
                                 _load();
                               },
+                              onSubmitted: _addRecent,
                               decoration: const InputDecoration(
                                 isDense: true,
-                                // 위아래 여백을 대칭으로 줘서 문구를 세로 가운데로
-                                contentPadding: EdgeInsets.symmetric(vertical: 11),
-                                // 포커스해도 색/테두리 안 변하게 (테마 채움·초록 테두리 차단)
+                                contentPadding:
+                                    EdgeInsets.symmetric(vertical: 13),
                                 filled: false,
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
                                 focusedBorder: InputBorder.none,
                                 hintText: '그룹명 또는 동네 검색',
                                 hintStyle: TextStyle(
-                                  fontSize: 15,
-                                  color: AppColors.textSecondary,
+                                  fontSize: 14.5,
+                                  color: AppColors.gray350,
                                 ),
                               ),
-                              style: const TextStyle(fontSize: 15),
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.ink,
+                              ),
                             ),
                           ),
                           if (_query.isNotEmpty)
@@ -129,12 +308,10 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                               onTap: () {
                                 _controller.clear();
                                 setState(() => _query = '');
+                                _load();
                               },
-                              child: const Icon(
-                                TablerIcons.x,
-                                size: 18,
-                                color: AppColors.textSecondary,
-                              ),
+                              child: const Icon(TablerIcons.x,
+                                  size: 18, color: AppColors.gray400),
                             ),
                         ],
                       ),
@@ -143,77 +320,169 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                 ],
               ),
             ),
-            // 필터: 드롭다운 2개 (지역 / 정렬) — 오버레이로 떠서 화면 안 밀림
+            // 상태바/검색바 아래 살짝 여백을 둬 콘텐츠가 위에 붙지 않게 한다.
+            const SizedBox(height: 8),
+            // 최근 검색 — 저장된 검색어가 있을 때만 라벨 + 칩을 노출한다.
+            if (_recent.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 14, 22, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '최근 검색',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray500,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final q in _recent) _recentPill(q),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            // 검색 결과 N + 정렬 토글
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // 결과 개수 (목업: 왼쪽, 드롭다운은 오른쪽)
                   Expanded(
-                    child: Text(
-                      _loading ? '' : '${_results.length}개 그룹',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                          color: AppColors.ink,
+                        ),
+                        children: [
+                          const TextSpan(text: '검색 결과 '),
+                          TextSpan(
+                            text: _loading ? '' : '${results.length}',
+                            style: const TextStyle(color: AppColors.gray500),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  _FilterDropdown(
-                    options: _regionOptions,
-                    selected: _region,
-                    open: _openFilter == 0,
-                    onToggle: () => setState(
-                      () => _openFilter = _openFilter == 0 ? null : 0,
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _openSort,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(TablerIcons.arrowsSort,
+                            size: 16, color: AppColors.ink),
+                        const SizedBox(width: 5),
+                        Text(
+                          _sortLabels[_sort],
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ],
                     ),
-                    onSelect: (i) => setState(() {
-                      _region = i;
-                      _openFilter = null;
-                    }),
-                  ),
-                  const SizedBox(width: 8),
-                  _FilterDropdown(
-                    options: _sortOptions,
-                    selected: _sort,
-                    open: _openFilter == 1,
-                    onToggle: () => setState(
-                      () => _openFilter = _openFilter == 1 ? null : 1,
-                    ),
-                    onSelect: (i) => setState(() {
-                      _sort = i;
-                      _openFilter = null;
-                    }),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            // 활동 강도 필터 알약 — 결과 헤더 아래(결과에 걸리는 조건임을 분명히).
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 14, 22, 0),
+              child: Row(
+                children: [
+                  for (int i = 0; i < _paceLabels.length; i++) ...[
+                    _paceChip(i),
+                    if (i < _paceLabels.length - 1) const SizedBox(width: 7),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             // 결과
             Expanded(
               child: _loading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: AppColors.primary,
+                        color: AppColors.progress,
                         strokeWidth: 2,
                       ),
                     )
                   : results.isEmpty
-                  ? _empty()
-                  : ListView.separated(
-                      // 하단 네비바에 마지막 카드가 가리지 않게 여유
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        12,
-                        16,
-                        MediaQueryData.fromView(
-                              View.of(context),
-                            ).padding.bottom +
-                            92,
-                      ),
-                      itemCount: results.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (_, i) => _groupCard(results[i]),
-                    ),
+                      // 빈 상태는 아래 고정 오버레이(_empty)로 그린다.
+                      ? const SizedBox.shrink()
+                      : ListView.separated(
+                          padding: EdgeInsets.fromLTRB(
+                            20,
+                            0,
+                            20,
+                            MediaQueryData.fromView(View.of(context))
+                                    .padding
+                                    .bottom +
+                                92,
+                          ),
+                          itemCount: results.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (_, i) => _groupCard(results[i]),
+                        ),
+            ),
+          ],
+        ),
+          ),
+          // 빈 상태 — 전체 화면 높이 기준 고정(키보드 온/오프와 무관하게 안 움직임)
+          if (!_loading && results.isEmpty)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: MediaQuery.of(context).size.height * 0.30,
+              child: _empty(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // 활동 강도 필터 알약 — 선택 시 다크 면 + 라임 아이콘(보더 제거), 미선택은 흰 면 + 보더.
+  Widget _paceChip(int i) {
+    final on = _pace == i;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      // 같은 알약을 다시 누르면 해제(null) — '전체' 알약이 따로 없는 이유.
+      onTap: () => setState(() => _pace = on ? null : i),
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: on ? AppColors.ink : AppColors.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: on
+              ? null
+              : Border.all(color: AppColors.gray200, width: 1.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_paceIcons[i],
+                size: 15, color: on ? AppColors.lime : AppColors.gray700),
+            const SizedBox(width: 5),
+            Text(
+              _paceLabels[i],
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: on ? FontWeight.w800 : FontWeight.w600,
+                color: on ? Colors.white : AppColors.gray700,
+              ),
             ),
           ],
         ),
@@ -221,39 +490,62 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     );
   }
 
+  // 최근 검색 칩 — 라운드 필. 탭하면 해당 검색어로 재검색.
+  Widget _recentPill(String q) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _applyRecent(q),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.gray200, width: 1.5),
+        ),
+        child: Text(
+          q,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 결과 없음 — 라임 라운드 스퀘어(72) + mapSearch(검정) + 안내 문구.
+  // 화면 중앙보다 살짝 위(헤더 높이만큼 아래로 치우쳐 보이던 것 보정).
   Widget _empty() {
-    return SingleChildScrollView(
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 70, 24, 24),
+        padding: const EdgeInsets.all(24),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 72,
+              height: 72,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE9EFEB),
-                shape: BoxShape.circle,
+              decoration: BoxDecoration(
+                color: AppColors.lime,
+                borderRadius: BorderRadius.circular(22),
               ),
-              child: const Icon(
-                TablerIcons.searchOff,
-                size: 30,
-                color: AppColors.neutral400,
-              ),
+              child: const Icon(TablerIcons.mapSearch,
+                  size: 34, color: AppColors.limeOn),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             const Text(
               '찾는 그룹이 없어요',
               style: TextStyle(
-                fontSize: 17,
+                fontSize: 18,
                 height: 1.4,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
               ),
             ),
             const SizedBox(height: 6),
             const Text(
-              '다른 이름으로 찾아보세요',
+              '검색어를 줄이거나 동네 이름으로\n다시 찾아보세요',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
@@ -267,8 +559,15 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
     );
   }
 
+  // 라인 보더 결과 카드 → 상세/가입
   Widget _groupCard(Group g) {
+    final active = g.todayActiveCount > 0;
+    // 부제 통일(SEARCH_PACE_FILTER §5): 항상 '강도 · 멤버 N명' (활동 여부는 앞의 점으로만).
+    // 거리(N.Nkm)는 모델에 값이 없어 생략.
+    final meta = '${g.intensity} · 멤버 ${g.memberCount}명';
+
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () async {
         final joined = await Navigator.push<bool>(
           context,
@@ -288,25 +587,15 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppColors.cardShadow,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.line100, width: 1.5),
         ),
         child: Row(
           children: [
-            // TODO: 실제 그룹 대표 이미지로 교체
-            Container(
-              width: 56,
-              height: 56,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceBrand,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Text('🌱', style: TextStyle(fontSize: 26)),
-            ),
+            GroupThumb(imageUrl: g.imageUrl, size: 50),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -315,236 +604,48 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                   Text(
                     g.name,
                     style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: AppColors.ink,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    g.region,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    g.meta,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 오버레이 드롭다운 (칩 아래에 떠서 화면 안 밀림 + 페이드/슬라이드)
-class _FilterDropdown extends StatefulWidget {
-  final List<String> options;
-  final int selected;
-  final bool open;
-  final VoidCallback onToggle;
-  final ValueChanged<int> onSelect;
-
-  const _FilterDropdown({
-    required this.options,
-    required this.selected,
-    required this.open,
-    required this.onToggle,
-    required this.onSelect,
-  });
-
-  @override
-  State<_FilterDropdown> createState() => _FilterDropdownState();
-}
-
-class _FilterDropdownState extends State<_FilterDropdown>
-    with SingleTickerProviderStateMixin {
-  final LayerLink _link = LayerLink();
-  OverlayEntry? _entry;
-  late final AnimationController _ac;
-  late final Animation<double> _fade;
-  late final Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _ac = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 180),
-    );
-    _fade = CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic);
-    _slide = Tween<Offset>(
-      begin: const Offset(0, -0.08),
-      end: Offset.zero,
-    ).animate(_fade);
-  }
-
-  @override
-  void didUpdateWidget(covariant _FilterDropdown old) {
-    super.didUpdateWidget(old);
-    if (widget.open && _entry == null) {
-      _show();
-    } else if (!widget.open && _entry != null) {
-      _hide();
-    }
-  }
-
-  @override
-  void dispose() {
-    _entry?.remove();
-    _entry = null;
-    _ac.dispose();
-    super.dispose();
-  }
-
-  void _show() {
-    _entry = OverlayEntry(
-      builder: (_) => Stack(
-        children: [
-          // 바깥 아무 데나 누르면 닫힘
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: widget.onToggle,
-            ),
-          ),
-          CompositedTransformFollower(
-            link: _link,
-            showWhenUnlinked: false,
-            // 토글 바로 아래, 가운데 정렬로 연다.
-            targetAnchor: Alignment.bottomCenter,
-            followerAnchor: Alignment.topCenter,
-            offset: const Offset(0, 7),
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: FadeTransition(
-                opacity: _fade,
-                child: SlideTransition(
-                  position: _slide,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Container(
-                      // 고정 폭 대신 항목 글씨 폭에 맞춘다.
-                      constraints: const BoxConstraints(minWidth: 112),
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: AppColors.cardShadow,
-                      ),
-                      child: IntrinsicWidth(
-                        child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: List.generate(widget.options.length, (i) {
-                          final on = widget.selected == i;
-                          return InkWell(
-                            onTap: () => widget.onSelect(i),
-                            child: Container(
-                              height: 44,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(horizontal: 18),
-                              // 목업: 텍스트만, 선택 항목만 초록 굵게 (체크 없음)
-                              child: Text(
-                                widget.options[i],
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: on
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: on
-                                      ? AppColors.textBrandOnLight
-                                      : AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
+                  Row(
+                    children: [
+                      if (active) ...[
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: AppColors.ink,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Flexible(
+                        child: Text(
+                          meta,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.gray500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    // 빌드 중 삽입 방지 → 다음 프레임에 삽입
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _entry == null) return;
-      Overlay.of(context).insert(_entry!);
-      _ac.forward(from: 0);
-    });
-  }
-
-  Future<void> _hide() async {
-    final entry = _entry;
-    _entry = null;
-    if (entry == null) return;
-    await _ac.reverse();
-    entry.remove();
-  }
-
-  // 토글 라벨 스타일 (선택 텍스트 · 폭 예약용 동일 적용)
-  static const TextStyle _labelStyle = TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textBrandOnLight,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    // 테두리 없는 토글 — 라벨 + 아래 화살표.
-    // 폭은 가장 긴 옵션 기준으로 고정해, 선택이 바뀌어도 흔들리지 않는다.
-    return CompositedTransformTarget(
-      link: _link,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onToggle,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  // 가장 긴 옵션들을 투명하게 깔아 폭을 고정한다.
-                  for (final o in widget.options)
-                    Opacity(
-                      opacity: 0,
-                      child: Text(o,
-                          maxLines: 1, softWrap: false, style: _labelStyle),
-                    ),
-                  // 실제 표시되는 선택 라벨
-                  Text(
-                    widget.options[widget.selected],
-                    maxLines: 1,
-                    softWrap: false,
-                    style: _labelStyle,
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(width: 3),
-              // 라벨 오른쪽에 아래 화살표(열리면 위로 뒤집힘)
-              Icon(
-                widget.open ? TablerIcons.chevronUp : TablerIcons.chevronDown,
-                size: 16,
-                color: AppColors.textBrandOnLight,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(TablerIcons.chevronRight,
+                size: 22, color: AppColors.gray400),
+          ],
         ),
       ),
     );

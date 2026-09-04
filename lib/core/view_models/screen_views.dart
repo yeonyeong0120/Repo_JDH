@@ -97,6 +97,12 @@ class HomeView {
   double get carbonKg => EcoMath.carbonKg(totalTrashKg);
   double get pineTrees => EcoMath.pineTrees(carbonKg);
 
+  // ── 연간 탄소 감축 목표 대비 진행률 (홈 '나의 환경 영향력' 도넛) ──
+  // 목표 10kgCO2eq/년 기준. (예: 2.1kg → 21%)
+  static const double annualCarbonGoalKg = 10.0;
+  double get annualGoalRatio => (carbonKg / annualCarbonGoalKg).clamp(0.0, 1.0);
+  int get annualGoalPercent => (annualGoalRatio * 100).round();
+
   // ── 레벨 (LevelSystem 이 유일한 계산 주체) ──
   LevelInfo get levelInfo => LevelSystem.of(profile.xp);
   int get level => levelInfo.level;
@@ -134,11 +140,18 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
   // (안 그러면 이전 사용자 프로필이 캐시돼 닉네임이 '가나디' 등으로 고정된다)
   ref.watch(authStateProvider.select((s) => s.valueOrNull?.uid));
 
+  // 프로필·통계는 홈의 뼈대라 실패하면 에러 상태를 보여준다.
+  // 나머지(동네 그룹·최근 활동·뉴스)는 부가 섹션이라 하나가 실패해도
+  // 빈 값으로 넘겨 홈 전체가 "불러오지 못했어요"로 빠지지 않게 한다.
   final results = await Future.wait([
     UserService.loadProfileDetail(),
     BadgeService.loadStats(),
-    GroupService.otherGroups(limit: 3), // 홈 '지금 우리 동네는': 최대 3개
-    ActivityService.getRecentCompleted(limit: 30),
+    GroupService.otherGroups(limit: 3).catchError(
+      (_) => <Group>[],
+    ), // 홈 '지금 우리 동네는': 최대 3개
+    ActivityService.getRecentCompleted(limit: 30).catchError(
+      (_) => <Activity>[],
+    ),
     NewsService.fetchNews(display: 5).catchError(
       (_) => <NewsArticle>[], // 뉴스 실패는 홈을 막지 않는다
     ),

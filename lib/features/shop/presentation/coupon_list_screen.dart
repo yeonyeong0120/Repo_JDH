@@ -4,9 +4,9 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/features/shop/presentation/coupon_detail_screen.dart';
-import 'package:repo_jdh/features/shop/presentation/widgets/coupon_thumb.dart';
 
-/// SHOP-03 내 쿠폰함 (사용 가능 / 사용 완료 탭)
+/// SHOP-03 쿠폰함 (Startline 목업 구조)
+/// 사용 가능 쿠폰이 위, 사용 완료/만료 쿠폰은 아래에 흐리게. 카드 탭·"사용하기" → 쿠폰 상세.
 class CouponListScreen extends StatefulWidget {
   const CouponListScreen({super.key});
 
@@ -17,7 +17,6 @@ class CouponListScreen extends StatefulWidget {
 class _CouponListScreenState extends State<CouponListScreen> {
   List<Coupon> _coupons = [];
   bool _loading = true;
-  int _tab = 0; // 0 사용 가능 / 1 사용 완료
 
   @override
   void initState() {
@@ -39,38 +38,27 @@ class _CouponListScreenState extends State<CouponListScreen> {
     });
   }
 
+  Future<void> _openDetail(Coupon c) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CouponDetailScreen(coupon: c)),
+    );
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // 사용 가능 → 사용 완료/만료 순으로 정렬
     final usable = _coupons.where((c) => c.usable).toList();
     final done = _coupons.where((c) => !c.usable).toList();
-    final list = _tab == 0 ? usable : done;
+    final ordered = [...usable, ...done];
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    '내 쿠폰함',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            _tabs(),
+            _topBar(usable.length),
             Expanded(
               child: _loading
                   ? const Center(
@@ -79,13 +67,13 @@ class _CouponListScreenState extends State<CouponListScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : list.isEmpty
-                  ? _empty(_tab == 0 ? '사용할 수 있는 쿠폰이 없어요' : '사용 완료·만료된 쿠폰이 없어요')
+                  : ordered.isEmpty
+                  ? _empty()
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-                      itemCount: list.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (_, i) => _card(list[i]),
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+                      itemCount: ordered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (_, i) => _card(ordered[i]),
                     ),
             ),
           ],
@@ -94,47 +82,42 @@ class _CouponListScreenState extends State<CouponListScreen> {
     );
   }
 
-  // ── 사용 가능 / 사용 완료 탭 ──
-  Widget _tabs() {
+  // ── 상단 바: 뒤로 + '쿠폰함' + 우측 '사용 가능 N' ──
+  Widget _topBar(int usableCount) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(16, 8, 22, 12),
       child: Row(
         children: [
-          _tabItem('사용 가능', 0),
-          const SizedBox(width: 22),
-          _tabItem('사용 완료', 1),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
-
-  Widget _tabItem(String label, int i) {
-    final on = _tab == i;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _tab = i),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: on ? FontWeight.w800 : FontWeight.w600,
-                color: on ? AppColors.textPrimary : AppColors.textSecondary,
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.pop(context),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                TablerIcons.chevronLeft,
+                size: 24,
+                color: AppColors.textPrimary,
               ),
             ),
           ),
-          // 활성 탭 밑줄
-          Container(
-            height: 2.5,
-            width: 52,
-            decoration: BoxDecoration(
-              color: on ? AppColors.actionPrimary : Colors.transparent,
-              borderRadius: BorderRadius.circular(2),
+          const Expanded(
+            child: Text(
+              '쿠폰함',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Text(
+            '사용 가능 $usableCount',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.gray500,
             ),
           ),
         ],
@@ -142,101 +125,105 @@ class _CouponListScreenState extends State<CouponListScreen> {
     );
   }
 
-  Widget _empty(String t) => Center(
+  // 쿠폰 이름 키워드로 아이콘 선택 (쿠폰 데이터에 종류 필드가 없어 이름 기반으로 매핑)
+  IconData _couponIcon(String name) {
+    if (name.contains('커피') || name.contains('음료') || name.contains('카페')) {
+      return TablerIcons.coffee;
+    }
+    if (name.contains('텀블러') || name.contains('컵')) return TablerIcons.cup;
+    if (name.contains('에코백') || name.contains('굿즈')) return TablerIcons.gift;
+    return TablerIcons.ticket;
+  }
+
+  Widget _empty() => const Center(
     child: Text(
-      t,
-      style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+      '쿠폰함이 비어 있어요',
+      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
     ),
   );
 
+  // ── 쿠폰 카드 (아이콘 + 이름/유효기한 + 사용하기 버튼) ──
   Widget _card(Coupon c) {
-    final dim = !c.usable;
+    final used = !c.usable;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => CouponDetailScreen(coupon: c)),
-        );
-        _load();
-      },
+      onTap: () => _openDetail(c),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppColors.cardShadow,
+          color: used ? AppColors.neutral50 : AppColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: used ? AppColors.line100 : AppColors.gray200,
+            width: 1.5,
+          ),
         ),
         child: Row(
           children: [
-            Opacity(opacity: dim ? 0.5 : 1, child: const CouponThumb(size: 64)),
+            // 아이콘 사각형 — 사용 가능=라임 / 사용 완료=회색
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: used ? AppColors.surfaceMuted : AppColors.lime,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                _couponIcon(c.name),
+                size: 23,
+                color: used ? AppColors.gray400 : AppColors.ink,
+              ),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    c.brand,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
                     c.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.w800,
-                      color: dim
-                          ? AppColors.textSecondary
-                          : AppColors.textPrimary,
+                      color: used ? AppColors.gray400 : AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _statusPill(c),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          c.expiresText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    used ? c.statusText : c.expiresText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.gray500,
+                    ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 10),
+            // 사용하기 / 사용됨 pill 버튼
+            Container(
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: used ? AppColors.surfaceMuted : AppColors.ink,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                used ? '사용됨' : '사용하기',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: used ? AppColors.gray400 : Colors.white,
+                ),
+              ),
+            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // 상태 배지 — 사용 가능(초록) / 사용 완료·기간 만료(회색)
-  Widget _statusPill(Coupon c) {
-    final usable = c.usable;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-      decoration: BoxDecoration(
-        color: usable ? AppColors.green100 : AppColors.neutral100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        usable ? '사용 가능' : c.statusText,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: usable ? AppColors.textBrandOnLight : AppColors.textSecondary,
         ),
       ),
     );

@@ -92,6 +92,29 @@ class GroupService {
 
   static Future<bool> isInGroup() async => (await myGroupId()) != null;
 
+  /// 현재 사용자의 이 그룹 내 역할 ('owner' | 'member' | null).
+  ///
+  /// 그룹장 판정의 권위 소스 — 생성 시 'owner', 가입 시 'member'로 기록된다.
+  /// ownerUid 비교보다 안전하다(과거 데이터·엣지에서 ownerUid가 비어 있을 수 있음).
+  static Future<String?> myRole(String groupId) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    try {
+      final doc = await _groups
+          .doc(groupId)
+          .collection('members')
+          .doc(uid)
+          .get();
+      return doc.data()?['role'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 현재 사용자가 이 그룹의 그룹장인지 (role == 'owner').
+  static Future<bool> isLeaderOf(String groupId) async =>
+      (await myRole(groupId)) == 'owner';
+
   /// 내 그룹 정보
   static Future<Group?> myGroup() async {
     final id = await myGroupId();
@@ -115,22 +138,18 @@ class GroupService {
     final mine = await myGroupId();
     final myRegion = await _resolveUserRegion();
 
-    // where('region')+orderBy('createdAt') 조합은 Firestore 복합 색인이 필요.
-    // (Firebase 콘솔 > Firestore > 색인에 region ASC + createdAt DESC 등록)
-    Query<Map<String, dynamic>> q = _groups;
-    if (myRegion.isNotEmpty) {
-      q = q.where('region', isEqualTo: myRegion);
-    }
-    // 내 그룹 제외를 클라이언트에서 하므로, 그게 상위 limit 개 안에 있으면
-    // 결과가 limit-1 개로 줄어든다. 한 개 더 받아 두고 제외한 뒤 잘라낸다.
-    // (쿼리에서 isNotEqualTo 로 거르는 방식은 orderBy 조합 제약·색인 문제가 있음)
-    final query = await q
+    // where('region')+orderBy('createdAt') 조합은 Firestore 복합 색인이 필요해
+    // 색인이 없으면 failed-precondition 예외로 홈이 통째로 안 뜬다.
+    // createdAt 단일 정렬(자동 색인)로만 받고, region 일치와 내 그룹 제외는
+    // 클라이언트에서 거른다. 필터로 줄어드는 만큼 넉넉히 받아 둔다.
+    final query = await _groups
         .orderBy('createdAt', descending: true)
-        .limit(limit + 1)
+        .limit((limit + 1) * 4)
         .get();
 
     return query.docs
         .where((d) => d.id != mine)
+        .where((d) => myRegion.isEmpty || d.data()['region'] == myRegion)
         .take(limit)
         .map((d) {
           final data = d.data();
@@ -191,6 +210,9 @@ class GroupService {
     String region = '',
     String intro = '',
     String? imageUrl,
+    String intensity = '가볍게 뛰기',
+    List<String> moods = const ['조용히 각자'],
+    bool isPublic = true,
   }) async {
     final resolvedRegion =
         region.isNotEmpty ? region : await _resolveUserRegion();
@@ -207,6 +229,11 @@ class GroupService {
       'todayActiveCount': 0,
       'ownerUid': uid,
       'createdAt': FieldValue.serverTimestamp(),
+      // 그룹 만들기에서 함께 받는 값 (그룹 정보 수정 시트에서 이어서 편집)
+      'intensity': intensity,
+      'moods': moods,
+      'goalKg': 25, // 목표량은 생성 후 수정 시트에서 설정
+      'isPublic': isPublic,
     });
 
     await ref.collection('members').doc(uid).set({
@@ -217,6 +244,36 @@ class GroupService {
     await _userDoc()!.set({'groupId': ref.id}, SetOptions(merge: true));
 
     return ref.id;
+  }
+
+  /// 그룹 정보 수정 (그룹장 전용) — 그룹 정보 수정 시트에서 호출.
+  ///
+  /// null 인 필드는 건드리지 않는다(부분 업데이트). 권한(그룹장) 판정은
+  /// 프레젠테이션에서 ownerUid 로 이미 걸러지고, Firestore 규칙에서도 막는다.
+  static Future<void> updateGroup({
+    required String groupId,
+    String? name,
+    String? intro,
+    String? imageUrl,
+    String? intensity,
+    List<String>? moods,
+    int? goalKg,
+    bool? isPublic,
+  }) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('로그인이 필요합니다');
+
+    final data = <String, dynamic>{};
+    if (name != null) data['name'] = name;
+    if (intro != null) data['intro'] = intro;
+    if (imageUrl != null) data['imageUrl'] = imageUrl;
+    if (intensity != null) data['intensity'] = intensity;
+    if (moods != null) data['moods'] = moods;
+    if (goalKg != null) data['goalKg'] = goalKg;
+    if (isPublic != null) data['isPublic'] = isPublic;
+    if (data.isEmpty) return;
+
+    await _groups.doc(groupId).update(data);
   }
 
   /// 그룹 가입. 이미 다른 그룹 소속이면 예외 (GRP-04 차단과 동일 규칙).
@@ -241,7 +298,7 @@ class GroupService {
       'uid': uid,
       'userName': userName,
       'type': PostType.system,
-      'text': '$userName님이 그룹에 가입하셨습니다!',
+      'text': '$userName님이 그룹에 가입하셨습니다',
       'imageUrl': null,
       'distance': '',
       'trash': 0,
@@ -324,6 +381,28 @@ class GroupService {
     return snap.docs
         .map((d) => (d.data()['userName'] as String?) ?? '')
         .toList();
+  }
+
+  /// 현재 사용자가 이 그룹에 가입한 시각 (members/{uid}.joinedAt).
+  ///
+  /// 재가입(탈퇴 후 다시 가입) 시에도 members 문서가 새로 쓰이므로 항상 최신
+  /// 가입 시각을 가리킨다. 이 값을 기준으로 채팅 피드를 잘라, 가입 이전 대화는
+  /// 보이지 않게 한다. 가입 정보를 못 읽으면 null (전체 표시로 fallback).
+  static Future<DateTime?> myJoinedAt(String groupId) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    try {
+      final doc = await _groups
+          .doc(groupId)
+          .collection('members')
+          .doc(uid)
+          .get();
+      final ts = doc.data()?['joinedAt'];
+      if (ts is Timestamp) return ts.toDate();
+    } catch (_) {
+      // 실패 시 null → 필터 없이 전체 표시
+    }
+    return null;
   }
 
   // ───────────────────────── 피드 ─────────────────────────

@@ -11,7 +11,6 @@ import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
-import 'package:repo_jdh/core/widgets/badge_medal.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 /// 획득 뱃지들에 대해 퀘스트 완료 → 뱃지 획득 팝업을 순서대로 띄운다.
@@ -304,7 +303,8 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
   @override
   Widget build(BuildContext context) {
     final b = widget.badge;
-    final desc = '${b.quest} 챌린지를 달성해 받은 뱃지예요.';
+    // 획득 조건을 그대로 노출한다 (예: '30분 이상 플로깅 3회 달성').
+    final desc = b.condition;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 36),
@@ -376,26 +376,10 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
                     const SizedBox(height: 22),
                     _rise(
                       btnV,
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AppButton(
-                              label: '뱃지함 보기',
-                              onTap: () => Navigator.pop(context, true),
-                              type: AppButtonType.secondary,
-                              expand: false,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: AppButton(
-                              label: '확인',
-                              onTap: () => Navigator.pop(context, false),
-                              type: AppButtonType.primary,
-                              expand: false,
-                            ),
-                          ),
-                        ],
+                      AppButton(
+                        label: '확인',
+                        onTap: () => Navigator.pop(context, false),
+                        type: AppButtonType.primary,
                       ),
                     ),
                   ],
@@ -409,13 +393,18 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
   }
 
   Widget _badgeTile(BadgeData b) {
-    // 뱃지함 타일과 같은 메달 도형으로 통일.
-    return BadgeMedal(
-      size: 84,
-      color: badgeColor(b),
-      icon: usesTrashBagIcon(b)
-          ? TrashBagIcon(size: 38, color: badgeColor(b)) // 봉지 뱃지
-          : Icon(b.icon, size: 38, color: badgeColor(b)),
+    // 목업: 라임 스퀘어클 + 검정(ink) 뱃지 글리프.
+    return Container(
+      width: 72,
+      height: 72,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.lime,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: usesTrashBagIcon(b)
+          ? TrashBagIcon(size: 34, color: AppColors.ink) // 봉지 뱃지
+          : Icon(b.icon, size: 34, color: AppColors.ink),
     );
   }
 }

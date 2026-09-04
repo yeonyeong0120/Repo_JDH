@@ -12,6 +12,11 @@ class Group {
   final int todayActiveCount; // 오늘 활동한 인원
   final String ownerUid;
   final DateTime createdAt;
+  // ── 그룹장 편집 필드 (그룹 정보 수정 시트) ──
+  final String intensity; // 활동 강도: '산책' | '가볍게 뛰기' | '러닝'
+  final List<String> moods; // 분위기 태그 (복수 선택)
+  final int goalKg; // 주간 목표 수거량 (5~60, 5단위)
+  final bool isPublic; // 공개 설정: true=누구나 가입 / false=승인 후 가입
 
   Group({
     required this.id,
@@ -23,6 +28,10 @@ class Group {
     this.todayActiveCount = 0,
     this.ownerUid = '',
     required this.createdAt,
+    this.intensity = '산책',
+    this.moods = const [],
+    this.goalKg = 25,
+    this.isPublic = true,
   });
 
   /// 목록 카드에 쓰는 한 줄 ('12명 · 오늘 활동 인원 3명')
@@ -39,6 +48,10 @@ class Group {
       todayActiveCount: (json['todayActiveCount'] as num?)?.toInt() ?? 0,
       ownerUid: (json['ownerUid'] as String?) ?? '',
       createdAt: _toDateTime(json['createdAt']) ?? DateTime.now(),
+      intensity: (json['intensity'] as String?) ?? '산책',
+      moods: ((json['moods'] as List?) ?? const []).cast<String>(),
+      goalKg: (json['goalKg'] as num?)?.toInt() ?? 25,
+      isPublic: (json['isPublic'] as bool?) ?? true,
     );
   }
 
@@ -51,6 +64,10 @@ class Group {
     'todayActiveCount': todayActiveCount,
     'ownerUid': ownerUid,
     'createdAt': Timestamp.fromDate(createdAt),
+    'intensity': intensity,
+    'moods': moods,
+    'goalKg': goalKg,
+    'isPublic': isPublic,
   };
 
   static DateTime? _toDateTime(dynamic v) {

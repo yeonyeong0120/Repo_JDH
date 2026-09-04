@@ -3,7 +3,8 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/settings/presentation/inquiry_screen.dart';
 
-/// 자주 묻는 질문 (메뉴 → FAQ)
+/// 도움말 (메뉴 → 자주 묻는 질문) — Startline 목업 구조
+/// 검색 박스(장식) + FAQ 리스트(인라인 펼침) + '해결되지 않았나요?' 문의 카드.
 /// 위치 권장: lib/features/settings/presentation/faq_screen.dart
 class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
@@ -18,85 +19,60 @@ class _FaqScreenState extends State<FaqScreen> {
   // TODO: 운영하면서 실제 문의 많은 항목으로 보강
   static const List<(String q, String a)> _faqs = [
     (
-      '플로깅이 뭔가요?',
-      '조깅(walking)을 하면서 쓰레기를 줍는(plocka upp) 활동이에요. '
-          '가볍게 걸으면서 눈에 띄는 쓰레기를 주우면 됩니다. '
-          '무리하지 않고 산책하듯 즐기시면 돼요.',
-    ),
-    (
-      '활동 기록은 어떻게 저장되나요?',
-      '플로깅을 시작하면 시간과 이동 거리가 자동으로 기록되고, '
-          '종료 후 정산 화면을 거치면 저장됩니다. '
-          '기록은 내 활동 > 기록 탭에서 확인할 수 있어요.',
-    ),
-    (
-      '쓰레기 인증은 어떻게 하나요?',
-      '활동 중 카메라 버튼을 눌러 주운 쓰레기를 촬영하면, '
-          'AI가 종류를 분류해 자동으로 개수를 세어줍니다. '
-          '인증한 만큼 수거량 퀘스트가 올라가요.',
-    ),
-    (
-      '에코 포인트는 어떻게 모으나요?',
-      '활동을 마칠 때마다 포인트가 적립되고, 퀘스트를 달성하면 추가로 받습니다. '
-          '모은 포인트는 메뉴 > 에코포인트 상점에서 상품으로 교환할 수 있어요.',
-    ),
-    (
-      '뱃지는 어떻게 얻나요?',
-      '퀘스트를 달성하면 그에 해당하는 뱃지와 줍댕이 꾸미기 아이템을 받습니다. '
-          '내 활동 > 뱃지 탭에서 각 뱃지를 눌러 획득 조건을 확인할 수 있어요.',
-    ),
-    (
-      '그룹은 여러 개 가입할 수 있나요?',
-      '한 번에 하나의 그룹에만 속할 수 있어요. '
-          '다른 그룹에 가입하려면 기존 그룹에서 먼저 탈퇴해주세요. '
-          '탈퇴는 그룹 피드 화면에서 할 수 있습니다.',
-    ),
-    (
-      '위치 권한은 왜 필요한가요?',
-      '이동 거리를 계산하고 주변 정화 거점을 안내하기 위해 사용해요. '
-          '활동 중에만 위치를 사용하며, 활동을 종료하면 수집하지 않습니다.',
-    ),
-    (
-      '활동 중 화면을 꺼도 되나요?',
-      '화면을 끄면 위치 수집이 중단될 수 있어 거리가 정확하지 않을 수 있어요. '
+      '활동 중 앱을 닫으면 기록이 사라지나요?',
+      '활동을 시작하면 진행 상황이 계속 저장되므로, 앱을 잠시 닫았다 다시 열어도 이어서 기록됩니다. '
+          '다만 화면을 끄면 위치 수집이 중단될 수 있어 거리가 정확하지 않을 수 있으니 '
           '가능하면 앱을 켜둔 상태로 활동해주세요.',
+    ),
+    (
+      '인증 사진은 왜 촬영만 가능한가요?',
+      '실제 활동 중에 주운 쓰레기를 인증하기 위한 기능이라 그 자리에서 촬영한 사진만 사용할 수 있어요. '
+          '앨범의 기존 사진은 등록할 수 없으며, 이는 기록의 신뢰도를 지키기 위한 정책입니다.',
+    ),
+    (
+      '포인트는 언제 적립되나요?',
+      '활동을 마치고 정산 화면을 거치면 포인트가 적립되고, 퀘스트를 달성하면 추가로 받습니다. '
+          '모은 포인트는 메뉴 > 포인트 샵에서 상품으로 교환할 수 있어요.',
+    ),
+    (
+      '그룹 리더를 넘길 수 있나요?',
+      '리더는 그룹 관리 화면에서 다른 구성원에게 리더 권한을 넘길 수 있어요. '
+          '권한을 넘기면 그룹 정보 수정과 구성원 관리 권한도 함께 이전됩니다.',
+    ),
+    (
+      '수거량은 어떻게 계산되나요?',
+      '활동 중 카메라로 촬영한 쓰레기를 AI가 종류별로 분류해 개수를 세고, '
+          '종류별 평균 무게로 환산해 수거량을 계산합니다. 인증한 만큼 수거량 퀘스트가 올라가요.',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-              child: Row(
+            _topBar(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
                 children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
-                  ),
+                  _searchBox(),
+                  const SizedBox(height: 20),
                   const Text(
                     '자주 묻는 질문',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.4,
+                      color: AppColors.gray500,
                     ),
                   ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                children: [
-                  _faqGroup(),
-                  const SizedBox(height: 20),
-                  _inquiryBox(),
+                  const SizedBox(height: 4),
+                  for (int i = 0; i < _faqs.length; i++) _item(i),
+                  const SizedBox(height: 22),
+                  _inquiryCard(),
                 ],
               ),
             ),
@@ -106,75 +82,58 @@ class _FaqScreenState extends State<FaqScreen> {
     );
   }
 
-  // FAQ 항목 한 덩어리 카드 (항목 사이 구분선, 각 항목 인라인 펼침)
-  Widget _faqGroup() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: Column(
+  Widget _topBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: Row(
         children: [
-          for (int i = 0; i < _faqs.length; i++) ...[
-            if (i > 0)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18),
-                child: Divider(height: 1, thickness: 0.8, color: AppColors.border),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.pop(context),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                TablerIcons.chevronLeft,
+                size: 24,
+                color: AppColors.textPrimary,
               ),
-            _item(i),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // 원하는 답변이 없을 때 → 문의 및 신고 (색은 연하게)
-  Widget _inquiryBox() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: BoxDecoration(
-        color: AppColors.green100,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
+            ),
+          ),
+          const SizedBox(width: 4),
           const Text(
-            '찾는 답변이 없으신가요?',
+            '도움말',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 20,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            '이용 중 불편한 점이나 신고할 내용을 알려주세요',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const InquiryScreen()),
-            ),
-            child: Container(
-              width: double.infinity,
-              height: 46,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Text(
-                '문의 및 신고하기',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
+        ],
+      ),
+    );
+  }
+
+  // 장식용 검색 박스 (실제 검색은 미구현 — 시각 요소)
+  Widget _searchBox() {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: const [
+          Icon(TablerIcons.search, size: 20, color: AppColors.gray500),
+          SizedBox(width: 11),
+          Text(
+            '무엇이 궁금하세요?',
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray350,
             ),
           ),
         ],
@@ -182,35 +141,31 @@ class _FaqScreenState extends State<FaqScreen> {
     );
   }
 
+  // FAQ 항목 한 줄 (질문 + 셰브론, 탭하면 답변 인라인 펼침)
   Widget _item(int i) {
     final open = _open == i;
     final (q, a) = _faqs[i];
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _open = open ? null : i),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
+      child: Container(
+        decoration: const BoxDecoration(
+          border:
+              Border(bottom: BorderSide(color: AppColors.line100, width: 1)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Q',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     q,
                     style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 14.5,
+                      height: 1.45,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -219,21 +174,19 @@ class _FaqScreenState extends State<FaqScreen> {
                   duration: const Duration(milliseconds: 180),
                   turns: open ? 0.5 : 0,
                   child: const Icon(
-                    TablerIcons.chevronDown,
-                    size: 22,
-                    color: AppColors.textSecondary,
+                    TablerIcons.chevronRight,
+                    size: 19,
+                    color: AppColors.gray300,
                   ),
                 ),
               ],
             ),
             if (open) ...[
-              const SizedBox(height: 14),
-              const Divider(color: AppColors.border, height: 1),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(
                 a,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   height: 1.7,
                   color: AppColors.textSecondary,
                 ),
@@ -241,6 +194,70 @@ class _FaqScreenState extends State<FaqScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  // '해결되지 않았나요?' 카드 → 1:1 문의
+  Widget _inquiryCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '해결되지 않았나요?',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 7),
+          const Text(
+            '평일 10시–18시, 보통 2시간 안에 답장해요',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.6,
+              color: AppColors.gray500,
+            ),
+          ),
+          const SizedBox(height: 14),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const InquiryScreen()),
+            ),
+            child: Container(
+              height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.ink,
+                borderRadius: BorderRadius.circular(17),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(TablerIcons.messages, size: 20, color: AppColors.lime),
+                  SizedBox(width: 9),
+                  Text(
+                    '1:1 문의하기',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

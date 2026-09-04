@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
-import 'dart:math' as math;
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,6 +69,17 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
 final GlobalKey<NavigatorState> rootNavigatorKey =
     GlobalKey<NavigatorState>();
 
+// 라우트 관찰기 — 홈 위에 다른 화면(플로깅·피드 등)이 덮였다 사라질 때를 감지해
+// 홈 마스코트 애니메이션을 다시 재생하기 위해 사용한다. (RouteAware 구독용)
+// 셸(탭)은 루트 내비게이터의 한 페이지이므로, 그 위로 풀스크린 화면이 push→pop
+// 될 때 셸 페이지가 didPopNext 를 받는다. 이를 셸 래퍼에서 구독한다.
+final RouteObserver<PageRoute<dynamic>> appRouteObserver =
+    RouteObserver<PageRoute<dynamic>>();
+
+// 홈으로 되돌아옴 신호 — 셸 래퍼가 didPopNext 를 받을 때마다 증가한다.
+// 홈 마스코트가 이 값을 듣고 애니메이션을 처음부터 다시 재생한다.
+final ValueNotifier<int> homeReentryTick = ValueNotifier<int>(0);
+
 @riverpod
 GoRouter appRouter(Ref ref) {
   // ─────────────────────────────────────────────────────────
@@ -95,6 +105,8 @@ GoRouter appRouter(Ref ref) {
     // 로그인으로 밀리는 깜빡임을 막는다. (splash 라우트는 아래에 정의)
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    // 홈 마스코트가 '홈으로 되돌아옴'을 감지하도록 루트 내비게이터에 관찰기 부착.
+    observers: [appRouteObserver],
 
     refreshListenable: refresh,
 
@@ -231,61 +243,43 @@ class _SplashScreen extends StatelessWidget {
   }
 }
 
-class _BumpTopArcPainter extends CustomPainter {
-  final double bumpRise;
-  final Color color;
-  const _BumpTopArcPainter({required this.bumpRise, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final r = size.width / 2; // 혹 반지름
-    final dy = bumpRise - r; // 원 중심 기준 바 윗선 위치
-    final half = math.sqrt(r * r - dy * dy);
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..strokeCap = StrokeCap.round;
-    final path = Path()
-      ..moveTo(r - half, bumpRise)
-      ..arcToPoint(
-        Offset(r + half, bumpRise),
-        radius: Radius.circular(r),
-        clockwise: true,
-      );
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ScaffoldWithBottomNav extends StatelessWidget {
+class _ScaffoldWithBottomNav extends StatefulWidget {
   final Widget child;
   const _ScaffoldWithBottomNav({required this.child});
 
-  // ▼▼▼ 직접 조절하는 값 ▼▼▼
-  static const double _barHeight = 63;
-  static const double _bumpRise = 13;
-  static const double _navIconSize = 29;
-  static const double _navLabelSize = 13;
-  static const double _navItemWidth = 73;
-  static const double _itemGap = 0;
-  static const double _centerGap = 86;
-  static const double _startBtnSize = 75;
-  static const double _startIconSize = 40;
-  static const double _bumpLift = 13; // 원래 위치 (_bumpRise 와 동일)
-  static const double _navBottomPad = 0;
-  static const double _barLift = 12;
-  static const double _startBumpSize = 88;
-  static const Color _startBtnColor = Color(0xFF0C7D5E);
-  // ▲▲▲ 직접 조절하는 값 ▲▲▲
+  @override
+  State<_ScaffoldWithBottomNav> createState() => _ScaffoldWithBottomNavState();
+}
+
+class _ScaffoldWithBottomNavState extends State<_ScaffoldWithBottomNav>
+    with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 셸 페이지(루트 내비게이터)에 관찰기 구독 — 위로 덮였던 화면이 사라질 때 감지.
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) {
+      appRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    appRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // 셸 위로 push 되었던 풀스크린 화면(플로깅·피드 등)이 pop 되어 셸이 다시 보일 때.
+  @override
+  void didPopNext() {
+    homeReentryTick.value++;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: child,
+      body: widget.child,
       bottomNavigationBar: _buildBar(context),
     );
   }
@@ -294,76 +288,31 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
     final current = _getCurrentIndex(context);
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
-    return SizedBox(
-      height: _barHeight + bottomInset + _barLift,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              height: _barHeight + bottomInset + _barLift,
-              padding: EdgeInsets.only(bottom: bottomInset + _barLift),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-                border: Border.all(color: AppColors.divider, width: 1),
-              ),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _navItem(context, 0, TablerIcons.smartHome, '홈', current),
-                        const SizedBox(width: _itemGap),
-                        _navItem(
-                          context,
-                          1,
-                          TablerIcons.heartHandshake,
-                          '그룹',
-                          current,
-                        ),
-                        const SizedBox(width: _centerGap),
-                        _navItem(context, 3, TablerIcons.activity, '내 활동', current),
-                        const SizedBox(width: _itemGap),
-                        _navItem(context, 4, TablerIcons.dots, '메뉴', current),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: -_bumpLift,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: CustomPaint(
-                foregroundPainter: _BumpTopArcPainter(
-                  bumpRise: _bumpRise,
-                  color: AppColors.divider,
-                ),
-                child: Container(
-                  width: _startBumpSize,
-                  height: _startBumpSize,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: _startButton(context),
-                ),
-              ),
-            ),
+    // Startline: 가운데 시작버튼 없는 4탭 바. 모서리 둥근 네모(위 라운드) 느낌 유지.
+    return Container(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        border: Border(top: BorderSide(color: AppColors.line100, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x14191E24),
+            blurRadius: 20,
+            offset: Offset(0, -4),
           ),
         ],
+      ),
+      child: SizedBox(
+        height: 64,
+        child: Row(
+          children: [
+            _navItem(context, 0, TablerIcons.smartHome, '홈', current),
+            _navItem(context, 1, TablerIcons.heartHandshake, '그룹', current),
+            _navItem(context, 2, TablerIcons.activity, '내 활동', current),
+            _navItem(context, 3, TablerIcons.dots, '메뉴', current),
+          ],
+        ),
       ),
     );
   }
@@ -377,46 +326,24 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
   ) {
     final selected = current == index;
     final color = selected ? AppColors.navActive : AppColors.navInactive;
-    return SizedBox(
-      width: _navItemWidth,
+    return Expanded(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => _onTap(context, index),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: _navIconSize),
-            const SizedBox(height: 3),
+            Icon(icon, color: color, size: 25),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 color: color,
-                fontSize: _navLabelSize,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                fontSize: 11.5,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
-            const SizedBox(height: _navBottomPad),
           ],
-        ),
-      ),
-    );
-  }
-
-    Widget _startButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _onTap(context, 2),
-      child: Container(
-        width: _startBtnSize,
-        height: _startBtnSize,
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: _startBtnColor,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          TablerIcons.run,
-          color: Colors.white,
-          size: _startIconSize,
         ),
       ),
     );
@@ -426,8 +353,8 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith(AppRoutes.home)) return 0;
     if (location.startsWith(AppRoutes.group)) return 1;
-    if (location.startsWith(AppRoutes.mypage)) return 3;
-    if (location.startsWith(AppRoutes.settings)) return 4;
+    if (location.startsWith(AppRoutes.mypage)) return 2;
+    if (location.startsWith(AppRoutes.settings)) return 3;
     return 0;
   }
 
@@ -439,10 +366,8 @@ class _ScaffoldWithBottomNav extends StatelessWidget {
       case 1:
         context.go(AppRoutes.group);
       case 2:
-        context.push(AppRoutes.ploggingRoute);
-      case 3:
         context.go(AppRoutes.mypage);
-      case 4:
+      case 3:
         context.go(AppRoutes.settings);
     }
   }

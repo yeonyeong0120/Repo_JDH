@@ -4,10 +4,9 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'news_detail_screen.dart';
 import 'news_service.dart';
 
-/// 정보 & 뉴스 피드 화면 (환경뉴스 목록)
+/// 환경 뉴스 피드 (Startline 목업 구조)
+/// 상단 대표 기사(큰 이미지 + 제목 + 요약) + 아래 목록(제목/메타 + 썸네일).
 /// 위치 제안: lib/features/news/presentation/news_feed_screen.dart
-/// 홈의 환경뉴스 카드 → 이 화면 → 뉴스 상세
-///
 /// 서버(FastAPI /news)에서 네이버 환경 뉴스를 실제로 불러온다.
 class NewsFeedScreen extends StatefulWidget {
   const NewsFeedScreen({super.key});
@@ -45,35 +44,53 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 상단 바
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    '환경뉴스',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _topBar(),
             Expanded(child: _buildBody()),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _topBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 22, 12),
+      child: Row(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.pop(context),
+            // 규칙 A: 뒤로가기 chevron 24 / 44x44 탭 영역 / 컨테이너 없음
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                TablerIcons.chevronLeft,
+                size: 24,
+                color: AppColors.ink,
+              ),
+            ),
+          ),
+          const Expanded(
+            child: Text(
+              '환경 뉴스',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          // 좌측 뒤로 버튼(44)과 균형을 맞춰 제목을 정중앙에 배치
+          const SizedBox(width: 44),
+        ],
       ),
     );
   }
@@ -100,18 +117,21 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
         title: '표시할 뉴스가 없어요',
       );
     }
-    // ④ 데이터 — 카테고리+이미지+제목 항목을 선으로 구분해 나열
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-      itemCount: _articles!.length,
-      separatorBuilder: (_, __) =>
-          const Divider(height: 1, thickness: 0.7, color: AppColors.border),
-      itemBuilder: (context, i) => _newsItem(context, _articles![i]),
+    // ④ 데이터 — 대표 기사 + 나머지 목록
+    final articles = _articles!;
+    final rest = articles.length > 1 ? articles.sublist(1) : <NewsArticle>[];
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
+      children: [
+        _featured(articles.first),
+        const SizedBox(height: 8),
+        for (final a in rest) _newsRow(a),
+      ],
     );
   }
 
   // 상세로 이동 (관련 뉴스 3개: 같은 카테고리 우선)
-  void _openDetail(BuildContext context, NewsArticle a) {
+  void _openDetail(NewsArticle a) {
     final related = NewsArticle.relatedFrom(_articles!, a);
     Navigator.push(
       context,
@@ -121,28 +141,83 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
     );
   }
 
-  // ── 뉴스 항목: 카테고리 + 제목 (왼쪽) · 이미지(오른쪽) ──
-  Widget _newsItem(BuildContext context, NewsArticle a) {
+  // 소스 · 날짜 메타 (소스명이 없으면 카테고리로 대체)
+  String _meta(NewsArticle a) {
+    final head = a.sourceName.isEmpty ? a.category : a.sourceName;
+    if (a.date.isEmpty) return head;
+    return head.isEmpty ? a.date : '$head · ${a.date}';
+  }
+
+  // ── 대표 기사: 큰 이미지 + 큰 제목 + 요약 + 메타 ──
+  Widget _featured(NewsArticle a) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _openDetail(context, a),
+      onTap: () => _openDetail(a),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.only(top: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 이미지 없으면 자리 자체를 두지 않고 텍스트만 (빈 회색 박스 금지)
+            if (a.imageUrl.isNotEmpty) ...[
+              _image(a, 214, 22),
+              const SizedBox(height: 18),
+            ],
+            Text(
+              a.title,
+              style: const TextStyle(
+                fontSize: 25,
+                height: 1.35,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.9,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            if (a.summary.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                a.summary,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.65,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              _meta(a),
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── 목록 항목: 썸네일(왼쪽) + 제목/메타(오른쪽) ──
+  Widget _newsRow(NewsArticle a) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openDetail(a),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.line100, width: 1)),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 원본 기사 사진이 있으면 왼쪽에 표시, 없으면 생략
+            // 이미지 있으면 왼쪽 썸네일 유지, 없으면 썸네일과 간격을 통째로 제거해 텍스트가 폭을 채운다
             if (a.imageUrl.isNotEmpty) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  a.imageUrl,
-                  width: 78,
-                  height: 78,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
+              _thumb(a, 66),
               const SizedBox(width: 14),
             ],
             Expanded(
@@ -150,23 +225,23 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    a.category,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.green800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
                     a.title,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 16,
+                      height: 1.45,
                       fontWeight: FontWeight.w700,
-                      height: 1.3,
                       color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    _meta(a),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.gray500,
                     ),
                   ),
                 ],
@@ -175,6 +250,66 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // 대표 이미지 — 있으면 표시, 없으면 소프트 그레이 플레이스홀더
+  Widget _image(NewsArticle a, double height, double radius) {
+    if (a.imageUrl.isEmpty) {
+      return Container(
+        height: height,
+        width: double.infinity,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(radius),
+        ),
+        child: const Text(
+          '대표 기사 이미지',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.gray350,
+          ),
+        ),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: Image.network(
+        a.imageUrl,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          height: height,
+          color: AppColors.surfaceSoft,
+        ),
+      ),
+    );
+  }
+
+  // 목록 썸네일 (66×66)
+  Widget _thumb(NewsArticle a, double size) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: a.imageUrl.isEmpty
+          ? Container(
+              width: size,
+              height: size,
+              color: AppColors.surfaceSoft,
+            )
+          : Image.network(
+              a.imageUrl,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: size,
+                height: size,
+                color: AppColors.surfaceSoft,
+              ),
+            ),
     );
   }
 }

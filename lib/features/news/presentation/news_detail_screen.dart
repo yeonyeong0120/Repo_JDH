@@ -66,6 +66,14 @@ class NewsDetailScreen extends StatefulWidget {
 class _NewsDetailScreenState extends State<NewsDetailScreen> {
   NewsArticle get article => widget.article;
 
+  // 저장(북마크) — 이 화면 내 로컬 표시 상태 (별도 저장소 연동은 추후)
+  bool _saved = false;
+
+  void _toggleSave() {
+    setState(() => _saved = !_saved);
+    AppSnackBar.show(context, _saved ? '저장했어요' : '저장을 해제했어요');
+  }
+
   // 원문 보기 — 외부 브라우저로 이동
   Future<void> _openSource() async {
     if (article.sourceUrl.isEmpty) {
@@ -103,31 +111,48 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 상단 바
+            // 상단 바 — 뒤로 + 공유
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              padding: const EdgeInsets.fromLTRB(16, 8, 10, 8),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Expanded(
-                    child: Text(
-                      article.sourceName.isEmpty ? '환경뉴스' : article.sourceName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(context),
+                    // 규칙 A: 뒤로가기 chevron 24 / 44x44 탭 영역 / 컨테이너 없음
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        TablerIcons.chevronLeft,
+                        size: 24,
+                        color: AppColors.ink,
                       ),
                     ),
                   ),
+                  const Spacer(),
+                  // 저장(북마크) — 규칙 A: 글리프만 44x44, 배경 컨테이너 없음
                   IconButton(
-                    icon: const Icon(TablerIcons.share, size: 20),
-                    color: AppColors.textSecondary,
+                    icon: Icon(
+                      _saved ? TablerIcons.bookmarkFilled : TablerIcons.bookmark,
+                      size: 21,
+                    ),
+                    color: AppColors.ink,
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    padding: EdgeInsets.zero,
+                    onPressed: _toggleSave,
+                  ),
+                  IconButton(
+                    icon: const Icon(TablerIcons.share2, size: 21),
+                    color: AppColors.ink,
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    padding: EdgeInsets.zero,
                     onPressed: _share,
                   ),
                 ],
@@ -135,99 +160,67 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                padding: const EdgeInsets.fromLTRB(22, 6, 22, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 언론사 · 분류 (신문 기사 머리)
-                    Row(
-                      children: [
-                        Text(
-                          article.sourceName.isEmpty
-                              ? '환경뉴스'
-                              : article.sourceName,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
+                    // 분류 — 라임 pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.lime,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        article.category.isEmpty ? '환경' : article.category,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.limeOn,
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 1,
-                          height: 11,
-                          color: AppColors.border,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          article.category,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 14),
                     // 제목 — 기사 제목처럼 크고 촘촘하게
                     Text(
                       article.title,
                       style: const TextStyle(
-                        fontSize: 23,
+                        fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        height: 1.4,
-                        letterSpacing: -0.3,
+                        height: 1.35,
+                        letterSpacing: -1,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    // 기자 · 날짜 — 얇은 선 사이에 끼운 바이라인
-                    Container(height: 1, color: AppColors.neutral100),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 9),
-                      child: Row(
-                        children: [
-                          Text(
-                            article.reporter,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            article.date,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              color: AppColors.neutral500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(height: 1, color: AppColors.neutral100),
-                    // 대표 이미지 — 있으면 원본 비율로 보여주고, 없으면 자리 없이 글만.
+                    const SizedBox(height: 12),
+                    // 언론사 · 기자 · 날짜 바이라인
+                    _byline(),
+                    // 대표 이미지 — 있을 때만 렌더, 없으면 히어로 블록(회색 자리)을 통째로 생략
                     if (article.imageUrl.isNotEmpty) ...[
-                      const SizedBox(height: 18),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.network(
-                          article.imageUrl,
-                          width: double.infinity,
-                          fit: BoxFit.fitWidth,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      const SizedBox(height: 16),
+                      _heroImage(),
+                    ],
+                    const SizedBox(height: 18),
+                    // 본문(요약문)
+                    if (article.summary.isNotEmpty)
+                      Text(
+                        article.summary,
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          height: 1.75,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF3D423F),
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 20),
-                    // AI 요약 토글 — Gemini 요약이 없으면 원본 발췌를 대신
-                    // 보여주지 않고 통째로 숨긴다 (요약인 척하지 않기 위함).
+                    // AI 요약 토글 — Gemini 요약이 없으면 통째로 숨긴다.
                     if (article.aiSummary.isNotEmpty) ...[
-                      _summaryCard(),
                       const SizedBox(height: 20),
+                      _summaryCard(),
                     ],
+                    const SizedBox(height: 24),
                     // 출처 · 원문 보기
                     _sourceBox(),
                     if (widget.related.isNotEmpty) ...[
@@ -244,6 +237,76 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     );
   }
 
+  // 언론사 · 기자 · 날짜 (가운데 구분점)
+  Widget _byline() {
+    final head = article.sourceName.isEmpty ? '환경뉴스' : article.sourceName;
+    final tail = [
+      article.reporter,
+      article.date,
+    ].where((s) => s.isNotEmpty).join(' · ');
+    return Row(
+      children: [
+        Text(
+          head,
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        if (tail.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Container(width: 1, height: 10, color: AppColors.gray200),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              tail,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray500,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // 대표 이미지 — 없으면 '기사 이미지' 소프트 그레이 자리
+  Widget _heroImage() {
+    if (article.imageUrl.isEmpty) {
+      return Container(
+        height: 196,
+        width: double.infinity,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: const Text(
+          '기사 이미지',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.gray350,
+          ),
+        ),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: Image.network(
+        article.imageUrl,
+        width: double.infinity,
+        fit: BoxFit.fitWidth,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      ),
+    );
+  }
+
   // ── AI 3줄 요약 (접기/펼치기) ──
   // TODO: 요약문은 뉴스 수집 시 서버에서 생성해 Firestore 에 저장해두고 내려받는 방식 권장
   Widget _summaryCard() {
@@ -252,9 +315,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
-        // 하양 배경 + 은은한 그림자(테두리 없음)
-        color: AppColors.bg,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,8 +356,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     height: 22,
                     margin: const EdgeInsets.only(top: 1, right: 10),
                     alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: AppColors.green200,
+                    decoration: BoxDecoration(
+                      color: AppColors.tint(AppColors.lime, 0.35),
                       shape: BoxShape.circle,
                     ),
                     child: Text(
@@ -303,7 +365,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.green750,
+                        color: AppColors.limeOn,
                       ),
                     ),
                   ),
@@ -326,47 +388,34 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     );
   }
 
-  // ── 출처 · 원문 보기 ──
+  // ── 원문 보기 바 (목업 하단 바 스타일) ──
   Widget _sourceBox() {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _openSource,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        height: 60,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          color: AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    article.sourceName.isEmpty ? '출처' : article.sourceName,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  const Text(
-                    '원문 보기',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(
               TablerIcons.externalLink,
-              size: 18,
-              color: AppColors.textSecondary,
+              size: 19,
+              color: AppColors.ink,
+            ),
+            SizedBox(width: 8),
+            Text(
+              '원문 보기',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
             ),
           ],
         ),
