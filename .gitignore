@@ -130,6 +130,9 @@ app.*.symbols
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 
-# 개발 툴 설정 파일
+# 개발 툴 설정 파일 및 사용자별 상태 파일
 .vscode/
-/.idea
+.idea/
+*.iml
+*.ipr
+*.iws
