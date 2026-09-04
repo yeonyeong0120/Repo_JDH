@@ -1121,15 +1121,16 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
 
   // ───────── 그룹 탈퇴 (탈퇴는 여기서만 가능 — 기획서 GRP-05) ─────────
   Future<void> _confirmLeave() async {
-    // POPUPS §8: 파괴적 액션이지만 빨강 버튼을 쓰지 않는다(다크/라임 2색 톤 유지).
-    // 경고 아이콘 + 다크 실행 버튼, 손실은 본문 텍스트로 명시한다.
+    // POPUPS_1 §8: 파괴적 액션은 빨강(#E4573D) 실행 버튼 + 연빨강 아이콘 배경(문 나가기).
+    // 좌 '머무르기'(회색) / 우 '나가기'(빨강). (그룹 이름은 노출하지 않고 '그룹'으로)
     final ok = await AppDialog.show(
       context,
-      title: '그룹에서 나갈까요?',
-      message: '지금까지 쌓은 그룹 기여 기록이 사라져요',
-      cancelText: '취소',
+      title: '그룹에서\n나가시겠어요?',
+      message: '이번 주 내 기여 3.7kg은 그룹 기록에 남고,\n주간 랭킹에서는 제외돼요',
+      cancelText: '머무르기',
       confirmText: '나가기',
-      warn: true,
+      danger: true,
+      icon: TablerIcons.doorExit,
     );
     if (ok != true || !mounted) return;
     try {
