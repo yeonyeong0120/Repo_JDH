@@ -7,6 +7,7 @@ import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dar
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 
 /// Ploggo - 전체 활동 기록 (ACT-04)
 /// 기록 탭 "최근 활동 전체 보기" → 이 화면. 월별 그룹 + 기간 필터.
@@ -32,6 +33,8 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   // null = 로딩 중 / [] = 로딩됐고 기록 0건
   List<_Act>? _acts;
   Object? _loadError; // null 이 아니면 에러 발생
+  double? _weightKg;
+  String? _gender;
 
   @override
   void initState() {
@@ -62,9 +65,12 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
 
   Future<void> _load() async {
     try {
+      final body = await UserService.loadBodyInfo();
       final list = await ActivityService.getRecentCompleted(limit: _limit);
       if (!mounted) return;
       setState(() {
+        _weightKg = body.weightKg;
+        _gender = body.gender;
         _acts = list.map(_toAct).toList();
         _loadError = null;
       });
@@ -86,7 +92,12 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
       ),
       ActivityMetrics.estimateSteps(a.distanceMeters),
       ActivityMetrics.weightGrams(a.trashCounts) / 1000.0,
-      ActivityMetrics.estimateKcal(a.distanceMeters),
+      ActivityMetrics.estimateKcal(
+        distanceMeters: a.distanceMeters,
+        durationSeconds: a.durationSeconds,
+        weightKg: _weightKg,
+        gender: _gender,
+      ),
       a.distanceMeters / 1000.0,
       a.imageUrls.isNotEmpty,
       a.trashCounts,

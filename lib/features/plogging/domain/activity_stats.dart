@@ -58,7 +58,12 @@ class ActivityStats {
 
   /// 주간 버킷 목록 (최근 주부터 과거로 [최근, 지난주, 2주전])
   /// 각 주 안에서 요일별(월~일) 걸음 합계를 막대로.
-  static List<GraphBucket> weekly(List<Activity> acts, {int weeks = 3}) {
+  static List<GraphBucket> weekly(
+    List<Activity> acts, {
+    int weeks = 3,
+    double? weightKg,
+    String? gender,
+  }) {
     final now = DateTime.now();
     // 이번 주 월요일 0시
     final thisMonday = _mondayOf(now);
@@ -83,7 +88,12 @@ class ActivityStats {
         final s = ActivityMetrics.estimateSteps(a.distanceMeters);
         daySteps[dow] += s;
         totalSteps += s;
-        totalKcal += ActivityMetrics.estimateKcal(a.distanceMeters);
+        totalKcal += ActivityMetrics.estimateKcal(
+          distanceMeters: a.distanceMeters,
+          durationSeconds: a.durationSeconds,
+          weightKg: weightKg,
+          gender: gender,
+        );
         totalWeight += ActivityMetrics.weightGrams(a.trashCounts);
       }
 
@@ -102,7 +112,12 @@ class ActivityStats {
 
   /// 월간 버킷 목록 (최근 달부터 과거로)
   /// 각 달 안에서 '주차별' 걸음 합계를 막대로.
-  static List<GraphBucket> monthly(List<Activity> acts, {int months = 2}) {
+  static List<GraphBucket> monthly(
+    List<Activity> acts, {
+    int months = 2,
+    double? weightKg,
+    String? gender,
+  }) {
     final now = DateTime.now();
     final buckets = <GraphBucket>[];
 
@@ -124,7 +139,12 @@ class ActivityStats {
         final s = ActivityMetrics.estimateSteps(a.distanceMeters);
         weekSteps[weekIdx] += s;
         totalSteps += s;
-        totalKcal += ActivityMetrics.estimateKcal(a.distanceMeters);
+        totalKcal += ActivityMetrics.estimateKcal(
+          distanceMeters: a.distanceMeters,
+          durationSeconds: a.durationSeconds,
+          weightKg: weightKg,
+          gender: gender,
+        );
         totalWeight += ActivityMetrics.weightGrams(a.trashCounts);
       }
 
@@ -142,11 +162,21 @@ class ActivityStats {
   }
 
   /// 누적 버킷 (가입일부터 전체 합계, 막대 없음)
-  static GraphBucket cumulative(List<Activity> acts, {DateTime? joinedAt}) {
+  static GraphBucket cumulative(
+    List<Activity> acts, {
+    DateTime? joinedAt,
+    double? weightKg,
+    String? gender,
+  }) {
     int totalSteps = 0, totalKcal = 0, totalWeight = 0;
     for (final a in acts) {
       totalSteps += ActivityMetrics.estimateSteps(a.distanceMeters);
-      totalKcal += ActivityMetrics.estimateKcal(a.distanceMeters);
+      totalKcal += ActivityMetrics.estimateKcal(
+        distanceMeters: a.distanceMeters,
+        durationSeconds: a.durationSeconds,
+        weightKg: weightKg,
+        gender: gender,
+      );
       totalWeight += ActivityMetrics.weightGrams(a.trashCounts);
     }
     final rangeText = joinedAt != null

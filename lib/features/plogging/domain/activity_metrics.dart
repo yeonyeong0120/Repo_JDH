@@ -24,8 +24,20 @@ class ActivityMetrics {
   // 평균 보폭(m). 걸음 수 = 거리 ÷ 보폭
   static const double _strideMeters = 0.75;
 
-  // 칼로리 추정 계수: 1km 당 약 50kcal (평균 성인 걷기 대략치)
-  static const double _kcalPerKm = 50.0;
+  // ── 칼로리 추정 (MET 공식: kcal = MET × 체중(kg) × 시간(h)) ──
+  // 플로깅은 쓰레기를 줍느라 자주 멈춰(카메라 인증 중엔 트래킹이 멈추지 않음)
+  // 일반 도보 기준보다 평균 속도가 낮게 나온다. 경계값을 도보 기준보다 낮춰뒀다.
+  // 실사용 데이터가 쌓이면 재조정 필요 — 현재는 추정치.
+  static const double _metSlow = 2.8; // 평균 속도가 낮은(정지 구간이 많은) 세션
+  static const double _metModerate = 3.3; // 전형적인 플로깅 페이스
+  static const double _metFast = 3.8; // 정지가 적은 세션
+  static const double _slowSpeedKmh = 2.5;
+  static const double _fastSpeedKmh = 4.0;
+
+  // 체중 폴백(kg) — 프로필에 체중이 없을 때. 성별 있으면 성별 평균, 없으면 전체 평균.
+  static const double _avgWeightMaleKg = 70;
+  static const double _avgWeightFemaleKg = 58;
+  static const double _avgWeightAllKg = 64;
 
   /// 수거 무게(g) — 카테고리별 (개수 × 평균무게) 합산
   ///
@@ -46,11 +58,34 @@ class ActivityMetrics {
     return (distanceMeters / _strideMeters).round();
   }
 
-  /// 칼로리 추정 — 거리(km) × 계수
+  /// 칼로리 추정 — MET × 체중 × 시간. 속도(거리÷시간)로 MET 구간을 고른다.
+  /// weightKg 가 없으면(프로필 미입력) 성별 평균으로 대체, 성별도 없으면 전체 평균.
   /// TODO: Health Connect 연동 시 실측 칼로리로 교체
-  static int estimateKcal(double distanceMeters) {
-    if (distanceMeters <= 0) return 0;
-    return (distanceMeters / 1000.0 * _kcalPerKm).round();
+  static int estimateKcal({
+    required double distanceMeters,
+    required int durationSeconds,
+    double? weightKg,
+    String? gender,
+  }) {
+    if (distanceMeters <= 0 || durationSeconds <= 0) return 0;
+    final hours = durationSeconds / 3600.0;
+    final speedKmh = (distanceMeters / 1000.0) / hours;
+    final met = speedKmh < _slowSpeedKmh
+        ? _metSlow
+        : (speedKmh <= _fastSpeedKmh ? _metModerate : _metFast);
+    final weight = weightKg ?? _fallbackWeightKg(gender);
+    return (met * weight * hours).round();
+  }
+
+  static double _fallbackWeightKg(String? gender) {
+    switch (gender) {
+      case '남성':
+        return _avgWeightMaleKg;
+      case '여성':
+        return _avgWeightFemaleKg;
+      default:
+        return _avgWeightAllKg;
+    }
   }
 
   /// 소요 시간(초) → "분:초" 문자열 (예: 1830초 → "30:30")

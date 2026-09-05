@@ -61,10 +61,6 @@ class TrackingState {
   /// TODO: 만보기(pedometer) 붙이면 실제 걸음수로 교체
   int get steps => ActivityMetrics.estimateSteps(distanceMeters);
 
-  /// 칼로리 — 다른 화면과 동일한 계산식 사용 (ActivityMetrics)
-  /// TODO: 체중 기반 계산으로 교체
-  int get kcal => ActivityMetrics.estimateKcal(distanceMeters);
-
   /// '06:12' 형식 (분:초) — 1시간 넘으면 '1:02:33'
   String get durationText => _formatSeconds(elapsedSeconds);
 
