@@ -11,6 +11,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/core/view_models/screen_views.dart';
+import 'package:repo_jdh/features/home/domain/greeting.dart';
 // NewsArticle 타입 + 뉴스 상세 화면.
 import 'package:repo_jdh/features/news/presentation/news_detail_screen.dart';
 import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
@@ -554,11 +555,11 @@ class _Greeting extends StatefulWidget {
   const _Greeting();
 
   // 목업 GREETS 를 옮긴 문구 세트.
-  static const List<({String top, String mid, String hl, String when})> greets = [
-    (top: '좋은 아침,', mid: '가볍게 ', hl: '줍죠', when: '아침'),
-    (top: '날씨 좋은데', mid: '한 바퀴 ', hl: '줍죠', when: '낮'),
-    (top: '퇴근길에', mid: '슬슬 ', hl: '줍줍', when: '저녁'),
-    (top: '딱 십 분만', mid: '동네 ', hl: '주워요', when: '늦은 밤'),
+  static const List<GreetingSet> greets = [
+    (top: '좋은 아침,', mid: '가볍게 ', hl: '줍죠', slot: GreetingSlot.morning),
+    (top: '날씨 좋은데', mid: '한 바퀴 ', hl: '줍죠', slot: GreetingSlot.day),
+    (top: '퇴근길에', mid: '슬슬 ', hl: '줍줍', slot: GreetingSlot.evening),
+    (top: '딱 십 분만', mid: '동네 ', hl: '주워요', slot: GreetingSlot.lateNight),
   ];
 
   @override
@@ -566,9 +567,17 @@ class _Greeting extends StatefulWidget {
 }
 
 class _GreetingState extends State<_Greeting> {
-  // 홈에 들어올 때마다(다른 탭 갔다 와도 화면이 새로 생성됨) 랜덤으로 하나 고른다.
-  late final ({String top, String mid, String hl, String when}) g =
-      _Greeting.greets[math.Random().nextInt(_Greeting.greets.length)];
+  // 홈에 들어올 때마다(다른 탭 갔다 와도 화면이 새로 생성됨) 현재 시각에 맞는
+  // 문구를 고른다. late final 이라 첫 build 에서 1회만 평가된다.
+  late final GreetingSet g = _pickGreeting();
+
+  GreetingSet _pickGreeting() {
+    final slot = greetingSlotOf(DateTime.now());
+    return _Greeting.greets.firstWhere(
+      (e) => e.slot == slot,
+      orElse: () => _Greeting.greets.first,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -603,7 +612,7 @@ class _GreetingState extends State<_Greeting> {
               ),
               Gap.w8,
               Text(
-                g.when,
+                g.slot.label,
                 style: AppType.caption.copyWith(
                   fontSize: 13,
                   color: AppColors.gray400,
