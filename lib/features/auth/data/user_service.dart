@@ -232,6 +232,18 @@ class UserService {
     }, SetOptions(merge: true));
   }
 
+  /// 체중·성별만 가볍게 조회 (칼로리 계산용). loadProfileDetail() 과 달리
+  /// 활동 기록을 다시 읽지 않는다 — 문서 1건 조회로 끝난다.
+  static Future<({double? weightKg, String? gender})> loadBodyInfo() async {
+    final uid = _uid;
+    if (uid == null) return (weightKg: null, gender: null);
+    final data = (await _db.collection('users').doc(uid).get()).data();
+    return (
+      weightKg: (data?['weight'] as num?)?.toDouble(),
+      gender: data?['gender'] as String?,
+    );
+  }
+
   static Future<void> signOut() {
     BadgeRepo.clear();
     return FirebaseAuth.instance.signOut();

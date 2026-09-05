@@ -5,6 +5,7 @@ import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 
 /// 뱃지 판정에 쓰는 누적 통계
 class UserStats {
@@ -106,6 +107,7 @@ class BadgeService {
     final counters = await GroupService.badgeCounters();
     final rows = await FirestoreRepository().getAllDetections();
     final acts = await ActivityService.getRecentCompleted(limit: 500);
+    final body = await UserService.loadBodyInfo();
 
     // ── 인증 기록 → 플라스틱 개수 · 인증 횟수 ──
     // (수거 무게는 아래 활동 기록의 trashCounts 로 계산 — 계수 통일)
@@ -136,7 +138,12 @@ class BadgeService {
       if (a.groupId != null) groupCount++;
       // 화면들과 동일한 계산식 사용
       totalSteps += ActivityMetrics.estimateSteps(a.distanceMeters);
-      totalKcal += ActivityMetrics.estimateKcal(a.distanceMeters);
+      totalKcal += ActivityMetrics.estimateKcal(
+        distanceMeters: a.distanceMeters,
+        durationSeconds: a.durationSeconds,
+        weightKg: body.weightKg,
+        gender: body.gender,
+      );
       totalWeightG += ActivityMetrics.weightGrams(a.trashCounts);
       final d = a.endedAt ?? a.startedAt;
       days.add(DateTime(d.year, d.month, d.day));
