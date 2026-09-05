@@ -19,24 +19,33 @@ class _TermsScreenState extends State<TermsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              padding: const EdgeInsets.fromLTRB(16, 8, 22, 12),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                    color: AppColors.textPrimary,
-                    onPressed: () => Navigator.pop(context),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        TablerIcons.chevronLeft,
+                        size: 24,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
                   const Text(
                     '이용 약관 및 정책',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -44,7 +53,7 @@ class _TermsScreenState extends State<TermsScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+              padding: const EdgeInsets.fromLTRB(22, 2, 22, 14),
               child: Row(
                 children: [
                   _tabButton('이용약관', 0),
@@ -55,14 +64,13 @@ class _TermsScreenState extends State<TermsScreen> {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
                 children: [
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: AppColors.cardShadow,
+                      color: AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(22),
                     ),
                     child: Text(
                       _tab == 0 ? _terms : _privacy,
@@ -79,7 +87,7 @@ class _TermsScreenState extends State<TermsScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: AppColors.gray500,
                     ),
                   ),
                 ],
@@ -98,21 +106,19 @@ class _TermsScreenState extends State<TermsScreen> {
         behavior: HitTestBehavior.opaque,
         onTap: () => setState(() => _tab = index),
         child: Container(
-          height: 42,
+          height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: on ? AppColors.primary : AppColors.surface,
-            borderRadius: BorderRadius.circular(21),
-            border: Border.all(
-              color: on ? AppColors.primary : AppColors.border,
-            ),
+            color: on ? AppColors.ink : AppColors.surface,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: on ? AppColors.ink : AppColors.gray200),
           ),
           child: Text(
             label,
             style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: on ? Colors.white : AppColors.textSecondary,
+              fontWeight: on ? FontWeight.w800 : FontWeight.w600,
+              color: on ? Colors.white : AppColors.gray500,
             ),
           ),
         ),

@@ -3,8 +3,10 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/shop/domain/point_log.dart';
 import 'package:repo_jdh/features/shop/data/point_history_service.dart';
+import 'package:repo_jdh/features/shop/data/shop_service.dart';
 
-/// SHOP-05 포인트 내역 (이번 달 요약 + 전체/적립/사용 필터 + 날짜별 리스트)
+/// SHOP-05 포인트 내역 (Startline 목업 구조)
+/// 적립/차감 한 줄 리스트. 아이콘 타일 + 라벨/날짜 + 금액(차감은 accent #E4573D).
 /// 위치 권장: lib/features/shop/presentation/point_history_screen.dart
 class PointHistoryScreen extends StatefulWidget {
   const PointHistoryScreen({super.key});
@@ -15,8 +17,8 @@ class PointHistoryScreen extends StatefulWidget {
 
 class _PointHistoryScreenState extends State<PointHistoryScreen> {
   List<PointLog> _logs = [];
+  int _points = 0; // 상단 우측 현재 보유 포인트
   bool _loading = true;
-  int _filter = 0; // 0 전체 / 1 적립 / 2 사용
 
   @override
   void initState() {
@@ -26,49 +28,29 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
 
   Future<void> _load() async {
     List<PointLog> list = [];
+    int points = 0;
     try {
       list = await PointHistoryService.recent();
     } catch (_) {
       // 실패 시 빈 목록
     }
+    try {
+      points = await ShopService.myPoints();
+    } catch (_) {
+      // 실패 시 0
+    }
     if (!mounted) return;
     setState(() {
       _logs = list;
+      _points = points;
       _loading = false;
     });
-  }
-
-  // 이번 달 적립·사용 합계
-  int get _monthEarned {
-    final now = DateTime.now();
-    return _logs
-        .where(
-          (l) =>
-              l.amount > 0 && l.at.year == now.year && l.at.month == now.month,
-        )
-        .fold(0, (s, l) => s + l.amount);
-  }
-
-  int get _monthUsed {
-    final now = DateTime.now();
-    return _logs
-        .where(
-          (l) =>
-              l.amount < 0 && l.at.year == now.year && l.at.month == now.month,
-        )
-        .fold(0, (s, l) => s + l.amount);
-  }
-
-  List<PointLog> get _visible {
-    if (_filter == 1) return _logs.where((l) => l.amount >= 0).toList();
-    if (_filter == 2) return _logs.where((l) => l.amount < 0).toList();
-    return _logs;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -81,25 +63,20 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                      children: [
-                        _summaryCard(),
-                        const SizedBox(height: 18),
-                        _filterChips(),
-                        const SizedBox(height: 8),
-                        ..._buildGroupedList(),
-                        const SizedBox(height: 24),
-                        const Center(
-                          child: Text(
-                            '최근 3개월 내역만 보여드려요',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
+                  : _logs.isEmpty
+                  ? const Center(
+                      child: Text(
+                        '내역이 없어요',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
                         ),
-                      ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(22, 4, 22, 24),
+                      itemCount: _logs.length,
+                      itemBuilder: (_, i) => _logRow(_logs[i]),
                     ),
             ),
           ],
@@ -110,18 +87,38 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      padding: const EdgeInsets.fromLTRB(16, 8, 22, 12),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(TablerIcons.chevronLeft, size: 20),
-            color: AppColors.textPrimary,
-            onPressed: () => Navigator.pop(context),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.pop(context),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                TablerIcons.chevronLeft,
+                size: 24,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
-          const Text(
-            '포인트 내역',
-            style: TextStyle(
-              fontSize: 20,
+          const Expanded(
+            child: Text(
+              '포인트 내역',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          // 우측 현재 보유 포인트 (목업 상단 우측 1,240P)
+          Text(
+            _loading ? '' : '${_fmtPlain(_points)}P',
+            style: const TextStyle(
+              fontSize: 16,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
@@ -131,192 +128,31 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
     );
   }
 
-  // ── 이번 달 적립 / 사용 요약 ──
-  Widget _summaryCard() {
+  // ── 내역 한 줄 (아이콘 타일 + 라벨/날짜 + 금액) ──
+  Widget _logRow(PointLog log) {
+    final earned = log.isEarned;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.cardShadow,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.line100, width: 1)),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _summaryCol(
-              '이번 달 적립',
-              _monthEarned,
-              AppColors.actionPrimary,
-              AppColors.textBrandOnLight,
-            ),
-          ),
-          Container(width: 1, height: 40, color: AppColors.border),
-          const SizedBox(width: 20),
-          Expanded(
-            child: _summaryCol(
-              '이번 달 사용',
-              _monthUsed,
-              AppColors.neutral400,
-              AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _summaryCol(String label, int value, Color dot, Color valueColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text.rich(
-          TextSpan(
-            text: _fmt(value),
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: valueColor,
-            ),
-            children: const [
-              TextSpan(
-                text: ' P',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── 전체 / 적립 / 사용 필터 ──
-  Widget _filterChips() {
-    const labels = ['전체', '적립', '사용'];
-    return Row(
-      children: [
-        for (int i = 0; i < labels.length; i++)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => _filter = i),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 9,
-                ),
-                decoration: BoxDecoration(
-                  color: _filter == i
-                      ? AppColors.actionPrimary
-                      : AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _filter == i
-                        ? AppColors.actionPrimary
-                        : AppColors.border,
-                  ),
-                ),
-                child: Text(
-                  labels[i],
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: _filter == i ? Colors.white : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  // ── 날짜별 그룹 리스트 ──
-  List<Widget> _buildGroupedList() {
-    final items = _visible;
-    if (items.isEmpty) {
-      return [
-        Container(
-          margin: const EdgeInsets.only(top: 40),
-          alignment: Alignment.center,
-          child: const Text(
-            '내역이 없어요',
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-          ),
-        ),
-      ];
-    }
-
-    final widgets = <Widget>[];
-    String? lastKey;
-    for (final log in items) {
-      final key = _dayKey(log.at);
-      if (key != lastKey) {
-        widgets.add(
-          Padding(
-            padding: EdgeInsets.only(top: lastKey == null ? 8 : 20, bottom: 10),
-            child: Text(
-              _dayLabel(log.at),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        );
-        lastKey = key;
-      }
-      widgets.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: _logCard(log),
-        ),
-      );
-    }
-    return widgets;
-  }
-
-  Widget _logCard(PointLog log) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: Row(
-        children: [
+          // 적립=라임 틴트 / 차감=소프트 그레이
           Container(
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.green50,
-              borderRadius: BorderRadius.circular(12),
+              color: earned
+                  ? AppColors.tint(AppColors.lime, 0.28)
+                  : AppColors.surfaceSoft,
+              shape: BoxShape.circle,
             ),
             child: Icon(
               _kindIcon(log.kind),
-              size: 22,
-              color: AppColors.textBrandOnLight,
+              size: 19,
+              color: earned ? AppColors.ink : AppColors.gray700,
             ),
           ),
           const SizedBox(width: 12),
@@ -329,7 +165,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
@@ -340,8 +176,9 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.gray500,
                   ),
                 ),
               ],
@@ -349,13 +186,12 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
           ),
           const SizedBox(width: 10),
           Text(
-            '${_fmt(log.amount)} P',
+            '${_fmt(log.amount)}P',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: log.isEarned
-                  ? AppColors.textBrandOnLight
-                  : AppColors.textPrimary,
+              // 차감은 accent(#E4573D), 적립은 잉크
+              color: earned ? AppColors.ink : AppColors.accent,
             ),
           ),
         ],
@@ -364,21 +200,21 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
   }
 
   IconData _kindIcon(PointLogKind k) => switch (k) {
-    PointLogKind.plogging => TablerIcons.walk,
-    PointLogKind.exchange => TablerIcons.coffee,
-    PointLogKind.quest => TablerIcons.trophy,
+    PointLogKind.plogging => TablerIcons.run,
+    PointLogKind.exchange => TablerIcons.gift,
+    PointLogKind.quest => TablerIcons.award,
   };
 
-  // 오늘이면 '오늘', 아니면 'M월 D일'
-  String _dayLabel(DateTime d) {
-    final now = DateTime.now();
-    if (d.year == now.year && d.month == now.month && d.day == now.day) {
-      return '오늘';
+  // 천단위 콤마만 (상단 보유 포인트 표기용)
+  String _fmtPlain(int v) {
+    final s = v.toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+      buf.write(s[i]);
     }
-    return '${d.month}월 ${d.day}일';
+    return buf.toString();
   }
-
-  String _dayKey(DateTime d) => '${d.year}-${d.month}-${d.day}';
 
   // 부호 + 천단위 콤마 (예: +2,490 / -4,500)
   String _fmt(int v) {

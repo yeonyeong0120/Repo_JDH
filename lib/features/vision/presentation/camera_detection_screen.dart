@@ -28,7 +28,7 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
   bool _isCapturing = false;
   bool _showGuide = true; // 상시 촬영 가이드 배너 (닫기 가능)
 
-  // 카테고리 한글명 + 색 (인식 박스·집계 pill 공용)
+  // 카테고리 한글명 + 색 (인식 박스·집계 칩 공용)
   (String, Color) _catMeta(String k) {
     switch (k) {
       case 'plastic':
@@ -218,18 +218,16 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
     super.dispose();
   }
 
-  static const Color _darkBg = Color(0xFF141815);
-
   @override
   Widget build(BuildContext context) {
     if (!_isReady) {
       return const Scaffold(
-        backgroundColor: _darkBg,
+        backgroundColor: AppColors.darkBg,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: Colors.white),
+              CircularProgressIndicator(color: AppColors.lime),
               SizedBox(height: 16),
               Text('카메라 준비 중...', style: TextStyle(color: Colors.white70)),
             ],
@@ -238,35 +236,27 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
       );
     }
 
-    final cameraAspectRatio = 1 / _camera!.value.aspectRatio;
     final int total = _liveCounts.values.fold<int>(0, (s, v) => s + v);
     final bool detected = total > 0;
     final entries = _liveCounts.entries.where((e) => e.value > 0).toList();
 
     return Scaffold(
-      backgroundColor: _darkBg,
+      backgroundColor: AppColors.darkBg,
       body: SafeArea(
         child: Column(
           children: [
-            // 상단 바
+            // 상단 바: 닫기(×) · 안내(i)
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
                 children: [
-                  _darkIconButton(TablerIcons.chevronLeft, _cancel),
-                  const SizedBox(width: 10),
-                  const Text(
-                    '쓰레기 등록',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  // 규칙 A: 닫기 x 23 / 흰색 / 44x44 / 컨테이너 없음
+                  _darkIconButton(TablerIcons.x, _cancel, size: 23),
                   const Spacer(),
+                  // 우상단 안내(i) 아이콘 — 촬영 가이드 열기/닫기 토글 (흰색 21)
                   _darkIconButton(
-                    TablerIcons.helpCircle,
-                    () => setState(() => _showGuide = true),
+                    TablerIcons.infoCircle,
+                    () => setState(() => _showGuide = !_showGuide),
                   ),
                 ],
               ),
@@ -278,15 +268,17 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
               maintainAnimation: true,
               maintainState: true,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
                 child: _guideBanner(),
               ),
             ),
-            // 카메라 프리뷰 + 인식 박스 + 코너 브래킷
+            // 카메라 미리보기 + 인식 박스 + 라임 코너 브래킷
+            // (화면 밖으로 넘치던 뷰파인더 박스 제거 — 미리보기가 프레임을 채운다)
             Expanded(
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: cameraAspectRatio,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -310,7 +302,8 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation(AppColors.lime),
                             ),
                           ),
                         ),
@@ -344,31 +337,52 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
                 ),
               ),
             ),
-            // 하단 패널: 인식 상태 + 집계 pill + 취소·촬영하기
+            // 하단: 인식 결과(종류 칩 + 개수) + 라임 촬영 버튼
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _statusChip(detected, total),
-                  if (entries.isNotEmpty) ...[
-                    const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '인식됨',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.4,
+                          color: AppColors.gray500,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        // 예: 2종 · 7개
+                        detected
+                            ? '${entries.length}종 · $total개'
+                            : '쓰레기를 비춰주세요',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (entries.isNotEmpty)
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        for (final e in entries) _countPill(e.key, e.value),
+                        for (final e in entries) _foundChip(e.key, e.value),
                       ],
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      _cancelButton(),
-                      const SizedBox(width: 12),
-                      Expanded(child: _shotButton()),
-                    ],
-                  ),
+                    )
+                  else
+                    _emptyChip(),
+                  const SizedBox(height: 20),
+                  Center(child: _captureButton()),
                 ],
               ),
             ),
@@ -378,19 +392,20 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
     );
   }
 
-  Widget _darkIconButton(IconData icon, VoidCallback onTap) {
+  Widget _darkIconButton(
+    IconData icon,
+    VoidCallback onTap, {
+    Color color = Colors.white,
+    double size = 21,
+  }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: Icon(icon, color: Colors.white, size: 23),
+      // 규칙 A(다크): 글리프만 44x44, 반투명 캡슐 배경 제거
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Center(child: Icon(icon, color: color, size: size)),
       ),
     );
   }
@@ -399,13 +414,13 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF262B27),
+        color: AppColors.darkChip,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(TablerIcons.bulbFilled, color: AppColors.green400, size: 20),
+          const Icon(TablerIcons.bulbFilled, color: AppColors.lime, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text.rich(
@@ -441,69 +456,43 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
     );
   }
 
-  Widget _statusChip(bool detected, int total) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 9,
-            height: 9,
-            decoration: BoxDecoration(
-              color: detected ? AppColors.green400 : Colors.white38,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            detected ? '이렇게 인식했어요' : '쓰레기를 비춰주세요',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: detected ? Colors.white : Colors.white54,
-            ),
-          ),
-          const Spacer(),
-          if (detected)
-            Text(
-              '$total개',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _countPill(String key, int count) {
+  // 인식된 종류 칩 — 분류색 면 + 흰 글씨/아이콘 (목업 그대로)
+  Widget _foundChip(String key, int count) {
     final (label, color) = _catMeta(key);
+    IconData icon;
+    switch (key) {
+      case 'plastic':
+        icon = TablerIcons.bottle;
+        break;
+      case 'can':
+        icon = TablerIcons.cup;
+        break;
+      case 'paper':
+        icon = TablerIcons.fileDescription;
+        break;
+      case 'glass':
+        icon = TablerIcons.glassFull;
+        break;
+      default:
+        icon = TablerIcons.trash;
+    }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 15),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(13),
+        color: color,
+        borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
+          Icon(icon, size: 19, color: Colors.white),
           const SizedBox(width: 7),
           Text(
             '$label $count',
             style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
               color: Colors.white,
             ),
           ),
@@ -512,80 +501,71 @@ class _CameraDetectionScreenState extends ConsumerState<CameraDetectionScreen> {
     );
   }
 
-  Widget _cancelButton() {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _isCapturing ? null : _cancel,
-      child: Container(
-        width: 84,
-        height: 58,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: const Text(
-          '취소',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+  // 아직 인식 전 — 비활성 칩 하나로 자리 유지
+  Widget _emptyChip() {
+    return Container(
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.darkChip,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Text(
+        '쓰레기를 인식시켜 주세요',
+        style: TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
+          color: AppColors.gray400,
         ),
       ),
     );
   }
 
-  Widget _shotButton() {
-    // 인식이 안 돼도 촬영 가능 — 촬영한 사진으로 등록/직접 분류
+  // 라임 원형 촬영 버튼 (인식이 안 돼도 촬영 가능 — 확인 시트에서 직접 분류)
+  Widget _captureButton() {
     final bool on = !_isCapturing;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: on ? _registerAndClose : null,
       child: Container(
-        height: 58,
+        width: 88,
+        height: 88,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: on ? AppColors.actionPrimary : Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(18),
+          color: on ? AppColors.lime : AppColors.darkChip,
+          shape: BoxShape.circle,
+          boxShadow: on
+              ? [
+                  BoxShadow(
+                    color: AppColors.lime.withValues(alpha: 0.18),
+                    spreadRadius: 6,
+                    blurRadius: 0,
+                  ),
+                ]
+              : null,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              TablerIcons.cameraFilled,
-              size: 22,
-              color: on ? Colors.white : Colors.white38,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              '촬영하기',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: on ? Colors.white : Colors.white38,
-              ),
-            ),
-          ],
+        child: Icon(
+          TablerIcons.cameraFilled,
+          size: 34,
+          color: on ? AppColors.ink : Colors.white38,
         ),
       ),
     );
   }
 }
 
-// 카메라 뷰파인더 4모서리 브래킷 (반투명 흰색).
+// 카메라 뷰파인더 4모서리 브래킷 (라임).
 class _BracketsPainter extends CustomPainter {
   const _BracketsPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
     final p = Paint()
-      ..color = Colors.white.withValues(alpha: 0.55)
+      ..color = AppColors.lime
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
+      ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
-    const double m = 34; // 가장자리 여백
+    const double m = 24; // 가장자리 여백
     const double len = 30; // 브래킷 길이
 
     void corner(double cx, double cy, int sx, int sy) {

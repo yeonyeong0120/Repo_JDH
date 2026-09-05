@@ -13,7 +13,7 @@ import 'package:repo_jdh/features/shop/data/shop_service.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/features/shop/presentation/widgets/coupon_thumb.dart';
 
-/// SHOP-04 쿠폰 상세 (바코드 + 사용 완료 처리)
+/// SHOP-04 쿠폰 상세 (바코드 + 사용 완료 처리) — Startline 목업 바코드 시트 구조.
 class CouponDetailScreen extends StatefulWidget {
   final Coupon coupon;
   const CouponDetailScreen({super.key, required this.coupon});
@@ -28,7 +28,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // 이미 사용한 쿠폰이면 처음부터 '사용 완료 취소' 상태로 열린다
+    // 이미 사용한 쿠폰이면 처음부터 '사용 취소' 상태로 열린다
     _used = widget.coupon.used;
   }
 
@@ -109,7 +109,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
   Widget build(BuildContext context) {
     final c = widget.coupon;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface,
       body: Stack(
         clipBehavior: Clip.none, // 오프스크린(-4000) 캡처 카드가 클립되지 않도록
         children: [
@@ -118,26 +118,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
           SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(TablerIcons.chevronLeft, size: 20),
-                        color: AppColors.textPrimary,
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const Text(
-                        '쿠폰',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _topBar(),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
@@ -185,7 +166,39 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
-  // ── 저장·공유 전용 캡처 카드 (초록 헤더 + 사진 + 상품명 + 유효기한 + 바코드) ──
+  Widget _topBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 22, 12),
+      child: Row(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.pop(context),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                TablerIcons.chevronLeft,
+                size: 24,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          const Text(
+            '쿠폰',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── 저장·공유 전용 캡처 카드 (차콜 헤더 + 사진 + 상품명 + 유효기한 + 바코드) ──
   Widget _captureCard(Coupon c) {
     return RepaintBoundary(
       key: _shotKey,
@@ -199,17 +212,17 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 초록 헤더
+            // 차콜 헤더 + 라임 아이콘
             Container(
               width: double.infinity,
-              color: AppColors.actionPrimary,
+              color: AppColors.ink,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               child: Row(
                 children: const [
-                  Icon(TablerIcons.leaf, size: 18, color: Colors.white),
+                  Icon(TablerIcons.ticket, size: 18, color: AppColors.lime),
                   SizedBox(width: 8),
                   Text(
-                    '플로고 에코포인트 쿠폰',
+                    '플로고 포인트 쿠폰',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -253,7 +266,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textBrandOnLight,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -277,7 +290,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 2,
+                      letterSpacing: 3,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -293,10 +306,10 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
   // ── 상품 + 바코드 카드 ──
   Widget _mainCard(Coupon c) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: AppColors.cardShadow,
       ),
       child: Column(
@@ -307,25 +320,33 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
             c.brand,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray500,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 5),
           Text(
             c.name,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 21,
+              fontSize: 19,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 10),
-          _detailStatusPill(c),
-          const SizedBox(height: 20),
-          const _DashedDivider(),
-          const SizedBox(height: 20),
+          const SizedBox(height: 6),
+          Text(
+            '교환일 ${_ymd(c.createdAt)} · ${c.expiresText}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray500,
+            ),
+          ),
+          const SizedBox(height: 18),
           // 화면용 바코드 (탭하면 확대). 저장·공유 이미지는 _captureCard 로 별도 구성.
           GestureDetector(
             onTap: () => _zoom(c),
@@ -347,9 +368,9 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                     Text(
                       _spacedCode(c.code),
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 2,
+                        letterSpacing: 3,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -360,10 +381,11 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            _used ? '이미 사용한 쿠폰이에요' : '매장에서 바코드를 보여주세요',
+            _used ? '사용 완료됨 · 다시 누르면 취소돼요' : '매장에서 바코드를 보여주세요',
             style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textBrandOnLight,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray350,
             ),
           ),
         ],
@@ -376,15 +398,14 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.cardShadow,
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.only(top: 14, bottom: 6),
+            padding: EdgeInsets.only(top: 16, bottom: 6),
             child: Text(
               '사용 안내',
               style: TextStyle(
@@ -408,7 +429,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
         border: last
             ? null
             : const Border(
-                bottom: BorderSide(color: AppColors.border, width: 0.8),
+                bottom: BorderSide(color: AppColors.line100, width: 0.8),
               ),
       ),
       child: Row(
@@ -419,8 +440,8 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
               label,
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+                color: AppColors.gray500,
               ),
             ),
           ),
@@ -440,42 +461,22 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
-  Widget _detailStatusPill(Coupon c) {
-    final usable = !_used && !c.expired;
-    final label = usable ? '사용 가능' : (c.expired ? '기간 만료' : '사용 완료');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        color: usable ? AppColors.green100 : AppColors.neutral100,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: usable ? AppColors.textBrandOnLight : AppColors.textSecondary,
-        ),
-      ),
-    );
-  }
-
   Widget _outlinedAction(IconData icon, String label, VoidCallback onTap) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        height: 50,
+        height: 52,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(17),
+          border: Border.all(color: AppColors.gray200),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: AppColors.textSecondary),
+            Icon(icon, size: 18, color: AppColors.gray700),
             const SizedBox(width: 7),
             Text(
               label,
@@ -491,22 +492,22 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
-  // 하단 버튼 — 사용완료 처리 / 되돌리기 / 만료 안내
+  // 하단 버튼 — 사용 완료 / 사용 취소 / 만료 안내 (목업 useBtn 색)
   Widget _bottomButton(Coupon c) {
     if (c.expired) {
       return Container(
         height: 54,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.neutral100,
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: const Text(
           '기간이 만료된 쿠폰이에요',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
+            color: AppColors.gray400,
           ),
         ),
       );
@@ -517,18 +518,16 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
         height: 54,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: _used ? AppColors.surface : AppColors.actionPrimary,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _used ? AppColors.border : AppColors.actionPrimary,
-          ),
+          color: _used ? AppColors.surfaceSoft : AppColors.ink,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Text(
-          _used ? '사용 완료 취소' : '사용 완료 처리',
+          _used ? '사용 취소' : '사용 완료',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: _used ? AppColors.textSecondary : Colors.white,
+            // 사용 취소는 accent(#E4573D), 사용 완료는 흰 글씨
+            color: _used ? AppColors.accent : Colors.white,
           ),
         ),
       ),
@@ -580,6 +579,9 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     }
     return buf.toString();
   }
+
+  // 'YYYY. M. D.' — 교환일 표기
+  String _ymd(DateTime d) => '${d.year}. ${d.month}. ${d.day}.';
 }
 
 /// 점선 구분선 (쿠폰 절취선 느낌)

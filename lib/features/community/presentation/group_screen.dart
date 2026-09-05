@@ -6,20 +6,19 @@ import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
-import 'package:repo_jdh/core/widgets/app_card.dart';
-import 'package:repo_jdh/core/widgets/app_section.dart';
 import 'package:repo_jdh/core/widgets/group_thumb.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'group_detail_screen.dart';
 import 'group_search_screen.dart';
 import 'group_create_screen.dart';
+import 'group_more_screen.dart';
 
 // ============================================================
-// 그룹 (v2)
-//  - 홈과 같은 어휘: 틴트 헤더 + 밝은 배경 + 흰 라운드 카드
-//  - 내 그룹은 '들어가기', 다른 그룹은 '오늘 활동'을 앞세운다
-//  - 오늘 활동 인원이 많은 그룹이 위로 (참여 유도)
+// 그룹 (Startline)
+//  - 흰 배경 + 상단 타이틀 "그룹" + 검색/만들기 아이콘 버튼
+//  - 내 그룹 = 차콜 카드(라임 블롭) → 탭하면 채팅, info 아이콘 → 상세
+//  - "이런 그룹 어때요?" = 라인 보더 추천 카드 목록 → 상세
 // ============================================================
 
 class GroupScreen extends StatefulWidget {
@@ -33,7 +32,6 @@ class _GroupScreenState extends State<GroupScreen> {
   Group? _myGroup;
   List<Group> _others = [];
   bool _loading = true;
-  // 헤더 문구는 새로고침할 때마다 5개 중 하나가 무작위로 뽑힌다.
 
   @override
   void initState() {
@@ -66,26 +64,17 @@ class _GroupScreenState extends State<GroupScreen> {
     });
   }
 
-  /// 동네 전체에서 오늘 활동한 인원 (내 그룹 포함)
-  int get _todayTotal =>
-      (_myGroup?.todayActiveCount ?? 0) +
-      _others.fold<int>(0, (a, g) => a + g.todayActiveCount);
-
   Future<void> _openSearch() async {
-    final joined = await Navigator.push<bool>(
+    await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => GroupSearchScreen(alreadyInGroup: _myGroup != null),
       ),
     );
     if (!mounted) return;
+    // 채팅방 이동은 GroupDetailScreen 이 가입 성공 시 직접 처리한다(중앙화).
+    // 여기서는 목록만 새로고침한다.
     await _load();
-    // 검색→상세에서 가입했다면 그룹 홈을 백스택에 두고 채팅방으로 이동
-    if (joined == true && mounted && _myGroup != null) {
-      await context.push('/group/feed',
-          extra: {'id': _myGroup!.id, 'name': _myGroup!.name});
-      if (mounted) _load();
-    }
   }
 
   Future<void> _openCreate() async {
@@ -98,21 +87,64 @@ class _GroupScreenState extends State<GroupScreen> {
     _load();
   }
 
+  // 내 그룹 카드 탭 → 채팅방(피드)
+  Future<void> _openMyChat() async {
+    final g = _myGroup;
+    if (g == null) return;
+    // 피드에서 탈퇴하고 돌아오면 즉시 반영되도록 재로드
+    await context.push('/group/feed', extra: {'id': g.id, 'name': g.name});
+    if (mounted) _load();
+  }
+
+  // 내 그룹 카드의 info 아이콘 → 상세(차콜 헤더)
+  Future<void> _openMyDetail() async {
+    final g = _myGroup;
+    if (g == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupDetailScreen(group: g, alreadyInGroup: true),
+      ),
+    );
+    if (mounted) _load();
+  }
+
+  // 추천 섹션 '더보기' → 전체 추천 목록 화면
+  Future<void> _openMore() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupMoreScreen(alreadyInGroup: _myGroup != null),
+      ),
+    );
+    if (mounted) _load();
+  }
+
+  // 추천 그룹 카드 → 상세. 가입 시 채팅방 이동은 상세가 직접 처리한다(중앙화).
+  Future<void> _openDetail(Group g) async {
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupDetailScreen(
+          group: g,
+          alreadyInGroup: _myGroup != null,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.surface, // 목업 그룹 화면: 흰 배경
       body: SafeArea(
         bottom: false,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Header(
-              todayTotal: _todayTotal,
-              region: _myGroup?.region ?? '',
-              loading: _loading,
-              onSearch: _openSearch,
-              onCreate: _openCreate,
-            ),
+            _titleBar(),
             Expanded(
               child: _loading
                   ? const Center(
@@ -125,16 +157,12 @@ class _GroupScreenState extends State<GroupScreen> {
                       onRefresh: _load,
                       color: AppColors.actionPrimary,
                       child: ListView(
-                        // 바텀 내비는 extendBody 로 본문 위에 떠 있어 이 여백으로만
-                        // 피한다. Gap.navSafe(96) 고정만으로는 제스처 내비 기기에서
-                        // 모자라 마지막 카드가 잘린다.
-                        // ⚠️ MediaQuery.of(context).padding.bottom 을 쓰면 안 된다 —
-                        // Scaffold(extendBody: true) 가 body 의 padding.bottom 을
-                        // 내비 높이로 덮어써서 여백이 이중으로 잡힌다.
-                        // 원시 시스템 inset 을 직접 읽는다 (홈·뱃지 탭과 동일한 식).
+                        // 바텀 내비는 extendBody 로 본문 위에 떠 있어 이 여백으로만 피한다.
+                        // ⚠️ MediaQuery.padding.bottom 을 쓰면 안 된다 — extendBody 가
+                        // 내비 높이로 덮어써 이중 여백이 잡힌다. 원시 시스템 inset 을 직접 읽는다.
                         padding: EdgeInsets.fromLTRB(
                           Gap.screenPad,
-                          Gap.xl,
+                          Gap.lg,
                           Gap.screenPad,
                           MediaQueryData.fromView(
                                 View.of(context),
@@ -142,48 +170,62 @@ class _GroupScreenState extends State<GroupScreen> {
                               92,
                         ),
                         children: [
-                          AppSection(
-                            title: '내 그룹',
-                            child: _myGroup == null
-                                ? _NoGroupCard(onSearch: _openSearch)
-                                : _MyGroupCard(
-                                    group: _myGroup!,
-                                    onTap: () async {
-                                      // 피드에서 탈퇴하고 돌아오면 즉시 반영되도록 재로드
-                                      await context.push(
-                                        '/group/feed',
-                                        extra: {
-                                          'id': _myGroup!.id,
-                                          'name': _myGroup!.name,
-                                        },
-                                      );
-                                      if (mounted) _load();
-                                    },
-                                  ),
+                          // ── 내 그룹 (차콜 카드) 또는 미가입 안내 ──
+                          if (_myGroup == null)
+                            _NoGroupCard(onSearch: _openSearch)
+                          else
+                            _MyGroupCard(
+                              group: _myGroup!,
+                              onTap: _openMyChat,
+                            ),
+                          Gap.h24,
+                          // ── 이런 그룹 어때요? (헤더 + 더보기) ──
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text('이런 그룹 어때요?',
+                                    style: AppType.title3),
+                              ),
+                              // 더보기 → 추천 그룹 전체 목록 화면
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _openMore,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '더보기',
+                                      style: AppType.caption.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.gray500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    const Icon(
+                                      TablerIcons.chevronRight,
+                                      size: 16,
+                                      color: AppColors.gray400,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          AppSection(
-                            title: '이런 그룹 어때요?',
-                            caption: _others.isEmpty ? null : '최근 활동순 정렬',
-                            captionInline: true,
-                            last: true,
-                            child: _others.isEmpty
-                                ? _EmptyCard(
-                                    icon: TablerIcons.users,
-                                    title: '아직 다른 그룹이 없어요',
-                                    body: '첫 번째 그룹을 만들어보세요',
-                                  )
-                                : Column(
-                                    children: [
-                                      for (final g in _others) ...[
-                                        _OtherGroupCard(
-                                          group: g,
-                                          onTap: () => _openDetail(g),
-                                        ),
-                                        if (g != _others.last) Gap.h12,
-                                      ],
-                                    ],
-                                  ),
-                          ),
+                          Gap.h12,
+                          if (_others.isEmpty)
+                            _EmptyCard(
+                              icon: TablerIcons.users,
+                              title: '아직 다른 그룹이 없어요',
+                              body: '첫 번째 그룹을 만들어보세요',
+                            )
+                          else
+                            for (final g in _others) ...[
+                              _OtherGroupCard(
+                                group: g,
+                                onTap: () => _openDetail(g),
+                              ),
+                              if (g != _others.last) Gap.h12,
+                            ],
                         ],
                       ),
                     ),
@@ -194,319 +236,290 @@ class _GroupScreenState extends State<GroupScreen> {
     );
   }
 
-  Future<void> _openDetail(Group g) async {
-    final joined = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => GroupDetailScreen(
-          group: g,
-          alreadyInGroup: _myGroup != null,
-        ),
+  // ── 상단 타이틀 바 (그룹 + 검색/만들기) ──
+  Widget _titleBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Gap.screenPad, Gap.xl, Gap.screenPad, Gap.xs),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '그룹',
+              style: AppType.title1.copyWith(letterSpacing: -0.8),
+            ),
+          ),
+          _SquareIconButton(icon: TablerIcons.search, onTap: _openSearch),
+          Gap.w8,
+          // 만들기: 라임 면 + 잉크 글리프 (유일 액센트)
+          _SquareIconButton(
+            icon: TablerIcons.plus,
+            onTap: _openCreate,
+            filled: true,
+          ),
+        ],
       ),
     );
-    if (!mounted) return;
-    _load();
-    // 가입 직후엔 그룹 홈(여기)을 백스택에 두고 채팅방으로 이동
-    // → 채팅방에서 뒤로가기 시 그룹 홈으로 나온다.
-    if (joined == true) {
-      await context.push('/group/feed', extra: {'id': g.id, 'name': g.name});
-      if (mounted) _load();
-    }
   }
 }
 
-// ── 헤더 ────────────────────────────────────────────────
+// ── 상단 아이콘 버튼 (만들기=라임 액션 면 유지, 그 외 네비 아이콘=글리프만) ──
+class _SquareIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
 
-class _Header extends StatelessWidget {
-  final int todayTotal;
-  final String region;
-  final bool loading;
-  final VoidCallback onSearch;
-  final VoidCallback onCreate;
+  /// true면 라임 액션 면(만들기 CTA), false면 컨테이너 없는 헤더 네비 아이콘.
+  final bool filled;
 
-  const _Header({
-    required this.todayTotal,
-    required this.region,
-    required this.loading,
-    required this.onSearch,
-    required this.onCreate,
+  const _SquareIconButton({
+    required this.icon,
+    required this.onTap,
+    this.filled = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 로딩 중에는 0명이라고 단정하지 않는다.
-    final subtitle = loading
-        ? '동네 활동을 불러오는 중이에요'
-        : (todayTotal > 0
-            ? '현재 $todayTotal명이 활동중이에요'
-            : '지금 나가면 오늘의 1등이에요');
-
-    // 초록 워시는 홈처럼 위→아래로 차오르고(HeaderWashPour), 안쪽 글자는 떠오른다.
-    return HeaderWashPour(
-      child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        Gap.screenPad,
-        Gap.lg, // 검색·만들기 버튼이 너무 위에 붙지 않게 아래로
-        Gap.screenPad,
-        Gap.xl4, // 워시가 아바타 줄 아래까지 내려오도록 헤더를 키운다
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 위치줄 — 위치 좌표/버튼 모두 애니메이션 제외(정적).
-          Row(
-            children: [
-              const Icon(
-                TablerIcons.mapPinFilled,
-                size: 15,
-                color: AppColors.neutral500,
-              ),
-              const SizedBox(width: 3),
-              Expanded(
-                child: Text(
-                  region.isEmpty ? '소속된 그룹이 없습니다' : region,
-                  style: AppType.caption.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.neutral500,
-                  ),
-                ),
-              ),
-              _IconButton(icon: TablerIcons.search, onTap: onSearch),
-              Gap.w8,
-              _IconButton(icon: TablerIcons.plus, onTap: onCreate),
-            ],
+    // 만들기(+)는 액션 버튼이므로 라임 면을 유지한다.
+    if (filled) {
+      return GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.lime,
+            borderRadius: Radii.tileR,
           ),
-          Gap.h16,
-          Row(
-            // 프로필을 제목 두 줄 사이 높이에 맞춘다(윗쪽 정렬 + 소폭 내림).
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 제목·서브텍스트만 떠오름/커짐 애니메이션 (프로필은 제외)
-              Expanded(
-                child: HeaderRise(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('같이 주우면\n두 배로 재밌어요', style: AppType.title1),
-                      Gap.h8,
-                      Text(
-                        subtitle,
-                        style: AppType.label.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // 프로필 나열 — 애니메이션 적용 안 함. 제목 두 줄 사이 높이로 올림.
-              if (!loading && todayTotal > 0) ...[
-                Gap.w12,
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: _TodayFaces(count: todayTotal),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
+          child: Icon(icon, size: 20, color: AppColors.ink),
+        ),
+      );
+    }
+    // 헤더 네비/보조 아이콘 — 컨테이너 없이 글리프만, 44×44 탭 영역.
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Icon(icon, size: 22, color: AppColors.ink),
       ),
     );
   }
 }
 
-/// 오늘 우리 동에서 활동한 사람들의 프로필. 최대 3명 겹쳐 보이고, 나머지는 +N.
-class _TodayFaces extends StatelessWidget {
-  final int count;
-  const _TodayFaces({required this.count});
-
-  static const double _d = 46; // 원 지름(조금 더 크게)
-  static const double _overlap = 30; // 겹쳐 놓을 때 다음 원까지의 간격
-  static const List<Color> _tones = [
-    AppColors.green500,
-    AppColors.dataDistance,
-    AppColors.dataCan,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final int faces = count < 3 ? count : 3;
-    final int extra = count - faces;
-    final int circles = faces + (extra > 0 ? 1 : 0);
-    final double width = _d + (circles - 1) * _overlap;
-    return SizedBox(
-      width: width,
-      height: _d,
-      child: Stack(
-        children: [
-          for (int i = 0; i < faces; i++)
-            Positioned(
-              left: i * _overlap,
-              child: _face(_tones[i % _tones.length]),
-            ),
-          // 나머지 인원 — 마지막 원에 '+N' (단위는 넣지 않는다: 두 자리부터 넘침)
-          if (extra > 0)
-            Positioned(
-              left: faces * _overlap,
-              child: Container(
-                width: _d,
-                height: _d,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.surface, width: 2),
-                ),
-                child: Text(
-                  '+$extra',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.green500,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _face(Color tone) {
-    return Container(
-      width: _d,
-      height: _d,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.tint(tone, 0.30),
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.surface, width: 2),
-      ),
-      child: Icon(TablerIcons.userFilled, size: 25,  color: tone),
-    );
-  }
-}
-
-class _IconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _IconButton({
-    required this.icon,
+// ── 내 그룹 (차콜 카드 + 라임 블롭) ──────────────────────────
+class _MyGroupCard extends StatelessWidget {
+  final Group group;
+  final VoidCallback onTap; // 카드 전체 → 채팅
+  const _MyGroupCard({
+    required this.group,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 배경색 헤더 위 40px 판 · 흰 배경 · 라운드 13 · 잉크 없음.
+    final active = group.todayActiveCount > 0;
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        width: 40,
-        height: 40,
-        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(13),
+          color: AppColors.ink,
+          borderRadius: BorderRadius.circular(26),
         ),
-        child: Icon(
-          icon,
-          size: 21,
-          color: AppColors.textBrandOnLight,
+        clipBehavior: Clip.antiAlias,
+        // 패딩을 Container 가 아니라 내용(Column)에만 준다 → 블롭은 카드 모서리
+        // 기준으로 배치돼 라운드 끝까지 채워진다(가장자리에서 잘리는 느낌 제거).
+        child: Stack(
+          children: [
+            // 올리브 블롭 (우상단) — 컨테이너 모서리 기준. 밝은 올리브 + 크기 축소.
+            Positioned(
+              right: -34,
+              top: -38,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 130, end: 0),
+                duration: const Duration(milliseconds: 2400),
+                curve: const Cubic(0.12, 0.72, 0.24, 1),
+                builder: (context, dx, child) =>
+                    Transform.translate(offset: Offset(dx, 0), child: child),
+                child: Container(
+                  width: 140,
+                  height: 140,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF515C42), // 잉크 위 밝은 올리브
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(Gap.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                // 상단 줄: '내 그룹' 라벨 + 활동 인디케이터 (info 아이콘 없음)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '내 그룹',
+                        style: AppType.caption.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.4,
+                          color: AppColors.gray400,
+                        ),
+                      ),
+                    ),
+                    if (active) ...[
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.lime,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        '${group.todayActiveCount}명 활동 중',
+                        style: AppType.caption.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.lime,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  group.name,
+                  style: const TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                    color: AppColors.surface,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              // TODO: 실제 이번주 그룹 수거량 집계로 교체(현재 placeholder)
+                              const Text(
+                                '18.4',
+                                style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.9,
+                                  color: AppColors.lime,
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                'kg',
+                                style: AppType.caption.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.lime,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '이번주 그룹 수거량',
+                            style: AppType.caption.copyWith(
+                              color: AppColors.gray400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _DarkFaces(count: group.memberCount),
+                  ],
+                ),
+              ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// ── 내 그룹 ──────────────────────────────────────────────
+/// 차콜 카드 위 멤버 아바타(최대 3 겹침 + "+N" 칩, 잉크 보더).
+/// 스크린샷: 첫 아바타만 라임 포인트, 나머지는 다크 칩, 초과 인원은 +N.
+class _DarkFaces extends StatelessWidget {
+  final int count;
+  const _DarkFaces({required this.count});
 
-class _MyGroupCard extends StatelessWidget {
-  final Group group;
-  final VoidCallback onTap;
-  const _MyGroupCard({required this.group, required this.onTap});
+  static const double _d = 34;
+  static const double _overlap = 24;
 
   @override
   Widget build(BuildContext context) {
-    final active = group.todayActiveCount > 0;
-
-    return AppCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final int shown = count < 3 ? (count < 1 ? 1 : count) : 3;
+    final int extra = count - shown;
+    final int chips = shown + (extra > 0 ? 1 : 0);
+    final double width = _d + (chips - 1) * _overlap;
+    return SizedBox(
+      width: width,
+      height: _d,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              GroupThumb(imageUrl: group.imageUrl, size: 64),
-              Gap.w16,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(group.name, style: AppType.title2),
-                    Gap.h4,
-                    Text(
-                      '${group.region} · 멤버 ${group.memberCount}명',
-                      style: AppType.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+          for (int i = 0; i < shown; i++)
+            Positioned(
+              left: i * _overlap,
+              child: Container(
+                width: _d,
+                height: _d,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  // 첫 아바타만 라임, 나머지는 다크 칩
+                  color: i == 0 ? AppColors.lime : AppColors.darkChip,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.ink, width: 2),
+                ),
+                child: Icon(
+                  TablerIcons.userFilled,
+                  size: 17,
+                  color: i == 0 ? AppColors.limeOn : AppColors.gray400,
                 ),
               ),
-            ],
-          ),
-          Gap.h16,
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Gap.lg,
-              vertical: Gap.md,
             ),
-            decoration: BoxDecoration(
-              color: active ? AppColors.surfaceBrand : AppColors.neutral75,
-              borderRadius: Radii.innerR,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  active ? TablerIcons.walk : TablerIcons.clock,
-                  size: 20,
-                  color: active
-                      ? AppColors.textBrandOnLight
-                      : AppColors.neutral500,
+          // 초과 인원 "+N" 칩
+          if (extra > 0)
+            Positioned(
+              left: shown * _overlap,
+              child: Container(
+                width: _d,
+                height: _d,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.darkChip,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.ink, width: 2),
                 ),
-                Gap.w8,
-                Expanded(
-                  child: Text(
-                    active
-                        ? '오늘 ${group.todayActiveCount}명이 활동했어요'
-                        : '오늘 활동한 멤버가 없어요',
-                    style: AppType.label.copyWith(
-                      color: active
-                          ? AppColors.textOnTint
-                          : AppColors.textSecondary,
-                    ),
+                child: Text(
+                  '+$extra',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.gray300,
                   ),
                 ),
-                Text(
-                  '피드 보기',
-                  style: AppType.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textBrandOnLight,
-                  ),
-                ),
-                const Icon(
-                  TablerIcons.chevronRight,
-                  size: 20,
-                  color: AppColors.textBrandOnLight,
-                ),
-              ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -520,7 +533,13 @@ class _NoGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.line100, width: 1.5),
+      ),
+      padding: const EdgeInsets.all(Gap.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -531,13 +550,13 @@ class _NoGroupCard extends StatelessWidget {
                 height: 56,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.green100,
-                  borderRadius: Radii.tileR,
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(17),
                 ),
                 child: const Icon(
                   TablerIcons.userPlus,
                   size: 26,
-                  color: AppColors.textBrandOnLight,
+                  color: AppColors.ink,
                 ),
               ),
               Gap.w16,
@@ -572,8 +591,7 @@ class _NoGroupCard extends StatelessWidget {
   }
 }
 
-// ── 다른 동네 그룹 ───────────────────────────────────────
-
+// ── 추천 그룹 카드 (라인 보더) ───────────────────────────────
 class _OtherGroupCard extends StatelessWidget {
   final Group group;
   final VoidCallback onTap;
@@ -582,70 +600,80 @@ class _OtherGroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = group.todayActiveCount > 0;
+    // 부제 통일(SEARCH_PACE_FILTER §5): 항상 '강도 · 멤버 N명' (활동 여부는 앞 점으로만).
+    final meta = '${group.intensity} · 멤버 ${group.memberCount}명';
 
-    return AppCard(
+    return GestureDetector(
       onTap: onTap,
-      padding: const EdgeInsets.all(Gap.lg),
-      child: Row(
-        children: [
-          GroupThumb(imageUrl: group.imageUrl, size: 56),
-          Gap.w16,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(group.name, style: AppType.title3),
-                Gap.h4,
-                Text(
-                  group.region,
-                  style: AppType.caption.copyWith(
-                    color: AppColors.textSecondary,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.line100, width: 1.5),
+        ),
+        padding: const EdgeInsets.all(15),
+        child: Row(
+          children: [
+            GroupThumb(imageUrl: group.imageUrl, size: 50),
+            Gap.w12,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    group.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Gap.h8,
-                Row(
-                  children: [
-                    if (active) ...[
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: const BoxDecoration(
-                          color: AppColors.actionPrimary,
-                          shape: BoxShape.circle,
+                  Gap.h4,
+                  Row(
+                    children: [
+                      if (active) ...[
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: AppColors.ink,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Flexible(
+                        child: Text(
+                          meta,
+                          style: AppType.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 5),
                     ],
-                    Text(
-                      active
-                          ? '오늘 ${group.todayActiveCount}명 활동 중'
-                          : '멤버 ${group.memberCount}명',
-                      style: AppType.caption.copyWith(
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                        color: active
-                            ? AppColors.textBrand
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          Gap.w8,
-          const Icon(
-            TablerIcons.chevronRight,
-            size: Touch.icon,
-            color: AppColors.neutral400,
-          ),
-        ],
+            Gap.w8,
+            const Icon(
+              TablerIcons.chevronRight,
+              size: 22,
+              color: AppColors.gray400,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ── 빈 상태 ─────────────────────────────────────────────
-
 class _EmptyCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -658,10 +686,16 @@ class _EmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.line100, width: 1.5),
+      ),
+      padding: const EdgeInsets.all(Gap.xl),
       child: Column(
         children: [
-          Icon(icon, size: 40, color: AppColors.neutral400),
+          Icon(icon, size: 40, color: AppColors.gray400),
           Gap.h12,
           Text(title, style: AppType.title3, textAlign: TextAlign.center),
           Gap.h4,

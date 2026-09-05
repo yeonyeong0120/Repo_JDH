@@ -98,13 +98,9 @@ class AppDialog extends StatelessWidget {
     // 경고(빨강) 아이콘: danger(파괴 확인) 또는 warn(아이콘만 경고)일 때.
     final bool alarm = danger || warn;
 
-    // 제목 위 46 원형 아이콘. 일반=연두+eco, 경고=연빨강+warning.
-    final Color tileBg = alarm
-        ? const Color(0xFFFBEBEA)
-        : const Color(0xFFDCEDE3);
-    final Color tileFg = alarm
-        ? AppColors.actionDanger
-        : AppColors.textBrandOnLight;
+    // 제목 위 56 원형 아이콘. 일반=라임 면+limeOn 글리프, 경고=연빨강 면+빨강 글리프.
+    final Color tileBg = alarm ? AppColors.coral50 : AppColors.lime;
+    final Color tileFg = alarm ? AppColors.actionDanger : AppColors.limeOn;
     final IconData tileIcon =
         icon ?? (alarm ? TablerIcons.alertTriangleFilled : TablerIcons.leaf);
 
@@ -114,30 +110,48 @@ class AppDialog extends StatelessWidget {
       insetPadding: const EdgeInsets.symmetric(horizontal: Gap.xl2),
       shape: RoundedRectangleBorder(borderRadius: Radii.cardR),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(Gap.xl2, Gap.xl2, Gap.xl2, Gap.xl),
+        padding: const EdgeInsets.fromLTRB(Gap.xl2, Gap.xl2, Gap.xl2, Gap.xl2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          // Startline 팝업: 중앙 정렬 구성(원형 아이콘·제목·본문·버튼).
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 46,
-              height: 46,
+              width: 56,
+              height: 56,
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: tileBg, shape: BoxShape.circle),
-              child: Icon(tileIcon, size: 24, color: tileFg),
+              decoration: BoxDecoration(
+                color: tileBg,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(tileIcon, size: 28, color: tileFg),
             ),
             Gap.h16,
-            Text(title, style: AppType.title2),
+            // 제목 19/800 잉크, 가운데.
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppType.title2.copyWith(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.38,
+                color: AppColors.textPrimary,
+              ),
+            ),
             Gap.h8,
+            // 본문 14.5/gray700, 가운데.
             Text(
               message,
-              style: AppType.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.55,
+              textAlign: TextAlign.center,
+              style: AppType.body.copyWith(
+                fontSize: 14.5,
+                color: AppColors.gray700,
+                height: 1.5,
               ),
             ),
             Gap.h24,
             if (isInfo)
+              // 안내(1버튼): 가로 전체 폭 잉크 버튼(위험 시 빨강).
               AppButton(
                 label: confirmText,
                 type: confirmType,
