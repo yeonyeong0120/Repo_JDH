@@ -47,7 +47,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   static const _titles = ['이메일로 시작해요', '더 정확한 측정에 필요해요', '어떻게 불러드릴까요?'];
   static const _subtitles = [
     '비밀번호는 8자 이상으로 만들어주세요.',
-    '걸음수와 칼로리를 계산하는 데 쓰여요.',
+    '칼로리를 계산하는 데 쓰여요.',
     '그룹 채팅과 활동 기록에 표시되는 이름이에요.',
   ];
 

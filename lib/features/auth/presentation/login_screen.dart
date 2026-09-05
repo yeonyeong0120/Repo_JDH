@@ -132,7 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'PLOGO',
+                                      'PLOGGO',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
