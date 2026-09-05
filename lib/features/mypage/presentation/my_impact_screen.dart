@@ -7,6 +7,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/auth/data/user_profile_provider.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/mypage/domain/impact_metrics.dart';
@@ -48,12 +49,18 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
   // 활동 기록 전체를 합산해 누적 수치 계산
   Future<void> _loadImpact() async {
     try {
+      final body = await UserService.loadBodyInfo();
       final acts = await ActivityService.getRecentCompleted(limit: 500);
       int weight = 0, kcal = 0;
       double distance = 0;
       for (final a in acts) {
         weight += ActivityMetrics.weightGrams(a.trashCounts);
-        kcal += ActivityMetrics.estimateKcal(a.distanceMeters);
+        kcal += ActivityMetrics.estimateKcal(
+          distanceMeters: a.distanceMeters,
+          durationSeconds: a.durationSeconds,
+          weightKg: body.weightKg,
+          gender: body.gender,
+        );
         distance += a.distanceMeters;
       }
       if (!mounted) return;

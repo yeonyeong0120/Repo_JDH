@@ -19,6 +19,7 @@ import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_stats.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 
 /// Ploggo - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
@@ -38,6 +39,8 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
 
   // 그래프용 활동 기록 (집계 대상). null = 로딩 중
   List<Activity>? _graphActivities;
+  double? _weightKg;
+  String? _gender;
 
   @override
   void initState() {
@@ -49,8 +52,15 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
   // 그래프용 활동 기록 불러오기 (집계하려면 넉넉히)
   Future<void> _loadGraphActivities() async {
     try {
+      final body = await UserService.loadBodyInfo();
       final list = await ActivityService.getRecentCompleted(limit: 200);
-      if (mounted) setState(() => _graphActivities = list);
+      if (mounted) {
+        setState(() {
+          _graphActivities = list;
+          _weightKg = body.weightKg;
+          _gender = body.gender;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _graphActivities = []); // 실패 시 빈 목록
     }
@@ -108,16 +118,22 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
                     period: 0,
                     playToken: _graphPlay,
                     activities: _graphActivities,
+                    weightKg: _weightKg,
+                    gender: _gender,
                   ),
                   _GraphTab(
                     period: 1,
                     playToken: _graphPlay,
                     activities: _graphActivities,
+                    weightKg: _weightKg,
+                    gender: _gender,
                   ),
                   _GraphTab(
                     period: 2,
                     playToken: _graphPlay,
                     activities: _graphActivities,
+                    weightKg: _weightKg,
+                    gender: _gender,
                   ),
                 ],
               ),
@@ -273,6 +289,8 @@ class _RecordsTabState extends State<_RecordsTab> {
   // null: 아직 로딩 중 / []: 로딩됐고 기록 0건 / [.. ]: 기록 있음
   List<_Activity>? _activities; // null = 로딩 중
   Object? _loadError; // null 이 아니면 에러 발생
+  double? _weightKg;
+  String? _gender;
 
   // 진행 중인 퀘스트 (달성률 높은 순 3개)
   List<_Quest> _quests = [];
@@ -287,9 +305,12 @@ class _RecordsTabState extends State<_RecordsTab> {
   // 활동 기록 불러오기 (서버 Activity → 화면 _Activity 로 변환)
   Future<void> _loadActivities() async {
     try {
+      final body = await UserService.loadBodyInfo();
       final list = await ActivityService.getRecentCompleted(
         limit: _displayLimit,
       );
+      _weightKg = body.weightKg;
+      _gender = body.gender;
       // 서버 데이터(Activity)를 화면용(_Activity)으로 변환
       final mapped = list.map(_toDisplay).toList();
       if (!mounted) return;
@@ -318,7 +339,12 @@ class _RecordsTabState extends State<_RecordsTab> {
         groupId: a.groupId,
       ),
       ActivityMetrics.estimateSteps(a.distanceMeters),
-      ActivityMetrics.estimateKcal(a.distanceMeters),
+      ActivityMetrics.estimateKcal(
+        distanceMeters: a.distanceMeters,
+        durationSeconds: a.durationSeconds,
+        weightKg: _weightKg,
+        gender: _gender,
+      ),
       a.distanceMeters, // 거리 라벨 계산용
       a.trashCounts, // 상세 화면에서 활동별 수거 개수를 그대로 쓴다
       a.imageUrls, // 인증샷도 원본 그대로 (없으면 빈 목록)
@@ -882,10 +908,14 @@ class _GraphTab extends StatefulWidget {
   final int period; // 이 페이지가 담당하는 기간 (0:주간 1:월간 2:누적)
   final int playToken; // 값이 바뀌면 애니메이션 재생
   final List<Activity>? activities; // 집계 대상 (null = 로딩 중)
+  final double? weightKg; // 칼로리 계산용 (없으면 평균값 폴백)
+  final String? gender;
   const _GraphTab({
     required this.period,
     required this.playToken,
     required this.activities,
+    this.weightKg,
+    this.gender,
   });
 
   @override
@@ -920,11 +950,23 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
   void _recompute() {
     final acts = widget.activities ?? const [];
 
-    _weekly = ActivityStats.weekly(acts).map((b) => _bucketToGData(b)).toList();
+    _weekly = ActivityStats.weekly(
+      acts,
+      weightKg: widget.weightKg,
+      gender: widget.gender,
+    ).map((b) => _bucketToGData(b)).toList();
     _monthly = ActivityStats.monthly(
       acts,
+      weightKg: widget.weightKg,
+      gender: widget.gender,
     ).map((b) => _bucketToGData(b)).toList();
-    _cumulative = _bucketToGData(ActivityStats.cumulative(acts));
+    _cumulative = _bucketToGData(
+      ActivityStats.cumulative(
+        acts,
+        weightKg: widget.weightKg,
+        gender: widget.gender,
+      ),
+    );
   }
 
   // 지금 보고 있는 기간의 활동만 골라 도넛 세그먼트 생성
