@@ -133,8 +133,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
   // 상세로 이동 (관련 뉴스 3개: 같은 카테고리 우선)
   void _openDetail(NewsArticle a) {
     final related = NewsArticle.relatedFrom(_articles!, a);
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => NewsDetailScreen(article: a, related: related),
       ),

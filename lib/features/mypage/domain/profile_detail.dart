@@ -12,6 +12,8 @@ class ProfileDetail {
   final int? height; // cm
   final int? weight; // kg
   final String region;
+  final double? regionLat;
+  final double? regionLng;
   final int points; // 보유 에코 포인트
   final int xp; // 누적 경험치 (활동 1회 = 20 XP)
   final DateTime? joinedAt;
@@ -25,6 +27,8 @@ class ProfileDetail {
     this.height,
     this.weight,
     this.region = '',
+    this.regionLat,
+    this.regionLng,
     this.points = 0,
     this.xp = 0,
     this.joinedAt,
@@ -65,6 +69,8 @@ class ProfileDetail {
     int? height,
     int? weight,
     String? region,
+    double? regionLat,
+    double? regionLng,
     int? points,
     int? xp,
     DateTime? joinedAt,
@@ -78,6 +84,8 @@ class ProfileDetail {
       height: height ?? this.height,
       weight: weight ?? this.weight,
       region: region ?? this.region,
+      regionLat: regionLat ?? this.regionLat,
+      regionLng: regionLng ?? this.regionLng,
       points: points ?? this.points,
       xp: xp ?? this.xp,
       joinedAt: joinedAt ?? this.joinedAt,
@@ -93,6 +101,8 @@ class ProfileDetail {
       height: (json['height'] as num?)?.toInt(),
       weight: (json['weight'] as num?)?.toInt(),
       region: (json['region'] as String?) ?? '',
+      regionLat: (json['regionLat'] as num?)?.toDouble(),
+      regionLng: (json['regionLng'] as num?)?.toDouble(),
       points: (json['points'] as num?)?.toInt() ?? 0,
     );
   }

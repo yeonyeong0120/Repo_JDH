@@ -115,7 +115,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case _NotiKind.challenge:
         AppSnackBar.show(context, '챌린지로 이동해요');
       case _NotiKind.system:
-        Navigator.of(context).push(
+        Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute<void>(builder: (_) => const NewsFeedScreen()),
         );
     }

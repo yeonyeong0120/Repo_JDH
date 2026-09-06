@@ -25,6 +25,7 @@ import 'package:repo_jdh/features/plogging/domain/activity.dart';
 import 'package:repo_jdh/features/home/domain/eco_math.dart';
 
 import 'package:repo_jdh/features/auth/data/user_service.dart';
+import 'package:repo_jdh/features/home/data/weather_service.dart';
 import 'package:repo_jdh/features/news/presentation/news_service.dart';
 import 'package:repo_jdh/features/news/presentation/news_detail_screen.dart';
 
@@ -63,6 +64,9 @@ class HomeView {
   /// '인증샷 모음집' — 사진이 있는 내 최근 활동 최대 5개. 그룹 가입 여부와 무관.
   final List<Activity> photos;
 
+  final int? weatherTemp;
+  final String? weatherPm10Grade;
+
   const HomeView({
     required this.profile,
     required this.stats,
@@ -70,7 +74,13 @@ class HomeView {
     required this.groups,
     required this.news,
     this.photos = const [],
+    this.weatherTemp,
+    this.weatherPm10Grade,
   });
+
+  // 값 없으면 '-' — 가짜 값으로 채우지 않는다.
+  String get tempLabel => weatherTemp != null ? '$weatherTemp°' : '-';
+  String get pmGradeLabel => weatherPm10Grade ?? '-';
 
   // ── 인사 영역 ──
   String get userName => profile.nickname;
@@ -143,8 +153,20 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
   // 프로필·통계는 홈의 뼈대라 실패하면 에러 상태를 보여준다.
   // 나머지(동네 그룹·최근 활동·뉴스)는 부가 섹션이라 하나가 실패해도
   // 빈 값으로 넘겨 홈 전체가 "불러오지 못했어요"로 빠지지 않게 한다.
+  // 날씨는 프로필의 저장된 좌표(regionLat/regionLng)가 있어야 부를 수 있다.
+  // 프로필 로드에 체이닝해서, 다른 병렬 작업(특히 최대 30초 걸리는 뉴스)을
+  // 막지 않으면서 의존 관계만 지킨다.
+  final profileFuture = UserService.loadProfileDetail();
+  final weatherFuture = profileFuture.then((p) async {
+    final lat = p.regionLat, lng = p.regionLng;
+    // 좌표가 없으면 호출 자체를 생략한다 — (0,0)으로 부르면 엉뚱한(아프리카
+    // 앞바다) 날씨가 오는데, 그게 자기 동네 날씨인 줄 알면 더 나쁘다.
+    if (lat == null || lng == null) return null;
+    return WeatherService.fetch(lat: lat, lng: lng, region: p.region);
+  }).catchError((_) => null);
+
   final results = await Future.wait([
-    UserService.loadProfileDetail(),
+    profileFuture,
     BadgeService.loadStats(),
     GroupService.otherGroups(limit: 3).catchError(
       (_) => <Group>[],
@@ -155,6 +177,7 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
     NewsService.fetchNews(display: 5).catchError(
       (_) => <NewsArticle>[], // 뉴스 실패는 홈을 막지 않는다
     ),
+    weatherFuture,
   ]);
 
   final profile = results[0] as ProfileDetail;
@@ -162,6 +185,7 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
   final others = results[2] as List<Group>;
   final activities = results[3] as List<Activity>;
   final news = results[4] as List<NewsArticle>;
+  final weather = results[5] as ({int? temp, String? pm10Grade})?;
 
   final sorted = [...others]
     ..sort((a, b) => b.todayActiveCount.compareTo(a.todayActiveCount));
@@ -177,6 +201,8 @@ final homeViewProvider = FutureProvider<HomeView>((ref) async {
     groups: sorted,
     news: news,
     photos: photos,
+    weatherTemp: weather?.temp,
+    weatherPm10Grade: weather?.pm10Grade,
   );
 });
 
