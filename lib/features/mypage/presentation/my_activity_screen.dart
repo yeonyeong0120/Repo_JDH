@@ -40,7 +40,6 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
   // 그래프용 활동 기록 (집계 대상). null = 로딩 중
   List<Activity>? _graphActivities;
   double? _weightKg;
-  String? _gender;
 
   @override
   void initState() {
@@ -58,7 +57,6 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
         setState(() {
           _graphActivities = list;
           _weightKg = body.weightKg;
-          _gender = body.gender;
         });
       }
     } catch (_) {
@@ -119,21 +117,18 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
                     playToken: _graphPlay,
                     activities: _graphActivities,
                     weightKg: _weightKg,
-                    gender: _gender,
                   ),
                   _GraphTab(
                     period: 1,
                     playToken: _graphPlay,
                     activities: _graphActivities,
                     weightKg: _weightKg,
-                    gender: _gender,
                   ),
                   _GraphTab(
                     period: 2,
                     playToken: _graphPlay,
                     activities: _graphActivities,
                     weightKg: _weightKg,
-                    gender: _gender,
                   ),
                 ],
               ),
@@ -290,7 +285,6 @@ class _RecordsTabState extends State<_RecordsTab> {
   List<_Activity>? _activities; // null = 로딩 중
   Object? _loadError; // null 이 아니면 에러 발생
   double? _weightKg;
-  String? _gender;
 
   // 진행 중인 퀘스트 (달성률 높은 순 3개)
   List<_Quest> _quests = [];
@@ -310,7 +304,6 @@ class _RecordsTabState extends State<_RecordsTab> {
         limit: _displayLimit,
       );
       _weightKg = body.weightKg;
-      _gender = body.gender;
       // 서버 데이터(Activity)를 화면용(_Activity)으로 변환
       final mapped = list.map(_toDisplay).toList();
       if (!mounted) return;
@@ -343,7 +336,6 @@ class _RecordsTabState extends State<_RecordsTab> {
         distanceMeters: a.distanceMeters,
         durationSeconds: a.durationSeconds,
         weightKg: _weightKg,
-        gender: _gender,
       ),
       a.distanceMeters, // 거리 라벨 계산용
       a.trashCounts, // 상세 화면에서 활동별 수거 개수를 그대로 쓴다
@@ -908,14 +900,12 @@ class _GraphTab extends StatefulWidget {
   final int period; // 이 페이지가 담당하는 기간 (0:주간 1:월간 2:누적)
   final int playToken; // 값이 바뀌면 애니메이션 재생
   final List<Activity>? activities; // 집계 대상 (null = 로딩 중)
-  final double? weightKg; // 칼로리 계산용 (없으면 평균값 폴백)
-  final String? gender;
+  final double? weightKg; // 칼로리 계산용 (없으면 표준체중 60kg 폴백)
   const _GraphTab({
     required this.period,
     required this.playToken,
     required this.activities,
     this.weightKg,
-    this.gender,
   });
 
   @override
@@ -953,18 +943,15 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     _weekly = ActivityStats.weekly(
       acts,
       weightKg: widget.weightKg,
-      gender: widget.gender,
     ).map((b) => _bucketToGData(b)).toList();
     _monthly = ActivityStats.monthly(
       acts,
       weightKg: widget.weightKg,
-      gender: widget.gender,
     ).map((b) => _bucketToGData(b)).toList();
     _cumulative = _bucketToGData(
       ActivityStats.cumulative(
         acts,
         weightKg: widget.weightKg,
-        gender: widget.gender,
       ),
     );
   }

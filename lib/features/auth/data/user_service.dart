@@ -173,11 +173,10 @@ class UserService {
 
   /// 프로필 항목 부분 수정 (넘긴 값만 갱신)
   /// 회원가입 선택 정보 저장에도 사용
+  /// 신체정보 중 칼로리 계산에 쓰는 몸무게(weight)만 받는다.
+  /// (성별·나이·키는 쓰이는 곳이 없어 수집하지 않는다)
   static Future<void> updateProfileFields({
     String? nickname,
-    String? gender,
-    int? age,
-    int? height,
     int? weight,
     String? region,
   }) async {
@@ -186,9 +185,6 @@ class UserService {
 
     final data = <String, dynamic>{};
     if (nickname != null) data['nickname'] = nickname;
-    if (gender != null) data['gender'] = gender;
-    if (age != null) data['age'] = age;
-    if (height != null) data['height'] = height;
     if (weight != null) data['weight'] = weight;
     if (region != null) data['region'] = region;
     if (data.isEmpty) return;
@@ -232,16 +228,14 @@ class UserService {
     }, SetOptions(merge: true));
   }
 
-  /// 체중·성별만 가볍게 조회 (칼로리 계산용). loadProfileDetail() 과 달리
+  /// 체중만 가볍게 조회 (칼로리 계산용). loadProfileDetail() 과 달리
   /// 활동 기록을 다시 읽지 않는다 — 문서 1건 조회로 끝난다.
-  static Future<({double? weightKg, String? gender})> loadBodyInfo() async {
+  /// 체중이 없으면 ActivityMetrics 가 표준체중 60kg 으로 계산한다.
+  static Future<({double? weightKg})> loadBodyInfo() async {
     final uid = _uid;
-    if (uid == null) return (weightKg: null, gender: null);
+    if (uid == null) return (weightKg: null);
     final data = (await _db.collection('users').doc(uid).get()).data();
-    return (
-      weightKg: (data?['weight'] as num?)?.toDouble(),
-      gender: data?['gender'] as String?,
-    );
+    return (weightKg: (data?['weight'] as num?)?.toDouble());
   }
 
   static Future<void> signOut() {

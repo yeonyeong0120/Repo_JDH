@@ -34,7 +34,6 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   List<_Act>? _acts;
   Object? _loadError; // null 이 아니면 에러 발생
   double? _weightKg;
-  String? _gender;
 
   @override
   void initState() {
@@ -70,7 +69,6 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
       if (!mounted) return;
       setState(() {
         _weightKg = body.weightKg;
-        _gender = body.gender;
         _acts = list.map(_toAct).toList();
         _loadError = null;
       });
@@ -96,7 +94,6 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
         distanceMeters: a.distanceMeters,
         durationSeconds: a.durationSeconds,
         weightKg: _weightKg,
-        gender: _gender,
       ),
       a.distanceMeters / 1000.0,
       a.imageUrls.isNotEmpty,

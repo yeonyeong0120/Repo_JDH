@@ -7,10 +7,7 @@ class ProfileDetail {
   final String nickname;
   final String email;
   final String? photoUrl;
-  final String? gender; // '남' / '여' / null
-  final int? age;
-  final int? height; // cm
-  final int? weight; // kg
+  final int? weight; // kg — 칼로리 계산용(성별·나이·키는 쓰지 않아 수집 안 함)
   final String region;
   final double? regionLat;
   final double? regionLng;
@@ -22,9 +19,6 @@ class ProfileDetail {
     this.nickname = '',
     this.email = '',
     this.photoUrl,
-    this.gender,
-    this.age,
-    this.height,
     this.weight,
     this.region = '',
     this.regionLat,
@@ -64,9 +58,6 @@ class ProfileDetail {
     String? nickname,
     String? email,
     String? photoUrl,
-    String? gender,
-    int? age,
-    int? height,
     int? weight,
     String? region,
     double? regionLat,
@@ -79,9 +70,6 @@ class ProfileDetail {
       nickname: nickname ?? this.nickname,
       email: email ?? this.email,
       photoUrl: photoUrl ?? this.photoUrl,
-      gender: gender ?? this.gender,
-      age: age ?? this.age,
-      height: height ?? this.height,
       weight: weight ?? this.weight,
       region: region ?? this.region,
       regionLat: regionLat ?? this.regionLat,
@@ -96,9 +84,6 @@ class ProfileDetail {
     return ProfileDetail(
       nickname: (json['nickname'] as String?) ?? '',
       photoUrl: json['photoUrl'] as String?,
-      gender: json['gender'] as String?,
-      age: (json['age'] as num?)?.toInt(),
-      height: (json['height'] as num?)?.toInt(),
       weight: (json['weight'] as num?)?.toInt(),
       region: (json['region'] as String?) ?? '',
       regionLat: (json['regionLat'] as num?)?.toDouble(),
@@ -110,9 +95,6 @@ class ProfileDetail {
   /// 저장은 프로필 항목만 (points 는 뱃지 적립 쪽에서 증감)
   Map<String, dynamic> toProfileJson() => {
     'nickname': nickname,
-    'gender': gender,
-    'age': age,
-    'height': height,
     'weight': weight,
     'region': region,
   };

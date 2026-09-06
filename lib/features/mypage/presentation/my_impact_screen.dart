@@ -59,7 +59,6 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
           distanceMeters: a.distanceMeters,
           durationSeconds: a.durationSeconds,
           weightKg: body.weightKg,
-          gender: body.gender,
         );
         distance += a.distanceMeters;
       }

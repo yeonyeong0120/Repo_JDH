@@ -142,7 +142,6 @@ class BadgeService {
         distanceMeters: a.distanceMeters,
         durationSeconds: a.durationSeconds,
         weightKg: body.weightKg,
-        gender: body.gender,
       );
       totalWeightG += ActivityMetrics.weightGrams(a.trashCounts);
       final d = a.endedAt ?? a.startedAt;

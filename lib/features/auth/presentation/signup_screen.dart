@@ -1,18 +1,22 @@
+import 'dart:io';
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/auth/data/auth_repository.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/core/location/region_updater.dart';
-import 'package:repo_jdh/features/plogging/data/location_repository.dart';
-import 'package:repo_jdh/features/plogging/data/geocode_service.dart';
 
-/// 회원가입 온보딩 (3단계) — 플로고 · Startline 구조
-///  1) 이메일·비밀번호·비밀번호 확인(인라인 3상태 검증)
-///  2) 성별·나이·키·몸무게·지역(선택)
-///  3) 닉네임
+/// 회원가입 온보딩 (2단계) — 플로고 · Startline 구조
+///  1) 이메일·비밀번호·비밀번호 확인 (인라인 3상태 검증)
+///  2) 프로필 사진(선택) · 닉네임 · 몸무게(선택)
+///
+/// 성별·나이·키·지역은 받지 않는다.
+///  - 성별·나이·키: 쓰이는 곳이 없다(칼로리는 몸무게만 사용, 없으면 표준체중 60kg).
+///  - 지역: 가입 완료 시 GPS 로 자동 설정한다.
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
@@ -30,24 +34,27 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _nicknameController = TextEditingController();
   bool _obscurePassword = true;
 
-  String? _gender; // '남성' / '여성'
-  int? _age;
-  int? _height;
-  int? _weight;
+  // 몸무게(선택) — 처음부터 표준체중 60kg 이 찍혀 있다. 안 건드리면 60kg 으로 저장.
+  static const int _weightMin = 30;
+  static const int _weightMax = 150;
+  static const int _weightDefault = 60;
+  int _weight = _weightDefault;
+  late final TextEditingController _weightController = TextEditingController(
+    text: '$_weightDefault',
+  );
+
+  // 프로필 사진(선택) — 계정이 만들어진 뒤(_finish) 업로드한다.
+  File? _photoFile;
+
+  // 닉네임 중복 — 제출 시 서버 확인 결과. 닉네임을 고치면 초기화된다.
+  bool _nickTaken = false;
 
   bool _isLoading = false;
 
-  // 2단계 지역 박스에 보여줄 현재 위치 주소.
-  // 화면 진입(2단계 도달) 시 GPS+역지오코딩으로 한 번 채운다. 저장은 _finish 에서.
-  String? _region; // 성공 시 '인천 남동구' 같은 지역명
-  bool _regionLoading = false;
-  bool _regionTried = false; // 중복 요청 방지
-
   // 단계별 제목/부제 (상단 고정 헤더에 노출)
-  static const _titles = ['이메일로 시작해요', '더 정확한 측정에 필요해요', '어떻게 불러드릴까요?'];
+  static const _titles = ['이메일로 시작해요', '어떻게 불러드릴까요?'];
   static const _subtitles = [
     '비밀번호는 8자 이상으로 만들어주세요.',
-    '칼로리를 계산하는 데 쓰여요.',
     '그룹 채팅과 활동 기록에 표시되는 이름이에요.',
   ];
 
@@ -58,34 +65,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _emailController.addListener(_rebuild);
     _passwordController.addListener(_rebuild);
     _pw2Controller.addListener(_rebuild);
-    _nicknameController.addListener(_rebuild);
+    _nicknameController.addListener(_onNicknameChanged);
   }
 
   void _rebuild() => setState(() {});
 
-  // 현재 위치 주소를 한 번 불러와 2단계 지역 박스에 표시한다.
-  // 저장하지 않고 표시만 한다 — 실제 저장은 _finish 의 RegionUpdater 가 담당.
-  Future<void> _loadRegion() async {
-    if (_regionTried) return;
-    _regionTried = true;
-    setState(() => _regionLoading = true);
-    String? region;
-    try {
-      final coords = await LocationRepository().getCurrentCoordinates();
-      if (coords != null) {
-        region = await GeocodeService.regionOf(
-          lat: coords.lat,
-          lng: coords.lng,
-        );
-      }
-    } catch (_) {
-      // 실패는 무시 — 박스는 안내 문구로 폴백한다
-    }
-    if (!mounted) return;
-    setState(() {
-      _region = region;
-      _regionLoading = false;
-    });
+  // 닉네임을 고치면 이전 중복 판정을 초기화한다.
+  void _onNicknameChanged() {
+    setState(() => _nickTaken = false);
   }
 
   @override
@@ -95,6 +82,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _passwordController.dispose();
     _pw2Controller.dispose();
     _nicknameController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -146,7 +134,63 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return n.length >= 2 && n.length <= 10;
   }
 
-  // 최종: 계정 생성 + 프로필 저장
+  // 몸무게 값 설정 (범위 보정 + 입력칸 동기화)
+  void _setWeight(int v) {
+    final nv = v.clamp(_weightMin, _weightMax);
+    setState(() {
+      _weight = nv;
+      _weightController.text = '$nv';
+      _weightController.selection =
+          TextSelection.collapsed(offset: _weightController.text.length);
+    });
+  }
+
+  // 포커스 해제/제출 시 입력칸 값을 30~150 으로 보정
+  void _commitWeightField() {
+    final v = int.tryParse(_weightController.text.trim());
+    _setWeight(v ?? _weight);
+  }
+
+  // ── 프로필 사진 선택 (갤러리/카메라) — 로컬 파일만 보관, 업로드는 _finish ──
+  Future<void> _pickPhoto() async {
+    FocusScope.of(context).unfocus();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(TablerIcons.photo),
+              title: const Text('앨범에서 선택'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(TablerIcons.camera),
+              title: const Text('사진 촬영'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 800, // 업로드 용량 절약
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _photoFile = File(picked.path));
+  }
+
+  // 최종: 계정 생성 + 프로필 저장(닉네임·몸무게) + 사진 업로드 + GPS 지역
   Future<void> _finish() async {
     final nick = _nicknameController.text.trim();
     if (nick.length < 2 || nick.length > 10) {
@@ -154,6 +198,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
     setState(() => _isLoading = true);
+
+    // 닉네임 중복 확인 (best-effort — 규칙상 조회 불가면 통과시킨다)
+    try {
+      if (await UserService.isNicknameTaken(nick)) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _nickTaken = true;
+        });
+        _goTo(1);
+        return;
+      }
+    } catch (_) {
+      // 조회 실패는 무시하고 진행
+    }
+
     final error = await AuthRepository.signUp(
       email: _emailController.text.trim(),
       password: _passwordController.text,
@@ -170,12 +230,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         email: _emailController.text.trim(),
         nickname: nick,
       );
-      await UserService.updateProfileFields(
-        gender: _gender,
-        age: _age,
-        height: _height,
-        weight: _weight,
-      );
+      // 몸무게만 저장한다(성별·나이·키는 수집하지 않음)
+      await UserService.updateProfileFields(weight: _weight);
+      // 프로필 사진(선택) — 로컬로 담아둔 파일이 있으면 업로드
+      if (_photoFile != null) {
+        await UserService.uploadProfilePhoto(_photoFile!);
+      }
       // 실패해도 가입 자체는 계속 진행 — 지역은 나중에 홈 버튼/메뉴에서 채울 수 있음
       final regionResult = await RegionUpdater.refreshFromGps();
       if (!regionResult.isSuccess) {
@@ -205,12 +265,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 child: PageView(
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (i) {
-                    setState(() => _step = i);
-                    // 2단계 도달 시 현재 위치 주소를 한 번 불러온다
-                    if (i == 1) _loadRegion();
-                  },
-                  children: [_step1(), _step2(), _step3()],
+                  onPageChanged: (i) => setState(() => _step = i),
+                  children: [_step1(), _step2()],
                 ),
               ),
               _bottomArea(),
@@ -221,7 +277,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
-  // ── 상단 고정 헤더: 뒤로 + 3분할 진행바 + n/3 + 제목 + 부제 ──
+  // ── 상단 고정 헤더: 뒤로 + 2분할 진행바 + n/2 + 제목 + 부제 ──
   Widget _topBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
@@ -244,28 +300,29 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              // 진행바 3분할
+              // 진행바 2분할
               Expanded(
                 child: Row(
                   children: [
-                    for (int i = 0; i < 3; i++) ...[
+                    for (int i = 0; i < 2; i++) ...[
                       Expanded(
                         child: Container(
                           height: 4,
                           decoration: BoxDecoration(
-                            color: i <= _step ? AppColors.ink : AppColors.gray200,
+                            color:
+                                i <= _step ? AppColors.ink : AppColors.gray200,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ),
-                      if (i < 2) const SizedBox(width: 5),
+                      if (i < 1) const SizedBox(width: 5),
                     ],
                   ],
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                '${_step + 1} / 3',
+                '${_step + 1} / 2',
                 style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w800,
@@ -300,6 +357,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
+  // overline (section label) — 800 11.5px 자간1.4 gray500
   Widget _fieldLabel(String t, {double top = 0}) => Padding(
     padding: EdgeInsets.only(top: top),
     child: Text(
@@ -320,7 +378,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       TablerIcons.circleCheckFilled,
       TablerIcons.alertCircleFilled,
     ];
-    final color = [AppColors.gray500, AppColors.ink, AppColors.actionDanger][state];
+    final color =
+        [AppColors.gray500, AppColors.ink, AppColors.actionDanger][state];
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: SizedBox(
@@ -377,7 +436,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
   );
 
-  // ═══════════════ 1단계: 이메일 · 비밀번호 · 비밀번호 확인 ═══════════════
+  // ═══════════════ 1/2: 이메일 · 비밀번호 · 비밀번호 확인 ═══════════════
   Widget _step1() {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
@@ -397,7 +456,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
           _validationRow(
             _emailState,
-            const ['로그인할 때 쓰는 주소예요', '사용할 수 있는 이메일이에요', '올바른 이메일 형식이 아니에요'][_emailState],
+            const [
+              '로그인할 때 쓰는 주소예요',
+              '사용할 수 있는 이메일이에요',
+              '올바른 이메일 형식이 아니에요',
+            ][_emailState],
           ),
           _fieldLabel('비밀번호', top: 18),
           TextField(
@@ -408,11 +471,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
-            decoration: _underlineState('8자 이상', _pwState, suffix: _pwEyeToggle()),
+            decoration:
+                _underlineState('8자 이상', _pwState, suffix: _pwEyeToggle()),
           ),
           _validationRow(
             _pwState,
-            const ['영문·숫자를 섞어 8자 이상', '쓸 수 있는 비밀번호예요', '8자 이상으로 만들어주세요'][_pwState],
+            const [
+              '영문·숫자를 섞어 8자 이상',
+              '쓸 수 있는 비밀번호예요',
+              '8자 이상으로 만들어주세요',
+            ][_pwState],
           ),
           _fieldLabel('비밀번호 확인', top: 18),
           TextField(
@@ -423,15 +491,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
-            decoration:
-                _underlineState('한 번 더 입력해주세요', _pw2State, suffix: _pwEyeToggle()),
+            decoration: _underlineState(
+              '한 번 더 입력해주세요',
+              _pw2State,
+              suffix: _pwEyeToggle(),
+            ),
           ),
           _validationRow(
             _pw2State,
-            const ['똑같이 한 번 더 입력해주세요', '비밀번호가 일치해요', '비밀번호가 서로 달라요'][_pw2State],
+            const [
+              '위와 같은 비밀번호를 입력해주세요',
+              '비밀번호가 일치해요',
+              '비밀번호가 일치하지 않아요',
+            ][_pw2State],
           ),
           const SizedBox(height: 20),
-          // 안내 박스
+          // 안심 카드
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
             decoration: BoxDecoration(
@@ -443,161 +518,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               children: const [
                 Padding(
                   padding: EdgeInsets.only(top: 1),
-                  child: Icon(TablerIcons.shield, size: 18, color: AppColors.ink),
+                  child:
+                      Icon(TablerIcons.shield, size: 18, color: AppColors.ink),
                 ),
                 SizedBox(width: 9),
                 Expanded(
                   child: Text(
                     '이메일은 비밀번호를 다시 만들 때만 써요. 그룹에는 닉네임만 보입니다.',
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 12.5,
                       height: 1.6,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.gray700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════ 2단계: 성별·나이·키·몸무게·지역 ═══════════════
-  Widget _step2() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _fieldLabel('성별'),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(child: _genderBox('남성')),
-              const SizedBox(width: 9),
-              Expanded(child: _genderBox('여성')),
-            ],
-          ),
-          const SizedBox(height: 22),
-          _numberRow(
-            icon: TablerIcons.cake,
-            label: '나이',
-            valueText: _age == null ? null : '$_age세',
-            onTap: () => _showNumberSheet(
-              title: '나이',
-              subtitle: '칼로리 계산에 사용해요',
-              unit: '세',
-              min: 14,
-              max: 100,
-              initial: _age ?? 34,
-              onConfirm: (v) => setState(() => _age = v),
-            ),
-          ),
-          _numberRow(
-            icon: TablerIcons.ruler2,
-            label: '키',
-            valueText: _height == null ? null : '${_height}cm',
-            onTap: () => _showNumberSheet(
-              title: '키',
-              subtitle: '걸음 보폭과 칼로리 계산에 사용해요',
-              unit: 'cm',
-              min: 120,
-              max: 220,
-              initial: _height ?? 170,
-              onConfirm: (v) => setState(() => _height = v),
-            ),
-          ),
-          _numberRow(
-            icon: TablerIcons.scale,
-            label: '몸무게',
-            valueText: _weight == null ? null : '${_weight}kg',
-            onTap: () => _showNumberSheet(
-              title: '몸무게',
-              subtitle: '칼로리 계산에 사용해요',
-              unit: 'kg',
-              min: 30,
-              max: 150,
-              initial: _weight ?? 65,
-              onConfirm: (v) => setState(() => _weight = v),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // 지역 (자동 — 가입 완료 시 위치 권한 기반으로 설정)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  TablerIcons.currentLocation,
-                  size: 19,
-                  color: AppColors.ink,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '지역',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.2,
-                          color: AppColors.gray500,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _regionLoading
-                            ? '현재 위치를 확인하는 중…'
-                            : (_region ?? '위치 권한을 켜면 자동으로 채워져요'),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: (_region == null && !_regionLoading)
-                              ? AppColors.gray500
-                              : AppColors.ink,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_regionLoading)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.gray400,
-                    ),
-                  )
-                else
-                  const Text(
-                    '자동',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
                       color: AppColors.gray500,
                     ),
                   ),
+                ),
               ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            '지금 건너뛰어도 괜찮아요. 메뉴에서 언제든 채울 수 있어요.',
-            style: TextStyle(
-              fontSize: 12.5,
-              height: 1.6,
-              fontWeight: FontWeight.w400,
-              color: AppColors.gray350,
             ),
           ),
         ],
@@ -605,119 +541,66 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
-  Widget _genderBox(String g) {
-    final on = _gender == g;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _gender = g),
-      child: Container(
-        height: 56,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: on ? AppColors.lime : AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: on ? AppColors.ink : AppColors.gray200,
-            width: 1.5,
-          ),
-        ),
-        child: Text(
-          g,
-          style: const TextStyle(
-            fontSize: 15.5,
-            fontWeight: FontWeight.w800,
-            color: AppColors.ink,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 나이/키/몸무게 행 (h60, 밑줄 line100)
-  Widget _numberRow({
-    required IconData icon,
-    required String label,
-    required String? valueText,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 60,
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: AppColors.line100, width: 1.5),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: AppColors.gray700),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ink,
-                ),
-              ),
-            ),
-            Text(
-              valueText ?? '선택',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: valueText == null ? AppColors.gray400 : AppColors.ink,
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Icon(
-              TablerIcons.chevronRight,
-              size: 19,
-              color: AppColors.gray300,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ═══════════════ 3단계: 닉네임 ═══════════════
-  Widget _step3() {
+  // ═══════════════ 2/2: 프로필 사진 · 닉네임 · 몸무게 ═══════════════
+  Widget _step2() {
     final nick = _nicknameController.text.trim();
-    // 상태 0 미입력 / 1 통과 / 2 오류(2자 미만)
-    final int nickState = nick.isEmpty ? 0 : (_nickOk ? 1 : 2);
-    final borderColor =
-        [AppColors.gray200, AppColors.ink, AppColors.actionDanger][nickState];
-    final hintColor =
-        [AppColors.gray500, AppColors.ink, AppColors.actionDanger][nickState];
-    const hintIcons = [
-      TablerIcons.infoCircle,
-      TablerIcons.circleCheckFilled,
-      TablerIcons.alertCircleFilled,
-    ];
+    // 힌트 4상태: 빈칸 / 중복 / 1자 / 통과
+    final int nickState;
+    if (nick.isEmpty) {
+      nickState = 0; // 안내
+    } else if (_nickTaken) {
+      nickState = 3; // 중복(오류)
+    } else if (nick.length < 2) {
+      nickState = 2; // 1자(오류)
+    } else {
+      nickState = 1; // 통과
+    }
+    final bool nickError = nickState == 2 || nickState == 3;
+    final borderColor = nickError
+        ? AppColors.actionDanger
+        : (nickState == 1 ? AppColors.ink : AppColors.gray200);
+    final hintColor = nickError
+        ? AppColors.actionDanger
+        : (nickState == 1 ? AppColors.ink : AppColors.gray500);
+    final IconData hintIcon = nickError
+        ? TablerIcons.alertCircleFilled
+        : (nickState == 1
+            ? TablerIcons.circleCheckFilled
+            : TablerIcons.infoCircle);
     final hintText = const [
-      '한글·영문·숫자를 쓸 수 있어요',
-      '쓸 수 있는 닉네임이에요',
-      '두 글자 이상 입력해주세요',
+      '한글·영문·숫자를 쓸 수 있어요', // 0 빈칸
+      '쓸 수 있는 닉네임이에요', // 1 통과
+      '두 글자 이상 입력해주세요', // 2 1자
+      '이미 사용 중인 닉네임이에요', // 3 중복
     ][nickState];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 1) 프로필 사진(선택)
+          Center(child: _avatarPicker()),
+          const SizedBox(height: 10),
+          const Text(
+            '선택이에요. 안 넣으면 기본 아바타로 보여요.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.6,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray500,
+            ),
+          ),
+          const SizedBox(height: 22),
+          // 2) 닉네임
           _fieldLabel('닉네임'),
           const SizedBox(height: 2),
           Container(
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: borderColor, width: 2),
-              ),
+              border: Border(bottom: BorderSide(color: borderColor, width: 2)),
             ),
-            padding: const EdgeInsets.only(top: 9, bottom: 11),
+            padding: const EdgeInsets.only(top: 8, bottom: 9),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -726,13 +609,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     controller: _nicknameController,
                     maxLength: 10,
                     style: const TextStyle(
-                      fontSize: 25,
+                      fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: -0.6,
+                      letterSpacing: -0.5,
+                      height: 1.0,
                       color: AppColors.ink,
                     ),
                     decoration: const InputDecoration(
                       isDense: true,
+                      filled: false, // 테마의 회색 fill 제거 (밑줄만 쓴다)
                       counterText: '',
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -740,9 +625,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       contentPadding: EdgeInsets.zero,
                       hintText: '2~10자',
                       hintStyle: TextStyle(
-                        fontSize: 25,
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
+                        letterSpacing: -0.5,
+                        height: 1.0,
                         color: AppColors.gray350,
                       ),
                     ),
@@ -750,9 +636,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  '${nick.length}/10',
+                  '${nick.characters.length}/10',
                   style: const TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: AppColors.gray400,
                   ),
@@ -760,16 +646,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: 10),
           Row(
             children: [
-              Icon(hintIcons[nickState], size: 17, color: hintColor),
+              Icon(hintIcon, size: 16, color: hintColor),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   hintText,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: hintColor,
                   ),
@@ -777,59 +663,132 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          // 미리보기 카드
+          const SizedBox(height: 18),
+          // 3) 미리보기 카드
+          _previewCard(nick),
+          const SizedBox(height: 22),
+          // 4) 추가 정보(선택) — 몸무게
+          _fieldLabel('추가 정보 (선택)'),
+          const SizedBox(height: 10),
+          _weightCard(),
+        ],
+      ),
+    );
+  }
+
+  // 아바타(64) + 카메라 뱃지(27) — 라임 원 + 차콜 유저 아이콘, 뱃지는 차콜 원 + 라임 카메라
+  Widget _avatarPicker() {
+    final file = _photoFile;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _isLoading ? null : _pickPhoto,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
           Container(
-            padding: const EdgeInsets.all(17),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(20),
+            width: 64,
+            height: 64,
+            alignment: Alignment.center,
+            clipBehavior: Clip.antiAlias,
+            decoration: const BoxDecoration(
+              color: AppColors.lime,
+              shape: BoxShape.circle,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: file == null
+                ? const Icon(
+                    TablerIcons.userFilled,
+                    size: 30,
+                    color: AppColors.ink,
+                  )
+                : Image.file(file, width: 64, height: 64, fit: BoxFit.cover),
+          ),
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Container(
+              width: 27,
+              height: 27,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.ink,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.surface, width: 3),
+              ),
+              child: const Icon(
+                TablerIcons.camera,
+                size: 14,
+                color: AppColors.lime,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 미리보기 카드 — 그룹 채팅에서 보이는 모습(아바타 36 + 닉네임 + 활동 한 줄)
+  Widget _previewCard(String nick) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _fieldLabel('그룹 채팅에서는 이렇게 보여요'),
+          const SizedBox(height: 11),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
               children: [
-                const Text(
-                  '그룹 채팅에서는 이렇게 보여요',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1.4,
-                    color: AppColors.gray500,
-                  ),
-                ),
-                const SizedBox(height: 11),
                 Container(
-                  padding: const EdgeInsets.all(13),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: const BoxDecoration(
+                    color: AppColors.lime,
+                    shape: BoxShape.circle,
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: AppColors.lime,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
+                  child: _photoFile == null
+                      ? const Icon(
                           TablerIcons.userFilled,
                           size: 19,
                           color: AppColors.ink,
+                        )
+                      : Image.file(
+                          _photoFile!,
+                          width: 36,
+                          height: 36,
+                          fit: BoxFit.cover,
+                        ),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        nick.isEmpty ? '닉네임' : nick,
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink,
                         ),
                       ),
-                      const SizedBox(width: 11),
-                      // 실제 그룹 채팅은 닉네임만 보여준다 — 미리보기도 닉네임만 표시
-                      Expanded(
-                        child: Text(
-                          nick.isEmpty ? '닉네임' : nick,
-                          style: const TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.ink,
-                          ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        '오전 7:30 · 소래습지 한 바퀴',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.gray500,
                         ),
                       ),
                     ],
@@ -839,6 +798,125 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // 몸무게 카드 — 인라인 −/+ 스테퍼 (기본 60kg, 직접 입력 가능)
+  Widget _weightCard() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 부가설명을 박스 안 상단에 둔다 (미리보기 카드 오버라인처럼)
+          const Text(
+            '칼로리 계산에만 사용되고, 미작성 시 표준체중 60kg으로 계산돼요',
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.6,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray500,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(
+                TablerIcons.scale,
+                size: 20,
+                color: AppColors.gray700,
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  '몸무게',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+              _weightStepBtn(TablerIcons.minus, () => _setWeight(_weight - 1)),
+              SizedBox(
+                width: 96,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    IntrinsicWidth(
+                      child: TextField(
+                        controller: _weightController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        style: const TextStyle(
+                          fontSize: 28,
+                          height: 1.0,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                          color: AppColors.ink,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          filled: false, // 테마의 회색 fill 제거
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (v) {
+                          final n = int.tryParse(v);
+                          if (n != null) _weight = n;
+                        },
+                        onSubmitted: (_) => _commitWeightField(),
+                        onEditingComplete: _commitWeightField,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    const Text(
+                      'kg',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.gray700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _weightStepBtn(TablerIcons.plus, () => _setWeight(_weight + 1)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 몸무게 −/+ 버튼 46×46 radius14 흰 배경
+  Widget _weightStepBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 46,
+        height: 46,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.gray200, width: 1.5),
+        ),
+        child: Icon(icon, size: 22, color: AppColors.ink),
       ),
     );
   }
@@ -857,28 +935,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       enabled = _accountReady;
       onTap = enabled ? () => _goTo(1) : null;
       sub = _loginLink();
-    } else if (_step == 1) {
-      label = '다음';
-      icon = TablerIcons.arrowRight;
-      enabled = true;
-      onTap = () => _goTo(2);
-      sub = GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _goTo(2),
-        child: const SizedBox(
-          height: 46,
-          child: Center(
-            child: Text(
-              '건너뛰기',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w600,
-                color: AppColors.gray500,
-              ),
-            ),
-          ),
-        ),
-      );
     } else {
       label = '플로고 시작하기';
       icon = TablerIcons.check;
@@ -892,9 +948,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _ctaButton(label, icon, enabled, onTap, loading: _step == 2 && _isLoading),
+          _ctaButton(
+            label,
+            icon,
+            enabled,
+            onTap,
+            loading: _step == 1 && _isLoading,
+          ),
           if (sub != null) ...[
-            if (_step == 0) const SizedBox(height: 14),
+            const SizedBox(height: 14),
             sub,
           ],
         ],
@@ -980,272 +1042,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   Icon(icon, size: 20, color: iconFg),
                 ],
               ),
-      ),
-    );
-  }
-
-  // ── 숫자 증감/키패드 바텀시트 ──
-  void _showNumberSheet({
-    required String title,
-    required String subtitle,
-    required String unit,
-    required int min,
-    required int max,
-    required int initial,
-    required ValueChanged<int> onConfirm,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: AppColors.ink.withValues(alpha: 0.42),
-      builder: (ctx) => _NumberSheet(
-        title: title,
-        subtitle: subtitle,
-        unit: unit,
-        min: min,
-        max: max,
-        initial: initial,
-        onConfirm: onConfirm,
-      ),
-    );
-  }
-}
-
-/// 나이·키·몸무게 입력 시트 — −/+ 버튼(56×56) + 숫자 직접 입력 + 퀵칩 + 확인.
-class _NumberSheet extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final String unit;
-  final int min;
-  final int max;
-  final int initial;
-  final ValueChanged<int> onConfirm;
-  const _NumberSheet({
-    required this.title,
-    required this.subtitle,
-    required this.unit,
-    required this.min,
-    required this.max,
-    required this.initial,
-    required this.onConfirm,
-  });
-
-  @override
-  State<_NumberSheet> createState() => _NumberSheetState();
-}
-
-class _NumberSheetState extends State<_NumberSheet> {
-  late int _val = widget.initial;
-  late final TextEditingController _c = TextEditingController(
-    text: '${widget.initial}',
-  );
-  final _focus = FocusNode();
-
-  @override
-  void dispose() {
-    _c.dispose();
-    _focus.dispose();
-    super.dispose();
-  }
-
-  void _set(int v) {
-    final nv = v.clamp(widget.min, widget.max);
-    setState(() {
-      _val = nv;
-      _c.text = '$nv';
-      _c.selection = TextSelection.collapsed(offset: _c.text.length);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      padding: EdgeInsets.fromLTRB(22, 14, 22, 30 + bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray200,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            widget.title,
-            style: const TextStyle(
-              fontSize: 20,
-              height: 1.4,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              color: AppColors.ink,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            widget.subtitle,
-            style: const TextStyle(
-              fontSize: 13.5,
-              height: 1.6,
-              fontWeight: FontWeight.w500,
-              color: AppColors.gray500,
-            ),
-          ),
-          const SizedBox(height: 22),
-          // − [숫자(키패드)] +
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _stepBtn(TablerIcons.minus, () => _set(_val - 1)),
-              const SizedBox(width: 18),
-              SizedBox(
-                width: 126,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    IntrinsicWidth(
-                      child: TextField(
-                        controller: _c,
-                        focusNode: _focus,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        style: const TextStyle(
-                          fontSize: 40,
-                          height: 1.1,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1.4,
-                          color: AppColors.ink,
-                        ),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        onChanged: (v) {
-                          final n = int.tryParse(v);
-                          if (n != null) _val = n;
-                        },
-                        onSubmitted: (_) => _set(_val),
-                        onEditingComplete: () => _set(_val),
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      widget.unit,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.gray700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 18),
-              _stepBtn(TablerIcons.plus, () => _set(_val + 1)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // 퀵칩 −10 / −5 / +5 / +10
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _quick('-10', () => _set(_val - 10)),
-              const SizedBox(width: 6),
-              _quick('-5', () => _set(_val - 5)),
-              const SizedBox(width: 6),
-              _quick('+5', () => _set(_val + 5)),
-              const SizedBox(width: 6),
-              _quick('+10', () => _set(_val + 10)),
-            ],
-          ),
-          const SizedBox(height: 22),
-          SizedBox(
-            height: 56,
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                final n = int.tryParse(_c.text) ?? _val;
-                widget.onConfirm(n.clamp(widget.min, widget.max));
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.ink,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              child: const Text(
-                '확인',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // −/+ 버튼 56×56 radius18 보더
-  Widget _stepBtn(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.gray200, width: 1.5),
-        ),
-        child: Icon(icon, size: 25, color: AppColors.ink),
-      ),
-    );
-  }
-
-  Widget _quick(String label, VoidCallback onTap) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 36,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.gray200, width: 1.5),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.gray700,
-          ),
-        ),
       ),
     );
   }

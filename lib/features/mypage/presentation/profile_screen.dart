@@ -77,9 +77,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       await UserService.updateProfileFields(
         nickname: nick,
-        gender: _p.gender,
-        age: _p.age,
-        height: _p.height,
         weight: _p.weight,
         region: _p.region.isEmpty ? null : _p.region,
       );
@@ -354,47 +351,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── 내 정보: 성별 칩(라임 선택) + 나이/키/몸무게 스테퍼 행 ──
+  // ── 내 정보: 몸무게 스테퍼 행만 (칼로리 계산용) ──
+  // 성별·나이·키는 쓰이는 곳이 없어 수집하지 않는다.
   Widget _infoSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _microLabel('내 정보', sub: '걸음수와 칼로리를 계산하는 데 쓰여요'),
+        _microLabel('내 정보', sub: '칼로리를 계산하는 데 쓰여요'),
         const SizedBox(height: 4),
-        Row(
-          children: [
-            _genderChip('남성'),
-            const SizedBox(width: 9),
-            _genderChip('여성'),
-          ],
-        ),
-        const SizedBox(height: 6),
-        _numRow(
-          TablerIcons.cake,
-          '나이',
-          _p.age == null ? null : '${_p.age}세',
-          () => _pickNumber(
-            '나이',
-            '세',
-            _p.age ?? 25,
-            10,
-            100,
-            (v) => setState(() => _p = _p.copyWith(age: v)),
-          ),
-        ),
-        _numRow(
-          TablerIcons.ruler2,
-          '키',
-          _p.height == null ? null : '${_p.height}cm',
-          () => _pickNumber(
-            '키',
-            'cm',
-            _p.height ?? 165,
-            100,
-            220,
-            (v) => setState(() => _p = _p.copyWith(height: v)),
-          ),
-        ),
         _numRow(
           TablerIcons.scale,
           '몸무게',
@@ -410,37 +374,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           last: true,
         ),
       ],
-    );
-  }
-
-  // 성별 칩 — 선택 시 라임 면 + 잉크 보더 (회원가입 2단계와 동일 스타일)
-  Widget _genderChip(String g) {
-    final on = _p.gender == g;
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => setState(() => _p = _p.copyWith(gender: g)),
-        child: Container(
-          height: 50,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: on ? AppColors.lime : AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: on ? AppColors.ink : AppColors.gray200,
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            g,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: on ? AppColors.limeOn : AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ),
     );
   }
 

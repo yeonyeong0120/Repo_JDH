@@ -132,7 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'PLOGGO',
+                                      'PLOGO',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
@@ -493,7 +493,7 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
             const Text(
               '가입한 이메일로 재설정 링크를 보내드려요.',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13.5,
                 height: 1.6,
                 fontWeight: FontWeight.w500,
                 color: AppColors.gray500,
