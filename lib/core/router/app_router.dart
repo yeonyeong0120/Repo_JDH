@@ -99,6 +99,15 @@ GoRouter appRouter(Ref ref) {
   ref.listen(userProfileProvider, (_, __) => refresh.ping());
   ref.onDispose(refresh.dispose);
 
+  // 스플래시 최소 노출 시간 — 이미 로그인된 기기 등에서 인증 확인이
+  // 순식간에 끝나버리면 로고를 인지할 틈도 없이 다음 화면으로 넘어간다.
+  // 인증 여부와 무관하게 최소한 이만큼은 스플래시에 붙잡아둔다.
+  bool minSplashElapsed = false;
+  Future.delayed(const Duration(milliseconds: 700), () {
+    minSplashElapsed = true;
+    refresh.ping();
+  });
+
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     // [문제 ②] 스플래시로 시작 — 인증 확인 중 홈이 잠깐 보였다가
@@ -120,8 +129,9 @@ GoRouter appRouter(Ref ref) {
       final loggingIn = loc == AppRoutes.login;
       final settingNickname = loc == AppRoutes.nicknameSetup;
 
-      // ① 아직 확인 중 → 스플래시에 머무른다 (섣불리 이동하지 않음)
-      if (authStatus == AuthStatus.unknown) {
+      // ① 아직 확인 중이거나 스플래시 최소 노출 시간이 안 지났으면 머무른다
+      //    (섣불리 이동하지 않음 — 인증이 빨리 끝나도 로고가 잠깐은 보이게)
+      if (authStatus == AuthStatus.unknown || !minSplashElapsed) {
         return onSplash ? null : AppRoutes.splash;
       }
 
@@ -237,8 +247,28 @@ class _SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/icons/app_icon.png', width: 96, height: 96),
+            const SizedBox(height: 16),
+            const Text(
+              'PLOGGO',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 6,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 28),
+            const CircularProgressIndicator(),
+          ],
+        ),
+      ),
     );
   }
 }

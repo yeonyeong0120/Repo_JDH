@@ -159,28 +159,30 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   bool _showOffRouteCard = false; // 이탈 안내 카드 표시
   Timer? _offRouteCardTimer; // 4초 뒤 카드 자동 숨김
 
-  // PLOG-04 플로깅 활동 규칙 — 사용자의 '제일 첫 플로깅'에만 자동 1회 노출.
-  // 기기 로컬(SharedPreferences)로 확실히 게이트하고, Firestore 는 보조 확인.
+  // PLOG-04 플로깅 활동 규칙 — 매 세션 시작 시 자동 노출.
+  // '봤는지' 여부는 이제 표시를 막는 게 아니라, 첫 세션인지에 따라 문구(firstRun)만 바꾸는 데 쓴다.
   static const String _kFirstGuideKey = 'seen_first_plogging_guide';
   Future<void> _maybeShowGuide() async {
     SharedPreferences? prefs;
     try {
       prefs = await SharedPreferences.getInstance();
     } catch (_) {}
-    bool seen = prefs?.getBool(_kFirstGuideKey) ?? false;
-    if (!seen) {
+    bool seenBefore = prefs?.getBool(_kFirstGuideKey) ?? false;
+    if (!seenBefore) {
       try {
-        seen = await UserService.hasSeenPloggingGuide();
+        seenBefore = await UserService.hasSeenPloggingGuide();
       } catch (_) {}
     }
-    if (seen || !mounted) return;
+    if (!mounted) return;
 
-    await _showRulesSheet(firstRun: true);
-    await prefs?.setBool(_kFirstGuideKey, true);
-    try {
-      await UserService.markPloggingGuideSeen();
-    } catch (_) {
-      // 저장 실패해도 진행
+    await _showRulesSheet(firstRun: !seenBefore);
+    if (!seenBefore) {
+      await prefs?.setBool(_kFirstGuideKey, true);
+      try {
+        await UserService.markPloggingGuideSeen();
+      } catch (_) {
+        // 저장 실패해도 진행
+      }
     }
   }
 

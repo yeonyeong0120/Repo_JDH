@@ -442,8 +442,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             padding: const EdgeInsets.only(bottom: 12),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.pushReplacement(
-                context,
+              onTap: () => Navigator.of(context, rootNavigator: true).pushReplacement(
                 MaterialPageRoute(
                   builder: (_) => NewsDetailScreen(
                     article: a,

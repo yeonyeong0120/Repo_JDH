@@ -83,10 +83,10 @@ class _MenuScreenState extends State<MenuScreen> {
     _loadStats();
   }
 
-  void _push(Widget screen) => Navigator.push(
+  void _push(Widget screen, {bool rootNavigator = false}) => Navigator.of(
     context,
-    MaterialPageRoute(builder: (_) => screen),
-  );
+    rootNavigator: rootNavigator,
+  ).push(MaterialPageRoute(builder: (_) => screen));
 
   Future<void> _openShop() async {
     await Navigator.push(
@@ -417,7 +417,7 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget _menuList() {
     final rows = <_MenuRow>[
       _MenuRow(TablerIcons.news, '환경 뉴스',
-          () => _push(const NewsFeedScreen())),
+          () => _push(const NewsFeedScreen(), rootNavigator: true)),
       _MenuRow(TablerIcons.settings, '설정',
           () => _push(const SettingsScreen())),
       _MenuRow(TablerIcons.bell, '알림',

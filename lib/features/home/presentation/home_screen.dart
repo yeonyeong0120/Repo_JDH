@@ -83,9 +83,12 @@ class _HomeBody extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(Gap.screenPad, 24, Gap.screenPad, 0),
                   child: Row(
                     children: [
-                      _LocationChip(district: v.userDistrict),
+                      Flexible(child: _LocationChip(district: v.userDistrict)),
                       const Spacer(),
-                      const _WeatherChip(),
+                      _WeatherChip(
+                        tempLabel: v.tempLabel,
+                        pmGradeLabel: v.pmGradeLabel,
+                      ),
                     ],
                   ),
                 ),
@@ -315,11 +318,15 @@ class _LocationChipState extends ConsumerState<_LocationChip> {
         children: [
           const Icon(TablerIcons.mapPin, size: 18, color: AppColors.ink),
           Gap.w8,
-          Text(
-            widget.district,
-            style: AppType.label.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink,
+          Flexible(
+            child: Text(
+              widget.district,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.label.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
             ),
           ),
           Gap.w8,
@@ -342,9 +349,11 @@ class _LocationChipState extends ConsumerState<_LocationChip> {
 // ── 날씨칩 ───────────────────────────────────────────────
 
 /// 날씨 pill(sun + 온도) + 라임 미세먼지 pill.
-/// TODO: FastAPI 프록시 경유 날씨/미세먼지 API 연동 시 실제 값으로 교체(현재 표시용 고정값).
+/// 값은 homeViewProvider 가 WeatherService 로 채운다 (없으면 '-').
 class _WeatherChip extends StatelessWidget {
-  const _WeatherChip();
+  final String tempLabel;
+  final String pmGradeLabel;
+  const _WeatherChip({required this.tempLabel, required this.pmGradeLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +372,7 @@ class _WeatherChip extends StatelessWidget {
               const Icon(TablerIcons.sun, size: 15, color: AppColors.ink),
               const SizedBox(width: 5),
               Text(
-                '24°',
+                tempLabel,
                 style: AppType.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.ink,
@@ -380,7 +389,7 @@ class _WeatherChip extends StatelessWidget {
             borderRadius: Radii.fullR,
           ),
           child: Text(
-            '미세 좋음',
+            pmGradeLabel,
             style: AppType.caption.copyWith(
               fontWeight: FontWeight.w800,
               color: AppColors.limeOn,
@@ -444,7 +453,7 @@ class _NewsTickerState extends State<_NewsTicker>
   }
 
   void _open() {
-    Navigator.of(context).push(
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute<void>(builder: (_) => const NewsFeedScreen()),
     );
   }
