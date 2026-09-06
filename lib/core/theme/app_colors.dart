@@ -32,6 +32,12 @@ class AppColors {
   /// 하이퍼링크·링크성 강조(호버).
   static const Color link = Color(0xFF17855A);
 
+  // 뉴스 AI 요약 — 딥 틸 액센트(아이콘·오버라인·불릿 마커)와 요약 본문 잉크.
+  // 딥 틸은 홈 임팩트 카드 틸 미스트의 원색이자 라임의 보색축이라
+  // 흰 배경에서 대비가 높으면서 브랜드와 부딪히지 않는다.
+  static const Color newsAiAccent = Color(0xFF14454B);
+  static const Color newsBody = Color(0xFF3D423F); // 요약 불릿 본문
+
   // 회색 계열 (Startline 그레이 스케일 — 살짝 초록기 도는 중립)
   static const Color gray700 = Color(0xFF5A5F5B); // 보조 텍스트·아이콘
   static const Color gray500 = Color(0xFF8A8F8B); // 메타 텍스트·라벨

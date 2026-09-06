@@ -96,7 +96,6 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
       (p) {
         ref.read(trackingProvider.notifier).addTrackPoint(p);
         _updateMyLocation(p.lat, p.lng); // 내 위치 점을 새 좌표로 이동
-        _checkOffRoute(p.lat, p.lng); // 경로 이탈 감지 → 자동 재추천
       },
       onError: (_) {}, // 위치 실패해도 시간은 계속 측정
     );
@@ -137,10 +136,8 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   NaverMapController? _mapController;
   bool _mapCentered = false;
   static const _fallback = NLatLng(37.5074, 126.7218); // GPS 전 기본 위치
-  // 계획 경로선(추천 경로) — 연한 회색. 도착지 설정 화면과 톤을 맞춘다.
-  static const _routeColor = AppColors.gray300;
-  // 지나온(걸은) 경로선 — 차콜(ink). 계획 라인 위에 얹어 '걸은 부분'을 보여준다.
-  static const _traveledColor = AppColors.ink;
+  // 추천 경로선 — 검정(ink). 앱이 짜준 경로만 그린다(걸은 경로는 그리지 않음).
+  static const _routeColor = AppColors.ink;
 
   // 내 위치 오버레이 아이콘을 최초 1회만 스타일링하기 위한 가드(매 GPS 틱마다
   // 아이콘을 다시 만들지 않도록 한다).
@@ -150,14 +147,7 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   // 도착지 핀 아이콘 캐시.
   NOverlayImage? _destIcon;
 
-  // ── 경로 이탈 자동 재추천 ──
-  // 추천 경로에서 100m 이상 벗어난 상태가 30초 이상 지속되면 자동으로 재추천한다.
-  static const double _offRouteMeters = 100;
-  static const Duration _offRouteHold = Duration(seconds: 30);
-  DateTime? _offRouteSince; // 벗어나기 시작한 시각
-  bool _rerouting = false; // 재추천 요청 중(중복 트리거 방지)
-  bool _showOffRouteCard = false; // 이탈 안내 카드 표시
-  Timer? _offRouteCardTimer; // 4초 뒤 카드 자동 숨김
+  // (경로 이탈 감지·자동 재추천·안내 카드 관련 상태 제거 — 이탈해도 이벤트 없음)
 
   // PLOG-04 플로깅 활동 규칙 — 매 세션 시작 시 자동 노출.
   // '봤는지' 여부는 이제 표시를 막는 게 아니라, 첫 세션인지에 따라 문구(firstRun)만 바꾸는 데 쓴다.
@@ -226,7 +216,7 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
       _locStyled = true;
       _styleMyLocationOverlay(overlay);
     }
-    // 지나온 경로(차콜)를 새 좌표까지 갱신한다.
+    // 추천 경로선을 다시 그린다.
     _renderRoute();
   }
 
@@ -253,80 +243,7 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
     overlay.setCircleRadius(0);
   }
 
-  // 현재 위치가 추천 경로에서 100m 이상 벗어났고 30초 이상 지속되면 재추천.
-  void _checkOffRoute(double lat, double lon) {
-    if (_rerouting) return;
-    // 멈춘 동안은 이탈 판정하지 않는다
-    if (ref.read(trackingProvider).paused) {
-      _offRouteSince = null;
-      return;
-    }
-    final result = ref.read(routeNotifierProvider).valueOrNull;
-    if (result == null || result.polyline.length < 2) return;
-
-    final dist = _distanceToPolyline(lat, lon, result.polyline);
-    final now = DateTime.now();
-    if (dist > _offRouteMeters) {
-      _offRouteSince ??= now;
-      if (now.difference(_offRouteSince!) >= _offRouteHold) {
-        _triggerReroute(lat, lon);
-      }
-    } else {
-      _offRouteSince = null; // 경로로 복귀 → 타이머 리셋
-    }
-  }
-
-  // 사용자 컨펌 없이 현재 위치→목적지로 새 경로를 자동 요청하고 안내 카드를 띄운다.
-  void _triggerReroute(double lat, double lon) {
-    final dest = _destLatLng(); // 도착지 = 추천 경로 끝점
-    if (dest == null) return;
-    _rerouting = true;
-    _offRouteSince = null;
-
-    // 이탈 안내 카드 4초 노출
-    _offRouteCardTimer?.cancel();
-    setState(() => _showOffRouteCard = true);
-    _offRouteCardTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted) setState(() => _showOffRouteCard = false);
-    });
-
-    ref.read(routeNotifierProvider.notifier).recommend(
-          originLat: lat,
-          originLon: lon,
-          destLat: dest.$1,
-          destLon: dest.$2,
-        );
-  }
-
-  // 점(lat,lon)에서 폴리라인까지의 최단 거리(m). 짧은 거리라 평면 근사로 충분.
-  double _distanceToPolyline(double lat, double lon, List<List<double>> poly) {
-    double best = double.infinity;
-    for (int i = 0; i < poly.length - 1; i++) {
-      final d = _distToSegment(
-        lat, lon, poly[i][0], poly[i][1], poly[i + 1][0], poly[i + 1][1],
-      );
-      if (d < best) best = d;
-    }
-    return best;
-  }
-
-  // 점~선분 최단거리(m). 위경도를 기준 위도로 미터 환산 후 계산.
-  double _distToSegment(double plat, double plon, double alat, double alon,
-      double blat, double blon) {
-    final double latRef = (alat + blat) / 2 * math.pi / 180;
-    final double mLon = 111320 * math.cos(latRef); // 경도 1도의 미터
-    const double mLat = 110540; // 위도 1도의 미터
-    final double px = plon * mLon, py = plat * mLat;
-    final double ax = alon * mLon, ay = alat * mLat;
-    final double bx = blon * mLon, by = blat * mLat;
-    final double dx = bx - ax, dy = by - ay;
-    final double len2 = dx * dx + dy * dy;
-    double t = len2 == 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
-    t = t.clamp(0.0, 1.0);
-    final double cx = ax + t * dx, cy = ay + t * dy;
-    final double ex = px - cx, ey = py - cy;
-    return math.sqrt(ex * ex + ey * ey);
-  }
+  // (경로 이탈 자동 재추천 기능 제거 — 이탈해도 아무 이벤트 없음)
 
   // 계획 경로(회색) + 지나온 경로(차콜) + 정화 거점(핫스팟) 핀을 그린다.
   // 계획 라인은 연회색으로 깔고, 내가 걸은 부분(트래킹 누적 좌표)을 그 위에
@@ -339,7 +256,7 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
 
     final overlays = <NAddableOverlay>{};
 
-    // 1) 계획(추천) 경로 — 연회색 라인. 아래에 깐다.
+    // 추천 경로 — 검정 라인. 앱이 짜준 경로만 표시하고, 걸어온 경로는 그리지 않는다.
     if (result != null && result.polyline.length >= 2) {
       overlays.add(
         NPathOverlay(
@@ -347,20 +264,6 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
           coords: result.polyline.map((p) => NLatLng(p[0], p[1])).toList(),
           width: 7,
           color: _routeColor,
-          outlineWidth: 0,
-        ),
-      );
-    }
-
-    // 2) 지나온(걸은) 경로 — 차콜(ink) 라인. 계획 위에 얹는다.
-    final path = tracking.path;
-    if (path.length >= 2) {
-      overlays.add(
-        NPathOverlay(
-          id: 'traveled',
-          coords: path.map((p) => NLatLng(p.lat, p.lng)).toList(),
-          width: 7,
-          color: _traveledColor,
           outlineWidth: 0,
         ),
       );
@@ -496,7 +399,6 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   void dispose() {
     _ticker?.cancel();
     _pointSub?.cancel();
-    _offRouteCardTimer?.cancel();
     _expandCtrl.dispose();
     _holdCtrl.dispose();
     _waveCtrl.dispose();
@@ -549,7 +451,6 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
     ref.listen(routeNotifierProvider, (prev, next) {
       next.whenData((r) {
         if (r != null) {
-          _rerouting = false; // 새 경로 도착 → 재추천 완료
           _renderRoute();
           _resolveDestName(); // 새 경로 끝점 기준 도착지명 해석
         }
@@ -627,20 +528,7 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
             ),
           ),
 
-          // 경로 이탈 안내 카드 (상단 버튼 아래, 4초 후 자동 사라짐)
-          if (_showOffRouteCard)
-            Positioned(
-              left: 20,
-              right: 20,
-              top: 0,
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 60),
-                  child: _offRouteCard(),
-                ),
-              ),
-            ),
+          // (경로 이탈 안내 카드 제거 — 이탈해도 아무 이벤트 없음)
 
           // 하단 다크 패널 + 그 오른쪽 위에 위치 재설정 버튼(목적지 설정 화면과 동일)
           Positioned(
@@ -778,40 +666,6 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
     _updateMyLocation(lat, lon);
     c.updateCamera(
       NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
-    );
-  }
-
-  // 경로 이탈 안내 카드 — 다크 칩 톤, 4초 후 자동 사라짐
-  Widget _offRouteCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.darkSurface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.ink.withValues(alpha: 0.30),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(TablerIcons.route, size: 20, color: AppColors.lime),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              '경로를 벗어나 새 경로로 다시 안내할게요',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

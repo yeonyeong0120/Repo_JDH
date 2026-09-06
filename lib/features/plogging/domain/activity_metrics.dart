@@ -34,10 +34,12 @@ class ActivityMetrics {
   static const double _slowSpeedKmh = 2.5;
   static const double _fastSpeedKmh = 4.0;
 
-  // 체중 폴백(kg) — 프로필에 체중이 없을 때. 성별 있으면 성별 평균, 없으면 전체 평균.
-  static const double _avgWeightMaleKg = 70;
-  static const double _avgWeightFemaleKg = 58;
-  static const double _avgWeightAllKg = 64;
+  // 체중 폴백(kg) — 프로필에 체중이 없을 때 쓰는 표준체중.
+  // 근거: 국민건강보험공단 건강검진통계 평균신장 165.22cm(KOSIS 100대지표) 기준
+  //   표준체중 = 키(m)^2 × 22 → 1.652^2 × 22 ≈ 60kg.
+  //   '평균'은 성별 차가 커 단일값으로 말할 수 없고(플로고는 성별을 받지 않음),
+  //   표준체중은 산식 근거가 명확해 폴백값으로 채택.
+  static const double _standardWeightKg = 60;
 
   /// 수거 무게(g) — 카테고리별 (개수 × 평균무게) 합산
   ///
@@ -59,13 +61,12 @@ class ActivityMetrics {
   }
 
   /// 칼로리 추정 — MET × 체중 × 시간. 속도(거리÷시간)로 MET 구간을 고른다.
-  /// weightKg 가 없으면(프로필 미입력) 성별 평균으로 대체, 성별도 없으면 전체 평균.
+  /// weightKg 가 없으면(프로필 미입력) 표준체중 60kg 으로 대체한다.
   /// TODO: Health Connect 연동 시 실측 칼로리로 교체
   static int estimateKcal({
     required double distanceMeters,
     required int durationSeconds,
     double? weightKg,
-    String? gender,
   }) {
     if (distanceMeters <= 0 || durationSeconds <= 0) return 0;
     final hours = durationSeconds / 3600.0;
@@ -73,19 +74,8 @@ class ActivityMetrics {
     final met = speedKmh < _slowSpeedKmh
         ? _metSlow
         : (speedKmh <= _fastSpeedKmh ? _metModerate : _metFast);
-    final weight = weightKg ?? _fallbackWeightKg(gender);
+    final weight = weightKg ?? _standardWeightKg;
     return (met * weight * hours).round();
-  }
-
-  static double _fallbackWeightKg(String? gender) {
-    switch (gender) {
-      case '남성':
-        return _avgWeightMaleKg;
-      case '여성':
-        return _avgWeightFemaleKg;
-      default:
-        return _avgWeightAllKg;
-    }
   }
 
   /// 소요 시간(초) → "분:초" 문자열 (예: 1830초 → "30:30")

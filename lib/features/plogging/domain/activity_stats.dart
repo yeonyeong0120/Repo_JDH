@@ -62,7 +62,6 @@ class ActivityStats {
     List<Activity> acts, {
     int weeks = 3,
     double? weightKg,
-    String? gender,
   }) {
     final now = DateTime.now();
     // 이번 주 월요일 0시
@@ -92,7 +91,6 @@ class ActivityStats {
           distanceMeters: a.distanceMeters,
           durationSeconds: a.durationSeconds,
           weightKg: weightKg,
-          gender: gender,
         );
         totalWeight += ActivityMetrics.weightGrams(a.trashCounts);
       }
@@ -116,7 +114,6 @@ class ActivityStats {
     List<Activity> acts, {
     int months = 2,
     double? weightKg,
-    String? gender,
   }) {
     final now = DateTime.now();
     final buckets = <GraphBucket>[];
@@ -143,7 +140,6 @@ class ActivityStats {
           distanceMeters: a.distanceMeters,
           durationSeconds: a.durationSeconds,
           weightKg: weightKg,
-          gender: gender,
         );
         totalWeight += ActivityMetrics.weightGrams(a.trashCounts);
       }
@@ -166,7 +162,6 @@ class ActivityStats {
     List<Activity> acts, {
     DateTime? joinedAt,
     double? weightKg,
-    String? gender,
   }) {
     int totalSteps = 0, totalKcal = 0, totalWeight = 0;
     for (final a in acts) {
@@ -175,7 +170,6 @@ class ActivityStats {
         distanceMeters: a.distanceMeters,
         durationSeconds: a.durationSeconds,
         weightKg: weightKg,
-        gender: gender,
       );
       totalWeight += ActivityMetrics.weightGrams(a.trashCounts);
     }

@@ -117,15 +117,112 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
         title: '표시할 뉴스가 없어요',
       );
     }
-    // ④ 데이터 — 대표 기사 + 나머지 목록
+    // ④ 데이터 — AI 고지 + 대표 기사 + 나머지 목록
     final articles = _articles!;
     final rest = articles.length > 1 ? articles.sublist(1) : <NewsArticle>[];
     return ListView(
-      padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
       children: [
+        _aiNotice(),
         _featured(articles.first),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         for (final a in rest) _newsRow(a),
+      ],
+    );
+  }
+
+  // 제목 아래 화면당 1회 — AI 요약 제공 고지
+  Widget _aiNotice() {
+    return const Padding(
+      padding: EdgeInsets.only(top: 6, bottom: 6),
+      child: Row(
+        children: [
+          Icon(TablerIcons.sparkles, size: 15, color: AppColors.ink),
+          SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              'AI로 요약된 뉴스를 제공하고 있어요',
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 요약 불릿 소스 — AI 요약이 있으면 그걸, 없으면 한 줄 요약을 쓴다
+  List<String> _bulletsOf(NewsArticle a) {
+    final src = a.aiSummary.isNotEmpty
+        ? a.aiSummary
+        : (a.summary.isNotEmpty ? [a.summary] : const <String>[]);
+    return src.take(2).toList();
+  }
+
+  // 4px 원형 마커 + 본문 (대표 기사 요약 불릿)
+  Widget _bulletLine(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 4,
+            height: 4,
+            margin: const EdgeInsets.only(top: 9, right: 9),
+            decoration: const BoxDecoration(
+              color: AppColors.ink,
+              shape: BoxShape.circle,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+                color: AppColors.newsBody,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 언론사 · 시간 메타 (언론사 700 + 1px 구분선 + 시간 500 gray500)
+  Widget _metaRow(NewsArticle a) {
+    final head = a.sourceName.isEmpty ? a.category : a.sourceName;
+    return Row(
+      children: [
+        Text(
+          head,
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        if (a.date.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Container(width: 1, height: 10, color: AppColors.gray200),
+          const SizedBox(width: 8),
+          Text(
+            a.date,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray500,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -147,105 +244,103 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
     return head.isEmpty ? a.date : '$head · ${a.date}';
   }
 
-  // ── 대표 기사: 큰 이미지 + 큰 제목 + 요약 + 메타 ──
+  // ── 대표 기사: 큰 이미지 + 큰 제목 + 요약 불릿 2줄 + 메타 ──
   Widget _featured(NewsArticle a) {
+    final bullets = _bulletsOf(a);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _openDetail(a),
       child: Padding(
-        padding: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.only(top: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 이미지 없으면 자리 자체를 두지 않고 텍스트만 (빈 회색 박스 금지)
             if (a.imageUrl.isNotEmpty) ...[
-              _image(a, 214, 22),
-              const SizedBox(height: 18),
+              _image(a, 150, 22),
+              const SizedBox(height: 16),
             ],
             Text(
               a.title,
               style: const TextStyle(
-                fontSize: 25,
+                fontSize: 22,
                 height: 1.35,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.9,
                 color: AppColors.textPrimary,
               ),
             ),
-            if (a.summary.isNotEmpty) ...[
+            if (bullets.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text(
-                a.summary,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.65,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+              for (final b in bullets) _bulletLine(b),
             ],
-            const SizedBox(height: 12),
-            Text(
-              _meta(a),
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: AppColors.gray500,
-              ),
-            ),
+            const SizedBox(height: 8),
+            _metaRow(a),
           ],
         ),
       ),
     );
   }
 
-  // ── 목록 항목: 썸네일(왼쪽) + 제목/메타(오른쪽) ──
+  // ── 목록 항목: 좌측 텍스트(제목·요약·메타) + 우측 썸네일 62 ──
   Widget _newsRow(NewsArticle a) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _openDetail(a),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 13),
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.line100, width: 1)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 이미지 있으면 왼쪽 썸네일 유지, 없으면 썸네일과 간격을 통째로 제거해 텍스트가 폭을 채운다
-            if (a.imageUrl.isNotEmpty) ...[
-              _thumb(a, 66),
-              const SizedBox(width: 14),
-            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     a.title,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 15.5,
                       height: 1.45,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 7),
+                  if (a.summary.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      a.summary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        height: 1.6,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray500,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
                   Text(
                     _meta(a),
                     style: const TextStyle(
-                      fontSize: 12.5,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.gray500,
+                      color: AppColors.gray350,
                     ),
                   ),
                 ],
               ),
             ),
+            // 썸네일은 있을 때만 (없으면 텍스트가 폭을 채운다)
+            if (a.imageUrl.isNotEmpty) ...[
+              const SizedBox(width: 14),
+              _thumb(a, 62),
+            ],
           ],
         ),
       ),
