@@ -34,11 +34,23 @@ class WeatherService {
       return null;
     }
 
-    final uri = Uri.parse('$_baseUrl/weather').replace(queryParameters: {
+    // Uri(...).replace(queryParameters: ...)는 공백을 '+'로 인코딩하는데
+    // (application/x-www-form-urlencoded 방식), FastAPI 는 이를 공백으로
+    // 되돌리지 않고 문자 그대로 받는다 — "인천 부평구"가 "인천+부평구"로 도착해
+    // 시도를 못 찾는 원인이 됐다. Uri.encodeComponent 로 직접 조립해 공백을
+    // %20 으로 인코딩한다.
+    final params = <String, String>{
       'lat': '$lat',
       'lng': '$lng',
       if (region != null && region.isNotEmpty) 'region': region,
-    });
+    };
+    final query = params.entries
+        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+    final uri = Uri.parse('$_baseUrl/weather?$query');
+
+    // TODO: 원인 확인용 임시 로그 — 확인 끝나면 제거
+    debugPrint('[날씨] 요청 URL: $uri (region 인자: "$region")');
 
     try {
       final resp = await http.get(uri).timeout(_timeout);
