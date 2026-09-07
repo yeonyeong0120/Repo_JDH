@@ -231,7 +231,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
     required bool dark,
   }) {
     return Container(
-      height: 84,
+      // 고정 높이(84)는 Pretendard 라인 높이·글꼴 확대 설정에서 세로 넘침이 났다.
+      // 최소 높이만 두고 내용이 커지면 카드가 함께 늘어나게 한다.
+      constraints: const BoxConstraints(minHeight: 84),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
         color: dark ? AppColors.ink : AppColors.surfaceSoft,
@@ -254,6 +256,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
           const SizedBox(height: 6),
           Text(
             value,
+            // 두 카드 높이가 어긋나지 않도록 값은 한 줄로 고정한다.
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -296,6 +301,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
   // 월별 사진 그리드 (3열 정사각형)
   Widget _photoGrid(_MonthGroup m) {
     return GridView.count(
+      // padding 을 비워 두면 MediaQuery 의 하단 인셋이 자동으로 붙는다.
+      // 바깥 SafeArea 가 bottom: false 라 그 값이 남아 있어 명시적으로 0을 준다.
+      padding: EdgeInsets.zero,
       crossAxisCount: 3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

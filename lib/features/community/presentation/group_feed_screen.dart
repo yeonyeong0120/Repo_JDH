@@ -912,7 +912,13 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
               20,
               12,
               20,
-              24 + MediaQuery.of(ctx).viewInsets.bottom,
+              // 키보드(viewInsets)뿐 아니라 시스템 하단 인셋(padding)도 더한다.
+              // showModalBottomSheet 는 useSafeArea 가 기본 false 라 자동 보정이 없어,
+              // 이게 없으면 3버튼 내비 바가 제출 버튼을 가린다.
+              // 키보드가 올라오면 padding.bottom 이 0 이 되므로 여백이 겹치지 않는다.
+              24 +
+                  MediaQuery.of(ctx).viewInsets.bottom +
+                  MediaQuery.of(ctx).padding.bottom,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

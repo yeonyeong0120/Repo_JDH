@@ -397,6 +397,10 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
     final totalTrash = counts.values.fold<int>(0, (s, v) => s + v);
     final t = ref.watch(trackingProvider);
     final topPad = MediaQuery.of(context).padding.top;
+    // 3버튼 내비게이션 바(48dp 안팎)에 하단 버튼이 가려지지 않게 확보한다.
+    // 이 화면은 ShellRoute 밖이라 extendBody 영향이 없어 MediaQuery 값이 그대로 정확하다.
+    // 제스처 내비는 인셋이 작아 기존 여백과 거의 같은 모습을 유지한다.
+    final bottomPad = MediaQuery.of(context).padding.bottom;
 
     // 정산은 되돌아갈 수 없음 — 기기 뒤로가기로 트래킹/지도에 복귀하지 않게 막는다
     return PopScope(
@@ -423,7 +427,12 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
                           ? const NeverScrollableScrollPhysics()
                           : null,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(22, 20 + topPad, 22, 30),
+                        padding: EdgeInsets.fromLTRB(
+                          22,
+                          20 + topPad,
+                          22,
+                          30 + bottomPad,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
