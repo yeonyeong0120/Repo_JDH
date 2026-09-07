@@ -47,10 +47,19 @@ class _GroupPhotosScreenState extends State<GroupPhotosScreen> {
     }
     List<GroupPost> photos = [];
     try {
+      // 내 가입 시각 이전 사진은 채팅 피드와 같은 기준으로 숨긴다.
+      // 못 읽으면 null → 필터 없이 전체 표시(피드와 동일한 fallback).
+      final joinedAt = await GroupService.myJoinedAt(widget.groupId);
       final posts = await GroupService.posts(widget.groupId, limit: 100);
       // 인증샷만: 활동 카드 중 이미지가 있는 것.
       photos = posts
-          .where((p) => !p.isMessage && !p.isSystem && p.imageUrl != null)
+          .where(
+            (p) =>
+                !p.isMessage &&
+                !p.isSystem &&
+                p.imageUrl != null &&
+                (joinedAt == null || !p.createdAt.isBefore(joinedAt)),
+          )
           .toList();
     } catch (e) {
       debugPrint('[그룹 사진] 목록 로드 실패: $e');

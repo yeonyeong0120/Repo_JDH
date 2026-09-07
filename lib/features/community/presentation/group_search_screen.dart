@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/widgets/group_card_meta.dart';
 import 'package:repo_jdh/core/widgets/group_thumb.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
@@ -562,9 +563,6 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
   // 라인 보더 결과 카드 → 상세/가입
   Widget _groupCard(Group g) {
     final active = g.todayActiveCount > 0;
-    // 부제 통일(SEARCH_PACE_FILTER §5): 항상 '강도 · 멤버 N명' (활동 여부는 앞의 점으로만).
-    // 거리(N.Nkm)는 모델에 값이 없어 생략.
-    final meta = '${g.intensity} · 멤버 ${g.memberCount}명';
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -612,32 +610,10 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (active) ...[
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.ink,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Flexible(
-                        child: Text(
-                          meta,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.gray500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  GroupCardMeta(
+                    meta: g.cardMeta,
+                    showActiveDot: active,
+                    approvalRequired: !g.isPublic,
                   ),
                 ],
               ),

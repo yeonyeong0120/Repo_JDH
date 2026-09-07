@@ -120,10 +120,18 @@ class AppSnackBar {
           content: content,
           backgroundColor: bg,
           behavior: SnackBarBehavior.floating,
-          elevation: 0,
+          // 그림자를 줘서 검정 버튼 위에 떠도 알약이 분리돼 보이게 한다.
+          elevation: 8,
           duration: duration,
-          // 떠 있는 다크 알약: 완전 둥근 모서리.
-          shape: RoundedRectangleBorder(borderRadius: Radii.fullR),
+          // 떠 있는 다크 알약: 완전 둥근 모서리 + 밝은 헤어라인 테두리.
+          // (검정 버튼과 겹칠 때 경계가 사라지지 않도록)
+          shape: RoundedRectangleBorder(
+            borderRadius: Radii.fullR,
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.22),
+              width: 1,
+            ),
+          ),
           margin: const EdgeInsets.fromLTRB(
             Gap.lg,
             0,

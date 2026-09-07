@@ -1042,6 +1042,13 @@ class _GroupEditSheetState extends State<_GroupEditSheet> {
 
   void _goalDown() => setState(() => _goalKg = (_goalKg - 5).clamp(5, 60));
   void _goalUp() => setState(() => _goalKg = (_goalKg + 5).clamp(5, 60));
+  // 게이지 위 x 좌표(0~width) → 5단위 목표량(5~60)
+  void _setGoalFromX(double x, double width) {
+    if (width <= 0) return;
+    final ratio = (x / width).clamp(0.0, 1.0);
+    final snapped = ((5 + ratio * 55) / 5).round() * 5;
+    setState(() => _goalKg = snapped.clamp(5, 60));
+  }
 
   Future<void> _save() async {
     if (_saving) return;
@@ -1490,25 +1497,48 @@ class _GroupEditSheetState extends State<_GroupEditSheet> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, c) {
-                  return Stack(
-                    children: [
-                      Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEDEFEE),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (d) =>
+                        _setGoalFromX(d.localPosition.dx, c.maxWidth),
+                    onHorizontalDragUpdate: (d) =>
+                        _setGoalFromX(d.localPosition.dx, c.maxWidth),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      child: Stack(
+                        children: [
+                          Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEDEFEE),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Container(
+                            height: 8,
+                            width: c.maxWidth * fill,
+                            decoration: BoxDecoration(
+                              // 밝은 트랙 위 라임은 대비 부족 → 멤버 그래프 색(차콜)로 통일
+                              color: const Color(0xFF3A403C),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Positioned(
+                            left: (c.maxWidth * fill - 8)
+                                .clamp(0.0, c.maxWidth - 16),
+                            top: -4,
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3A403C),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      Container(
-                        height: 8,
-                        width: c.maxWidth * fill,
-                        decoration: BoxDecoration(
-                          // 밝은 트랙 위 라임은 대비 부족 → 멤버 그래프 색(차콜)로 통일
-                          color: const Color(0xFF3A403C),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ],
+                    ),
                   );
                 },
               ),

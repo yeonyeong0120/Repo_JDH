@@ -22,6 +22,7 @@ class UserStats {
   final int shareCount; // 인증샷 공유 횟수
   final bool joinedGroup; // 그룹 가입 여부
   final int streakDays; // 연속 플로깅 일수
+  final int activeDays; // 활동한 날짜 수 (가입 요청 프로필 카드 표시용)
 
   const UserStats({
     this.ploggingCount = 0,
@@ -37,6 +38,7 @@ class UserStats {
     this.shareCount = 0,
     this.joinedGroup = false,
     this.streakDays = 0,
+    this.activeDays = 0,
   });
 }
 
@@ -167,6 +169,7 @@ class BadgeService {
       shareCount: counters.shareCount,
       joinedGroup: counters.joined,
       streakDays: _streakDays(days),
+      activeDays: days.length,
     );
   }
 

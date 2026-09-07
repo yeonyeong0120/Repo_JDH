@@ -6,6 +6,8 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
+import 'package:repo_jdh/features/mypage/data/badge_service.dart';
+import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 /// Ploggo - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
 /// 그룹 상세 시안(detail-othergroup) 기준: 라임 헤더 + 활동량 카드 + 주간 랭킹.
@@ -26,9 +28,14 @@ class GroupDetailScreen extends StatefulWidget {
 
 class _GroupDetailScreenState extends State<GroupDetailScreen> {
   bool? _inGroup;
+  // 승인 후 가입 그룹(isPublic:false)에서 내 요청 상태 (pending/rejected/null).
+  String? _joinStatus;
+  bool _requesting = false; // 요청 전송 중 중복 방지
 
   Group get group => widget.group;
   bool get alreadyInGroup => _inGroup ?? widget.alreadyInGroup;
+  // 승인 대기 중인지 (요청 화면 분기)
+  bool get _isWaiting => _joinStatus == JoinStatus.pending;
 
   // ── 시안 팔레트 ──
   static const Color _lime = AppColors.lime;
@@ -75,6 +82,13 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       if (!mounted) return;
       setState(() => _inGroup = id != null && id != widget.group.id);
     } catch (_) {}
+    // 승인 후 가입 그룹이면 내 요청 상태도 확인한다.
+    if (!group.isPublic && group.id.isNotEmpty) {
+      try {
+        final status = await GroupService.myJoinStatus(group.id);
+        if (mounted) setState(() => _joinStatus = status);
+      } catch (_) {}
+    }
   }
 
   // 가입하기 → 확인 팝업 → 예 → (이미 그룹 있으면) 차단 / (없으면) 가입
@@ -117,6 +131,243 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     }
   }
 
+  // ── §2 가입 요청 시트 (승인 후 가입) ──
+  Future<void> _openRequestSheet() async {
+    if (_requesting) return;
+    if (alreadyInGroup) {
+      AppSnackBar.show(context, '이미 그룹에 가입되어 있어요');
+      return;
+    }
+    // 그룹장에게 보여줄 프로필 스냅샷 계산 (누적 수거량·활동 일수·뱃지)
+    AppSnackBar.showLoading(context, '프로필 불러오는 중...');
+    late final String name;
+    late final String region;
+    late final UserStats stats;
+    late final int badges;
+    try {
+      name = await GroupService.myName();
+      region = await GroupService.myRegion();
+      stats = await BadgeService.loadStats();
+      await BadgeService.loadEarned();
+      badges = kBadges.where((b) => BadgeRepo.isEarned(b.id)).length;
+    } catch (_) {
+      if (mounted) {
+        AppSnackBar.hide(context);
+        AppSnackBar.show(context, '프로필을 불러오지 못했어요', kind: SnackKind.error);
+      }
+      return;
+    }
+    if (!mounted) return;
+    AppSnackBar.hide(context);
+
+    final kgText = ((stats.totalWeightKg * 10).round() / 10).toStringAsFixed(1);
+    final meta = [
+      if (region.isNotEmpty) region,
+      '누적 ${kgText}kg',
+      '뱃지 $badges개',
+    ].join(' · ');
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const Text(
+                '가입 요청 보내기',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 프로필 카드
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: _lime,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        name.isEmpty ? '?' : name.substring(0, 1),
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.limeOn,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: AppColors.gray500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                '위 프로필과 누적 수거량이 그룹장에게 보여요',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.5,
+                  color: AppColors.gray500,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.pop(sctx),
+                    child: Container(
+                      width: 104,
+                      height: 56,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSoft,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Text(
+                        '취소',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.gray700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        Navigator.pop(sctx);
+                        _sendRequest(
+                          region: region,
+                          kg: stats.totalWeightKg,
+                          days: stats.activeDays,
+                          badges: badges,
+                        );
+                      },
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.ink,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Text(
+                          '요청 보내기',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendRequest({
+    required String region,
+    required double kg,
+    required int days,
+    required int badges,
+  }) async {
+    if (_requesting) return;
+    setState(() => _requesting = true);
+    try {
+      await GroupService.requestJoin(
+        group.id,
+        region: region,
+        cumulativeKg: kg,
+        activeDays: days,
+        badgeCount: badges,
+      );
+      if (!mounted) return;
+      setState(() => _joinStatus = JoinStatus.pending);
+      AppSnackBar.show(context, '가입 요청을 보냈어요', kind: SnackKind.success);
+    } catch (_) {
+      if (mounted) AppSnackBar.show(context, '요청을 보내지 못했어요', kind: SnackKind.error);
+    } finally {
+      if (mounted) setState(() => _requesting = false);
+    }
+  }
+
+  // §3 요청 취소 — 확인 팝업 없이 즉시.
+  Future<void> _cancelRequest() async {
+    try {
+      await GroupService.cancelJoinRequest(group.id);
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _joinStatus = null);
+    AppSnackBar.show(context, '가입 요청을 취소했어요');
+  }
+
   @override
   Widget build(BuildContext context) {
     final double bottomPad = MediaQuery.of(context).padding.bottom;
@@ -152,11 +403,30 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     );
   }
 
-  // 가입하기 CTA (스크롤 내부). 이미 다른 그룹 소속이면 탭 시 안내(_join).
+  // 가입 CTA (스크롤 내부).
+  // - 공개 그룹: '가입하기' → 확인 팝업(_join)
+  // - 승인 후 가입 + 미요청/거절: '가입 요청 보내기' → 요청 시트(§2)
+  // - 승인 후 가입 + 대기 중: 대기 배너 + 비활성 버튼 + 요청 취소(§3)
   Widget _joinButton() {
+    if (!group.isPublic && _isWaiting) return _waitingStack();
+    if (!group.isPublic) {
+      return _ctaButton(
+        label: '가입 요청 보내기',
+        icon: TablerIcons.send,
+        onTap: _openRequestSheet,
+      );
+    }
+    return _ctaButton(label: '가입하기', icon: TablerIcons.plus, onTap: _join);
+  }
+
+  Widget _ctaButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: _join,
+      onTap: onTap,
       child: Container(
         height: 64,
         alignment: Alignment.center,
@@ -164,14 +434,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           color: AppColors.ink,
           borderRadius: BorderRadius.circular(22),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(TablerIcons.plus, size: 21, color: _lime),
-            SizedBox(width: 9),
+            Icon(icon, size: 21, color: _lime),
+            const SizedBox(width: 9),
             Text(
-              '가입하기',
-              style: TextStyle(
+              label,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -180,6 +450,84 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // §3 승인 대기 상태 — 안내 배너 + 비활성 '승인 대기 중' + '요청 취소'.
+  Widget _waitingStack() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(TablerIcons.hourglassHigh,
+                  size: 20, color: AppColors.gray700),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '그룹장이 요청을 확인하고 있어요',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE7EAE8),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Text(
+                  '승인 대기 중',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFA8ADA9),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _cancelRequest,
+              child: Container(
+                width: 104,
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Text(
+                  '요청 취소',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFE4573D),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -251,13 +599,21 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              '멤버 ${group.memberCount}명',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: _memberGreen,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  '멤버 ${group.memberCount}명',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: _memberGreen,
+                                  ),
+                                ),
+                                if (_accessChip() != null) ...[
+                                  const SizedBox(width: 8),
+                                  _accessChip()!,
+                                ],
+                              ],
                             ),
                             const SizedBox(height: 7),
                             Text(
@@ -309,6 +665,40 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       size: 22, color: Color(0xFF8E948A)),
                 ),
               ),
+      ),
+    );
+  }
+
+  // §1 접근 칩 — 승인 후 가입 그룹에서만. 미요청: '승인 후 가입'(잠금),
+  // 대기 중: '승인 대기 중'(시계). 공개 그룹이면 null(칩 없음).
+  Widget? _accessChip() {
+    if (group.isPublic) return null;
+    final waiting = _isWaiting;
+    final Color bg =
+        waiting ? const Color(0xFFEDEFEE) : AppColors.ink.withValues(alpha: 0.08);
+    final Color fg = waiting ? const Color(0xFF5A5F5B) : const Color(0xFF3A403C);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        // 알약(999)이 아니라 라운드 6 — 옆의 멤버수 텍스트와 높이가 붙어
+        // 완전한 알약이면 과하게 둥글어 보인다.
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(waiting ? TablerIcons.clock : TablerIcons.lock, size: 11, color: fg),
+          const SizedBox(width: 4),
+          Text(
+            waiting ? '승인 대기 중' : '승인 후 가입',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: fg,
+            ),
+          ),
+        ],
       ),
     );
   }

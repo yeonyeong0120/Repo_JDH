@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +21,6 @@ import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/providers/tracking_provider.dart';
-import 'package:repo_jdh/core/constants/map_defaults.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
 
 class PloggingTrackingScreen extends ConsumerStatefulWidget {
@@ -96,10 +96,29 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
     _pointSub = LocationRepository().watchTrackPoints().listen(
       (p) {
         ref.read(trackingProvider.notifier).addTrackPoint(p);
+        _lastMyLatLng = NLatLng(p.lat, p.lng); // recenter 용 최신 좌표 저장
         _updateMyLocation(p.lat, p.lng); // 내 위치 점을 새 좌표로 이동
       },
       onError: (_) {}, // 위치 실패해도 시간은 계속 측정
     );
+    _subscribeCompass();
+  }
+
+  // 나침반 구독 — heading 이 바뀔 때마다 내 위치 오버레이의 방향을 갱신한다.
+  // 자기센서가 없는 기기(events == null)면 화살표는 북쪽 고정(기본값)으로 둔다.
+  void _subscribeCompass() {
+    final events = FlutterCompass.events;
+    if (events == null) return;
+    _compassSub = events.listen((e) {
+      final h = e.heading;
+      if (h == null || !mounted) return;
+      // 0/360 경계를 고려한 각도 차. 2도 미만 변화는 떨림 완화를 위해 무시.
+      final diff = ((h - _heading + 540) % 360) - 180;
+      if (_headingReady && diff.abs() < 2) return;
+      _heading = h;
+      _headingReady = true;
+      _mapController?.getLocationOverlay().setBearing(h);
+    }, onError: (_) {});
   }
 
   // 추천 경로의 끝점 = 도착지 좌표 (경로 이탈 재추천의 목적지로 쓰인다)
@@ -136,13 +155,15 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   // 네이버 지도
   NaverMapController? _mapController;
   bool _mapCentered = false;
-  static const _fallback = NLatLng(
-    MapDefaults.fallbackLat,
-    MapDefaults.fallbackLng,
-  ); // GPS 전 기본 위치
-  // 실시간 스트림(watchTrackPoints)이 준 마지막 좌표. one-shot 조회가 실패해도
-  // 이 값은 들어오므로 '내 위치' 버튼의 1순위 기준으로 쓴다.
-  ({double lat, double lng})? _lastGps;
+  // 트래킹 중 마지막으로 받은 내 좌표 — '내 위치로 돌아가기'가 이 값을 쓴다.
+  // (currentLocationProvider 는 초기값에 머물러 학교 등으로 튀는 문제가 있었다)
+  NLatLng? _lastMyLatLng;
+  static const _fallback = NLatLng(37.5074, 126.7218); // GPS 전 기본 위치
+
+  // 나침반(자기센서) — 폰이 향한 방향(heading)으로 내 위치 아이콘을 회전시킨다.
+  StreamSubscription<CompassEvent>? _compassSub;
+  double _heading = 0; // 최근 heading(도). 0 = 북쪽(위)
+  bool _headingReady = false; // 센서값을 한 번이라도 받았는지
   // 추천 경로선 — 검정(ink). 앱이 짜준 경로만 그린다(걸은 경로는 그리지 않음).
   static const _routeColor = AppColors.ink;
 
@@ -196,18 +217,23 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
 
   // 지도를 현재 GPS로 최초 1회 이동 + 내 위치 오버레이 갱신
   void _centerOnGps(Map<String, dynamic>? loc) {
-    if (loc == null) return;
+    final c = _mapController;
+    if (c == null || loc == null) return;
     final lat = (loc['latitude'] as num?)?.toDouble();
     final lon = (loc['longitude'] as num?)?.toDouble();
     if (lat == null || lon == null) return;
-    _updateMyLocation(lat, lon); // 카메라 최초 1회 이동도 여기서 함께 처리
+    // 내 위치 점은 트래킹 내내 갱신(카메라 이동은 최초 1회만)
+    _updateMyLocation(lat, lon);
+    if (_mapCentered) return;
+    _mapCentered = true;
+    c.updateCamera(
+      NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
+    );
   }
 
   // 내 위치(네이버 내장 위치 오버레이) — 도착지 설정 화면과 같은 아이콘으로 통일.
   // clearOverlays 로도 지워지지 않아 트래킹 중 계속 유지된다.
   void _updateMyLocation(double lat, double lon) {
-    // 지도 준비 여부와 무관하게 마지막 좌표는 항상 기억해 둔다.
-    _lastGps = (lat: lat, lng: lon);
     final c = _mapController;
     if (c == null) return;
     final overlay = c.getLocationOverlay();
@@ -218,14 +244,6 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
       _locStyled = true;
       _styleMyLocationOverlay(overlay);
     }
-    // 카메라를 실제 위치로 최초 1회 옮긴다. one-shot 조회가 실패하면 이
-    // 스트림이 카메라를 움직일 유일한 계기가 되므로 여기서 처리해야 한다.
-    if (!_mapCentered) {
-      _mapCentered = true;
-      c.updateCamera(
-        NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
-      );
-    }
     // 추천 경로선을 다시 그린다.
     _renderRoute();
   }
@@ -235,22 +253,26 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   // getLocationOverlay / setIcon / setIconSize / setAnchor / setCircleColor /
   // setCircleRadius 는 flutter_naver_map 의 NLocationOverlay 실제 API다.
   Future<void> _styleMyLocationOverlay(NLocationOverlay overlay) async {
+    // 방향(heading) 표시용 아이콘: 가운데 점 + 위로 향한 화살표.
+    // 앵커를 중앙에 두고 setBearing 으로 회전시키면 화살표가 폰 정면을 가리킨다.
     final icon = await NOverlayImage.fromWidget(
       context: context,
-      size: const Size(34, 36),
+      size: const Size(40, 40),
       widget: const Directionality(
         textDirection: TextDirection.ltr,
-        child: _MyLocationPuck(),
+        child: _MyHeadingPuck(),
       ),
     );
     if (!mounted) return;
     overlay.setIcon(icon);
-    overlay.setIconSize(const Size(34, 36));
-    // 삼각형 끝(아래)이 실제 좌표에 오도록 앵커를 하단 뾰족점으로.
-    overlay.setAnchor(const NPoint(0.5, 0.944));
+    overlay.setIconSize(const Size(40, 40));
+    // 회전 중심(=실제 좌표)을 아이콘 정중앙으로.
+    overlay.setAnchor(const NPoint(0.5, 0.5));
     // 정확도 원: 파랑 대신 은은한 검정으로.
     overlay.setCircleColor(AppColors.ink.withValues(alpha: 0.10));
     overlay.setCircleRadius(0);
+    // 이미 나침반값을 받았다면 즉시 방향 반영.
+    if (_headingReady) overlay.setBearing(_heading);
   }
 
   // (경로 이탈 자동 재추천 기능 제거 — 이탈해도 아무 이벤트 없음)
@@ -409,6 +431,7 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   void dispose() {
     _ticker?.cancel();
     _pointSub?.cancel();
+    _compassSub?.cancel();
     _expandCtrl.dispose();
     _holdCtrl.dispose();
     _waveCtrl.dispose();
@@ -666,34 +689,24 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   }
 
   // 현재 위치로 지도 카메라 복귀 (버튼용 — 최초 1회 제한 없이 항상 이동)
-  //
-  // 1순위는 실시간 스트림이 준 마지막 좌표다. currentLocationProvider 는 화면
-  // 진입 시 1회만 조회하고 실패하면 계속 null 이라 2순위로 둔다.
   void _recenterToGps() {
     final c = _mapController;
     if (c == null) return;
-    var here = _lastGps;
-    if (here == null) {
+    // 트래킹 중 받은 최신 좌표를 우선 사용(없으면 초기 위치 provider 폴백).
+    double? lat;
+    double? lon;
+    if (_lastMyLatLng != null) {
+      lat = _lastMyLatLng!.latitude;
+      lon = _lastMyLatLng!.longitude;
+    } else {
       final loc = ref.read(currentLocationProvider).valueOrNull;
-      final lat = (loc?['latitude'] as num?)?.toDouble();
-      final lon = (loc?['longitude'] as num?)?.toDouble();
-      if (lat != null && lon != null) here = (lat: lat, lng: lon);
+      lat = (loc?['latitude'] as num?)?.toDouble();
+      lon = (loc?['longitude'] as num?)?.toDouble();
     }
-    if (here == null) {
-      // 조용히 무시하면 '버튼이 학교로 보낸다'처럼 보인다. 상태를 알리고 재조회한다.
-      AppSnackBar.show(
-        context,
-        '위치를 가져오지 못했어요. 잠시 후 다시 눌러주세요.',
-        kind: SnackKind.error,
-      );
-      ref.invalidate(currentLocationProvider);
-      return;
-    }
+    if (lat == null || lon == null) return;
+    _updateMyLocation(lat, lon);
     c.updateCamera(
-      NCameraUpdate.scrollAndZoomTo(
-        target: NLatLng(here.lat, here.lng),
-        zoom: 16,
-      ),
+      NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
     );
   }
 
@@ -1417,63 +1430,61 @@ class _PinShapePainter extends CustomPainter {
   bool shouldRepaint(covariant _PinShapePainter old) => old.color != color;
 }
 
-// 내 위치 퍽: 검정 방향 포인터(위쪽을 가리키는 뾰족한 검정 원). 네이버 지도 느낌.
-// 도착지 설정 화면(route_setup_screen.dart)과 동일한 도형으로 통일한다.
-// 네이버 내장 위치 오버레이의 setIcon 으로 붙는다(기본 파란 점 대체).
-// 목적지 설정 화면과 완전히 동일한 내 위치 퍽(원 + 짧은 아래 삼각형 + 그림자).
-class _MyLocationPuck extends StatelessWidget {
-  const _MyLocationPuck();
+// 방향(heading) 표시용 내 위치 아이콘 — 가운데 점 + 위로 향한 화살표.
+// 기본은 위(북쪽)를 가리키며, 오버레이 setBearing 으로 회전해 폰 정면을 가리킨다.
+class _MyHeadingPuck extends StatelessWidget {
+  const _MyHeadingPuck();
 
   @override
   Widget build(BuildContext context) {
     return const SizedBox(
-      width: 34,
-      height: 36,
-      child: CustomPaint(painter: _MyLocationPainter()),
+      width: 40,
+      height: 40,
+      child: CustomPaint(painter: _MyHeadingPainter()),
     );
   }
 }
 
-class _MyLocationPainter extends CustomPainter {
-  const _MyLocationPainter();
+class _MyHeadingPainter extends CustomPainter {
+  const _MyHeadingPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double cx = size.width / 2;
-    final double r = 9;
-    final double cy = r + 4; // 13
-    final double tipY = size.height - 2;
+    final double cx = size.width / 2; // 20
+    const double dotY = 23; // 위치 점 중심
+    const double r = 6.5;
 
-    final white = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeJoin = StrokeJoin.round
-      ..isAntiAlias = true;
     final ink = Paint()
       ..color = AppColors.ink
       ..isAntiAlias = true;
+    final white = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
     final shadow = Paint()
-      ..color = Colors.black.withValues(alpha: 0.30)
+      ..color = Colors.black.withValues(alpha: 0.28)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0)
       ..isAntiAlias = true;
 
-    final tri = Path()
-      ..moveTo(cx - r * 0.5, cy + r * 0.5)
-      ..lineTo(cx + r * 0.5, cy + r * 0.5)
-      ..lineTo(cx, tipY)
+    // 위로 향한 화살표(끝이 뾰족한 삼각형, 아래는 살짝 오목).
+    final arrow = Path()
+      ..moveTo(cx, 3)
+      ..lineTo(cx + 8, 16)
+      ..lineTo(cx, 12)
+      ..lineTo(cx - 8, 16)
       ..close();
-    final circle = Path()
-      ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
 
-    canvas.drawCircle(Offset(cx, cy + 2), r, shadow);
-    canvas.drawPath(tri, ink);
-    canvas.drawPath(circle, ink);
-    canvas.drawPath(circle, white);
+    canvas.drawCircle(Offset(cx, dotY + 1.5), r, shadow);
+    canvas.drawPath(arrow, ink);
+    canvas.drawPath(arrow, white);
+    canvas.drawCircle(Offset(cx, dotY), r, ink);
+    canvas.drawCircle(Offset(cx, dotY), r, white);
   }
 
   @override
-  bool shouldRepaint(covariant _MyLocationPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MyHeadingPainter oldDelegate) => false;
 }
 
 // ── 종료 버튼 채움 물결(바다 출렁) ─────────────────────────
