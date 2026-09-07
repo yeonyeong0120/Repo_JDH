@@ -201,7 +201,8 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen>
           Positioned(
             left: 18,
             right: 18,
-            bottom: 32,
+            // 3버튼 내비 바에 카드가 가리지 않도록 시스템 하단 인셋을 더한다.
+            bottom: 32 + MediaQuery.of(context).padding.bottom,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

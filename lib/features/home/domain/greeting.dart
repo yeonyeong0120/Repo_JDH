@@ -15,11 +15,11 @@ extension GreetingSlotLabel on GreetingSlot {
 }
 
 /// 기기 로컬 시각을 시간대로 환산한다.
-/// 05:00~10:59 아침 / 11:00~16:59 낮 / 17:00~21:59 저녁 / 22:00~04:59 늦은 밤
+/// 03:00~10:59 아침 / 11:00~16:59 낮 / 17:00~20:59 저녁 / 21:00~02:59 늦은 밤
 GreetingSlot greetingSlotOf(DateTime now) {
   final h = now.hour;
-  if (h >= 5 && h < 11) return GreetingSlot.morning;
+  if (h >= 3 && h < 11) return GreetingSlot.morning;
   if (h >= 11 && h < 17) return GreetingSlot.day;
-  if (h >= 17 && h < 22) return GreetingSlot.evening;
+  if (h >= 17 && h < 21) return GreetingSlot.evening;
   return GreetingSlot.lateNight;
 }
