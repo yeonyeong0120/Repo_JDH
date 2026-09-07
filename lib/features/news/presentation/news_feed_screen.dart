@@ -282,7 +282,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
     );
   }
 
-  // ── 목록 항목: 좌측 텍스트(제목·요약·메타) + 우측 썸네일 62 ──
+  // ── 목록 항목: 좌측 썸네일 62 + 우측 텍스트(제목·요약·메타) ──
   Widget _newsRow(NewsArticle a) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -295,6 +295,11 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 썸네일은 있을 때만 좌측에 (없으면 텍스트가 폭을 채운다)
+            if (a.imageUrl.isNotEmpty) ...[
+              _thumb(a, 62),
+              const SizedBox(width: 14),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,11 +341,6 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                 ],
               ),
             ),
-            // 썸네일은 있을 때만 (없으면 텍스트가 폭을 채운다)
-            if (a.imageUrl.isNotEmpty) ...[
-              const SizedBox(width: 14),
-              _thumb(a, 62),
-            ],
           ],
         ),
       ),

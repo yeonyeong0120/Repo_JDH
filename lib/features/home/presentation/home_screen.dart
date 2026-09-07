@@ -563,12 +563,25 @@ class _NewsTickerState extends State<_NewsTicker>
 class _Greeting extends StatefulWidget {
   const _Greeting();
 
-  // 목업 GREETS 를 옮긴 문구 세트.
+  // 시간대별 문구 세트 — 한 시간대에 여러 개를 두고 홈 진입마다 랜덤으로 고른다.
+  // (전에는 시간대당 1개라 늘 같은 문구만 떴다)
   static const List<GreetingSet> greets = [
+    // 아침
     (top: '좋은 아침,', mid: '가볍게 ', hl: '줍죠', slot: GreetingSlot.morning),
+    (top: '상쾌한 아침', mid: '한 걸음 ', hl: '줍줍', slot: GreetingSlot.morning),
+    (top: '오늘도 화이팅', mid: '아침부터 ', hl: '줍줍', slot: GreetingSlot.morning),
+    // 낮
     (top: '날씨 좋은데', mid: '한 바퀴 ', hl: '줍죠', slot: GreetingSlot.day),
+    (top: '점심 먹고', mid: '슬슬 ', hl: '줍줍', slot: GreetingSlot.day),
+    (top: '햇살 좋은 날', mid: '동네 ', hl: '주워요', slot: GreetingSlot.day),
+    // 저녁
     (top: '퇴근길에', mid: '슬슬 ', hl: '줍줍', slot: GreetingSlot.evening),
+    (top: '노을 지는데', mid: '한 바퀴 ', hl: '주워요', slot: GreetingSlot.evening),
+    (top: '하루 마무리', mid: '가볍게 ', hl: '줍죠', slot: GreetingSlot.evening),
+    // 늦은 밤
     (top: '딱 십 분만', mid: '동네 ', hl: '주워요', slot: GreetingSlot.lateNight),
+    (top: '자기 전에', mid: '동네 한 바퀴 ', hl: '줍줍', slot: GreetingSlot.lateNight),
+    (top: '고요한 밤', mid: '살살 ', hl: '줍죠', slot: GreetingSlot.lateNight),
   ];
 
   @override
@@ -582,10 +595,10 @@ class _GreetingState extends State<_Greeting> {
 
   GreetingSet _pickGreeting() {
     final slot = greetingSlotOf(DateTime.now());
-    return _Greeting.greets.firstWhere(
-      (e) => e.slot == slot,
-      orElse: () => _Greeting.greets.first,
-    );
+    // 현재 시간대에 맞는 문구들 중 랜덤으로 하나. 없으면 첫 문구로 폴백.
+    final pool = _Greeting.greets.where((e) => e.slot == slot).toList();
+    if (pool.isEmpty) return _Greeting.greets.first;
+    return pool[math.Random().nextInt(pool.length)];
   }
 
   @override
@@ -745,16 +758,24 @@ class _ImpactSection extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // 우상단 장식 블롭 — 원래대로 솔리드 원(딥 틸 6%). 카드가 코너에서 깔끔히 자른다.
+          // 우상단 장식 블롭 — 딥 틸 6% 솔리드 원. 내 그룹/프로필 카드처럼
+          // 진입 시 우측에서 슬라이드해 들어온다(홈 재생성마다 재생).
           Positioned(
             right: -40,
             top: -46,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color.fromRGBO(20, 69, 75, 0.06),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 130, end: 0),
+              duration: const Duration(milliseconds: 2400),
+              curve: const Cubic(0.12, 0.72, 0.24, 1),
+              builder: (context, dx, child) =>
+                  Transform.translate(offset: Offset(dx, 0), child: child),
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.fromRGBO(20, 69, 75, 0.06),
+                ),
               ),
             ),
           ),

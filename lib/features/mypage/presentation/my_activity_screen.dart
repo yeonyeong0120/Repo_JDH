@@ -610,7 +610,7 @@ class _RecordsTabState extends State<_RecordsTab> {
                 ),
                 if (!hasPhoto)
                   Positioned(
-                    left: 4,
+                    right: 4,
                     bottom: 4,
                     child: Container(
                       width: 19,

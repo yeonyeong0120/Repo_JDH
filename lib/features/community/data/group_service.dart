@@ -212,6 +212,7 @@ class GroupService {
     String? imageUrl,
     String intensity = '가볍게 뛰기',
     List<String> moods = const ['조용히 각자'],
+    int goalKg = 25,
     bool isPublic = true,
   }) async {
     final resolvedRegion =
@@ -232,7 +233,7 @@ class GroupService {
       // 그룹 만들기에서 함께 받는 값 (그룹 정보 수정 시트에서 이어서 편집)
       'intensity': intensity,
       'moods': moods,
-      'goalKg': 25, // 목표량은 생성 후 수정 시트에서 설정
+      'goalKg': goalKg, // 그룹 만들기에서 설정(수정 시트에서 이어서 변경 가능)
       'isPublic': isPublic,
     });
 
