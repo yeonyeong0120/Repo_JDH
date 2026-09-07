@@ -36,6 +36,12 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
   // 사진 업로드 진행 중 여부 (버튼 중복 탭 방지 + 진행 표시)
   bool _uploading = false;
 
+  // 저장 시작~화면 이동 전까지 전 구간 버튼 중복 탭 방지.
+  // _uploading 은 업로드 구간만 가리는데, 그 이후 실제 저장(_saveActivity)이
+  // 도는 동안엔 다시 풀려서 버튼이 활성 상태가 됐다 — 그 틈에 두 번 탭하면
+  // saveCompleted() 가 두 번 불려 활동이 중복 저장됐다.
+  bool _settling = false;
+
   // 획득 경험치 (고정)
   static const int _rewardXp = 20;
 
@@ -202,9 +208,15 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
 
   // 찍기 → 봉투 인증샷 촬영 → 자동 그룹 공유 → 홈 + AUTO-02 팝업
   Future<void> _takePhoto() async {
-    final file = await PhotoService.takePhoto();
-    if (file == null) return; // 촬영 취소 → 정산 화면에 머무름
-    await _uploadAndShare(file);
+    if (_settling) return; // 이미 정산 처리 중이면 중복 탭 무시
+    setState(() => _settling = true);
+    try {
+      final file = await PhotoService.takePhoto();
+      if (file == null) return; // 촬영 취소 → 정산 화면에 머무름
+      await _uploadAndShare(file);
+    } finally {
+      if (mounted) setState(() => _settling = false);
+    }
   }
 
   // 사진 업로드 후 공유 (업로드 중에는 진행 표시)
@@ -223,15 +235,21 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
 
   // 활동 마치기(인증샷 X) → 완료 퀘스트 있으면 팝업 바로 노출, 없으면 곧장 홈.
   Future<void> _skip() async {
-    await _saveActivity(); // ① 활동 저장 (뱃지 판정보다 먼저)
-    await ref.read(ploggingProvider.notifier).reset();
-    if (!mounted) return;
-    final badges = await _earnedBadges(); // ② 판정·저장
-    ref.read(trackingProvider.notifier).reset();
-    if (!mounted) return;
-    final navigated = await showRewardFlow(context, badges); // ③ 바로 팝업
-    if (!mounted || navigated) return; // 뱃지함 보기로 이동했으면 끝
-    context.go('/home');
+    if (_settling) return; // 이미 정산 처리 중이면 중복 탭 무시
+    setState(() => _settling = true);
+    try {
+      await _saveActivity(); // ① 활동 저장 (뱃지 판정보다 먼저)
+      await ref.read(ploggingProvider.notifier).reset();
+      if (!mounted) return;
+      final badges = await _earnedBadges(); // ② 판정·저장
+      ref.read(trackingProvider.notifier).reset();
+      if (!mounted) return;
+      final navigated = await showRewardFlow(context, badges); // ③ 바로 팝업
+      if (!mounted || navigated) return; // 뱃지함 보기로 이동했으면 끝
+      context.go('/home');
+    } finally {
+      if (mounted) setState(() => _settling = false);
+    }
   }
 
   // 사진 결정(찍기) 공통: 자동 그룹 공유 → '올렸어요' 시트 → 홈 or 피드
@@ -950,6 +968,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
             label: '인증샷 촬영',
             icon: TablerIcons.camera,
             onTap: _takePhoto,
+            loading: _settling,
             type: AppButtonType.secondary,
             expand: false,
           ),
@@ -959,6 +978,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
           child: AppButton(
             label: '활동 종료',
             onTap: _skip,
+            loading: _settling,
             type: AppButtonType.primary,
             expand: false,
           ),
