@@ -20,6 +20,7 @@ import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/core/providers/tracking_provider.dart';
+import 'package:repo_jdh/core/constants/map_defaults.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
 
 class PloggingTrackingScreen extends ConsumerStatefulWidget {
@@ -135,7 +136,13 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   // 네이버 지도
   NaverMapController? _mapController;
   bool _mapCentered = false;
-  static const _fallback = NLatLng(37.5074, 126.7218); // GPS 전 기본 위치
+  static const _fallback = NLatLng(
+    MapDefaults.fallbackLat,
+    MapDefaults.fallbackLng,
+  ); // GPS 전 기본 위치
+  // 실시간 스트림(watchTrackPoints)이 준 마지막 좌표. one-shot 조회가 실패해도
+  // 이 값은 들어오므로 '내 위치' 버튼의 1순위 기준으로 쓴다.
+  ({double lat, double lng})? _lastGps;
   // 추천 경로선 — 검정(ink). 앱이 짜준 경로만 그린다(걸은 경로는 그리지 않음).
   static const _routeColor = AppColors.ink;
 
@@ -189,23 +196,18 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
 
   // 지도를 현재 GPS로 최초 1회 이동 + 내 위치 오버레이 갱신
   void _centerOnGps(Map<String, dynamic>? loc) {
-    final c = _mapController;
-    if (c == null || loc == null) return;
+    if (loc == null) return;
     final lat = (loc['latitude'] as num?)?.toDouble();
     final lon = (loc['longitude'] as num?)?.toDouble();
     if (lat == null || lon == null) return;
-    // 내 위치 점은 트래킹 내내 갱신(카메라 이동은 최초 1회만)
-    _updateMyLocation(lat, lon);
-    if (_mapCentered) return;
-    _mapCentered = true;
-    c.updateCamera(
-      NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
-    );
+    _updateMyLocation(lat, lon); // 카메라 최초 1회 이동도 여기서 함께 처리
   }
 
   // 내 위치(네이버 내장 위치 오버레이) — 도착지 설정 화면과 같은 아이콘으로 통일.
   // clearOverlays 로도 지워지지 않아 트래킹 중 계속 유지된다.
   void _updateMyLocation(double lat, double lon) {
+    // 지도 준비 여부와 무관하게 마지막 좌표는 항상 기억해 둔다.
+    _lastGps = (lat: lat, lng: lon);
     final c = _mapController;
     if (c == null) return;
     final overlay = c.getLocationOverlay();
@@ -215,6 +217,14 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
     if (!_locStyled) {
       _locStyled = true;
       _styleMyLocationOverlay(overlay);
+    }
+    // 카메라를 실제 위치로 최초 1회 옮긴다. one-shot 조회가 실패하면 이
+    // 스트림이 카메라를 움직일 유일한 계기가 되므로 여기서 처리해야 한다.
+    if (!_mapCentered) {
+      _mapCentered = true;
+      c.updateCamera(
+        NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
+      );
     }
     // 추천 경로선을 다시 그린다.
     _renderRoute();
@@ -656,16 +666,34 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   }
 
   // 현재 위치로 지도 카메라 복귀 (버튼용 — 최초 1회 제한 없이 항상 이동)
+  //
+  // 1순위는 실시간 스트림이 준 마지막 좌표다. currentLocationProvider 는 화면
+  // 진입 시 1회만 조회하고 실패하면 계속 null 이라 2순위로 둔다.
   void _recenterToGps() {
     final c = _mapController;
-    final loc = ref.read(currentLocationProvider).valueOrNull;
-    if (c == null || loc == null) return;
-    final lat = (loc['latitude'] as num?)?.toDouble();
-    final lon = (loc['longitude'] as num?)?.toDouble();
-    if (lat == null || lon == null) return;
-    _updateMyLocation(lat, lon);
+    if (c == null) return;
+    var here = _lastGps;
+    if (here == null) {
+      final loc = ref.read(currentLocationProvider).valueOrNull;
+      final lat = (loc?['latitude'] as num?)?.toDouble();
+      final lon = (loc?['longitude'] as num?)?.toDouble();
+      if (lat != null && lon != null) here = (lat: lat, lng: lon);
+    }
+    if (here == null) {
+      // 조용히 무시하면 '버튼이 학교로 보낸다'처럼 보인다. 상태를 알리고 재조회한다.
+      AppSnackBar.show(
+        context,
+        '위치를 가져오지 못했어요. 잠시 후 다시 눌러주세요.',
+        kind: SnackKind.error,
+      );
+      ref.invalidate(currentLocationProvider);
+      return;
+    }
     c.updateCamera(
-      NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 16),
+      NCameraUpdate.scrollAndZoomTo(
+        target: NLatLng(here.lat, here.lng),
+        zoom: 16,
+      ),
     );
   }
 
