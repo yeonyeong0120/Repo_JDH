@@ -127,8 +127,6 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     if (widget.groupId.isNotEmpty) {
       _joinedAt = await GroupService.myJoinedAt(widget.groupId);
     }
-    // TODO: 원인 확인용 임시 로그 — 확인 끝나면 제거
-    debugPrint('[피드] _joinedAt=$_joinedAt (now=${DateTime.now()})');
     if (!mounted) return;
     _subscribePosts();
   }
@@ -148,32 +146,13 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       (posts) {
         if (!mounted) return;
         final wasNearBottom = _isNearBottom();
-        // TODO: 원인 확인용 임시 로그 — 확인 끝나면 제거
-        debugPrint(
-          '[피드] 스트림 posts=${posts.length}건 _joinedAt=$_joinedAt',
-        );
-        for (final p in posts) {
-          debugPrint(
-            '[피드]   id=${p.id} type=${p.type} createdAt=${p.createdAt} '
-            'isBeforeJoin=${_joinedAt != null && p.createdAt.isBefore(_joinedAt!)}',
-          );
-        }
-        // 가입 시각 이전 대화는 숨긴다 → 처음 보이는 메시지는 항상
-        // 'ㅇㅇ님이 그룹에 가입하셨습니다' 시스템 알림이 된다.
-        // 인증샷(activity)은 예외 — 그룹의 누적 갤러리 성격이라 늦게 가입한
-        // 멤버도 이전 게시물을 볼 수 있어야 한다. 채팅(message)·가입 알림
-        // (system)만 가입 시각 이전을 숨긴다.
+        // 가입 시각 이전 게시물은 타입 구분 없이 전부 숨긴다 → 처음 보이는
+        // 메시지는 항상 'ㅇㅇ님이 그룹에 가입하셨습니다' 시스템 알림이 된다.
+        // 인증샷(activity)도 예외 없이 숨긴다 — 나갔다 재가입하면 이전 기록이
+        // 보이지 않는 것이 의도된 동작이다.
         final visible = _joinedAt == null
             ? posts
-            : posts
-                  .where(
-                    (p) =>
-                        p.type == PostType.activity ||
-                        !p.createdAt.isBefore(_joinedAt!),
-                  )
-                  .toList();
-        // TODO: 원인 확인용 임시 로그 — 확인 끝나면 제거
-        debugPrint('[피드] 필터 후 visible=${visible.length}건');
+            : posts.where((p) => !p.createdAt.isBefore(_joinedAt!)).toList();
         setState(() => _items = visible.map(_fromPost).toList());
         // 가입 시 시스템 메시지가 함께 올라오므로, 새 글이 도착할 때마다
         // 멤버 수도 다시 조회한다 (탈퇴는 시스템 메시지가 없어 반영 안 됨 —

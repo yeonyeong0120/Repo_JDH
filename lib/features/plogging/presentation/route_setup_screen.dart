@@ -20,6 +20,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/providers/tracking_provider.dart';
+import 'package:repo_jdh/core/constants/map_defaults.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/features/plogging/domain/destination_providers.dart';
 import 'package:repo_jdh/features/plogging/data/location_repository.dart';
@@ -87,7 +88,10 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen>
   }
 
   // GPS를 아직 못 받았을 때 보여줄 기본 카메라 위치(인천 부평구청 부근).
-  static const _fallback = NLatLng(37.5074, 126.7218);
+  static const _fallback = NLatLng(
+    MapDefaults.fallbackLat,
+    MapDefaults.fallbackLng,
+  );
 
   // 경로 색상.
   static const _routeColor = AppColors.routeLine;
@@ -288,7 +292,13 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen>
     final lat = (loc?['latitude'] as num?)?.toDouble();
     final lon = (loc?['longitude'] as num?)?.toDouble();
     final controller = _controller;
-    if (controller == null || lat == null || lon == null) return;
+    if (controller == null) return;
+    if (lat == null || lon == null) {
+      // 조용히 무시하지 않는다 — 사용자에겐 버튼이 고장 난 것처럼 보인다.
+      _toast('위치를 가져오지 못했습니다. 잠시 후 다시 눌러주세요.');
+      ref.invalidate(currentLocationProvider);
+      return;
+    }
     controller.updateCamera(
       NCameraUpdate.scrollAndZoomTo(target: NLatLng(lat, lon), zoom: 15),
     );
