@@ -48,6 +48,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  // 삭제됐던 구글 로그인 복원 (99eb234에서 UI만 실수로 제거됨).
+  // _isLoading을 이메일 로그인과 공유해 두 버튼이 동시에 중복 탭되지 않게 한다.
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    final error = await AuthRepository.signInWithGoogle();
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.actionDanger),
+      );
+    }
+  }
+
   // 비밀번호 찾기 — 팝업(별도 위젯)으로 이메일 입력받아 재설정 링크 발송
   Future<void> _handlePasswordReset() async {
     FocusScope.of(context).unfocus();
@@ -237,6 +251,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
                                 child: _loginButton(),
                               ),
+                              const SizedBox(height: 10),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
+                                child: _googleButton(),
+                              ),
                               const SizedBox(height: 16),
                               _signupLink(),
                               const SizedBox(height: 24),
@@ -368,6 +387,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   SizedBox(width: 8),
                   Icon(TablerIcons.arrowRight, size: 20, color: AppColors.lime),
+                ],
+              ),
+      ),
+    );
+  }
+
+  // 구글 로그인 — 로그인 버튼과 같은 크기(h58 radius18), 보조 버튼 톤으로 구분.
+  Widget _googleButton() {
+    return SizedBox(
+      height: 58,
+      child: OutlinedButton(
+        onPressed: _isLoading ? null : _handleGoogleSignIn,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: AppColors.surface,
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: AppColors.border),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: AppColors.ink,
+                  strokeWidth: 2,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Text(
+                    'G',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF4285F4),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    '구글로 로그인',
+                    style: TextStyle(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                 ],
               ),
       ),

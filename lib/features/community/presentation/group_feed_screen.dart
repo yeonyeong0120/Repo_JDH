@@ -33,6 +33,10 @@ class GroupFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
+  // 활동 카드(_feedCard)의 최대 폭. 카드 내부(_feedCard)의 고정폭 계산이
+  // 전부 이 값 기준이라, 폭을 바꾸려면 여기 하나만 고치면 된다.
+  static const double _kCardMaxWidth = 248.0;
+
   // 피드 데이터 (placeholder — 실제 그룹 활동 공유로 교체)
   // date = 게시(=활동) 시각. TODO: 실제 활동 데이터의 DateTime으로 교체
   // groupId 가 있으면 Firestore 피드로 교체됨 (없으면 아래 더미 유지)
@@ -123,6 +127,8 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     if (widget.groupId.isNotEmpty) {
       _joinedAt = await GroupService.myJoinedAt(widget.groupId);
     }
+    // TODO: 원인 확인용 임시 로그 — 확인 끝나면 제거
+    debugPrint('[피드] _joinedAt=$_joinedAt (now=${DateTime.now()})');
     if (!mounted) return;
     _subscribePosts();
   }
@@ -142,13 +148,32 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       (posts) {
         if (!mounted) return;
         final wasNearBottom = _isNearBottom();
+        // TODO: 원인 확인용 임시 로그 — 확인 끝나면 제거
+        debugPrint(
+          '[피드] 스트림 posts=${posts.length}건 _joinedAt=$_joinedAt',
+        );
+        for (final p in posts) {
+          debugPrint(
+            '[피드]   id=${p.id} type=${p.type} createdAt=${p.createdAt} '
+            'isBeforeJoin=${_joinedAt != null && p.createdAt.isBefore(_joinedAt!)}',
+          );
+        }
         // 가입 시각 이전 대화는 숨긴다 → 처음 보이는 메시지는 항상
         // 'ㅇㅇ님이 그룹에 가입하셨습니다' 시스템 알림이 된다.
+        // 인증샷(activity)은 예외 — 그룹의 누적 갤러리 성격이라 늦게 가입한
+        // 멤버도 이전 게시물을 볼 수 있어야 한다. 채팅(message)·가입 알림
+        // (system)만 가입 시각 이전을 숨긴다.
         final visible = _joinedAt == null
             ? posts
             : posts
-                  .where((p) => !p.createdAt.isBefore(_joinedAt!))
+                  .where(
+                    (p) =>
+                        p.type == PostType.activity ||
+                        !p.createdAt.isBefore(_joinedAt!),
+                  )
                   .toList();
+        // TODO: 원인 확인용 임시 로그 — 확인 끝나면 제거
+        debugPrint('[피드] 필터 후 visible=${visible.length}건');
         setState(() => _items = visible.map(_fromPost).toList());
         // 가입 시 시스템 메시지가 함께 올라오므로, 새 글이 도착할 때마다
         // 멤버 수도 다시 조회한다 (탈퇴는 시스템 메시지가 없어 반영 안 됨 —
@@ -345,7 +370,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
               ),
             ),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 248),
+              constraints: const BoxConstraints(maxWidth: _kCardMaxWidth),
               child: _feedCard(it),
             ),
           ],
@@ -357,7 +382,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 248),
+                constraints: const BoxConstraints(maxWidth: _kCardMaxWidth),
                 child: _feedCard(it),
               ),
               const SizedBox(width: 6),
@@ -1660,7 +1685,16 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 const SizedBox(width: 10),
                 // 실제로는 닉네임만 표시 (시간·목적지 등 부가 정보 제거)
                 // 신고 깃발·시각은 카드 바깥 오른쪽(_cardFlagTime)으로 뺐다.
-                Expanded(
+                //
+                // Expanded 대신 고정 maxWidth를 쓴다 — 이 카드는 "남의 활동
+                // 카드" 분기에서 IntrinsicHeight 로 감싸이는데, Expanded/Flexible
+                // 은 intrinsic 측정 트리 안에 있으면 "RenderBox was not laid
+                // out" 류의 예외를 낸다. 이 Row엔 Expanded와 경쟁할 다른 유동
+                // 요소가 없어서, 폭을 고정해도 결과(줄임표 처리)는 동일하다.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: _kCardMaxWidth - 28 - 36 - 10, // 카드폭-패딩-아바타-간격
+                  ),
                   child: Text(
                     item.name,
                     style: const TextStyle(
@@ -1693,7 +1727,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 child: (item.imageUrl?.startsWith('http') ?? false)
                     ? Image.network(
                         item.imageUrl!,
-                        width: double.infinity,
+                        width: _kCardMaxWidth - 24, // 카드폭 - Container 좌우 margin(12×2)
                         height: 132,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => const Icon(
@@ -1713,11 +1747,15 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
               ),
             ),
           // 통계 + 하트
+          // Expanded 대신 고정 maxWidth — 이유는 위 닉네임 줄 주석 참고.
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
             child: Row(
               children: [
-                Expanded(
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: _kCardMaxWidth - 28 - 46, // 카드폭-패딩-하트영역
+                  ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
