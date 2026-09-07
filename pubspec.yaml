@@ -29,6 +29,8 @@ dependencies:
   flutter_naver_map: ^1.4.4
   geolocator: ^13.0.2
   dart_geohash: ^2.1.0
+  # 나침반(자기센서) — 내 위치 아이콘이 폰 정면 방향을 가리키게(heading)
+  flutter_compass: ^0.8.1
 
   # ===== 헬스 데이터 (Android Health Connect) =====
   health: ^13.3.1

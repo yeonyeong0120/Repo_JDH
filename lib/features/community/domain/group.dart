@@ -37,6 +37,12 @@ class Group {
   /// 목록 카드에 쓰는 한 줄 ('12명 · 오늘 활동 인원 3명')
   String get meta => '$memberCount명 · 오늘 활동 인원 $todayActiveCount명';
 
+  /// 그룹 카드 부제 — 홈·더보기·검색 3곳이 같은 문구를 쓴다.
+  /// 승인 후 가입 그룹이면 뒤에 잠금 글리프 + '승인'이 붙으므로(카드 위젯이 그림)
+  /// 여기서 구분점까지 미리 달아 둔다. 자유 가입 그룹에는 아무 표기도 넣지 않는다.
+  String get cardMeta =>
+      '$intensity · 멤버 $memberCount명${isPublic ? '' : ' ·'}';
+
   factory Group.fromJson(Map<String, dynamic> json) {
     return Group(
       id: json['id'] as String,
@@ -74,6 +80,77 @@ class Group {
     if (v is Timestamp) return v.toDate();
     if (v is DateTime) return v;
     return null;
+  }
+}
+
+/// 가입 요청 상태
+/// - pending  : 그룹장 확인 대기
+/// - approved : 승인됨(멤버로 편입)
+/// - rejected : 거절됨
+class JoinStatus {
+  static const String pending = 'pending';
+  static const String approved = 'approved';
+  static const String rejected = 'rejected';
+}
+
+/// 승인 후 가입(isPublic:false) 그룹의 가입 요청
+/// Firestore: groups/{groupId}/joinRequests/{uid}
+///
+/// 요청 시점의 프로필 스냅샷(지역·누적 수거량·활동 일수·뱃지 수)을 함께 저장한다.
+/// 그룹장이 상대 사용자 문서를 직접 못 읽어도 요청 카드에 통계를 보여주기 위함이다.
+class JoinRequest {
+  final String uid;
+  final String userName;
+  final String? photoUrl;
+  final String region; // 예: '서울 마포구'
+  final double cumulativeKg; // 누적 수거량(kg)
+  final int activeDays; // 활동 일수
+  final int badgeCount; // 획득 뱃지 수
+  final String status; // pending / approved / rejected
+  final DateTime requestedAt;
+
+  JoinRequest({
+    required this.uid,
+    this.userName = '',
+    this.photoUrl,
+    this.region = '',
+    this.cumulativeKg = 0,
+    this.activeDays = 0,
+    this.badgeCount = 0,
+    this.status = JoinStatus.pending,
+    required this.requestedAt,
+  });
+
+  /// 활동 기록이 있는지 (없으면 카드에 '아직 플로깅 기록이 없어요' 표시)
+  bool get hasRecord => cumulativeKg > 0 || activeDays > 0;
+
+  /// 카드 메타 한 줄 ('서울 마포구 · 누적 12.4kg · 뱃지 3개')
+  String get meta {
+    final parts = <String>[];
+    if (region.isNotEmpty) parts.add(region);
+    parts.add('누적 ${cumulativeKgText}kg');
+    parts.add('뱃지 $badgeCount개');
+    return parts.join(' · ');
+  }
+
+  /// 누적 수거량을 소수 첫째 자리까지 (예: 12.4)
+  String get cumulativeKgText {
+    final v = (cumulativeKg * 10).round() / 10;
+    return v.toStringAsFixed(1);
+  }
+
+  factory JoinRequest.fromJson(Map<String, dynamic> json, String uid) {
+    return JoinRequest(
+      uid: uid,
+      userName: (json['userName'] as String?) ?? '',
+      photoUrl: json['photoUrl'] as String?,
+      region: (json['region'] as String?) ?? '',
+      cumulativeKg: (json['cumulativeKg'] as num?)?.toDouble() ?? 0,
+      activeDays: (json['activeDays'] as num?)?.toInt() ?? 0,
+      badgeCount: (json['badgeCount'] as num?)?.toInt() ?? 0,
+      status: (json['status'] as String?) ?? JoinStatus.pending,
+      requestedAt: Group._toDateTime(json['requestedAt']) ?? DateTime.now(),
+    );
   }
 }
 

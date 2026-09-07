@@ -19,6 +19,14 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
   List<PointLog> _logs = [];
   int _points = 0; // 상단 우측 현재 보유 포인트
   bool _loading = true;
+  int _filter = 0; // 0 전체 / 1 적립(+) / 2 사용(−)
+
+  // 현재 필터가 적용된 내역
+  List<PointLog> get _filtered => switch (_filter) {
+    1 => _logs.where((l) => l.amount > 0).toList(),
+    2 => _logs.where((l) => l.amount < 0).toList(),
+    _ => _logs,
+  };
 
   @override
   void initState() {
@@ -55,6 +63,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
         child: Column(
           children: [
             _topBar(),
+            if (!_loading) _filterBar(),
             Expanded(
               child: _loading
                   ? const Center(
@@ -63,7 +72,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : _logs.isEmpty
+                  : _filtered.isEmpty
                   ? const Center(
                       child: Text(
                         '내역이 없어요',
@@ -75,11 +84,52 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(22, 4, 22, 24),
-                      itemCount: _logs.length,
-                      itemBuilder: (_, i) => _logRow(_logs[i]),
+                      itemCount: _filtered.length,
+                      itemBuilder: (_, i) => _logRow(_filtered[i]),
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // 전체 / 적립 / 사용 세그먼트 (기본: 전체)
+  Widget _filterBar() {
+    const labels = ['전체', '적립', '사용'];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 0, 22, 10),
+      child: Row(
+        children: [
+          for (int i = 0; i < labels.length; i++) ...[
+            _filterChip(labels[i], i),
+            if (i < labels.length - 1) const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, int value) {
+    final on = _filter == value;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _filter = value),
+      child: Container(
+        height: 34,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: on ? AppColors.ink : AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            color: on ? AppColors.textOnBrand : AppColors.gray700,
+          ),
         ),
       ),
     );

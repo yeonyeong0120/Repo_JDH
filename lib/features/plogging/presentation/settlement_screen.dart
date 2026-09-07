@@ -42,6 +42,11 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
   // saveCompleted() 가 두 번 불려 활동이 중복 저장됐다.
   bool _settling = false;
 
+  // 이 플로깅 세션의 고정 활동 문서 ID — 세션 시작시각 기반.
+  // _settling(중복 탭 방지) 만으로는 화면 재진입 등 다른 경로로 저장이 두 번
+  // 불릴 수 있어, 저장을 이 ID 로 set() 해 몇 번 저장돼도 1건만 남게 한다(멱등).
+  late final String _sessionDocId;
+
   // 획득 경험치 (고정)
   static const int _rewardXp = 20;
 
@@ -72,6 +77,9 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
   @override
   void initState() {
     super.initState();
+    // 세션 고정 문서 ID 확정(시작시각 기준, 없으면 진입시각). 재진입에도 동일 → 중복 저장 방지.
+    final sa = ref.read(trackingProvider).startedAt;
+    _sessionDocId = 'act_${(sa ?? DateTime.now()).millisecondsSinceEpoch}';
     // 진입 연출 컨트롤러 (흔들림 0.9s + 도장/링/컨페티/보상 stagger 를 하나로 구동)
     // 보상 카드가 더 느긋하게 떠오르도록 전체 연출 시간을 늘림
     _intro = AnimationController(
@@ -170,6 +178,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen>
         // 그룹 피드뿐 아니라 활동 기록에도 인증샷을 남긴다
         imageUrls: imageUrl == null ? const [] : [imageUrl],
         pointsEarned: _points.total,
+        docId: _sessionDocId, // 세션 고정 ID → 재저장해도 같은 문서(중복 방지)
       );
 
       // 포인트 적립은 활동 저장과 분리 — 실패해도 활동 저장 자체는 막지 않는다.

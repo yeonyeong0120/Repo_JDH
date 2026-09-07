@@ -191,12 +191,13 @@ class ActivityService {
     List<String> imageUrls = const [], // 인증샷 URL (없으면 빈 배열)
     String? placeName, // 역지오코딩 결과 (좌표가 없거나 실패했으면 null)
     String? placeDetail, // 번지 포함 상세 장소명 (없으면 null)
+    String? docId, // 세션 고정 ID (멱등 저장용). 없으면 자동 생성
   }) async {
     final col = _activitiesCol();
     if (col == null) return null;
 
     final total = trashCounts.values.fold<int>(0, (a, b) => a + b);
-    final doc = await col.add({
+    final data = {
       'startedAt': Timestamp.fromDate(startedAt),
       'endedAt': Timestamp.fromDate(endedAt),
       'durationSeconds': durationSeconds,
@@ -213,7 +214,13 @@ class ActivityService {
       if (groupId != null) 'groupId': groupId,
       if (placeName != null) 'placeName': placeName,
       if (placeDetail != null) 'placeDetail': placeDetail,
-    });
+    };
+    // docId 를 주면 그 문서에 set() → 같은 세션 재저장은 덮어써 중복 방지(멱등).
+    if (docId != null) {
+      await col.doc(docId).set(data);
+      return docId;
+    }
+    final doc = await col.add(data);
     return doc.id;
   }
 

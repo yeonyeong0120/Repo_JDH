@@ -4,6 +4,7 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
+import 'package:repo_jdh/core/widgets/group_card_meta.dart';
 import 'package:repo_jdh/core/widgets/group_thumb.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
@@ -364,8 +365,6 @@ class _GroupRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = group.todayActiveCount > 0;
-    // 부제 통일(SEARCH_PACE_FILTER §5): 항상 '강도 · 멤버 N명' (활동 여부는 앞 점으로만).
-    final meta = '${group.intensity} · 멤버 ${group.memberCount}명';
 
     return GestureDetector(
       onTap: onTap,
@@ -396,30 +395,10 @@ class _GroupRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Gap.h4,
-                  Row(
-                    children: [
-                      if (active) ...[
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.ink,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Flexible(
-                        child: Text(
-                          meta,
-                          style: AppType.caption.copyWith(
-                            color: AppColors.gray500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  GroupCardMeta(
+                    meta: group.cardMeta,
+                    showActiveDot: active,
+                    approvalRequired: !group.isPublic,
                   ),
                 ],
               ),

@@ -48,6 +48,13 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   int _goalKg = 25;
   void _goalDown() => setState(() => _goalKg = (_goalKg - 5).clamp(5, 60));
   void _goalUp() => setState(() => _goalKg = (_goalKg + 5).clamp(5, 60));
+  // 게이지 위 x 좌표(0~width) → 5단위 목표량(5~60)
+  void _setGoalFromX(double x, double width) {
+    if (width <= 0) return;
+    final ratio = (x / width).clamp(0.0, 1.0);
+    final snapped = ((5 + ratio * 55) / 5).round() * 5;
+    setState(() => _goalKg = snapped.clamp(5, 60));
+  }
 
   // 누구나 가입 가능 토글(로컬 UI 상태).
   bool _isPublic = true;
@@ -792,25 +799,49 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: LayoutBuilder(
-                builder: (context, c) => Stack(
-                  children: [
-                    Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.line100,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                builder: (context, c) => GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  // 탭/드래그한 x 위치로 목표량을 5단위(5~60)로 조절
+                  onTapDown: (d) => _setGoalFromX(d.localPosition.dx, c.maxWidth),
+                  onHorizontalDragUpdate: (d) =>
+                      _setGoalFromX(d.localPosition.dx, c.maxWidth),
+                  child: Padding(
+                    // 얇은 바도 쉽게 잡히도록 위아래 터치 영역 확보
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: AppColors.line100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        Container(
+                          height: 8,
+                          width: c.maxWidth * fill,
+                          decoration: BoxDecoration(
+                            // 라임은 밝은 트랙 위에서 잘 안 보여, 멤버 그래프 색(차콜)로 통일
+                            color: const Color(0xFF3A403C),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        // 드래그 손잡이 (현재 위치)
+                        Positioned(
+                          left: (c.maxWidth * fill - 8).clamp(0.0, c.maxWidth - 16),
+                          top: -4,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF3A403C),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Container(
-                      height: 8,
-                      width: c.maxWidth * fill,
-                      decoration: BoxDecoration(
-                        // 라임은 밝은 트랙 위에서 잘 안 보여, 그룹 상세의 멤버 그래프 색(차콜)로 통일
-                        color: const Color(0xFF3A403C),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

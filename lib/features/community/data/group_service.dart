@@ -56,6 +56,9 @@ class GroupService {
   /// 프레젠테이션 레이어(그룹 만들기 미리보기 등)에서 쓰기 위한 공개 래퍼.
   static Future<String> myRegion() => _resolveUserRegion();
 
+  /// 내 표시 이름 — 가입 요청 시트의 프로필 카드 미리보기에서 쓰는 공개 래퍼.
+  static Future<String> myName() => _resolveUserName();
+
   static CollectionReference<Map<String, dynamic>> get _groups =>
       _db.collection('groups');
   static DocumentReference<Map<String, dynamic>>? _userDoc() {
@@ -311,31 +314,227 @@ class GroupService {
     await batch.commit();
   }
 
+  // ───────────────────────── 승인 후 가입 (isPublic:false) ─────────────────────────
+
+  static CollectionReference<Map<String, dynamic>> _joinReqCol(String groupId) =>
+      _groups.doc(groupId).collection('joinRequests');
+
+  /// 내 가입 요청 상태 ('pending' | 'rejected' | 'approved' | null).
+  /// 미가입 상세 화면에서 '가입 요청 보내기' / '승인 대기 중' 분기에 쓴다.
+  static Future<String?> myJoinStatus(String groupId) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    try {
+      final doc = await _joinReqCol(groupId).doc(uid).get();
+      return doc.data()?['status'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 가입 요청 보내기 (승인 후 가입 그룹). 프로필 스냅샷을 함께 저장한다.
+  /// 통계 계산은 프레젠테이션(BadgeService)에서 미리 해서 넘긴다.
+  static Future<void> requestJoin(
+    String groupId, {
+    required String region,
+    required double cumulativeKg,
+    required int activeDays,
+    required int badgeCount,
+  }) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('로그인이 필요합니다');
+    if (await isInGroup()) throw Exception('이미 그룹에 가입되어 있습니다');
+
+    final userName = await _resolveUserName();
+    await _joinReqCol(groupId).doc(uid).set({
+      'uid': uid,
+      'userName': userName,
+      'photoUrl': _userPhoto,
+      'region': region,
+      'cumulativeKg': cumulativeKg,
+      'activeDays': activeDays,
+      'badgeCount': badgeCount,
+      'status': JoinStatus.pending,
+      'requestedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// 내 가입 요청 취소 (요청 문서 삭제 — 확인 팝업 없이 즉시).
+  static Future<void> cancelJoinRequest(String groupId) async {
+    final uid = _uid;
+    if (uid == null) return;
+    try {
+      await _joinReqCol(groupId).doc(uid).delete();
+    } catch (e) {
+      debugPrint('[그룹] 가입 요청 취소 실패: $e');
+    }
+  }
+
+  /// 대기 중 요청 실시간 (그룹장 채팅 배너·햄버거 뱃지·요청 화면).
+  static Stream<List<JoinRequest>> watchPendingRequests(String groupId) {
+    return _joinReqCol(groupId)
+        .where('status', isEqualTo: JoinStatus.pending)
+        .snapshots()
+        .map((snap) {
+          final list = snap.docs
+              .map((d) => JoinRequest.fromJson(d.data(), d.id))
+              .toList();
+          // 요청 시각 오름차순(먼저 온 순) — 색인 없이 클라이언트 정렬
+          list.sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
+          return list;
+        });
+  }
+
+  /// 처리됨(승인/거절) 요청 실시간 — 가입 요청 화면 '처리됨' 탭.
+  static Stream<List<JoinRequest>> watchProcessedRequests(String groupId) {
+    return _joinReqCol(groupId)
+        .where('status', whereIn: [JoinStatus.approved, JoinStatus.rejected])
+        .snapshots()
+        .map((snap) {
+          final list = snap.docs
+              .map((d) => JoinRequest.fromJson(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+          return list;
+        });
+  }
+
+  /// 가입 요청 승인 (그룹장) — 요청자를 멤버로 편입한다.
+  /// members/{uid}·memberCount·users/{uid}.groupId·요청상태·가입 시스템 알림을 한 번에.
+  static Future<void> approveJoin(String groupId, JoinRequest req) async {
+    final ref = _groups.doc(groupId);
+    final batch = _db.batch();
+    batch.set(ref.collection('members').doc(req.uid), {
+      'joinedAt': FieldValue.serverTimestamp(),
+      'role': 'member',
+      'userName': req.userName,
+    });
+    batch.update(ref, {'memberCount': FieldValue.increment(1)});
+    batch.set(_db.collection('users').doc(req.uid), {
+      'groupId': groupId,
+    }, SetOptions(merge: true));
+    batch.update(_joinReqCol(groupId).doc(req.uid), {
+      'status': JoinStatus.approved,
+      'processedAt': FieldValue.serverTimestamp(),
+    });
+    batch.set(ref.collection('posts').doc(), {
+      'uid': req.uid,
+      'userName': req.userName,
+      'type': PostType.system,
+      'text': '${req.userName}님이 그룹에 가입하셨습니다',
+      'imageUrl': null,
+      'distance': '',
+      'trash': 0,
+      'duration': '',
+      'likes': 0,
+      'likedBy': <String>[],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+  }
+
+  /// 가입 요청 거절 (그룹장) — 상태만 rejected 로 바꾼다(멤버 편입 없음).
+  static Future<void> rejectJoin(String groupId, JoinRequest req) async {
+    await _joinReqCol(groupId).doc(req.uid).update({
+      'status': JoinStatus.rejected,
+      'processedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ───────────────────────── 탈퇴 / 위임 ─────────────────────────
+
   /// 그룹 탈퇴
   ///
-  /// 마지막 멤버가 나가면 빈 그룹이 남지 않도록 그룹까지 정리한다.
-  /// 그룹 정리에 실패하더라도 내 소속은 반드시 비운다 — 실패로 인해
-  /// 사용자가 유령 그룹에 갇히는 상황을 만들지 않기 위해서다.
+  /// - 마지막 멤버가 나가면 빈 그룹이 남지 않도록 그룹째 정리한다.
+  /// - 그룹장이 나가고 멤버가 남아 있으면, 가장 먼저 가입한(최고참) 멤버에게
+  ///   그룹장을 자동 위임한다(members.role='owner' + groups.ownerUid 갱신).
+  ///   → 위임하지 않으면 ownerUid 가 유령이 되어 그룹 정보 수정·가입 요청 처리가 막힌다.
+  /// - 나감/위임 사실은 채팅에 시스템 알림으로 남긴다(멤버 수 실시간 갱신도 겸함).
+  /// 정리에 실패하더라도 내 소속은 반드시 비운다 — 유령 그룹에 갇히지 않게 한다.
   static Future<void> leaveGroup(String groupId) async {
     final uid = _uid;
     if (uid == null) return;
 
     final ref = _groups.doc(groupId);
+    final myRef = ref.collection('members').doc(uid);
     try {
-      await ref.collection('members').doc(uid).delete();
+      final groupSnap = await ref.get();
+      if (!groupSnap.exists) {
+        // 유령 그룹 → 내 멤버 문서만 정리
+        await myRef.delete();
+      } else {
+        final myMember = await myRef.get();
+        final myRole = myMember.data()?['role'] as String?;
+        final myName =
+            (myMember.data()?['userName'] as String?) ?? await _resolveUserName();
 
-      // 그룹 문서가 이미 없으면(유령) 더 볼 것이 없다.
-      // 예전 코드는 여기서 batch.update 가 실패해 탈퇴 자체가 막혔다.
-      if ((await ref.get()).exists) {
-        final remaining = await ref.collection('members').limit(1).get();
-        if (remaining.docs.isEmpty) {
-          await deleteGroupDeep(ref); // 마지막 멤버 → 그룹째 정리
+        final all = await ref.collection('members').get();
+        final others = all.docs.where((d) => d.id != uid).toList();
+
+        if (others.isEmpty) {
+          // 마지막 멤버 → 그룹째 정리
+          await myRef.delete();
+          await deleteGroupDeep(ref);
+        } else if (myRole == 'owner') {
+          // 최고참(joinedAt 최솟값) 멤버에게 위임
+          others.sort((a, b) {
+            final ta = a.data()['joinedAt'];
+            final tb = b.data()['joinedAt'];
+            final da = ta is Timestamp ? ta.toDate() : DateTime.now();
+            final db = tb is Timestamp ? tb.toDate() : DateTime.now();
+            return da.compareTo(db);
+          });
+          final successor = others.first;
+          final successorName =
+              (successor.data()['userName'] as String?) ?? '새 그룹장';
+          final batch = _db.batch();
+          batch.update(successor.reference, {'role': 'owner'});
+          batch.update(ref, {
+            'ownerUid': successor.id,
+            'memberCount': FieldValue.increment(-1),
+          });
+          batch.delete(myRef);
+          batch.set(ref.collection('posts').doc(), {
+            'uid': uid,
+            'userName': myName,
+            'type': PostType.system,
+            'text': '전 그룹장 $myName 님이 $successorName 님에게 그룹을 위임하고 탈퇴하셨습니다',
+            'imageUrl': null,
+            'distance': '',
+            'trash': 0,
+            'duration': '',
+            'likes': 0,
+            'likedBy': <String>[],
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          await batch.commit();
         } else {
-          await ref.update({'memberCount': FieldValue.increment(-1)});
+          // 일반 멤버 → 탈퇴 알림 + 멤버 수 감소
+          final batch = _db.batch();
+          batch.delete(myRef);
+          batch.update(ref, {'memberCount': FieldValue.increment(-1)});
+          batch.set(ref.collection('posts').doc(), {
+            'uid': uid,
+            'userName': myName,
+            'type': PostType.system,
+            'text': '$myName님이 그룹을 나가셨습니다',
+            'imageUrl': null,
+            'distance': '',
+            'trash': 0,
+            'duration': '',
+            'likes': 0,
+            'likedBy': <String>[],
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          await batch.commit();
         }
       }
     } catch (e) {
-      debugPrint('[그룹] 탈퇴 중 그룹 정리 실패: $e');
+      debugPrint('[그룹] 탈퇴 처리 실패: $e');
+      // 최소한 내 멤버 문서는 지워 유령 소속을 막는다.
+      try {
+        await myRef.delete();
+      } catch (_) {}
     }
 
     await _userDoc()!.set({'groupId': null}, SetOptions(merge: true));

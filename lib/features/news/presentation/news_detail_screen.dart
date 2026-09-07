@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 
@@ -46,9 +47,9 @@ class NewsArticle {
   }
 }
 
-/// 뉴스 상세 화면 — 원문 없이 AI 요약만 제공한다.
-///  헤더 → 카테고리 칩 + 메타 → 제목 → AI 요약(리드+불릿) → 이어서 볼 요약
-///  → (하단 고정) 요약 피드백 + AI 고지
+/// 뉴스 상세 화면 — 본문 대신 AI 요약을 보여주고, 원문은 링크로 연결한다.
+///  헤더 → 카테고리 칩 + 메타 → 제목 → AI 요약(리드+불릿) → 원문 보기 →
+///  이어서 볼 요약 → (하단 고정) 요약 피드백 + AI 고지
 class NewsDetailScreen extends StatefulWidget {
   final NewsArticle article;
   // 하단 "이어서 볼 요약" — 피드에서 같은 분류 기사들을 넘겨주면 표시됨
@@ -68,6 +69,20 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
   // 요약 피드백 — 0 도움됨 / 1 안됨 / null 미선택
   int? _feedback;
+
+  // 원문 보기 — 외부 브라우저로 기사 링크 열기
+  Future<void> _openSource() async {
+    final uri = Uri.tryParse(article.sourceUrl);
+    if (uri == null) {
+      if (mounted) AppSnackBar.show(context, '원문 링크가 없어요');
+      return;
+    }
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (mounted) AppSnackBar.show(context, '링크를 열지 못했어요');
+    }
+  }
 
   // 공유 — 제목 + 원문 링크
   Future<void> _share() async {
@@ -120,6 +135,11 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     const SizedBox(height: 22),
                     // AI 요약(3c: 리드 문장 + 불릿) — 요약이 있을 때만
                     if (_summaryLines.isNotEmpty) _aiSummary(),
+                    // 원문 바로가기 — 링크가 있을 때만
+                    if (article.sourceUrl.isNotEmpty) ...[
+                      const SizedBox(height: 22),
+                      _sourceButton(),
+                    ],
                     // 이어서 볼 요약
                     if (widget.related.isNotEmpty) ...[
                       const SizedBox(height: 28),
@@ -391,21 +411,52 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     );
   }
 
+  // ── 원문 보기 CTA — 차콜 버튼 + 라임 아이콘 ──
+  Widget _sourceButton() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _openSource,
+      child: Container(
+        height: 54,
+        width: double.infinity,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.ink,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Text(
+              '원문 보기',
+              style: TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(width: 8),
+            Icon(TablerIcons.externalLink, size: 19, color: AppColors.lime),
+          ],
+        ),
+      ),
+    );
+  }
+
   // 흰 버튼 38×38 radius13 — 선택 시 딥 틸 강조
   Widget _feedbackBtn(IconData icon, int value) {
     final on = _feedback == value;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        setState(() => _feedback = value);
-        AppSnackBar.show(context, '의견 고마워요');
-      },
+      // 선택 상태만 표시하고 별도 팝업(스낵바)은 띄우지 않는다
+      onTap: () => setState(() => _feedback = value),
       child: Container(
         width: 38,
         height: 38,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: on ? AppColors.newsAiAccent : AppColors.surface,
+          // 선택 시 진초록 대신 차콜(잉크)로
+          color: on ? AppColors.ink : AppColors.surface,
           borderRadius: BorderRadius.circular(13),
         ),
         child: Icon(
