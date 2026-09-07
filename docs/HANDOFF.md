@@ -92,6 +92,48 @@ AGP 9는 새 DSL만 읽어서 `android/app/build.gradle.kts` 수정이 함께 �
 바뀌었는지 자동 판별이 불가능하므로, 어느 화면인지 지정해서 요청해야 한다.
 디자인 파일 스냅샷을 저장소에 두면 진짜 diff가 가능해지는데 아직 만들지 않았다.
 
+**GitHub CLI (`gh`)**
+
+PR 생성·조회를 Claude가 대신 하려면 필요하다. winget으로 설치하면 UAC 승인 창이 뜨는데,
+비대화형 세션에서는 그 창을 클릭할 수 없어 설치가 그대로 멈춘다. 관리자 권한이 필요 없는
+아래 방식이 확실하다.
+
+```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$dest = "$env:LOCALAPPDATA\gh-cli"
+$r = Invoke-RestMethod -Uri "https://api.github.com/repos/cli/cli/releases/latest" -Headers @{ 'User-Agent' = 'pwsh' }
+$asset = $r.assets | Where-Object { $_.name -like "*windows_amd64.zip" } | Select-Object -First 1
+$zip = "$env:TEMP\$($asset.name)"
+Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zip -UseBasicParsing
+Expand-Archive -Path $zip -DestinationPath $dest -Force
+$bin = "$dest\bin"
+$cur = [Environment]::GetEnvironmentVariable('Path','User')
+if ($cur -split ';' -notcontains $bin) {
+  [Environment]::SetEnvironmentVariable('Path', ($cur.TrimEnd(';') + ';' + $bin), 'User')
+}
+& "$bin\gh.exe" auth login
+```
+
+`auth login`은 브라우저 인증이라 사람이 직접 해야 한다. GitHub.com → HTTPS → Yes →
+Login with a web browser 순서.
+
+**주의** — PATH 변경은 새로 여는 터미널부터 적용된다. 이미 열려 있던 창에서는 `gh`를
+계속 못 찾으므로, 전체 경로(`& "$env:LOCALAPPDATA\gh-cli\bin\gh.exe" ...`)로 부르거나
+터미널을 새로 열어야 한다.
+
+**세팅 체크리스트**
+
+| 항목 | 비고 |
+|---|---|
+| Flutter · Android SDK · git | 개발 환경 |
+| Claude Code 로그인 | 컴퓨터별 |
+| `/design-login` | 컴퓨터별. CLI 안에서 입력 |
+| `gh` 설치 + `gh auth login` | 위 절차. 토큰이 자격 증명 저장소에 들어가 복사가 안 된다 |
+| `~/.claude/projects/c--flutter-project-Repo-JDH/memory/` 복사 | 선택. 안 옮기면 디자인 projectId를 다시 알려줘야 한다 |
+
+대화 기록은 같은 폴더의 `<세션id>.jsonl` 파일 하나에 들어 있고 동기화되지 않는다.
+같은 경로에 복사하면 `claude --resume`으로 열릴 수 있으나 보장된 방식은 아니다.
+
 ## 5. 이 커밋에 함께 들어간 이전 작업
 
 이번 세션 이전부터 미커밋 상태였던 변경을 한 커밋으로 묶었다. 내용은 확인하지 않았다.
