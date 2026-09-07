@@ -44,6 +44,11 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     '반려견 동반',
   ];
 
+  // 주간 목표 수거량(kg) — 5~60, 5단위. 그룹 상세의 '이번주 활동량' 목표로 쓰인다.
+  int _goalKg = 25;
+  void _goalDown() => setState(() => _goalKg = (_goalKg - 5).clamp(5, 60));
+  void _goalUp() => setState(() => _goalKg = (_goalKg + 5).clamp(5, 60));
+
   // 누구나 가입 가능 토글(로컬 UI 상태).
   bool _isPublic = true;
 
@@ -342,6 +347,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
         imageUrl: imageUrl,
         intensity: _intensity,
         moods: _moods.toList(),
+        goalKg: _goalKg,
         isPublic: _isPublic,
       );
       if (!mounted) return;
@@ -504,6 +510,9 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         for (final m in _moodOptions) _moodChip(m),
                       ],
                     ),
+                    const SizedBox(height: 24),
+                    // 주간 목표 수거량 — 그룹 상세 '이번주 활동량'의 목표치
+                    _goalSection(),
                     const SizedBox(height: 24),
                     // 누구나 가입 가능 토글 — 켜면 자유 가입, 끄면 승인 후 가입
                     GestureDetector(
@@ -750,6 +759,92 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
             color: selected ? AppColors.textOnBrand : AppColors.gray700,
           ),
         ),
+      ),
+    );
+  }
+
+  // 주간 목표 수거량 — -/+ 5단위(5~60) + 라임 게이지. 그룹 상세 활동량 목표로 저장.
+  Widget _goalSection() {
+    final double fill = ((_goalKg - 5) / 55).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            _microLabel('주간 목표 수거량'),
+            Text(
+              '${_goalKg}kg',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _stepBtn(TablerIcons.minus, _goalDown),
+            const SizedBox(width: 12),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, c) => Stack(
+                  children: [
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.line100,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    Container(
+                      height: 8,
+                      width: c.maxWidth * fill,
+                      decoration: BoxDecoration(
+                        // 라임은 밝은 트랙 위에서 잘 안 보여, 그룹 상세의 멤버 그래프 색(차콜)로 통일
+                        color: const Color(0xFF3A403C),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            _stepBtn(TablerIcons.plus, _goalUp),
+          ],
+        ),
+        const SizedBox(height: 9),
+        const Text(
+          '그룹 전체의 한 주 목표예요. 멤버가 늘면 1인당 부담은 줄어요.',
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+            color: AppColors.gray500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // -/+ 스테퍼 버튼 44 사각형
+  Widget _stepBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, size: 20, color: AppColors.ink),
       ),
     );
   }

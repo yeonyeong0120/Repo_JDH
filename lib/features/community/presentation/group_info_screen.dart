@@ -1503,7 +1503,8 @@ class _GroupEditSheetState extends State<_GroupEditSheet> {
                         height: 8,
                         width: c.maxWidth * fill,
                         decoration: BoxDecoration(
-                          color: AppColors.lime,
+                          // 밝은 트랙 위 라임은 대비 부족 → 멤버 그래프 색(차콜)로 통일
+                          color: const Color(0xFF3A403C),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

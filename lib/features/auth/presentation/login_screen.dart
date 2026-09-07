@@ -7,7 +7,7 @@ import 'package:repo_jdh/features/auth/data/auth_repository.dart';
 import 'package:repo_jdh/features/auth/presentation/signup_screen.dart';
 
 /// 로그인(첫 화면) — Startline 구조.
-/// 흰 배경 · PLOGGO 워드마크 · 34/800 헤드라인(라임 하이라이트) · 라임 원 블롭(진입 애니메이션)
+/// 흰 배경 · PLOGO 워드마크 · 34/800 헤드라인(라임 하이라이트) · 라임 원 블롭(진입 애니메이션)
 /// · 밑줄 인풋 · 차콜 CTA(라임 arrow).
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -125,14 +125,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               const SizedBox(height: 44),
-                              // ── 헤더: PLOGGO 워드마크 + 34/800 헤드라인 ──
+                              // ── 헤더: PLOGO 워드마크 + 34/800 헤드라인 ──
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(26, 0, 26, 0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'PLOGGO',
+                                      'PLOGO',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
