@@ -1215,8 +1215,10 @@ class _PloggingRulesSheet extends StatelessWidget {
                   Text(
                     firstRun ? '첫 플로깅을 시작할게요' : '플로깅 이렇게 해요',
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
+                      height: 1.35,
                       fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -1265,19 +1267,19 @@ class _PloggingRulesSheet extends StatelessWidget {
             ),
             child: SizedBox(
               width: double.infinity,
-              height: 54,
+              height: 58,
               child: FilledButton(
                 onPressed: () => Navigator.pop(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.actionPrimary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(19),
                   ),
                 ),
                 child: Text(
                   firstRun ? '시작하기' : '확인했어요',
                   style: const TextStyle(
-                    fontSize: 17,
+                    fontSize: 16.5,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
@@ -1297,32 +1299,36 @@ class _PloggingRulesSheet extends StatelessWidget {
     bool lime = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 아이콘 타일 — 라운드 스퀘어. 촬영만 라임, 나머지는 연회색.
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: lime ? AppColors.lime : AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(13),
+              color: lime ? AppColors.lime : const Color(0xFFF2F4F3),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 20, color: AppColors.ink),
+            child: Icon(
+              icon,
+              size: 19,
+              color: lime ? AppColors.limeOn : AppColors.gray700,
+            ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: lime ? AppColors.limeOn : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1332,14 +1338,14 @@ class _PloggingRulesSheet extends StatelessWidget {
                     child: Text(
                       lines[i].text,
                       style: TextStyle(
-                        fontSize: 13.5,
-                        height: 1.5,
+                        fontSize: 13,
+                        height: 1.55,
                         fontWeight: lines[i].danger
                             ? FontWeight.w600
-                            : FontWeight.w400,
+                            : FontWeight.w500,
                         color: lines[i].danger
                             ? AppColors.actionDanger
-                            : AppColors.textSecondary,
+                            : (lime ? AppColors.gray700 : AppColors.gray500),
                       ),
                     ),
                   ),

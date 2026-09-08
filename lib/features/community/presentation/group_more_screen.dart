@@ -35,7 +35,7 @@ class _GroupMoreScreenState extends State<GroupMoreScreen> {
   // 정렬 — 그룹검색과 동일하게 '박스(바텀시트)'에서 고른다.
   int _sort = 0; // 0 활동순 / 1 멤버순 / 2 최신순
   static const List<String> _sortLabels = ['활동순', '멤버순', '최신순'];
-  static const List<String> _sortHints = ['오늘 활동 많은 순', '멤버 많은 순', '개설 최신순'];
+  static const List<String> _sortHints = ['지금 뛰는 사람 많은 순', '멤버 많은 순', '새로 생긴 순'];
 
   @override
   void initState() {
@@ -103,7 +103,7 @@ class _GroupMoreScreenState extends State<GroupMoreScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.gray200,
+                    color: const Color(0xFFE3E6E4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -154,7 +154,7 @@ class _GroupMoreScreenState extends State<GroupMoreScreen> {
                           style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.gray350,
+                            color: Color(0xFFA8ADA9),
                           ),
                         ),
                         if (_sort == i) ...[

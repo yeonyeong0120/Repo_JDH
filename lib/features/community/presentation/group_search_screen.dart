@@ -49,7 +49,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
   // 정렬 — 실제 모델 필드(todayActiveCount / memberCount / createdAt)로만 구성.
   int _sort = 0;
   static const List<String> _sortLabels = ['활동순', '인기순', '최신순'];
-  static const List<String> _sortHints = ['오늘 활동 많은 순', '멤버 많은 순', '개설 최신순'];
+  static const List<String> _sortHints = ['지금 뛰는 사람 많은 순', '멤버 많은 순', '새로 생긴 순'];
 
   // 활동 강도 필터 (null = 전체). 알약은 짧은 라벨, 매칭·메타는 원문을 쓴다.
   int? _pace;
@@ -141,7 +141,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.gray200,
+                    color: const Color(0xFFE3E6E4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -192,7 +192,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                           style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.gray350,
+                            color: Color(0xFFA8ADA9),
                           ),
                         ),
                         if (_sort == i) ...[
@@ -294,7 +294,7 @@ class _GroupSearchScreenState extends State<GroupSearchScreen> {
                                 hintText: '그룹명 또는 동네 검색',
                                 hintStyle: TextStyle(
                                   fontSize: 14.5,
-                                  color: AppColors.gray350,
+                                  color: Color(0xFFA8ADA9),
                                 ),
                               ),
                               style: const TextStyle(

@@ -10,7 +10,6 @@ import 'package:repo_jdh/core/view_models/screen_views.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
-import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'group_photos_screen.dart';
 import 'group_info_screen.dart';
 import 'group_join_requests_screen.dart';
@@ -1034,6 +1033,38 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     if (mounted) setState(() {}); // 바깥 상태에도 반영
   }
 
+  /// B형 시트 하단 버튼 — 명세 공통 규격: height 56, 라운드 18, 800 16.
+  /// [width] 를 주면 그 폭으로 고정하고, 없으면 Expanded 안에서 늘어난다.
+  Widget _sheetBtn(
+    String label, {
+    required Color bg,
+    required Color fg,
+    required VoidCallback? onTap,
+    double? width,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: width,
+        height: 56,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: fg,
+          ),
+        ),
+      ),
+    );
+  }
+
   // 알림 토글 한 줄 (제목 + 부제 + 스위치)
   Widget _notifToggleRow(
       String title, String sub, bool value, VoidCallback onToggle) {
@@ -1099,11 +1130,11 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   // ───────── 신고 (대상: 활동 또는 메시지) — 목업: 사유 선택 바텀시트 ─────────
   void _showReport(_FeedItem item) {
     const reasons = [
-      '부적절한 사진이에요',
-      '욕설·비방이 있어요',
-      '광고·스팸이에요',
-      '활동과 관계없는 내용이에요',
-      '다른 사유',
+      '허위 인증 (활동하지 않은 사진)',
+      '부적절한 사진',
+      '욕설 · 비방',
+      '스팸 · 홍보',
+      '기타',
     ];
     String? selected;
     final otherController = TextEditingController();
@@ -1118,7 +1149,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSt) {
-          final isOther = selected == '다른 사유';
+          final isOther = selected == '기타';
           final canSubmit = selected != null &&
               (!isOther || otherController.text.trim().isNotEmpty);
           return Padding(
@@ -1154,20 +1185,21 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                       ? '${item.name} 님의 메시지를 신고하시겠어요?'
                       : '${item.name} 님의 활동 인증을 신고하시겠어요?',
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 19,
                     height: 1.35,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 7),
                 const Text(
-                  '신고 내용은 그룹장과 운영진만 볼 수 있어요. 같은 멤버를 3번 이상 신고하면 자동으로 확인해요.',
+                  '신고 사유를 선택하면 운영팀이 24시간 내에 확인해요. 신고 사실은 상대에게 알려지지 않아요.',
                   style: TextStyle(
-                    fontSize: 14,
-                    height: 1.6,
-                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.55,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.gray500,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1228,24 +1260,39 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    Expanded(
-                      child: AppButton(
-                        label: '취소',
-                        type: AppButtonType.secondary,
-                        onTap: () => Navigator.pop(ctx),
-                      ),
+                    _sheetBtn(
+                      '취소',
+                      width: 104,
+                      bg: AppColors.surfaceSoft,
+                      fg: AppColors.gray700,
+                      onTap: () => Navigator.pop(ctx),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 9),
                     Expanded(
-                      child: AppButton(
-                        label: '신고하기',
-                        enabled: canSubmit,
-                        type: AppButtonType.danger,
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          // TODO: 실제 신고 접수 (대상 item · 사유 selected · 상세 otherController.text)
-                          AppSnackBar.show(context, '신고를 접수했어요. 검토 후 알려드릴게요');
-                        },
+                      // 사유를 고르기 전에는 눌러도 아무 일이 없다.
+                      // 에러 토스트를 띄우지 않는다 — 사유 선택이 답이다.
+                      child: _sheetBtn(
+                        '신고 접수',
+                        bg: canSubmit
+                            ? AppColors.ink
+                            : const Color(0xFFE7EAE8),
+                        fg: canSubmit
+                            ? Colors.white
+                            : const Color(0xFFA8ADA9),
+                        onTap: canSubmit
+                            ? () {
+                                Navigator.pop(ctx);
+                                // TODO: 실제 신고 접수 (대상 item · 사유 selected · 상세 otherController.text)
+                                AppSnackBar.show(
+                                  context,
+                                  '신고가 접수됐어요. 운영팀이 24시간 내에 확인해요',
+                                  icon: TablerIcons.shieldCheck,
+                                  iconSize: 21,
+                                  bottom: 104,
+                                  duration: const Duration(milliseconds: 3200),
+                                );
+                              }
+                            : null,
                       ),
                     ),
                   ],
