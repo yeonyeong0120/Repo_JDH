@@ -844,51 +844,118 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 ),
               ),
               const Text(
-                '초대하기',
+                '멤버 초대',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
+                  height: 1.35,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.6,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               const Text(
-                '친구에게 초대 링크를 보내 그룹에 함께해요.',
+                '링크를 받은 사람은 바로 그룹에 참여할 수 있어요. 링크는 7일 후 만료돼요.',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13.5,
                   height: 1.6,
-                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.gray500,
                 ),
               ),
-              const SizedBox(height: 14),
-              _inviteRow(
-                icon: TablerIcons.brandKakoTalk,
-                label: '카카오톡',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppSnackBar.show(context, '카카오톡으로 초대 링크를 보냈어요');
-                },
+              const SizedBox(height: 16),
+              // 링크 행 — '복사'는 시트를 닫지 않는다(채널 선택만 닫힌다).
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(TablerIcons.link,
+                        size: 19, color: AppColors.gray500),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        link,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        await Clipboard.setData(ClipboardData(text: link));
+                        if (!mounted) return;
+                        AppSnackBar.show(context, '초대 링크를 복사했어요');
+                      },
+                      child: Container(
+                        height: 34,
+                        padding: const EdgeInsets.symmetric(horizontal: 13),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.ink,
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: const Text(
+                          '복사',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              _inviteRow(
-                icon: TablerIcons.message2,
-                label: '문자',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppSnackBar.show(context, '문자로 초대 링크를 보냈어요');
-                },
+              const SizedBox(height: 16),
+              // 채널 — 명세에는 QR 코드·더보기도 있지만 아직 기능이 없어
+              // 넣지 않는다(눌러도 아무 일이 없는 타일이 된다).
+              Row(
+                children: [
+                  Expanded(
+                    child: _inviteChannel(
+                      icon: TablerIcons.brandKakoTalk,
+                      label: '카카오톡',
+                      tileBg: const Color(0xFFFEE500),
+                      glyph: const Color(0xFF3B1E1E),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        AppSnackBar.show(context, '카카오톡으로 초대 링크를 보냈어요');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _inviteChannel(
+                      icon: TablerIcons.message,
+                      label: '문자',
+                      tileBg: AppColors.surfaceSoft,
+                      glyph: AppColors.ink,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        AppSnackBar.show(context, '문자로 초대 링크를 보냈어요');
+                      },
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              _inviteRow(
-                icon: TablerIcons.link,
-                label: '링크 복사',
-                onTap: () async {
-                  await Clipboard.setData(ClipboardData(text: link));
-                  if (!mounted) return;
-                  Navigator.pop(ctx);
-                  AppSnackBar.show(context, '초대 링크를 복사했어요');
-                },
+              const SizedBox(height: 16),
+              _sheetBtn(
+                '닫기',
+                bg: AppColors.surfaceSoft,
+                fg: AppColors.textPrimary,
+                onTap: () => Navigator.pop(ctx),
               ),
             ],
           ),
@@ -897,43 +964,38 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     );
   }
 
-  // 초대 채널 한 줄 (아이콘 + 라벨)
-  Widget _inviteRow({
+  /// 초대 채널 타일 — 세로 구성(타일 + 라벨).
+  Widget _inviteChannel({
     required IconData icon,
     required String label,
+    required Color tileBg,
+    required Color glyph,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: AppColors.bg,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: AppColors.ink),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+      child: Column(
+        children: [
+          Container(
+            height: 60,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: tileBg,
+              borderRadius: BorderRadius.circular(20),
             ),
-            const Icon(
-              TablerIcons.chevronRight,
-              size: 20,
-              color: AppColors.gray400,
+            child: Icon(icon, size: 24, color: glyph),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.gray700,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
