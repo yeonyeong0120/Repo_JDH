@@ -606,8 +606,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
+      // 명세 §16 — 이 시트만 딤이 연하다 rgba(25,30,36,.42)
+      barrierColor: const Color(0x6B191E24),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
       builder: (_) => _NumberSheet(
         label: label,
@@ -784,15 +786,17 @@ class _NumberSheetState extends State<_NumberSheet> {
       padding: EdgeInsets.only(bottom: bottom),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 20),
+          padding: const EdgeInsets.fromLTRB(22, 14, 22, 30),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 widget.label,
                 style: const TextStyle(
-                  fontSize: 17,
+                  fontSize: 20,
+                  height: 1.4,
                   fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                   color: AppColors.textPrimary,
                 ),
               ),
@@ -810,7 +814,7 @@ class _NumberSheetState extends State<_NumberSheet> {
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         SizedBox(
-                          width: 96,
+                          width: 86,
                           child: TextField(
                             controller: _c,
                             textAlign: TextAlign.center,
@@ -823,7 +827,9 @@ class _NumberSheetState extends State<_NumberSheet> {
                             onEditingComplete: _commitField,
                             style: const TextStyle(
                               fontSize: 40,
+                              height: 1.1,
                               fontWeight: FontWeight.w800,
+                              letterSpacing: -1.4,
                               color: AppColors.textPrimary,
                             ),
                             decoration: const InputDecoration(
@@ -840,9 +846,9 @@ class _NumberSheetState extends State<_NumberSheet> {
                         Text(
                           widget.unit,
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.gray700,
                           ),
                         ),
                       ],
@@ -851,7 +857,7 @@ class _NumberSheetState extends State<_NumberSheet> {
                   _roundBtn(TablerIcons.plus, () => _set(_value + 1)),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -864,7 +870,7 @@ class _NumberSheetState extends State<_NumberSheet> {
               const SizedBox(height: 22),
               SizedBox(
                 width: double.infinity,
-                height: 54,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: () {
                     _commitField();
@@ -876,7 +882,7 @@ class _NumberSheetState extends State<_NumberSheet> {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                   ),
                   child: const Text(
@@ -892,20 +898,20 @@ class _NumberSheetState extends State<_NumberSheet> {
     );
   }
 
+  // 명세 §16 — 원이 아니라 라운드 사각 56, 보더 1.5 #E3E6E4.
   Widget _roundBtn(IconData icon, VoidCallback onTap) {
-    return Material(
-      color: AppColors.surface,
-      shape: const CircleBorder(
-        side: BorderSide(color: AppColors.neutral300, width: 1.2),
-      ),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 54,
-          height: 54,
-          child: Icon(icon, size: 26, color: AppColors.textPrimary),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE3E6E4), width: 1.5),
         ),
+        child: Icon(icon, size: 25, color: AppColors.textPrimary),
       ),
     );
   }
@@ -913,23 +919,24 @@ class _NumberSheetState extends State<_NumberSheet> {
   // 빠른 증감 — 회원가입과 동일한 방식(내용 크기에 맞춘 pill)
   Widget _quick(String label, int delta) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 3),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => _set(_value + delta),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          height: 36,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: AppColors.neutral300),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE3E6E4), width: 1.5),
           ),
           child: Text(
             label,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
+              color: AppColors.gray700,
             ),
           ),
         ),

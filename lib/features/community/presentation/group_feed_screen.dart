@@ -895,7 +895,13 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                       onTap: () async {
                         await Clipboard.setData(ClipboardData(text: link));
                         if (!mounted) return;
-                        AppSnackBar.show(context, '초대 링크를 복사했어요');
+                        AppSnackBar.show(
+                          context,
+                          '초대 링크를 복사했어요',
+                          icon: TablerIcons.shieldCheck,
+                          iconSize: 21,
+                          bottom: 104,
+                        );
                       },
                       child: Container(
                         height: 34,
@@ -931,7 +937,13 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                       glyph: const Color(0xFF3B1E1E),
                       onTap: () {
                         Navigator.pop(ctx);
-                        AppSnackBar.show(context, '카카오톡으로 초대 링크를 보냈어요');
+                        AppSnackBar.show(
+                          context,
+                          '카카오톡으로 초대 링크를 보냈어요',
+                          icon: TablerIcons.shieldCheck,
+                          iconSize: 21,
+                          bottom: 104,
+                        );
                       },
                     ),
                   ),
@@ -944,7 +956,13 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                       glyph: AppColors.ink,
                       onTap: () {
                         Navigator.pop(ctx);
-                        AppSnackBar.show(context, '문자로 초대 링크를 보냈어요');
+                        AppSnackBar.show(
+                          context,
+                          '문자로 초대 링크를 보냈어요',
+                          icon: TablerIcons.shieldCheck,
+                          iconSize: 21,
+                          bottom: 104,
+                        );
                       },
                     ),
                   ),
