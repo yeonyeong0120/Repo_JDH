@@ -407,17 +407,28 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
     }
   }
 
-  // PLOG-06 뒤로가기: 나가면 기록 폐기. 계속하기(초록)를 오른쪽 주 버튼으로.
+  // PLOG-06 뒤로가기 — 명세 §2 활동 취소.
+  // 세로 배치이고 안전한 선택(계속 뛰기)이 위·다크다. 가로로 바꾸지 말 것.
   Future<void> _confirmCancel() async {
+    final t = ref.read(trackingProvider);
+    final weight =
+        ActivityMetrics.weightLabel(ref.read(ploggingProvider).totalCounts);
     final ok = await AppDialog.show(
       context,
-      title: '지금 나가면 기록이 사라져요',
-      message: '아직 저장되지 않은 활동이에요. 나가면 처음부터 다시 시작해야 합니다.',
-      cancelText: '나가기', // 왼쪽 흰 버튼 → 기록 폐기 후 홈
-      confirmText: '계속하기', // 오른쪽 초록 버튼 → 화면 유지
-      warn: true, // 아이콘만 경고(빨강), 계속하기 버튼은 초록 유지
+      title: '플로깅을 그만두시겠어요?',
+      message: '이번 활동은 취소되고 지금까지 걸은 ${t.distanceText}km,\n수거 $weight은 기록되지 않아요',
+      cancelText: '계속 뛰기', // 위 · 다크 (안전)
+      confirmText: '활동 취소하기', // 아래 · 연회색 면 + 빨강 글자 (파괴)
+      danger: true,
+      softDanger: true,
+      verticalButtons: true,
+      icon: TablerIcons.alertTriangle,
+      iconBg: const Color(0xFFFDEBE7),
+      iconFg: const Color(0xFFE4573D),
+      // 지도 위라 딤이 더 어둡다 — 명세 rgba(12,15,13,.62)
+      barrierColor: const Color(0x9E0C0F0D),
     );
-    if (ok == false) {
+    if (ok == true) {
       await ref.read(ploggingProvider.notifier).reset();
       ref.read(trackingProvider.notifier).reset(); // 세션 폐기(이어하기 안 묻게)
       // 홈이 아니라 목적지 설정 화면으로 이동한다.
@@ -447,7 +458,12 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
       message: '${t.distanceText}km · 수거 $weight이 기록되고\n포인트가 적립돼요',
       cancelText: '계속 뛰기',
       confirmText: '마치기',
-      icon: TablerIcons.flagFilled, // 라임 스퀘어클 + 검정 깃발
+      icon: TablerIcons.flagFilled,
+      iconBg: const Color(0xFFF7FBE4),
+      iconFg: AppColors.ink,
+      iconSize: 26,
+      // 지도 위라 딤이 더 어둡다 — 명세 rgba(12,15,13,.62)
+      barrierColor: const Color(0x9E0C0F0D),
     );
     if (ok != true || !mounted) return;
 

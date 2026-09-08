@@ -1358,6 +1358,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
             confirmText: '나가기',
             danger: true,
             icon: TablerIcons.doorExit,
+            iconSize: 28,
           ) ==
           true;
     }

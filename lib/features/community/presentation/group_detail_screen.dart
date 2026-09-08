@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
@@ -375,7 +376,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       );
       if (!mounted) return;
       setState(() => _joinStatus = JoinStatus.pending);
-      AppSnackBar.show(context, '가입 요청을 보냈어요', kind: SnackKind.success);
+      // 명세: 그룹 상세 토스트 — 잉크 면 + 라임 체크, bottom 34, 2.6s
+      AppSnackBar.show(
+        context,
+        '가입 요청을 보냈어요',
+        icon: TablerIcons.check,
+      );
     } catch (_) {
       if (mounted) AppSnackBar.show(context, '요청을 보내지 못했어요', kind: SnackKind.error);
     } finally {
@@ -1136,97 +1142,20 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     );
   }
 
-  // ── 가입 확인 팝업 (시안 §6.3) ──
+  // ── §7 가입 확인 팝업 ──
+  // 명세 A형과 값이 같아 AppDialog 로 옮겼다. 같은 규격을 두 벌 두지 않는다.
   Future<bool?> _confirmJoin() {
-    return showDialog<bool>(
-      context: context,
-      barrierColor: const Color(0x80141816),
-      builder: (dctx) => Dialog(
-        backgroundColor: AppColors.surface,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 30),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 26, 24, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                    color: _lime, shape: BoxShape.circle),
-                child: const Icon(TablerIcons.heartHandshake,
-                    size: 28, color: AppColors.ink),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                // 그룹 이름을 노출하지 않고 '그룹'으로 통일
-                '그룹에\n가입하시겠습니까?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 21,
-                    height: 1.4,
-                    letterSpacing: -0.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                '가입하면 그룹 채팅과 주간 랭킹에\n바로 참여할 수 있어요',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13.5,
-                    height: 1.6,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.gray500),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.pop(dctx, false),
-                      child: Container(
-                        height: 54,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            color: AppColors.surfaceSoft,
-                            borderRadius: BorderRadius.circular(18)),
-                        child: const Text('아니요',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.gray700)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.pop(dctx, true),
-                      child: Container(
-                        height: 54,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            color: AppColors.ink,
-                            borderRadius: BorderRadius.circular(18)),
-                        child: const Text('가입하기',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    return AppDialog.show(
+      context,
+      // 그룹 이름을 노출하지 않고 '그룹'으로 통일
+      title: '그룹에\n가입하시겠습니까?',
+      message: '가입하면 그룹 채팅과 주간 랭킹에\n바로 참여할 수 있어요',
+      cancelText: '아니요',
+      confirmText: '가입하기',
+      icon: TablerIcons.heartHandshake,
+      iconBg: _lime,
+      iconFg: AppColors.ink,
+      iconSize: 28,
     );
   }
 }

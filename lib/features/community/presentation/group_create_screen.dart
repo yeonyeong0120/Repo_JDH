@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:go_router/go_router.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 
@@ -88,91 +90,43 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     // 그룹장(ownerUid == 내 uid)이면 '운영 중', 아니면 '그룹에 속해 있음' 안내로 분기.
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final bool isOwner = mine != null && mine.ownerUid == uid;
-    await showDialog<void>(
-      context: context,
+    // §10 그룹 개설 제한 — 좌 '닫기' / 우 '내 그룹 보기'.
+    final go = await AppDialog.show(
+      context,
+      title: isOwner ? '이미 그룹을 운영 중이에요' : '이미 그룹에 가입되어 있어요',
+      message: isOwner
+          ? '한 사람이 만들 수 있는 그룹은 하나예요.\n새로 만들려면 운영 중인 그룹을 먼저 정리해주세요'
+          : '한 사람이 가입할 수 있는 그룹은 하나예요.\n새로 만들려면 가입한 그룹을 먼저 정리해주세요',
+      cancelText: '닫기',
+      confirmText: '내 그룹 보기',
       barrierDismissible: false,
-      barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
-      builder: (dctx) => _ownedGroupDialog(dctx, mine, isOwner),
+      icon: TablerIcons.usersGroup,
+      iconBg: const Color(0xFFF2F4F3),
+      iconFg: AppColors.gray700,
+      iconSize: 26,
+      // 실제 그룹을 못 읽었으면 카드 없이 안내만 보여준다.
+      extra: mine == null ? null : _ownedGroupRow(mine, isOwner),
     );
-    if (mounted) Navigator.pop(context); // 만들 수 없으므로 만들기 화면 닫기
+    if (!mounted) return;
+    Navigator.pop(context); // 만들 수 없으므로 만들기 화면 닫기
+    // '내 그룹 보기' → 그룹 채팅으로. 그룹을 못 읽었으면 닫기만 한다.
+    if (go == true && mine != null && mine.id.isNotEmpty) {
+      final g = mine;
+      GoRouter.of(context).push(
+        '/group/feed',
+        extra: {'id': g.id, 'name': g.name},
+      );
+    }
   }
 
-  // (A) 이미 그룹 소속 안내 팝업 — 흰 라운드 카드(중앙 정렬).
-  // isOwner: 그룹장이면 '운영 중', 일반 멤버면 '속해 있음' 문구.
-  Widget _ownedGroupDialog(BuildContext dctx, Group? mine, bool isOwner) {
-    return Dialog(
-      backgroundColor: AppColors.surface,
-      surfaceTintColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 32),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 상단 56 원형 — 소프트 그레이 면 + usersGroup 잉크 글리프
-            Container(
-              width: 56,
-              height: 56,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceSoft,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(TablerIcons.users,
-                  size: 28, color: AppColors.ink),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              // 그룹장/멤버 구분 없이 통일
-              '이미 그룹에 가입되어 있어요',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.38,
-                color: AppColors.ink,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '한 사람이 가입할 수 있는 그룹은 하나예요\n새로 만들려면 가입 되어 있는 그룹을 정리해주세요',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14.5,
-                height: 1.5,
-                color: AppColors.gray700,
-              ),
-            ),
-            // 내 그룹 카드(실데이터가 있을 때만)
-            if (mine != null) ...[
-              const SizedBox(height: 20),
-              _ownedGroupRow(mine, isOwner),
-            ],
-            const SizedBox(height: 24),
-            // 확인 버튼 하나만
-            SizedBox(
-              width: double.infinity,
-              child: _dialogButton(
-                '확인',
-                primary: true,
-                onTap: () => Navigator.pop(dctx),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 내 그룹 요약 행 — 라임 라운드 스퀘어 + 깃발 + 이름/멤버 수
+  // §10 내 그룹 카드 — 본문 아래에 붙는다.
+  // 타일은 라임 라운드 사각 44, 글리프는 깃발.
   Widget _ownedGroupRow(Group g, bool isOwner) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.surfaceSoft,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
@@ -182,9 +136,9 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.lime,
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(TablerIcons.users, size: 22, color: AppColors.limeOn),
+            child: const Icon(TablerIcons.flag, size: 20, color: AppColors.limeOn),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -197,18 +151,18 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.ink,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   isOwner
                       ? '멤버 ${g.memberCount}명 · 내가 리더'
                       : '멤버 ${g.memberCount}명',
                   style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.gray500,
                   ),
                 ),
@@ -220,95 +174,18 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     );
   }
 
-  // (B) '같은 이름의 그룹이 있어요' 팝업 — 코랄 경고 + 단일 잉크 버튼
+  // §11 같은 이름의 그룹이 있어요 — 단일 버튼 안내.
   Future<void> _showDuplicateName(String name) async {
-    await showDialog<void>(
-      context: context,
-      barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
-      builder: (dctx) => Dialog(
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 상단 56 원형 — 코랄 면 + 경고 삼각형(빨강)
-              Container(
-                width: 56,
-                height: 56,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: AppColors.coral50,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(TablerIcons.alertTriangleFilled,
-                    size: 28, color: AppColors.actionDanger),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '같은 이름의 그룹이 있어요',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.38,
-                  color: AppColors.ink,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '\'$name\'은 이미 사용 중인 이름이에요.\n다른 이름으로 만들어주세요',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  height: 1.5,
-                  color: AppColors.gray700,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: _dialogButton(
-                  '이름 고치기',
-                  primary: true,
-                  onTap: () => Navigator.pop(dctx),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    await AppDialog.showInfo(
+      context,
+      title: '같은 이름의 그룹이 있어요',
+      message: "'$name'은 이미 사용 중인 이름이에요.\n다른 이름으로 만들어주세요",
+      buttonText: '이름 고치기',
+      danger: true,
+      icon: TablerIcons.alertTriangle,
     );
   }
 
-  // 팝업 버튼 — primary: 잉크 채움 / 아니면 소프트 그레이 보조
-  Widget _dialogButton(String label,
-      {required bool primary, required VoidCallback onTap}) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 54,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: primary ? AppColors.ink : AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 15.5,
-            fontWeight: FontWeight.w800,
-            color: primary ? AppColors.textOnBrand : AppColors.ink,
-          ),
-        ),
-      ),
-    );
-  }
 
   Future<void> _pickPhoto() async {
     try {
