@@ -9,7 +9,6 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
@@ -149,35 +148,41 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
                           ),
                         );
                       },
-                      // 파티 아이콘: 이미지 에셋을 우선 사용, 없으면 Material 아이콘.
-                      // assets/icons/celebration.png 에 넣으면 그 이미지로 교체됨.
-                      child: Image.asset(
-                        'assets/icons/celebration.png',
-                        width: 60,
-                        height: 60,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          TablerIcons.confetti,
-                          size: 56,
-                          color: AppColors.accent,
+                      // 명세 §5 — 라임 원 66 + 깃발. 뱃지(§6)는 라운드 사각이라
+                      // 여기가 원이라는 점이 둘을 구분한다.
+                      child: Container(
+                        width: 66,
+                        height: 66,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: AppColors.lime,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          TablerIcons.flagFilled,
+                          size: 30,
+                          color: AppColors.ink,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
+                    // 제목은 '퀘스트 완료', 무엇을 깼는지는 부제로 내린다.
                     const Text(
-                      '챌린지 완료',
+                      '퀘스트 완료',
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textBrandOnLight,
+                        fontSize: 19,
+                        height: 1.35,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       widget.quest,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -186,17 +191,14 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
                       widget.desc,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 15,
-                        height: 1.45,
-                        color: AppColors.textSecondary,
+                        fontSize: 12.5,
+                        height: 1.55,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray500,
                       ),
                     ),
-                    const SizedBox(height: 22),
-                    AppButton(
-                      label: '확인',
-                      onTap: () => Navigator.pop(context),
-                      type: AppButtonType.primary,
-                    ),
+                    const SizedBox(height: 16),
+                    _rewardBtn(context),
                   ],
                 ),
               ),
@@ -206,6 +208,32 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
       ],
     );
   }
+}
+
+/// 리워드 카드(§5·§6)의 확인 버튼 — 명세 C형: height 50, 라운드 17, 800 15.
+/// AppButton 은 앱 전역 규격(52·라운드 다름)이라 여기서는 쓰지 않는다.
+Widget _rewardBtn(BuildContext context, {Object? result}) {
+  return GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: () => Navigator.pop(context, result),
+    child: Container(
+      width: double.infinity,
+      height: 50,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(17),
+      ),
+      child: const Text(
+        '확인',
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+        ),
+      ),
+    ),
+  );
 }
 
 class _Confetto {
@@ -341,26 +369,27 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
                       const Text(
                         '새 뱃지 획득',
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textBrandOnLight,
+                          fontSize: 19,
+                          height: 1.35,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     _rise(
                       nameV,
                       Text(
                         b.name,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     // 설명: 단어가 문장 순서대로 따다닥 떠오름
                     _StaggerWords(
                       text: desc,
@@ -368,20 +397,14 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
                       start: 0.72,
                       span: 0.2,
                       style: const TextStyle(
-                        fontSize: 15,
-                        height: 1.45,
-                        color: AppColors.textSecondary,
+                        fontSize: 12.5,
+                        height: 1.55,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray500,
                       ),
                     ),
-                    const SizedBox(height: 22),
-                    _rise(
-                      btnV,
-                      AppButton(
-                        label: '확인',
-                        onTap: () => Navigator.pop(context, false),
-                        type: AppButtonType.primary,
-                      ),
-                    ),
+                    const SizedBox(height: 16),
+                    _rise(btnV, _rewardBtn(context, result: false)),
                   ],
                 );
               },
@@ -395,16 +418,17 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
   Widget _badgeTile(BadgeData b) {
     // 목업: 라임 스퀘어클 + 검정(ink) 뱃지 글리프.
     return Container(
-      width: 72,
-      height: 72,
+      width: 66,
+      height: 66,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.lime,
+        // 원이 아니라 라운드 사각이다 — 퀘스트(§5)가 원이라 이걸로 구분한다.
         borderRadius: BorderRadius.circular(22),
       ),
       child: usesTrashBagIcon(b)
-          ? TrashBagIcon(size: 34, color: AppColors.ink) // 봉지 뱃지
-          : Icon(b.icon, size: 34, color: AppColors.ink),
+          ? TrashBagIcon(size: 32, color: AppColors.ink) // 봉지 뱃지
+          : Icon(b.icon, size: 32, color: AppColors.ink),
     );
   }
 }
