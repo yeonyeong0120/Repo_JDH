@@ -277,14 +277,12 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
 
   // (경로 이탈 자동 재추천 기능 제거 — 이탈해도 아무 이벤트 없음)
 
-  // 계획 경로(회색) + 지나온 경로(차콜) + 정화 거점(핫스팟) 핀을 그린다.
-  // 계획 라인은 연회색으로 깔고, 내가 걸은 부분(트래킹 누적 좌표)을 그 위에
-  // 차콜(ink)로 얹어 '걸은 부분'이 또렷하게 드러나도록 한다.
+  // 계획 경로 + 정화 거점(핫스팟) 핀을 그린다.
+  // 걸어온 경로는 겹쳐 그리지 않는다 — 앱이 짜준 경로만 한 겹으로 보여준다.
   Future<void> _renderRoute() async {
     final c = _mapController;
     if (c == null) return;
     final result = ref.read(routeNotifierProvider).valueOrNull;
-    final tracking = ref.read(trackingProvider);
 
     final overlays = <NAddableOverlay>{};
 
@@ -1233,7 +1231,8 @@ class _PloggingRulesSheet extends StatelessWidget {
                     icon: TablerIcons.power,
                     title: '도착하면 종료',
                     lines: const [
-                      _Span('화면 오른쪽 전원 버튼을 꾹 누르면 플로깅이 끝나고 기록·포인트가 저장돼요. 중간에 나가면 저장되지 않아요'),
+                      _Span('화면 오른쪽 전원 버튼을 꾹 누르면 플로깅이 끝나고 기록·포인트가 저장돼요'),
+                      _Span('중간에 나가면 저장되지 않아요', danger: true),
                     ],
                   ),
                 ],

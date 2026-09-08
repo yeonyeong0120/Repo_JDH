@@ -187,6 +187,36 @@ class JoinRequest {
 /// 피드 항목 종류
 /// - activity : 플로깅 인증 카드 (거리·수거량·시간)
 /// - message  : 그룹 채팅 메시지 (텍스트)
+/// 그룹장 승계 후보 — 위임 확인 팝업에 미리 보여줄 최소 정보.
+/// 실제 승계는 leaveGroup 이 같은 기준(joinedAt 최솟값)으로 다시 고른다.
+class SuccessorBrief {
+  final String uid;
+  final String userName;
+  final String? photoUrl;
+  final DateTime? joinedAt;
+
+  const SuccessorBrief({
+    required this.uid,
+    this.userName = '',
+    this.photoUrl,
+    this.joinedAt,
+  });
+
+  /// 가입 후 며칠째인지. 가입 시각을 모르면 null.
+  int? get activeDays {
+    final at = joinedAt;
+    if (at == null) return null;
+    return DateTime.now().difference(at).inDays + 1;
+  }
+
+  /// 팝업 카드 메타 ('28일째 활동 · 새 그룹장').
+  /// 가입 시각을 모르면 '새 그룹장'만 남긴다.
+  String get cardMeta {
+    final d = activeDays;
+    return d == null ? '새 그룹장' : '$d일째 활동 · 새 그룹장';
+  }
+}
+
 class PostType {
   static const String activity = 'activity';
   static const String message = 'message';

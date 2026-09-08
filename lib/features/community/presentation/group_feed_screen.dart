@@ -151,17 +151,48 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   // 스쳐 보이는 것을 막기 위해 구독보다 앞서 가입 시각을 확보한다.
   Future<void> _initFeed() async {
     if (widget.groupId.isNotEmpty) {
-      _joinedAt = await GroupService.myJoinedAt(widget.groupId);
       // 가입 직후 진입 시 members/{uid}.joinedAt(serverTimestamp)이 아직
-      // 서버에 확정되지 않아 null 로 읽힐 수 있다. null 이면 잠깐 뒤 한 번 더
-      // 시도한다 — 이 재시도가 없으면 필터가 꺼져 '가입 이전 채팅'이 노출된다.
-      if (_joinedAt == null) {
-        await Future.delayed(const Duration(milliseconds: 500));
+      // 서버에 확정되지 않아 null 로 읽힐 수 있다. 간격을 늘려가며 몇 번 더
+      // 시도한다 — 확보 전에는 글을 하나도 보여주지 않는다.
+      for (final ms in _joinedAtBackoff) {
         _joinedAt = await GroupService.myJoinedAt(widget.groupId);
+        if (_joinedAt != null || !mounted) break;
+        await Future.delayed(Duration(milliseconds: ms));
+      }
+      if (mounted && _joinedAt == null) {
+        // 여기까지 실패했으면 '가입 이전 글 노출'을 막는 쪽을 택한다.
+        setState(() => _joinedAtGaveUp = true);
       }
     }
     if (!mounted) return;
     _subscribePosts();
+  }
+
+  /// 가입 시각 재시도 간격(ms). 마지막 값 뒤에는 더 기다리지 않는다.
+  static const List<int> _joinedAtBackoff = [0, 300, 700, 1500];
+
+  /// 재시도를 모두 소진하고도 가입 시각을 못 읽은 상태.
+  /// 이때는 글을 감추고 안내를 띄운다 (전체 노출보다 안전한 쪽).
+  bool _joinedAtGaveUp = false;
+
+  /// 안내의 '다시 시도' — 재시도 상태를 풀고 처음부터 다시 읽는다.
+  Future<void> _retryJoinedAt() async {
+    if (!mounted) return;
+    setState(() {
+      _joinedAtGaveUp = false;
+      _joinedAtHealing = false;
+    });
+    for (final ms in _joinedAtBackoff) {
+      _joinedAt = await GroupService.myJoinedAt(widget.groupId);
+      if (_joinedAt != null || !mounted) break;
+      await Future.delayed(Duration(milliseconds: ms));
+    }
+    if (!mounted) return;
+    if (_joinedAt == null) {
+      setState(() => _joinedAtGaveUp = true);
+    } else {
+      _applyPosts(_lastPosts);
+    }
   }
 
   // 스트림에서 _joinedAt 이 아직 null 이면(초기 진입 레이스) 한 번만 다시 읽어
@@ -173,8 +204,11 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     if (_joinedAtHealing || _joinedAt != null || widget.groupId.isEmpty) return;
     _joinedAtHealing = true;
     final v = await GroupService.myJoinedAt(widget.groupId);
+    // 실패해도 잠금을 풀어, 다음 스트림 이벤트에서 다시 시도할 수 있게 한다.
+    _joinedAtHealing = false;
     if (!mounted || v == null) return;
     _joinedAt = v;
+    if (_joinedAtGaveUp) setState(() => _joinedAtGaveUp = false);
     _applyPosts(_lastPosts); // 가입 시각을 이제 알았으니 이전 대화를 다시 걸러낸다.
   }
 
@@ -182,8 +216,10 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   // 채팅·시스템 알림·인증샷을 가리지 않고, 가입 시각 이전 글은 모두 숨긴다.
   // → 재가입하면 이전 소속 때의 대화·인증샷이 전혀 보이지 않는다.
   void _applyPosts(List<GroupPost> posts) {
+    // 가입 시각을 모르는 동안에는 아무것도 보여주지 않는다. 필터를 끄면
+    // 가입 이전 대화가 그대로 노출되므로, 빈 화면 쪽이 안전하다.
     final visible = _joinedAt == null
-        ? posts
+        ? const <GroupPost>[]
         : posts.where((p) => !p.createdAt.isBefore(_joinedAt!)).toList();
     setState(() => _items = visible.map(_fromPost).toList());
   }
@@ -365,8 +401,81 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     return '$period $hh:$mm';
   }
 
+  // 가입 시각을 확보하기 전/실패했을 때 피드 자리에 놓는 안내.
+  // 글을 감춘 채로 두어 가입 이전 대화가 새어 나가지 않게 한다.
+  Widget _joinedAtNotice() {
+    if (!_joinedAtGaveUp) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 60),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.2),
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 24),
+      child: Column(
+        children: [
+          const Icon(TablerIcons.cloudOff, size: 30, color: AppColors.gray500),
+          const SizedBox(height: 12),
+          const Text(
+            '대화를 불러오지 못했어요',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '연결을 확인하고 다시 시도해 주세요',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray500,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _retryJoinedAt,
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Text(
+                '다시 시도',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // 날짜별로 묶어서: [날짜 칩] 아래에 그 날 활동 카드들
   List<Widget> _buildFeed() {
+    // 가입 시각을 아직 못 읽었으면 글 대신 상태만 보여준다.
+    // (더미 모드는 groupId 가 비어 있어 이 분기를 타지 않는다)
+    if (widget.groupId.isNotEmpty && _joinedAt == null) {
+      return [_joinedAtNotice()];
+    }
     final items = [..._items]..sort((a, b) => a.date.compareTo(b.date));
     final widgets = <Widget>[];
     String? lastLabel;
@@ -1235,7 +1344,9 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     // 그 외(일반 멤버, 또는 마지막 1인 그룹장)는 기존 나가기 확인 팝업.
     bool ok;
     if (_isOwner && memberCount > 1) {
-      ok = await _confirmOwnerLeave() == true;
+      final successor = await GroupService.nextOwner(widget.groupId);
+      if (!mounted) return;
+      ok = await _confirmOwnerLeave(successor) == true;
     } else {
       // POPUPS_1 §8: 파괴적 액션은 빨강(#E4573D) 실행 버튼 + 연빨강 아이콘 배경(문 나가기).
       // 좌 '머무르기'(회색) / 우 '나가기'(빨강). (그룹 이름은 노출하지 않고 '그룹'으로)
@@ -1264,7 +1375,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
 
   // §7 그룹장 위임 안내 팝업 (세로 버튼) — 위/머무르기(안전) · 아래/위임하고 나가기(빨강).
   // 승계자는 가장 먼저 가입한 멤버로 자동 지정된다(수동 선택 없음).
-  Future<bool?> _confirmOwnerLeave() {
+  Future<bool?> _confirmOwnerLeave(SuccessorBrief? successor) {
     return showDialog<bool>(
       context: context,
       barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
@@ -1290,10 +1401,12 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                     size: 28, color: Color(0xFFE4573D)),
               ),
               const SizedBox(height: 16),
-              const Text(
-                '그룹을 위임하고\n나가시겠어요?',
+              Text(
+                successor == null || successor.userName.isEmpty
+                    ? '그룹을 위임하고\n나가시겠어요?'
+                    : '${successor.userName} 님에게 그룹을\n위임하고 나가시겠어요?',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 21,
                   height: 1.4,
                   fontWeight: FontWeight.w800,
@@ -1312,6 +1425,10 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                   color: AppColors.gray500,
                 ),
               ),
+              if (successor != null) ...[
+                const SizedBox(height: 18),
+                _successorCard(successor),
+              ],
               const SizedBox(height: 18),
               // 위: 머무르기(안전, 잉크)
               GestureDetector(
@@ -1362,6 +1479,80 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       ),
     );
   }
+
+  // §7.2 승계자 카드 — 누가 그룹장을 받는지 보여준다. 고르는 UI 가 아니라
+  // 통보다(승계는 가입이 가장 오래된 멤버로 자동 결정된다).
+  Widget _successorCard(SuccessorBrief s) {
+    final initial = s.userName.isEmpty ? '?' : s.userName.substring(0, 1);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: AppColors.lime,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: (s.photoUrl != null && s.photoUrl!.isNotEmpty)
+                ? Image.network(s.photoUrl!,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _successorInitial(initial))
+                : _successorInitial(initial),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  s.userName.isEmpty ? '새 그룹장' : s.userName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  s.cardMeta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(TablerIcons.crown, size: 20, color: AppColors.gray700),
+        ],
+      ),
+    );
+  }
+
+  Widget _successorInitial(String initial) => Text(
+        initial,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
+          color: AppColors.limeOn,
+        ),
+      );
 
   // 탈퇴 후 공통 처리 — 안내 + 홈 갱신 + 피드 닫기.
   void _leftGroupExit() {
