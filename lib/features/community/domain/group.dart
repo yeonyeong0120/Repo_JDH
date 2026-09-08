@@ -133,6 +133,36 @@ class JoinRequest {
     return parts.join(' · ');
   }
 
+  /// 요청 시각의 상대 표기 (예: '2시간 전'). 7일이 넘으면 날짜로 떨어뜨린다.
+  String get sinceText {
+    final d = DateTime.now().difference(requestedAt);
+    if (d.inMinutes < 1) return '방금';
+    if (d.inMinutes < 60) return '${d.inMinutes}분 전';
+    if (d.inHours < 24) return '${d.inHours}시간 전';
+    if (d.inDays < 7) return '${d.inDays}일 전';
+    return '${requestedAt.month}월 ${requestedAt.day}일';
+  }
+
+  /// 전용 화면 카드 메타 ('서울 마포구 · 2시간 전 요청')
+  String get screenMeta {
+    final parts = <String>[
+      if (region.isNotEmpty) region,
+      '$sinceText 요청',
+    ];
+    return parts.join(' · ');
+  }
+
+  /// 처리 시트 카드 메타 ('서울 마포구 · 누적 12.4kg · 2시간 전').
+  /// 활동 기록이 없으면 누적 대신 '첫 활동 전'을 넣는다.
+  String get sheetMeta {
+    final parts = <String>[
+      if (region.isNotEmpty) region,
+      hasRecord ? '누적 ${cumulativeKgText}kg' : '첫 활동 전',
+      sinceText,
+    ];
+    return parts.join(' · ');
+  }
+
   /// 누적 수거량을 소수 첫째 자리까지 (예: 12.4)
   String get cumulativeKgText {
     final v = (cumulativeKg * 10).round() / 10;

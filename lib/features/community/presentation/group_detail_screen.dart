@@ -45,6 +45,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   static const Color _titleGreen = Color(0xFF1E2418);
   static const Color _memberGreen = Color(0xFF4A5A2A);
   static const Color _charcoal = Color(0xFF3A403C);
+  // 요청 시트 고지 문구 — 본문 회색보다 한 단계 연하다
+  static const Color _noticeGray = Color(0xFFA8ADA9);
   static const Color _faint = Color(0xFFB0B6B1);
   static const Color _track = Color(0xFFEDEFEE);
   static const Color _hairline = Color(0xFFF1F3F2);
@@ -176,38 +178,50 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       ),
       builder: (sctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+          padding: const EdgeInsets.fromLTRB(22, 12, 22, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 18),
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(3),
+                    color: const Color(0xFFE3E6E4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               const Text(
                 '가입 요청 보내기',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
+                  height: 1.35,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.6,
                   color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '이 그룹은 그룹장 승인이 필요해요. 요청을 보내면 그룹장이 확인하고 승인해요.',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  height: 1.6,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.gray500,
                 ),
               ),
               const SizedBox(height: 16),
               // 프로필 카드
               Container(
-                padding: const EdgeInsets.all(14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
@@ -215,14 +229,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       width: 44,
                       height: 44,
                       alignment: Alignment.center,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: _lime,
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
                         name.isEmpty ? '?' : name.substring(0, 1),
                         style: const TextStyle(
-                          fontSize: 17,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                           color: AppColors.limeOn,
                         ),
@@ -238,7 +252,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 15.5,
+                              fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
                             ),
@@ -249,7 +263,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.gray500,
                             ),
                           ),
@@ -259,16 +274,26 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-              const Text(
-                '위 프로필과 누적 수거량이 그룹장에게 보여요',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  height: 1.5,
-                  color: AppColors.gray500,
-                ),
+              const SizedBox(height: 14),
+              const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(TablerIcons.infoCircle, size: 17, color: _noticeGray),
+                  SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      '위 프로필과 누적 수거량이 그룹장에게 보여요',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.55,
+                        fontWeight: FontWeight.w500,
+                        color: _noticeGray,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   GestureDetector(
@@ -292,7 +317,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 9),
                   Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
@@ -459,21 +484,22 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
           decoration: BoxDecoration(
             color: AppColors.surfaceSoft,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
           ),
           child: Row(
             children: [
               const Icon(TablerIcons.hourglassHigh,
-                  size: 20, color: AppColors.gray700),
-              const SizedBox(width: 12),
+                  size: 19, color: AppColors.gray700),
+              const SizedBox(width: 9),
               const Expanded(
                 child: Text(
                   '그룹장이 요청을 확인하고 있어요',
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 12.5,
+                    height: 1.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.gray700,
                   ),
@@ -482,38 +508,45 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 9),
         Row(
           children: [
             Expanded(
               child: Container(
-                height: 56,
+                height: 64,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE7EAE8),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(22),
                 ),
-                child: const Text(
-                  '승인 대기 중',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFFA8ADA9),
-                  ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(TablerIcons.clock, size: 21, color: Color(0xFFA8ADA9)),
+                    SizedBox(width: 9),
+                    Text(
+                      '승인 대기 중',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFA8ADA9),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 9),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: _cancelRequest,
               child: Container(
                 width: 104,
-                height: 56,
+                height: 64,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Text(
                   '요청 취소',

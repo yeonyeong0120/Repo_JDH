@@ -15,6 +15,9 @@ import 'group_photos_screen.dart';
 import 'group_info_screen.dart';
 import 'group_join_requests_screen.dart';
 
+/// 가입 요청 다크 배너의 보조 텍스트·셰브론 색 (잉크 면 위 회색)
+const Color _bannerMeta = Color(0xFF9BA29C);
+
 /// Ploggo - 그룹 세부 화면 (활동 공유 피드)
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
 /// 위치 권장: lib/features/community/presentation/group_feed_screen.dart
@@ -650,36 +653,47 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     return InkWell(
       onTap: _openRequestScreen,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            const Icon(TablerIcons.userPlus, size: 20, color: AppColors.textPrimary),
-            const SizedBox(width: 13),
-            const Text(
-              '가입 요청',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSoft,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                '${_pending.length}',
-                style: const TextStyle(
-                  fontSize: 11.5,
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(TablerIcons.userPlus,
+                  size: 20, color: AppColors.textPrimary),
+              const SizedBox(width: 11),
+              const Text(
+                '가입 요청',
+                style: TextStyle(
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.gray700,
+                  color: AppColors.textPrimary,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Container(
+                height: 22,
+                constraints: const BoxConstraints(minWidth: 22),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE4573D),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${_pending.length}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1269,71 +1283,73 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 height: 58,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
-                  color: AppColors.lime,
+                  color: Color(0xFFFDEBE7),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(TablerIcons.crownFilled, size: 27, color: AppColors.ink),
+                child: const Icon(TablerIcons.doorExit,
+                    size: 28, color: Color(0xFFE4573D)),
               ),
               const SizedBox(height: 16),
               const Text(
                 '그룹을 위임하고\n나가시겠어요?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 18,
-                  height: 1.35,
+                  fontSize: 21,
+                  height: 1.4,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.5,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               const Text(
-                '그룹장이 나가면 가장 먼저 가입한 멤버가\n새 그룹장이 돼요.',
+                '그룹장은 자리를 비울 수 없어요. 가입이 가장\n오래된 멤버가 새 그룹장이 돼요',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13.5,
-                  height: 1.5,
-                  color: AppColors.gray700,
+                  height: 1.6,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.gray500,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               // 위: 머무르기(안전, 잉크)
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.pop(dctx, false),
                 child: Container(
-                  height: 52,
+                  height: 54,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.ink,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Text(
                     '머무르기',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 9),
               // 아래: 위임하고 나가기(파괴적, 연회색 면 + 빨강 글씨)
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.pop(dctx, true),
                 child: Container(
-                  height: 52,
+                  height: 54,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSoft,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Text(
                     '위임하고 나가기',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFFE4573D),
                     ),
@@ -1588,14 +1604,24 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       onTap: _openRequestSheet,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: AppColors.ink,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            const Icon(TablerIcons.userPlus, size: 20, color: AppColors.lime),
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.lime.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(TablerIcons.userPlus,
+                  size: 20, color: AppColors.lime),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1614,15 +1640,16 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                     _pendingNamesMeta(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: Colors.white.withValues(alpha: 0.7),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _bannerMeta,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(TablerIcons.chevronRight, size: 20, color: Colors.white),
+            const Icon(TablerIcons.chevronRight, size: 19, color: _bannerMeta),
           ],
         ),
       ),
@@ -2214,37 +2241,66 @@ class _RequestSheetState extends State<_RequestSheet> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-        child: Column(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 20),
+        child: StreamBuilder<List<JoinRequest>>(
+          stream: GroupService.watchPendingRequests(widget.groupId),
+          builder: (_, snap) {
+            final list = snap.data ?? const <JoinRequest>[];
+            return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Container(
-                width: 44,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: 18),
+                width: 42,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(3),
+                  color: const Color(0xFFE3E6E4),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                const Text(
+                  '가입 요청',
+                  style: TextStyle(
+                    fontSize: 22,
+                    height: 1.35,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                if (list.isNotEmpty)
+                  Text(
+                    '${list.length}건',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.gray500,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
             const Text(
-              '가입 요청 처리',
+              '승인하면 바로 채팅과 주간 랭킹에 들어와요.',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
-                color: AppColors.textPrimary,
+                fontSize: 13.5,
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray500,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Flexible(
-              child: StreamBuilder<List<JoinRequest>>(
-                stream: GroupService.watchPendingRequests(widget.groupId),
-                builder: (_, snap) {
-                  final list = snap.data ?? const <JoinRequest>[];
+              child: Builder(
+                builder: (_) {
                   if (list.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 30),
@@ -2265,21 +2321,21 @@ class _RequestSheetState extends State<_RequestSheet> {
                 },
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
               child: Container(
-                height: 52,
+                height: 56,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: const Text(
                   '닫기',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
@@ -2287,6 +2343,8 @@ class _RequestSheetState extends State<_RequestSheet> {
               ),
             ),
           ],
+            );
+          },
         ),
       ),
     );
@@ -2295,12 +2353,12 @@ class _RequestSheetState extends State<_RequestSheet> {
   Widget _card(JoinRequest req) {
     final initial = req.userName.isEmpty ? '?' : req.userName.substring(0, 1);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.line100),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.line100, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2312,8 +2370,10 @@ class _RequestSheetState extends State<_RequestSheet> {
                 height: 44,
                 alignment: Alignment.center,
                 clipBehavior: Clip.antiAlias,
-                decoration: const BoxDecoration(
-                    color: AppColors.lime, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDEFEE),
+                  borderRadius: BorderRadius.circular(15),
+                ),
                 child: (req.photoUrl != null && req.photoUrl!.isNotEmpty)
                     ? Image.network(req.photoUrl!,
                         width: 44,
@@ -2339,11 +2399,12 @@ class _RequestSheetState extends State<_RequestSheet> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      req.hasRecord ? req.meta : (req.region.isEmpty ? '지역 미설정' : req.region),
+                      req.sheetMeta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.gray500,
                       ),
                     ),
@@ -2357,12 +2418,16 @@ class _RequestSheetState extends State<_RequestSheet> {
             children: [
               SizedBox(
                 width: 88,
-                child: _btn('거절', bg: const Color(0xFFE4573D),
+                child: _btn('거절',
+                    bg: AppColors.surfaceSoft,
+                    fg: const Color(0xFFE4573D),
                     onTap: _busy ? null : () => _reject(req)),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
-                child: _btn('승인', bg: AppColors.ink,
+                child: _btn('승인',
+                    bg: AppColors.ink,
+                    fg: Colors.white,
                     onTap: _busy ? null : () => _approve(req)),
               ),
             ],
@@ -2375,13 +2440,14 @@ class _RequestSheetState extends State<_RequestSheet> {
   Widget _ini(String initial) => Text(
         initial,
         style: const TextStyle(
-          fontSize: 17,
+          fontSize: 15,
           fontWeight: FontWeight.w800,
-          color: AppColors.limeOn,
+          color: AppColors.gray700,
         ),
       );
 
-  Widget _btn(String label, {required Color bg, required VoidCallback? onTap}) {
+  Widget _btn(String label,
+      {required Color bg, required Color fg, required VoidCallback? onTap}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -2390,14 +2456,14 @@ class _RequestSheetState extends State<_RequestSheet> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: onTap == null ? AppColors.gray200 : bg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 14.5,
             fontWeight: FontWeight.w800,
-            color: onTap == null ? AppColors.gray500 : Colors.white,
+            color: onTap == null ? AppColors.gray500 : fg,
           ),
         ),
       ),
