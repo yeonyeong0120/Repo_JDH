@@ -9,7 +9,7 @@ import 'package:repo_jdh/core/widgets/route_pin.dart';
 import 'package:repo_jdh/features/plogging/data/photo_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 
-/// Ploggo - 개별 활동 상세 (ACT-05)
+/// PLOGGO - 개별 활동 상세 (ACT-05)
 /// 상단 경로 지도 + 기록/수거/인증샷/보상.
 /// 수거 개수는 호출부가 활동별 trashCounts 를 넘겨야 한다 — 기본값을 더미로 두면
 /// 누락됐을 때 모든 활동이 같은 숫자로 보이므로 빈 맵(전부 0)으로 둔다.

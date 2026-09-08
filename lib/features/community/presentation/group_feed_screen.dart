@@ -18,7 +18,7 @@ import 'group_join_requests_screen.dart';
 /// 가입 요청 다크 배너의 보조 텍스트·셰브론 색 (잉크 면 위 회색)
 const Color _bannerMeta = Color(0xFF9BA29C);
 
-/// Ploggo - 그룹 세부 화면 (활동 공유 피드)
+/// PLOGGO - 그룹 세부 화면 (활동 공유 피드)
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
 /// 위치 권장: lib/features/community/presentation/group_feed_screen.dart
 class GroupFeedScreen extends ConsumerStatefulWidget {

@@ -7,7 +7,7 @@ import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'group_detail_screen.dart';
 
-/// Ploggo - 그룹 검색 화면 (GRP-02, Startline)
+/// PLOGGO - 그룹 검색 화면 (GRP-02, Startline)
 /// 검색바(퍼지 매칭은 GroupService.search) + 정렬 시트 + 라인 보더 결과 카드.
 /// 위치 권장: lib/features/community/presentation/group_search_screen.dart
 class GroupSearchScreen extends StatefulWidget {

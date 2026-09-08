@@ -9,7 +9,7 @@ import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
-/// Ploggo - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
+/// PLOGGO - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
 /// 그룹 상세 시안(detail-othergroup) 기준: 라임 헤더 + 활동량 카드 + 주간 랭킹.
 /// 미가입 상태이므로 랭킹 하단이 페이드되고 '가입하기' CTA가 고정된다.
 class GroupDetailScreen extends StatefulWidget {

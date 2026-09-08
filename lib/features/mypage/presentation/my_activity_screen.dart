@@ -21,7 +21,7 @@ import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_stats.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 
-/// Ploggo - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
+/// PLOGGO - 내 활동 화면 (기록 / 뱃지 / 그래프 탭)
 /// 하단 네비는 ShellRoute 가 담당. 본문만.
 /// 위치 권장: lib/features/mypage/presentation/my_activity_screen.dart
 class MyActivityScreen extends StatefulWidget {

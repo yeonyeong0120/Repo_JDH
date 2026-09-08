@@ -8,7 +8,7 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 
-/// Ploggo - 그룹 만들기 화면 (GRP-03, Startline)
+/// PLOGGO - 그룹 만들기 화면 (GRP-03, Startline)
 /// 목업: X 닫기 + "어떤 그룹을 만들까요?" + 썸네일·밑줄형 이름/소개 + 잉크 CTA.
 /// 동네는 백엔드가 생성자 위치로 자동 설정한다(읽기 전용 안내).
 /// 위치 권장: lib/features/community/presentation/group_create_screen.dart

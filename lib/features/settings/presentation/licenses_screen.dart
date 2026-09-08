@@ -96,7 +96,7 @@ class LicensesScreen extends StatelessWidget {
                       context: context,
                       applicationName: '플로고',
                       applicationVersion: '1.0.0',
-                      applicationLegalese: '© 2026 Ploggo',
+                      applicationLegalese: '© 2026 PLOGGO',
                     ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(

@@ -256,7 +256,7 @@ class _SplashScreen extends StatelessWidget {
             Image.asset('assets/icons/app_icon.png', width: 96, height: 96),
             const SizedBox(height: 16),
             const Text(
-              'PLOGO',
+              'PLOGGO',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
