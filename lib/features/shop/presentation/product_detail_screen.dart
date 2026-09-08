@@ -298,7 +298,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Future<void> _confirmExchange(ShopItem item) async {
     if (_loading) return;
     if (_points < item.price) {
-      AppSnackBar.show(context, '포인트가 조금 더 필요해요');
+      AppSnackBar.show(context, '포인트가 조금 더 필요해요',
+          bottom: AppSnackBar.aboveCta);
       return;
     }
 
@@ -320,7 +321,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     } catch (_) {
       if (mounted) {
         setState(() => _exchanging = false);
-        AppSnackBar.show(context, '교환하지 못했어요');
+        AppSnackBar.show(context, '교환하지 못했어요',
+            bottom: AppSnackBar.aboveCta);
       }
       return;
     }

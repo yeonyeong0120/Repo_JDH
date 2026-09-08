@@ -211,16 +211,27 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 내 위치로 복귀 — 하얀 바탕 없이 아이콘만.
+                // 내 위치로 복귀 — 하얀 원 위에 잉크 글리프(트래킹 화면과 동일 규격).
                 Align(
                   alignment: Alignment.centerRight,
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: _recenter,
-                    child: const SizedBox(
+                    child: Container(
                       width: 46,
                       height: 46,
-                      child: Center(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.ink.withValues(alpha: 0.10),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
                         child: Icon(
                           TablerIcons.currentLocation,
                           size: 26,

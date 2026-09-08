@@ -63,7 +63,16 @@ class NewsService {
   static NewsArticle _toArticle(Map<String, dynamic> json) {
     final title = (json['title'] as String?) ?? '';
     final summary = (json['summary'] as String?) ?? '';
-    final link = (json['link'] as String?) ?? '';
+    // 원문 링크. 서버 계약은 'link' 하나지만, 수집 소스에 따라 다른 이름으로
+    // 오는 경우가 있어 흔한 대체 키까지 훑는다. 비면 상세의 '원문 보기' 버튼이
+    // 통째로 사라지므로 여기서 최대한 건져낸다.
+    final link = (json['link'] as String?)?.trim().isNotEmpty == true
+        ? (json['link'] as String).trim()
+        : ((json['originallink'] as String?) ??
+                (json['url'] as String?) ??
+                (json['originalUrl'] as String?) ??
+                '')
+            .trim();
     final pubDate = (json['pubDate'] as String?) ?? '';
     // 서버가 분류한 카테고리 (없으면 '환경')
     final category = (json['category'] as String?) ?? '환경';

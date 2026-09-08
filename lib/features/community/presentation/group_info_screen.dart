@@ -271,6 +271,9 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                                       color: _memberGreen,
                                     ),
                                   ),
+                                  // 가입 방식 칩 — 명세 순서: 뱃지 → 멤버수 → 칩
+                                  const SizedBox(width: 8),
+                                  _accessChip(),
                                 ],
                               ),
                               const SizedBox(height: 7),
@@ -294,6 +297,42 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 가입 방식 칩 — 자유 가입: '누구나 가입'(열린 자물쇠) /
+  // 승인 후 가입: '승인 후 가입'(잠금). 그룹 상세(group_detail_screen)와 같은 규격.
+  //
+  // _isPublic 은 이 화면의 공개 설정 토글과 같은 값을 본다. 그래서 토글을 바꾸면
+  // 저장 없이도 칩이 바로 따라 바뀐다.
+  Widget _accessChip() {
+    final open = _isPublic;
+    final Color fg = const Color(0xFF3A403C);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.ink.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            open ? TablerIcons.lockOpen : TablerIcons.lock,
+            size: 11,
+            color: fg,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            open ? '누구나 가입' : '승인 후 가입',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: fg,
             ),
           ),
         ],

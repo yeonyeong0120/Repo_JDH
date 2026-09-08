@@ -708,11 +708,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     );
   }
 
-  // §1 접근 칩 — 승인 후 가입 그룹에서만. 미요청: '승인 후 가입'(잠금),
-  // 대기 중: '승인 대기 중'(시계). 공개 그룹이면 null(칩 없음).
+  // §1 접근 칩 — 가입 방식을 항상 밝힌다.
+  //   자유 가입: '누구나 가입'(열린 자물쇠)
+  //   승인 후 가입: '승인 후 가입'(잠금) / 요청 대기 중이면 '승인 대기 중'(시계)
+  // 목록 카드는 승인제에만 표기하지만(공간이 좁아 접미로 붙는다), 상세는 공간이
+  // 있으므로 자유 가입도 적어 준다.
   Widget? _accessChip() {
-    if (group.isPublic) return null;
-    final waiting = _isWaiting;
+    final open = group.isPublic;
+    final waiting = !open && _isWaiting;
     final Color bg =
         waiting ? const Color(0xFFEDEFEE) : AppColors.ink.withValues(alpha: 0.08);
     final Color fg = waiting ? const Color(0xFF5A5F5B) : const Color(0xFF3A403C);
@@ -727,10 +730,18 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(waiting ? TablerIcons.clock : TablerIcons.lock, size: 11, color: fg),
+          Icon(
+            waiting
+                ? TablerIcons.clock
+                : (open ? TablerIcons.lockOpen : TablerIcons.lock),
+            size: 11,
+            color: fg,
+          ),
           const SizedBox(width: 4),
           Text(
-            waiting ? '승인 대기 중' : '승인 후 가입',
+            waiting
+                ? '승인 대기 중'
+                : (open ? '누구나 가입' : '승인 후 가입'),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
