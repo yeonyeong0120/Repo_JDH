@@ -173,7 +173,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),

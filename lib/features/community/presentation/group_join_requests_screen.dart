@@ -17,7 +17,7 @@ Future<bool> confirmApproveJoin(BuildContext context, JoinRequest req) async {
   final initial = req.userName.isEmpty ? '?' : req.userName.substring(0, 1);
   final ok = await showDialog<bool>(
     context: context,
-    barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
+    barrierColor: AppColors.barrierDim,
     builder: (_) => _ConfirmDialog(
       tileBg: const Color(0xFFEDEFEE),
       tileChild: Text(
@@ -41,7 +41,7 @@ Future<bool> confirmApproveJoin(BuildContext context, JoinRequest req) async {
 Future<bool> confirmRejectJoin(BuildContext context, JoinRequest req) async {
   final ok = await showDialog<bool>(
     context: context,
-    barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
+    barrierColor: AppColors.barrierDim,
     builder: (_) => _ConfirmDialog(
       tileBg: const Color(0xFFFDEBE7),
       tileChild: const Icon(TablerIcons.userX, size: 27, color: Color(0xFFE4573D)),

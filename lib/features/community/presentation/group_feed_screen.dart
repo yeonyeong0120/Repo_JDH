@@ -822,7 +822,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -960,7 +960,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -1110,7 +1110,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       context: context,
       backgroundColor: AppColors.surface,
       isScrollControlled: true,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -1379,7 +1379,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   Future<bool?> _confirmOwnerLeave(SuccessorBrief? successor) {
     return showDialog<bool>(
       context: context,
-      barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       builder: (dctx) => Dialog(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
@@ -1854,7 +1854,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),

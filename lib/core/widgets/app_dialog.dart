@@ -148,8 +148,8 @@ class AppDialog extends StatelessWidget {
     );
   }
 
-  /// 딤 — 명세 공통값 rgba(20,24,22,.5).
-  static const Color _barrier = Color(0x80141816);
+  /// 딤 — 명세 공통값. 앱 전역이 같은 상수를 쓴다.
+  static const Color _barrier = AppColors.barrierDim;
 
   // 명세 §0.4 버튼 색
   static const Color _btnPrimaryBg = Color(0xFF2A2F2C);
