@@ -44,7 +44,7 @@ Future<void> showQuestComplete(
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
-    barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
+    barrierColor: AppColors.barrierDim,
     builder: (_) => _QuestCompleteDialog(quest: quest, desc: desc),
   );
 }
@@ -262,7 +262,7 @@ Future<bool?> showBadgeEarnedAnimated(
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
-    barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
+    barrierColor: AppColors.barrierDim,
     builder: (_) => _BadgeEarnedDialog(badge: badge),
   );
 }

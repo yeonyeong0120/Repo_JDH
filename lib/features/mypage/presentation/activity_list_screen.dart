@@ -9,7 +9,7 @@ import 'package:repo_jdh/features/plogging/domain/activity.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 
-/// Ploggo - 전체 활동 기록 (ACT-04)
+/// PLOGGO - 전체 활동 기록 (ACT-04)
 /// 기록 탭 "최근 활동 전체 보기" → 이 화면. 월별 그룹 + 기간 필터.
 class ActivityListScreen extends StatefulWidget {
   const ActivityListScreen({super.key});

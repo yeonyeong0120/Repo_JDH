@@ -443,6 +443,41 @@ class GroupService {
 
   // ───────────────────────── 탈퇴 / 위임 ─────────────────────────
 
+  /// 내가 지금 나가면 그룹장을 물려받을 멤버.
+  ///
+  /// leaveGroup 의 승계 규칙과 같은 기준(나를 뺀 멤버 중 joinedAt 최솟값)으로
+  /// 고른다. 위임 확인 팝업에서 '누가 받는지'를 미리 보여주는 용도다.
+  /// 남은 멤버가 없거나 읽기에 실패하면 null — 호출부는 카드를 접으면 된다.
+  static Future<SuccessorBrief?> nextOwner(String groupId) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    try {
+      final all = await _groups.doc(groupId).collection('members').get();
+      final others = all.docs.where((d) => d.id != uid).toList();
+      if (others.isEmpty) return null;
+      others.sort((a, b) {
+        final ta = a.data()['joinedAt'];
+        final tb = b.data()['joinedAt'];
+        // 가입 시각이 없으면 가장 뒤로 — 최고참을 잘못 고르지 않게 한다.
+        final da = ta is Timestamp ? ta.toDate() : DateTime(9999);
+        final db = tb is Timestamp ? tb.toDate() : DateTime(9999);
+        return da.compareTo(db);
+      });
+      final d = others.first;
+      final data = d.data();
+      final ts = data['joinedAt'];
+      return SuccessorBrief(
+        uid: d.id,
+        userName: (data['userName'] as String?) ?? '',
+        photoUrl: data['photoUrl'] as String?,
+        joinedAt: ts is Timestamp ? ts.toDate() : null,
+      );
+    } catch (e) {
+      debugPrint('[그룹] 승계 후보 조회 실패: $e');
+      return null;
+    }
+  }
+
   /// 그룹 탈퇴
   ///
   /// - 마지막 멤버가 나가면 빈 그룹이 남지 않도록 그룹째 정리한다.

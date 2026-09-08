@@ -7,6 +7,7 @@ import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/features/settings/presentation/terms_screen.dart';
+import 'package:repo_jdh/features/settings/presentation/withdraw_sheet.dart';
 
 /// 설정 화면 (Startline 목업 32 — 메뉴 → 설정 · 개인정보 설정)
 /// 알림/활동/계정 섹션의 토글·값 행. 하단에 로그아웃·탈퇴 링크 + 버전.
@@ -93,10 +94,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _confirmSignOut() async {
     final ok = await AppDialog.show(
       context,
-      title: '로그아웃',
-      message: '로그아웃 하시겠습니까?',
-      cancelText: '아니오',
+      title: '로그아웃 하시겠어요?',
+      message: '기록과 포인트는 그대로 보관돼요',
+      cancelText: '취소',
       confirmText: '로그아웃',
+      hideIcon: true, // 명세 §17 — 이 팝업만 아이콘 원이 없다
     );
     if (ok != true || !mounted) return;
     await UserService.signOut();
@@ -105,24 +107,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── 회원 탈퇴 (menu_screen 과 동일한 다이얼로그 패턴) ──
   Future<void> _confirmDelete() async {
-    final ok = await AppDialog.show(
-      context,
-      title: '회원 탈퇴',
-      message: '정말 탈퇴하시겠습니까?\n\n활동 기록과 뱃지, 포인트가 모두 사라지며 되돌릴 수 없어요.',
-      cancelText: '아니오',
-      confirmText: '탈퇴',
-      danger: true,
-    );
-    if (ok != true || !mounted) return;
-    try {
-      await UserService.deleteAccount();
-    } catch (_) {
-      if (mounted) {
-        AppSnackBar.show(context, '탈퇴하지 못했어요. 다시 로그인 후 시도해주세요');
-      }
-      return;
-    }
-    if (mounted) context.go('/login');
+    // 명세 '회원 탈퇴' — 안내 시트 → 최종 확인 → 완료 화면까지 흐름 전체.
+    // 삭제 호출과 성공·실패 피드백도 그 안에서 끝난다.
+    await startWithdrawFlow(context);
   }
 
   @override

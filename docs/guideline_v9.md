@@ -1,6 +1,6 @@
-# Ploggo Flutter 개발 가이드라인 v9
+# PLOGGO Flutter 개발 가이드라인 v9
 
-AI 플로깅 플랫폼 (Ploggo) | 2026 한이음 드림업 프로젝트
+AI 플로깅 플랫폼 (PLOGGO) | 2026 한이음 드림업 프로젝트
 
 - 작성일: 2026-08-13
 - 기준 커밋: `f/route` 브랜치 HEAD (`66e28d7`)
@@ -12,7 +12,7 @@ AI 플로깅 플랫폼 (Ploggo) | 2026 한이음 드림업 프로젝트
 
 ## 0. 문서 목적 및 v8 대비 구조 변경
 
-본 문서는 Ploggo Flutter 앱과 FastAPI 서버의 **현행 상태(as-is)**, 서버 API 계약, 계층 규약, 코딩 규칙, 잔여 과제를 기술한다.
+본 문서는 PLOGGO Flutter 앱과 FastAPI 서버의 **현행 상태(as-is)**, 서버 API 계약, 계층 규약, 코딩 규칙, 잔여 과제를 기술한다.
 
 ### 0-1. STEP 번호 체계 폐기
 

@@ -256,7 +256,7 @@ class _SplashScreen extends StatelessWidget {
             Image.asset('assets/icons/app_icon.png', width: 96, height: 96),
             const SizedBox(height: 16),
             const Text(
-              'PLOGO',
+              'PLOGGO',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
@@ -323,7 +323,7 @@ class _ScaffoldWithBottomNavState extends State<_ScaffoldWithBottomNav>
       padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         border: Border(top: BorderSide(color: AppColors.line100, width: 1)),
         boxShadow: [
           BoxShadow(

@@ -662,12 +662,12 @@ class _ConfirmSheetState extends State<_ConfirmSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 44,
-            height: 5,
+            width: 42,
+            height: 4,
             margin: const EdgeInsets.only(top: 10, bottom: 6),
             decoration: BoxDecoration(
-              color: AppColors.neutral300,
-              borderRadius: BorderRadius.circular(3),
+              color: const Color(0xFFE3E6E4),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
           Flexible(

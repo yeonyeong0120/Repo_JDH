@@ -174,7 +174,7 @@ class PhotoDetailScreen extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -187,12 +187,12 @@ class PhotoDetailScreen extends StatelessWidget {
             children: [
               Center(
                 child: Container(
-                  width: 44,
-                  height: 5,
+                  width: 42,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(3),
+                    color: const Color(0xFFE3E6E4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
@@ -290,7 +290,7 @@ class PhotoDetailScreen extends StatelessWidget {
       context: context,
       backgroundColor: AppColors.surface,
       isScrollControlled: true,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -316,12 +316,12 @@ class PhotoDetailScreen extends StatelessWidget {
               children: [
                 Center(
                   child: Container(
-                    width: 44,
-                    height: 5,
+                    width: 42,
+                    height: 4,
                     margin: const EdgeInsets.only(bottom: 18),
                     decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(3),
+                      color: const Color(0xFFE3E6E4),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),

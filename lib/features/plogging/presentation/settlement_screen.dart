@@ -23,7 +23,7 @@ import 'package:repo_jdh/features/plogging/domain/activity_points.dart';
 import 'package:repo_jdh/features/plogging/domain/route_notifier.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 
-/// Ploggo - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
+/// PLOGGO - 활동 정산 화면 (플로깅 종료 후 결과 요약 + 보상 + 기록/공유)
 class SettlementScreen extends ConsumerStatefulWidget {
   const SettlementScreen({super.key});
 

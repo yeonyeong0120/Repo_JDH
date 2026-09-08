@@ -5,7 +5,7 @@ import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 
-/// Ploggo - 챌린지 목록 (ACT-09)
+/// PLOGGO - 챌린지 목록 (ACT-09)
 /// 기록 탭 "진행 중인 챌린지 →" → 이 화면.
 /// 진행률은 BadgeService.loadStats() 의 실제 누적 통계로 계산된다.
 /// 상단 [진행 중 / 달성] 탭으로 분류. (전체 탭·등급 구분 없음)

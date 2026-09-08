@@ -10,12 +10,14 @@ import 'package:repo_jdh/core/view_models/screen_views.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
-import 'package:repo_jdh/core/widgets/app_button.dart';
 import 'group_photos_screen.dart';
 import 'group_info_screen.dart';
 import 'group_join_requests_screen.dart';
 
-/// Ploggo - 그룹 세부 화면 (활동 공유 피드)
+/// 가입 요청 다크 배너의 보조 텍스트·셰브론 색 (잉크 면 위 회색)
+const Color _bannerMeta = Color(0xFF9BA29C);
+
+/// PLOGGO - 그룹 세부 화면 (활동 공유 피드)
 /// 채팅 기능 없음. 멤버들의 플로깅 결과를 보고 '좋아요'만 누름.
 /// 위치 권장: lib/features/community/presentation/group_feed_screen.dart
 class GroupFeedScreen extends ConsumerStatefulWidget {
@@ -148,17 +150,48 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   // 스쳐 보이는 것을 막기 위해 구독보다 앞서 가입 시각을 확보한다.
   Future<void> _initFeed() async {
     if (widget.groupId.isNotEmpty) {
-      _joinedAt = await GroupService.myJoinedAt(widget.groupId);
       // 가입 직후 진입 시 members/{uid}.joinedAt(serverTimestamp)이 아직
-      // 서버에 확정되지 않아 null 로 읽힐 수 있다. null 이면 잠깐 뒤 한 번 더
-      // 시도한다 — 이 재시도가 없으면 필터가 꺼져 '가입 이전 채팅'이 노출된다.
-      if (_joinedAt == null) {
-        await Future.delayed(const Duration(milliseconds: 500));
+      // 서버에 확정되지 않아 null 로 읽힐 수 있다. 간격을 늘려가며 몇 번 더
+      // 시도한다 — 확보 전에는 글을 하나도 보여주지 않는다.
+      for (final ms in _joinedAtBackoff) {
         _joinedAt = await GroupService.myJoinedAt(widget.groupId);
+        if (_joinedAt != null || !mounted) break;
+        await Future.delayed(Duration(milliseconds: ms));
+      }
+      if (mounted && _joinedAt == null) {
+        // 여기까지 실패했으면 '가입 이전 글 노출'을 막는 쪽을 택한다.
+        setState(() => _joinedAtGaveUp = true);
       }
     }
     if (!mounted) return;
     _subscribePosts();
+  }
+
+  /// 가입 시각 재시도 간격(ms). 마지막 값 뒤에는 더 기다리지 않는다.
+  static const List<int> _joinedAtBackoff = [0, 300, 700, 1500];
+
+  /// 재시도를 모두 소진하고도 가입 시각을 못 읽은 상태.
+  /// 이때는 글을 감추고 안내를 띄운다 (전체 노출보다 안전한 쪽).
+  bool _joinedAtGaveUp = false;
+
+  /// 안내의 '다시 시도' — 재시도 상태를 풀고 처음부터 다시 읽는다.
+  Future<void> _retryJoinedAt() async {
+    if (!mounted) return;
+    setState(() {
+      _joinedAtGaveUp = false;
+      _joinedAtHealing = false;
+    });
+    for (final ms in _joinedAtBackoff) {
+      _joinedAt = await GroupService.myJoinedAt(widget.groupId);
+      if (_joinedAt != null || !mounted) break;
+      await Future.delayed(Duration(milliseconds: ms));
+    }
+    if (!mounted) return;
+    if (_joinedAt == null) {
+      setState(() => _joinedAtGaveUp = true);
+    } else {
+      _applyPosts(_lastPosts);
+    }
   }
 
   // 스트림에서 _joinedAt 이 아직 null 이면(초기 진입 레이스) 한 번만 다시 읽어
@@ -170,8 +203,11 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     if (_joinedAtHealing || _joinedAt != null || widget.groupId.isEmpty) return;
     _joinedAtHealing = true;
     final v = await GroupService.myJoinedAt(widget.groupId);
+    // 실패해도 잠금을 풀어, 다음 스트림 이벤트에서 다시 시도할 수 있게 한다.
+    _joinedAtHealing = false;
     if (!mounted || v == null) return;
     _joinedAt = v;
+    if (_joinedAtGaveUp) setState(() => _joinedAtGaveUp = false);
     _applyPosts(_lastPosts); // 가입 시각을 이제 알았으니 이전 대화를 다시 걸러낸다.
   }
 
@@ -179,8 +215,10 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   // 채팅·시스템 알림·인증샷을 가리지 않고, 가입 시각 이전 글은 모두 숨긴다.
   // → 재가입하면 이전 소속 때의 대화·인증샷이 전혀 보이지 않는다.
   void _applyPosts(List<GroupPost> posts) {
+    // 가입 시각을 모르는 동안에는 아무것도 보여주지 않는다. 필터를 끄면
+    // 가입 이전 대화가 그대로 노출되므로, 빈 화면 쪽이 안전하다.
     final visible = _joinedAt == null
-        ? posts
+        ? const <GroupPost>[]
         : posts.where((p) => !p.createdAt.isBefore(_joinedAt!)).toList();
     setState(() => _items = visible.map(_fromPost).toList());
   }
@@ -362,8 +400,81 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     return '$period $hh:$mm';
   }
 
+  // 가입 시각을 확보하기 전/실패했을 때 피드 자리에 놓는 안내.
+  // 글을 감춘 채로 두어 가입 이전 대화가 새어 나가지 않게 한다.
+  Widget _joinedAtNotice() {
+    if (!_joinedAtGaveUp) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 60),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.2),
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 24),
+      child: Column(
+        children: [
+          const Icon(TablerIcons.cloudOff, size: 30, color: AppColors.gray500),
+          const SizedBox(height: 12),
+          const Text(
+            '대화를 불러오지 못했어요',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '연결을 확인하고 다시 시도해 주세요',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray500,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _retryJoinedAt,
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Text(
+                '다시 시도',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // 날짜별로 묶어서: [날짜 칩] 아래에 그 날 활동 카드들
   List<Widget> _buildFeed() {
+    // 가입 시각을 아직 못 읽었으면 글 대신 상태만 보여준다.
+    // (더미 모드는 groupId 가 비어 있어 이 분기를 타지 않는다)
+    if (widget.groupId.isNotEmpty && _joinedAt == null) {
+      return [_joinedAtNotice()];
+    }
     final items = [..._items]..sort((a, b) => a.date.compareTo(b.date));
     final widgets = <Widget>[];
     String? lastLabel;
@@ -650,36 +761,47 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     return InkWell(
       onTap: _openRequestScreen,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            const Icon(TablerIcons.userPlus, size: 20, color: AppColors.textPrimary),
-            const SizedBox(width: 13),
-            const Text(
-              '가입 요청',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSoft,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                '${_pending.length}',
-                style: const TextStyle(
-                  fontSize: 11.5,
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(TablerIcons.userPlus,
+                  size: 20, color: AppColors.textPrimary),
+              const SizedBox(width: 11),
+              const Text(
+                '가입 요청',
+                style: TextStyle(
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.gray700,
+                  color: AppColors.textPrimary,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Container(
+                height: 22,
+                constraints: const BoxConstraints(minWidth: 22),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE4573D),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${_pending.length}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -699,7 +821,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -712,61 +834,128 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
             children: [
               Center(
                 child: Container(
-                  width: 44,
-                  height: 5,
+                  width: 42,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 18),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(3),
+                    color: const Color(0xFFE3E6E4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               const Text(
-                '초대하기',
+                '멤버 초대',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
+                  height: 1.35,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.6,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               const Text(
-                '친구에게 초대 링크를 보내 그룹에 함께해요.',
+                '링크를 받은 사람은 바로 그룹에 참여할 수 있어요. 링크는 7일 후 만료돼요.',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13.5,
                   height: 1.6,
-                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.gray500,
                 ),
               ),
-              const SizedBox(height: 14),
-              _inviteRow(
-                icon: TablerIcons.brandKakoTalk,
-                label: '카카오톡',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppSnackBar.show(context, '카카오톡으로 초대 링크를 보냈어요');
-                },
+              const SizedBox(height: 16),
+              // 링크 행 — '복사'는 시트를 닫지 않는다(채널 선택만 닫힌다).
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(TablerIcons.link,
+                        size: 19, color: AppColors.gray500),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        link,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        await Clipboard.setData(ClipboardData(text: link));
+                        if (!mounted) return;
+                        AppSnackBar.show(context, '초대 링크를 복사했어요');
+                      },
+                      child: Container(
+                        height: 34,
+                        padding: const EdgeInsets.symmetric(horizontal: 13),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.ink,
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: const Text(
+                          '복사',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              _inviteRow(
-                icon: TablerIcons.message2,
-                label: '문자',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppSnackBar.show(context, '문자로 초대 링크를 보냈어요');
-                },
+              const SizedBox(height: 16),
+              // 채널 — 명세에는 QR 코드·더보기도 있지만 아직 기능이 없어
+              // 넣지 않는다(눌러도 아무 일이 없는 타일이 된다).
+              Row(
+                children: [
+                  Expanded(
+                    child: _inviteChannel(
+                      icon: TablerIcons.brandKakoTalk,
+                      label: '카카오톡',
+                      tileBg: const Color(0xFFFEE500),
+                      glyph: const Color(0xFF3B1E1E),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        AppSnackBar.show(context, '카카오톡으로 초대 링크를 보냈어요');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _inviteChannel(
+                      icon: TablerIcons.message,
+                      label: '문자',
+                      tileBg: AppColors.surfaceSoft,
+                      glyph: AppColors.ink,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        AppSnackBar.show(context, '문자로 초대 링크를 보냈어요');
+                      },
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              _inviteRow(
-                icon: TablerIcons.link,
-                label: '링크 복사',
-                onTap: () async {
-                  await Clipboard.setData(ClipboardData(text: link));
-                  if (!mounted) return;
-                  Navigator.pop(ctx);
-                  AppSnackBar.show(context, '초대 링크를 복사했어요');
-                },
+              const SizedBox(height: 16),
+              _sheetBtn(
+                '닫기',
+                bg: AppColors.surfaceSoft,
+                fg: AppColors.textPrimary,
+                onTap: () => Navigator.pop(ctx),
               ),
             ],
           ),
@@ -775,43 +964,38 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     );
   }
 
-  // 초대 채널 한 줄 (아이콘 + 라벨)
-  Widget _inviteRow({
+  /// 초대 채널 타일 — 세로 구성(타일 + 라벨).
+  Widget _inviteChannel({
     required IconData icon,
     required String label,
+    required Color tileBg,
+    required Color glyph,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: AppColors.bg,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: AppColors.ink),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+      child: Column(
+        children: [
+          Container(
+            height: 60,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: tileBg,
+              borderRadius: BorderRadius.circular(20),
             ),
-            const Icon(
-              TablerIcons.chevronRight,
-              size: 20,
-              color: AppColors.gray400,
+            child: Icon(icon, size: 24, color: glyph),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.gray700,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -837,7 +1021,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -852,12 +1036,12 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
               children: [
                 Center(
                   child: Container(
-                    width: 44,
-                    height: 5,
+                    width: 42,
+                    height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(3),
+                      color: const Color(0xFFE3E6E4),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
@@ -865,8 +1049,9 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                   '그룹 알림',
                   style: TextStyle(
                     fontSize: 22,
+                    height: 1.35,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
+                    letterSpacing: -0.6,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -884,13 +1069,14 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                   behavior: HitTestBehavior.opaque,
                   onTap: () => Navigator.pop(ctx),
                   child: Container(
-                    height: 58,
+                    height: 56,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.ink,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Text(
+                      // 저장 버튼이 아니라 닫기다 — 토글은 즉시 반영된다.
                       '완료',
                       style: TextStyle(
                         fontSize: 16,
@@ -909,6 +1095,38 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     if (mounted) setState(() {}); // 바깥 상태에도 반영
   }
 
+  /// B형 시트 하단 버튼 — 명세 공통 규격: height 56, 라운드 18, 800 16.
+  /// [width] 를 주면 그 폭으로 고정하고, 없으면 Expanded 안에서 늘어난다.
+  Widget _sheetBtn(
+    String label, {
+    required Color bg,
+    required Color fg,
+    required VoidCallback? onTap,
+    double? width,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: width,
+        height: 56,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: fg,
+          ),
+        ),
+      ),
+    );
+  }
+
   // 알림 토글 한 줄 (제목 + 부제 + 스위치)
   Widget _notifToggleRow(
       String title, String sub, bool value, VoidCallback onToggle) {
@@ -923,8 +1141,8 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -974,11 +1192,11 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   // ───────── 신고 (대상: 활동 또는 메시지) — 목업: 사유 선택 바텀시트 ─────────
   void _showReport(_FeedItem item) {
     const reasons = [
-      '부적절한 사진이에요',
-      '욕설·비방이 있어요',
-      '광고·스팸이에요',
-      '활동과 관계없는 내용이에요',
-      '다른 사유',
+      '허위 인증 (활동하지 않은 사진)',
+      '부적절한 사진',
+      '욕설 · 비방',
+      '스팸 · 홍보',
+      '기타',
     ];
     String? selected;
     final otherController = TextEditingController();
@@ -987,13 +1205,13 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       context: context,
       backgroundColor: AppColors.surface,
       isScrollControlled: true,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSt) {
-          final isOther = selected == '다른 사유';
+          final isOther = selected == '기타';
           final canSubmit = selected != null &&
               (!isOther || otherController.text.trim().isNotEmpty);
           return Padding(
@@ -1015,12 +1233,12 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
               children: [
                 Center(
                   child: Container(
-                    width: 44,
-                    height: 5,
+                    width: 42,
+                    height: 4,
                     margin: const EdgeInsets.only(bottom: 18),
                     decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(3),
+                      color: const Color(0xFFE3E6E4),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
@@ -1029,20 +1247,21 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                       ? '${item.name} 님의 메시지를 신고하시겠어요?'
                       : '${item.name} 님의 활동 인증을 신고하시겠어요?',
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 19,
                     height: 1.35,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 7),
                 const Text(
-                  '신고 내용은 그룹장과 운영진만 볼 수 있어요. 같은 멤버를 3번 이상 신고하면 자동으로 확인해요.',
+                  '신고 사유를 선택하면 운영팀이 24시간 내에 확인해요. 신고 사실은 상대에게 알려지지 않아요.',
                   style: TextStyle(
-                    fontSize: 14,
-                    height: 1.6,
-                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.55,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.gray500,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1103,24 +1322,39 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    Expanded(
-                      child: AppButton(
-                        label: '취소',
-                        type: AppButtonType.secondary,
-                        onTap: () => Navigator.pop(ctx),
-                      ),
+                    _sheetBtn(
+                      '취소',
+                      width: 104,
+                      bg: AppColors.surfaceSoft,
+                      fg: AppColors.gray700,
+                      onTap: () => Navigator.pop(ctx),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 9),
                     Expanded(
-                      child: AppButton(
-                        label: '신고하기',
-                        enabled: canSubmit,
-                        type: AppButtonType.danger,
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          // TODO: 실제 신고 접수 (대상 item · 사유 selected · 상세 otherController.text)
-                          AppSnackBar.show(context, '신고를 접수했어요. 검토 후 알려드릴게요');
-                        },
+                      // 사유를 고르기 전에는 눌러도 아무 일이 없다.
+                      // 에러 토스트를 띄우지 않는다 — 사유 선택이 답이다.
+                      child: _sheetBtn(
+                        '신고 접수',
+                        bg: canSubmit
+                            ? AppColors.ink
+                            : const Color(0xFFE7EAE8),
+                        fg: canSubmit
+                            ? Colors.white
+                            : const Color(0xFFA8ADA9),
+                        onTap: canSubmit
+                            ? () {
+                                Navigator.pop(ctx);
+                                // TODO: 실제 신고 접수 (대상 item · 사유 selected · 상세 otherController.text)
+                                AppSnackBar.show(
+                                  context,
+                                  '신고가 접수됐어요. 운영팀이 24시간 내에 확인해요',
+                                  icon: TablerIcons.shieldCheck,
+                                  iconSize: 21,
+                                  bottom: 104,
+                                  duration: const Duration(milliseconds: 3200),
+                                );
+                              }
+                            : null,
                       ),
                     ),
                   ],
@@ -1221,7 +1455,9 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     // 그 외(일반 멤버, 또는 마지막 1인 그룹장)는 기존 나가기 확인 팝업.
     bool ok;
     if (_isOwner && memberCount > 1) {
-      ok = await _confirmOwnerLeave() == true;
+      final successor = await GroupService.nextOwner(widget.groupId);
+      if (!mounted) return;
+      ok = await _confirmOwnerLeave(successor) == true;
     } else {
       // POPUPS_1 §8: 파괴적 액션은 빨강(#E4573D) 실행 버튼 + 연빨강 아이콘 배경(문 나가기).
       // 좌 '머무르기'(회색) / 우 '나가기'(빨강). (그룹 이름은 노출하지 않고 '그룹'으로)
@@ -1233,6 +1469,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
             confirmText: '나가기',
             danger: true,
             icon: TablerIcons.doorExit,
+            iconSize: 28,
           ) ==
           true;
     }
@@ -1250,10 +1487,10 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
 
   // §7 그룹장 위임 안내 팝업 (세로 버튼) — 위/머무르기(안전) · 아래/위임하고 나가기(빨강).
   // 승계자는 가장 먼저 가입한 멤버로 자동 지정된다(수동 선택 없음).
-  Future<bool?> _confirmOwnerLeave() {
+  Future<bool?> _confirmOwnerLeave(SuccessorBrief? successor) {
     return showDialog<bool>(
       context: context,
-      barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       builder: (dctx) => Dialog(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
@@ -1269,71 +1506,79 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 height: 58,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
-                  color: AppColors.lime,
+                  color: Color(0xFFFDEBE7),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(TablerIcons.crownFilled, size: 27, color: AppColors.ink),
+                child: const Icon(TablerIcons.doorExit,
+                    size: 28, color: Color(0xFFE4573D)),
               ),
               const SizedBox(height: 16),
-              const Text(
-                '그룹을 위임하고\n나가시겠어요?',
+              Text(
+                successor == null || successor.userName.isEmpty
+                    ? '그룹을 위임하고\n나가시겠어요?'
+                    : '${successor.userName} 님에게 그룹을\n위임하고 나가시겠어요?',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  height: 1.35,
+                style: const TextStyle(
+                  fontSize: 21,
+                  height: 1.4,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.5,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               const Text(
-                '그룹장이 나가면 가장 먼저 가입한 멤버가\n새 그룹장이 돼요.',
+                '그룹장은 자리를 비울 수 없어요. 가입이 가장\n오래된 멤버가 새 그룹장이 돼요',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13.5,
-                  height: 1.5,
-                  color: AppColors.gray700,
+                  height: 1.6,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.gray500,
                 ),
               ),
-              const SizedBox(height: 20),
+              if (successor != null) ...[
+                const SizedBox(height: 18),
+                _successorCard(successor),
+              ],
+              const SizedBox(height: 18),
               // 위: 머무르기(안전, 잉크)
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.pop(dctx, false),
                 child: Container(
-                  height: 52,
+                  height: 54,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.ink,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Text(
                     '머무르기',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 9),
               // 아래: 위임하고 나가기(파괴적, 연회색 면 + 빨강 글씨)
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.pop(dctx, true),
                 child: Container(
-                  height: 52,
+                  height: 54,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSoft,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Text(
                     '위임하고 나가기',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFFE4573D),
                     ),
@@ -1346,6 +1591,80 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       ),
     );
   }
+
+  // §7.2 승계자 카드 — 누가 그룹장을 받는지 보여준다. 고르는 UI 가 아니라
+  // 통보다(승계는 가입이 가장 오래된 멤버로 자동 결정된다).
+  Widget _successorCard(SuccessorBrief s) {
+    final initial = s.userName.isEmpty ? '?' : s.userName.substring(0, 1);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: AppColors.lime,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: (s.photoUrl != null && s.photoUrl!.isNotEmpty)
+                ? Image.network(s.photoUrl!,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _successorInitial(initial))
+                : _successorInitial(initial),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  s.userName.isEmpty ? '새 그룹장' : s.userName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  s.cardMeta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(TablerIcons.crown, size: 20, color: AppColors.gray700),
+        ],
+      ),
+    );
+  }
+
+  Widget _successorInitial(String initial) => Text(
+        initial,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
+          color: AppColors.limeOn,
+        ),
+      );
 
   // 탈퇴 후 공통 처리 — 안내 + 홈 갱신 + 피드 닫기.
   void _leftGroupExit() {
@@ -1588,14 +1907,24 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       onTap: _openRequestSheet,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: AppColors.ink,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            const Icon(TablerIcons.userPlus, size: 20, color: AppColors.lime),
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.lime.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(TablerIcons.userPlus,
+                  size: 20, color: AppColors.lime),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1614,15 +1943,16 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                     _pendingNamesMeta(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: Colors.white.withValues(alpha: 0.7),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _bannerMeta,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(TablerIcons.chevronRight, size: 20, color: Colors.white),
+            const Icon(TablerIcons.chevronRight, size: 19, color: _bannerMeta),
           ],
         ),
       ),
@@ -1635,7 +1965,7 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -2214,37 +2544,66 @@ class _RequestSheetState extends State<_RequestSheet> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-        child: Column(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 20),
+        child: StreamBuilder<List<JoinRequest>>(
+          stream: GroupService.watchPendingRequests(widget.groupId),
+          builder: (_, snap) {
+            final list = snap.data ?? const <JoinRequest>[];
+            return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Container(
-                width: 44,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: 18),
+                width: 42,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(3),
+                  color: const Color(0xFFE3E6E4),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                const Text(
+                  '가입 요청',
+                  style: TextStyle(
+                    fontSize: 22,
+                    height: 1.35,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                if (list.isNotEmpty)
+                  Text(
+                    '${list.length}건',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.gray500,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
             const Text(
-              '가입 요청 처리',
+              '승인하면 바로 채팅과 주간 랭킹에 들어와요.',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
-                color: AppColors.textPrimary,
+                fontSize: 13.5,
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray500,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Flexible(
-              child: StreamBuilder<List<JoinRequest>>(
-                stream: GroupService.watchPendingRequests(widget.groupId),
-                builder: (_, snap) {
-                  final list = snap.data ?? const <JoinRequest>[];
+              child: Builder(
+                builder: (_) {
                   if (list.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 30),
@@ -2265,21 +2624,21 @@ class _RequestSheetState extends State<_RequestSheet> {
                 },
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
               child: Container(
-                height: 52,
+                height: 56,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: const Text(
                   '닫기',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
@@ -2287,6 +2646,8 @@ class _RequestSheetState extends State<_RequestSheet> {
               ),
             ),
           ],
+            );
+          },
         ),
       ),
     );
@@ -2295,12 +2656,12 @@ class _RequestSheetState extends State<_RequestSheet> {
   Widget _card(JoinRequest req) {
     final initial = req.userName.isEmpty ? '?' : req.userName.substring(0, 1);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.line100),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.line100, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2312,8 +2673,10 @@ class _RequestSheetState extends State<_RequestSheet> {
                 height: 44,
                 alignment: Alignment.center,
                 clipBehavior: Clip.antiAlias,
-                decoration: const BoxDecoration(
-                    color: AppColors.lime, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDEFEE),
+                  borderRadius: BorderRadius.circular(15),
+                ),
                 child: (req.photoUrl != null && req.photoUrl!.isNotEmpty)
                     ? Image.network(req.photoUrl!,
                         width: 44,
@@ -2339,11 +2702,12 @@ class _RequestSheetState extends State<_RequestSheet> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      req.hasRecord ? req.meta : (req.region.isEmpty ? '지역 미설정' : req.region),
+                      req.sheetMeta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.gray500,
                       ),
                     ),
@@ -2357,12 +2721,16 @@ class _RequestSheetState extends State<_RequestSheet> {
             children: [
               SizedBox(
                 width: 88,
-                child: _btn('거절', bg: const Color(0xFFE4573D),
+                child: _btn('거절',
+                    bg: AppColors.surfaceSoft,
+                    fg: const Color(0xFFE4573D),
                     onTap: _busy ? null : () => _reject(req)),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
-                child: _btn('승인', bg: AppColors.ink,
+                child: _btn('승인',
+                    bg: AppColors.ink,
+                    fg: Colors.white,
                     onTap: _busy ? null : () => _approve(req)),
               ),
             ],
@@ -2375,13 +2743,14 @@ class _RequestSheetState extends State<_RequestSheet> {
   Widget _ini(String initial) => Text(
         initial,
         style: const TextStyle(
-          fontSize: 17,
+          fontSize: 15,
           fontWeight: FontWeight.w800,
-          color: AppColors.limeOn,
+          color: AppColors.gray700,
         ),
       );
 
-  Widget _btn(String label, {required Color bg, required VoidCallback? onTap}) {
+  Widget _btn(String label,
+      {required Color bg, required Color fg, required VoidCallback? onTap}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -2390,14 +2759,14 @@ class _RequestSheetState extends State<_RequestSheet> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: onTap == null ? AppColors.gray200 : bg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 14.5,
             fontWeight: FontWeight.w800,
-            color: onTap == null ? AppColors.gray500 : Colors.white,
+            color: onTap == null ? AppColors.gray500 : fg,
           ),
         ),
       ),

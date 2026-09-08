@@ -34,6 +34,13 @@ class _GroupPhotosScreenState extends State<GroupPhotosScreen> {
   bool _loading = true;
   _PhotoFilter _filter = _PhotoFilter.all;
 
+  /// 가입 시각을 끝내 못 읽은 상태. 이때는 사진을 감추고 안내를 띄운다.
+  /// 필터를 끄면 가입 이전 사진이 그대로 노출되므로 빈 화면 쪽이 안전하다.
+  bool _joinedAtGaveUp = false;
+
+  /// 가입 시각 재시도 간격(ms) — 채팅 피드와 같은 정책.
+  static const List<int> _joinedAtBackoff = [0, 300, 700, 1500];
+
   @override
   void initState() {
     super.initState();
@@ -46,29 +53,52 @@ class _GroupPhotosScreenState extends State<GroupPhotosScreen> {
       return;
     }
     List<GroupPost> photos = [];
+    bool gaveUp = false;
     try {
       // 내 가입 시각 이전 사진은 채팅 피드와 같은 기준으로 숨긴다.
-      // 못 읽으면 null → 필터 없이 전체 표시(피드와 동일한 fallback).
-      final joinedAt = await GroupService.myJoinedAt(widget.groupId);
-      final posts = await GroupService.posts(widget.groupId, limit: 100);
-      // 인증샷만: 활동 카드 중 이미지가 있는 것.
-      photos = posts
-          .where(
-            (p) =>
-                !p.isMessage &&
-                !p.isSystem &&
-                p.imageUrl != null &&
-                (joinedAt == null || !p.createdAt.isBefore(joinedAt)),
-          )
-          .toList();
+      // 가입 직후에는 serverTimestamp 가 아직 확정되지 않아 null 로 읽히므로
+      // 간격을 늘려가며 몇 번 더 시도한다.
+      DateTime? joinedAt;
+      for (final ms in _joinedAtBackoff) {
+        joinedAt = await GroupService.myJoinedAt(widget.groupId);
+        if (joinedAt != null || !mounted) break;
+        await Future.delayed(Duration(milliseconds: ms));
+      }
+      if (joinedAt == null) {
+        // 못 읽었으면 전체 표시가 아니라 전체 숨김으로 간다.
+        gaveUp = true;
+      } else {
+        final posts = await GroupService.posts(widget.groupId, limit: 100);
+        // 인증샷만: 활동 카드 중 이미지가 있는 것.
+        photos = posts
+            .where(
+              (p) =>
+                  !p.isMessage &&
+                  !p.isSystem &&
+                  p.imageUrl != null &&
+                  !p.createdAt.isBefore(joinedAt!),
+            )
+            .toList();
+      }
     } catch (e) {
       debugPrint('[그룹 사진] 목록 로드 실패: $e');
+      gaveUp = true;
     }
     if (!mounted) return;
     setState(() {
       _photos = photos;
+      _joinedAtGaveUp = gaveUp;
       _loading = false;
     });
+  }
+
+  /// 안내의 '다시 시도'.
+  Future<void> _retryLoad() async {
+    setState(() {
+      _loading = true;
+      _joinedAtGaveUp = false;
+    });
+    await _load();
   }
 
   // 현재 필터가 적용된 사진 목록.
@@ -129,7 +159,9 @@ class _GroupPhotosScreenState extends State<GroupPhotosScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : list.isEmpty
+                  : _joinedAtGaveUp
+                      ? _loadFailed()
+                      : list.isEmpty
                       ? _empty()
                       : GridView.builder(
                           padding: EdgeInsets.fromLTRB(
@@ -204,6 +236,52 @@ class _GroupPhotosScreenState extends State<GroupPhotosScreen> {
             fontWeight: FontWeight.w700,
             color: selected ? AppColors.surface : AppColors.gray700,
           ),
+        ),
+      ),
+    );
+  }
+
+  // 가입 시각을 못 읽어 사진을 감춘 상태. '사진이 없음'과 구분해서 보여준다 —
+  // 실제로는 있을 수 있는데 기준을 몰라 가린 것이기 때문이다.
+  Widget _loadFailed() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Gap.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(TablerIcons.cloudOff, size: 40, color: AppColors.gray400),
+            Gap.h12,
+            Text('사진을 불러오지 못했어요', style: AppType.title3),
+            Gap.h4,
+            Text(
+              '연결을 확인하고 다시 시도해 주세요',
+              style: AppType.body.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            Gap.h12,
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _retryLoad,
+              child: Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Text(
+                  '다시 시도',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

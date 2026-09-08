@@ -17,18 +17,19 @@ Future<bool> confirmApproveJoin(BuildContext context, JoinRequest req) async {
   final initial = req.userName.isEmpty ? '?' : req.userName.substring(0, 1);
   final ok = await showDialog<bool>(
     context: context,
-    barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
+    barrierColor: AppColors.barrierDim,
     builder: (_) => _ConfirmDialog(
       tileBg: const Color(0xFFEDEFEE),
       tileChild: Text(
         initial,
         style: const TextStyle(
-          fontSize: 24,
+          fontSize: 21,
           fontWeight: FontWeight.w800,
-          color: AppColors.ink,
+          color: AppColors.gray700,
         ),
       ),
       title: '${req.userName} 님을\n멤버로 받을까요?',
+      body: '승인하면 바로 그룹 채팅과\n주간 랭킹에 참여해요',
       confirmText: '승인',
       confirmDanger: false,
     ),
@@ -40,11 +41,12 @@ Future<bool> confirmApproveJoin(BuildContext context, JoinRequest req) async {
 Future<bool> confirmRejectJoin(BuildContext context, JoinRequest req) async {
   final ok = await showDialog<bool>(
     context: context,
-    barrierColor: AppColors.neutral900.withValues(alpha: 0.45),
+    barrierColor: AppColors.barrierDim,
     builder: (_) => _ConfirmDialog(
       tileBg: const Color(0xFFFDEBE7),
       tileChild: const Icon(TablerIcons.userX, size: 27, color: Color(0xFFE4573D)),
       title: '${req.userName} 님의 요청을\n거절할까요?',
+      body: '요청은 목록에서 사라져요.\n거절 사유는 상대에게 보이지 않아요',
       confirmText: '거절',
       confirmDanger: true,
     ),
@@ -57,6 +59,7 @@ class _ConfirmDialog extends StatelessWidget {
   final Color tileBg;
   final Widget tileChild;
   final String title;
+  final String body;
   final String confirmText;
   final bool confirmDanger;
 
@@ -64,6 +67,7 @@ class _ConfirmDialog extends StatelessWidget {
     required this.tileBg,
     required this.tileChild,
     required this.title,
+    required this.body,
     required this.confirmText,
     required this.confirmDanger,
   });
@@ -92,25 +96,36 @@ class _ConfirmDialog extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 18,
-                height: 1.35,
+                fontSize: 21,
+                height: 1.4,
                 fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
+                letterSpacing: -0.5,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 10),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13.5,
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray500,
+              ),
+            ),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: _dialogBtn(
                     label: '취소',
                     bg: AppColors.surfaceSoft,
-                    fg: AppColors.textPrimary,
+                    fg: AppColors.gray700,
                     onTap: () => Navigator.pop(context, false),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 9),
                 Expanded(
                   child: _dialogBtn(
                     label: confirmText,
@@ -137,16 +152,16 @@ class _ConfirmDialog extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        height: 52,
+        height: 54,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: FontWeight.w800,
             color: fg,
           ),
@@ -254,20 +269,28 @@ class _GroupJoinRequestsScreenState extends State<GroupJoinRequestsScreen> {
 
   Widget _memberRow() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 0, 22, 8),
-      child: Row(
-        children: [
-          const Icon(TablerIcons.users, size: 16, color: AppColors.gray500),
-          const SizedBox(width: 6),
-          Text(
-            '현재 멤버 ${widget.memberCount}명',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.gray500,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            const Icon(TablerIcons.users, size: 18, color: AppColors.gray700),
+            const SizedBox(width: 9),
+            Text(
+              '멤버 ${widget.memberCount}명',
+              style: const TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.gray700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -299,16 +322,16 @@ class _GroupJoinRequestsScreenState extends State<GroupJoinRequestsScreen> {
       child: Container(
         height: 34,
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: on ? AppColors.ink : AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(11),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            fontWeight: on ? FontWeight.w800 : FontWeight.w700,
             color: on ? AppColors.textOnBrand : AppColors.gray700,
           ),
         ),
@@ -359,11 +382,11 @@ class _GroupJoinRequestsScreenState extends State<GroupJoinRequestsScreen> {
   Widget _requestCard(JoinRequest req, {required bool pending}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.line100),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.line100, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,18 +404,20 @@ class _GroupJoinRequestsScreenState extends State<GroupJoinRequestsScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15.5,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      req.region.isEmpty ? '지역 미설정' : req.region,
+                      req.screenMeta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.gray500,
                       ),
                     ),
@@ -406,29 +431,48 @@ class _GroupJoinRequestsScreenState extends State<GroupJoinRequestsScreen> {
           if (req.hasRecord)
             _metrics(req)
           else
-            const Text(
-              '아직 플로깅 기록이 없어요',
-              style: TextStyle(fontSize: 13, color: AppColors.gray500),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Row(
+                children: [
+                  Icon(TablerIcons.seedling, size: 18, color: AppColors.gray500),
+                  SizedBox(width: 9),
+                  Text(
+                    '아직 플로깅 기록이 없어요',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.gray500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           if (pending) ...[
             const SizedBox(height: 14),
             Row(
               children: [
                 SizedBox(
-                  width: 88,
+                  width: 96,
                   child: _cardBtn(
                     '거절',
-                    bg: const Color(0xFFE4573D),
-                    fg: Colors.white,
+                    bg: AppColors.surfaceSoft,
+                    fg: const Color(0xFFE4573D),
                     onTap: _busy ? null : () => _reject(req),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 9),
                 Expanded(
                   child: _cardBtn(
                     '승인',
                     bg: AppColors.ink,
                     fg: Colors.white,
+                    icon: TablerIcons.check,
                     onTap: _busy ? null : () => _approve(req),
                   ),
                 ),
@@ -444,13 +488,16 @@ class _GroupJoinRequestsScreenState extends State<GroupJoinRequestsScreen> {
     final photo = req.photoUrl;
     final initial = req.userName.isEmpty ? '?' : req.userName.substring(0, 1);
     return Container(
-      width: 44,
-      height: 44,
+      width: 52,
+      height: 52,
       alignment: Alignment.center,
       clipBehavior: Clip.antiAlias,
-      decoration: const BoxDecoration(color: AppColors.lime, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDEFEE),
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: (photo != null && photo.isNotEmpty)
-          ? Image.network(photo, width: 44, height: 44, fit: BoxFit.cover,
+          ? Image.network(photo, width: 52, height: 52, fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _initialText(initial))
           : _initialText(initial),
     );
@@ -459,9 +506,9 @@ class _GroupJoinRequestsScreenState extends State<GroupJoinRequestsScreen> {
   Widget _initialText(String initial) => Text(
         initial,
         style: const TextStyle(
-          fontSize: 17,
+          fontSize: 18,
           fontWeight: FontWeight.w800,
-          color: AppColors.limeOn,
+          color: AppColors.gray700,
         ),
       );
 
@@ -530,26 +577,41 @@ class _GroupJoinRequestsScreenState extends State<GroupJoinRequestsScreen> {
     required Color bg,
     required Color fg,
     required VoidCallback? onTap,
+    IconData? icon,
   }) {
+    final Color on = onTap == null ? AppColors.gray500 : fg;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        height: 46,
+        height: 50,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: onTap == null ? AppColors.gray200 : bg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(17),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w800,
-            color: onTap == null ? AppColors.gray500 : fg,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null) ...[
+              // 승인 버튼 체크는 잉크 면 위 라임 (완료 계열 강조)
+              Icon(icon,
+                  size: 19,
+                  color: onTap == null ? AppColors.gray500 : AppColors.lime),
+              const SizedBox(width: 7),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: on,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+
 }

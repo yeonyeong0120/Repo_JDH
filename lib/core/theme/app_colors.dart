@@ -127,6 +127,10 @@ class AppColors {
   static const Color wxOvercast = Color(0xFF6E7681);
   static const Color wxRain = Color(0xFF4A81B8);
 
+  /// 팝업·시트 뒤 딤 — 디자인 명세 POPUPS.md 공통값 rgba(20,24,22,.5).
+  /// 트래킹 화면만 지도 위라 더 어두운 값을 따로 쓴다.
+  static const Color barrierDim = Color(0x80141816);
+
   static const Color border = gray200;
 
   static const Color textPrimary = ink; // 기본 텍스트

@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
-/// Ploggo - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
+/// PLOGGO - 그룹 소개/가입 화면 (다른 동네 그룹 카드 → 이 화면)
 /// 그룹 상세 시안(detail-othergroup) 기준: 라임 헤더 + 활동량 카드 + 주간 랭킹.
 /// 미가입 상태이므로 랭킹 하단이 페이드되고 '가입하기' CTA가 고정된다.
 class GroupDetailScreen extends StatefulWidget {
@@ -45,6 +46,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   static const Color _titleGreen = Color(0xFF1E2418);
   static const Color _memberGreen = Color(0xFF4A5A2A);
   static const Color _charcoal = Color(0xFF3A403C);
+  // 요청 시트 고지 문구 — 본문 회색보다 한 단계 연하다
+  static const Color _noticeGray = Color(0xFFA8ADA9);
   static const Color _faint = Color(0xFFB0B6B1);
   static const Color _track = Color(0xFFEDEFEE);
   static const Color _hairline = Color(0xFFF1F3F2);
@@ -170,44 +173,56 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: AppColors.barrierDim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (sctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+          padding: const EdgeInsets.fromLTRB(22, 12, 22, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 18),
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(3),
+                    color: const Color(0xFFE3E6E4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               const Text(
                 '가입 요청 보내기',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
+                  height: 1.35,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.6,
                   color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '이 그룹은 그룹장 승인이 필요해요. 요청을 보내면 그룹장이 확인하고 승인해요.',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  height: 1.6,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.gray500,
                 ),
               ),
               const SizedBox(height: 16),
               // 프로필 카드
               Container(
-                padding: const EdgeInsets.all(14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
@@ -215,14 +230,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       width: 44,
                       height: 44,
                       alignment: Alignment.center,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: _lime,
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
                         name.isEmpty ? '?' : name.substring(0, 1),
                         style: const TextStyle(
-                          fontSize: 17,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                           color: AppColors.limeOn,
                         ),
@@ -238,7 +253,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 15.5,
+                              fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
                             ),
@@ -249,7 +264,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.gray500,
                             ),
                           ),
@@ -259,16 +275,26 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-              const Text(
-                '위 프로필과 누적 수거량이 그룹장에게 보여요',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  height: 1.5,
-                  color: AppColors.gray500,
-                ),
+              const SizedBox(height: 14),
+              const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(TablerIcons.infoCircle, size: 17, color: _noticeGray),
+                  SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      '위 프로필과 누적 수거량이 그룹장에게 보여요',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.55,
+                        fontWeight: FontWeight.w500,
+                        color: _noticeGray,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   GestureDetector(
@@ -292,7 +318,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 9),
                   Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
@@ -350,7 +376,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       );
       if (!mounted) return;
       setState(() => _joinStatus = JoinStatus.pending);
-      AppSnackBar.show(context, '가입 요청을 보냈어요', kind: SnackKind.success);
+      // 명세: 그룹 상세 토스트 — 잉크 면 + 라임 체크, bottom 34, 2.6s
+      AppSnackBar.show(
+        context,
+        '가입 요청을 보냈어요',
+        icon: TablerIcons.check,
+      );
     } catch (_) {
       if (mounted) AppSnackBar.show(context, '요청을 보내지 못했어요', kind: SnackKind.error);
     } finally {
@@ -459,21 +490,22 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
           decoration: BoxDecoration(
             color: AppColors.surfaceSoft,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
           ),
           child: Row(
             children: [
               const Icon(TablerIcons.hourglassHigh,
-                  size: 20, color: AppColors.gray700),
-              const SizedBox(width: 12),
+                  size: 19, color: AppColors.gray700),
+              const SizedBox(width: 9),
               const Expanded(
                 child: Text(
                   '그룹장이 요청을 확인하고 있어요',
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 12.5,
+                    height: 1.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.gray700,
                   ),
@@ -482,38 +514,45 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 9),
         Row(
           children: [
             Expanded(
               child: Container(
-                height: 56,
+                height: 64,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE7EAE8),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(22),
                 ),
-                child: const Text(
-                  '승인 대기 중',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFFA8ADA9),
-                  ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(TablerIcons.clock, size: 21, color: Color(0xFFA8ADA9)),
+                    SizedBox(width: 9),
+                    Text(
+                      '승인 대기 중',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFA8ADA9),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 9),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: _cancelRequest,
               child: Container(
                 width: 104,
-                height: 56,
+                height: 64,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Text(
                   '요청 취소',
@@ -1103,97 +1142,20 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     );
   }
 
-  // ── 가입 확인 팝업 (시안 §6.3) ──
+  // ── §7 가입 확인 팝업 ──
+  // 명세 A형과 값이 같아 AppDialog 로 옮겼다. 같은 규격을 두 벌 두지 않는다.
   Future<bool?> _confirmJoin() {
-    return showDialog<bool>(
-      context: context,
-      barrierColor: const Color(0x80141816),
-      builder: (dctx) => Dialog(
-        backgroundColor: AppColors.surface,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 30),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 26, 24, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                    color: _lime, shape: BoxShape.circle),
-                child: const Icon(TablerIcons.heartHandshake,
-                    size: 28, color: AppColors.ink),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                // 그룹 이름을 노출하지 않고 '그룹'으로 통일
-                '그룹에\n가입하시겠습니까?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 21,
-                    height: 1.4,
-                    letterSpacing: -0.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                '가입하면 그룹 채팅과 주간 랭킹에\n바로 참여할 수 있어요',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13.5,
-                    height: 1.6,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.gray500),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.pop(dctx, false),
-                      child: Container(
-                        height: 54,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            color: AppColors.surfaceSoft,
-                            borderRadius: BorderRadius.circular(18)),
-                        child: const Text('아니요',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.gray700)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.pop(dctx, true),
-                      child: Container(
-                        height: 54,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            color: AppColors.ink,
-                            borderRadius: BorderRadius.circular(18)),
-                        child: const Text('가입하기',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    return AppDialog.show(
+      context,
+      // 그룹 이름을 노출하지 않고 '그룹'으로 통일
+      title: '그룹에\n가입하시겠습니까?',
+      message: '가입하면 그룹 채팅과 주간 랭킹에\n바로 참여할 수 있어요',
+      cancelText: '아니요',
+      confirmText: '가입하기',
+      icon: TablerIcons.heartHandshake,
+      iconBg: _lime,
+      iconFg: AppColors.ink,
+      iconSize: 28,
     );
   }
 }

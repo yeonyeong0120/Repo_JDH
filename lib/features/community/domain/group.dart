@@ -133,6 +133,36 @@ class JoinRequest {
     return parts.join(' · ');
   }
 
+  /// 요청 시각의 상대 표기 (예: '2시간 전'). 7일이 넘으면 날짜로 떨어뜨린다.
+  String get sinceText {
+    final d = DateTime.now().difference(requestedAt);
+    if (d.inMinutes < 1) return '방금';
+    if (d.inMinutes < 60) return '${d.inMinutes}분 전';
+    if (d.inHours < 24) return '${d.inHours}시간 전';
+    if (d.inDays < 7) return '${d.inDays}일 전';
+    return '${requestedAt.month}월 ${requestedAt.day}일';
+  }
+
+  /// 전용 화면 카드 메타 ('서울 마포구 · 2시간 전 요청')
+  String get screenMeta {
+    final parts = <String>[
+      if (region.isNotEmpty) region,
+      '$sinceText 요청',
+    ];
+    return parts.join(' · ');
+  }
+
+  /// 처리 시트 카드 메타 ('서울 마포구 · 누적 12.4kg · 2시간 전').
+  /// 활동 기록이 없으면 누적 대신 '첫 활동 전'을 넣는다.
+  String get sheetMeta {
+    final parts = <String>[
+      if (region.isNotEmpty) region,
+      hasRecord ? '누적 ${cumulativeKgText}kg' : '첫 활동 전',
+      sinceText,
+    ];
+    return parts.join(' · ');
+  }
+
   /// 누적 수거량을 소수 첫째 자리까지 (예: 12.4)
   String get cumulativeKgText {
     final v = (cumulativeKg * 10).round() / 10;
@@ -157,6 +187,36 @@ class JoinRequest {
 /// 피드 항목 종류
 /// - activity : 플로깅 인증 카드 (거리·수거량·시간)
 /// - message  : 그룹 채팅 메시지 (텍스트)
+/// 그룹장 승계 후보 — 위임 확인 팝업에 미리 보여줄 최소 정보.
+/// 실제 승계는 leaveGroup 이 같은 기준(joinedAt 최솟값)으로 다시 고른다.
+class SuccessorBrief {
+  final String uid;
+  final String userName;
+  final String? photoUrl;
+  final DateTime? joinedAt;
+
+  const SuccessorBrief({
+    required this.uid,
+    this.userName = '',
+    this.photoUrl,
+    this.joinedAt,
+  });
+
+  /// 가입 후 며칠째인지. 가입 시각을 모르면 null.
+  int? get activeDays {
+    final at = joinedAt;
+    if (at == null) return null;
+    return DateTime.now().difference(at).inDays + 1;
+  }
+
+  /// 팝업 카드 메타 ('28일째 활동 · 새 그룹장').
+  /// 가입 시각을 모르면 '새 그룹장'만 남긴다.
+  String get cardMeta {
+    final d = activeDays;
+    return d == null ? '새 그룹장' : '$d일째 활동 · 새 그룹장';
+  }
+}
+
 class PostType {
   static const String activity = 'activity';
   static const String message = 'message';

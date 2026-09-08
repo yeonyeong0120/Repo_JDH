@@ -5,6 +5,7 @@ import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
 import 'package:repo_jdh/features/shop/presentation/coupon_list_screen.dart';
+import 'package:repo_jdh/core/widgets/app_card_dialog.dart';
 
 /// SHOP-27 상품 상세 (Startline 목업 구조)
 /// 상품 이미지 + 브랜드/이름/포인트가 + 안내 항목 + 하단 '교환하기' CTA.
@@ -301,18 +302,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       return;
     }
 
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => _CenterDialog(
-        icon: TablerIcons.gift,
-        title: '${_format(item.price)}P로 교환할까요?',
-        message:
-            '교환 후 잔액 ${_format(_points - item.price)}P · 쿠폰함에 30일간 보관돼요',
-        cancelText: '취소',
-        confirmText: '교환하기',
-        onCancel: () => Navigator.pop(ctx, false),
-        onConfirm: () => Navigator.pop(ctx, true),
-      ),
+    // §21 구매 확인
+    final ok = await AppCardDialog.show(
+      context,
+      icon: TablerIcons.gift,
+      title: '${_format(item.price)}P로 교환할까요?',
+      message: '교환 후 잔액 ${_format(_points - item.price)}P · 쿠폰함에 30일간 보관돼요',
+      cancelText: '취소',
+      confirmText: '교환하기',
     );
 
     if (ok != true) return;
@@ -334,24 +331,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _showDone(ShopItem item) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => _CenterDialog(
-        icon: TablerIcons.ticket,
-        title: '교환 완료!',
-        message: '${item.name}이(가) 쿠폰함에 담겼어요',
-        cancelText: '닫기',
-        confirmText: '쿠폰함 보기',
-        onCancel: () => Navigator.pop(ctx),
-        onConfirm: () {
-          Navigator.pop(ctx);
-          Navigator.push(
-            context,
-            MaterialPageRoute<void>(builder: (_) => const CouponListScreen()),
-          );
-        },
-      ),
-    );
+    // §22 구매 완료 — 딤을 눌러도 닫히지 않는다.
+    // 결과를 인지하지 못한 채 지나가는 것을 막기 위한 의도다.
+    AppCardDialog.show(
+      context,
+      icon: TablerIcons.ticket,
+      title: '교환 완료!',
+      message: '${item.name}이(가) 쿠폰함에 담겼어요',
+      cancelText: '닫기',
+      confirmText: '쿠폰함 보기',
+      barrierDismissible: false,
+    ).then((go) {
+      if (go != true || !mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const CouponListScreen()),
+      );
+    });
   }
 
   String _format(int v) {
@@ -362,125 +358,5 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       buf.write(s[i]);
     }
     return buf.toString();
-  }
-}
-
-/// 중앙 다이얼로그 — 라임 원형 아이콘 + 제목 + 메시지 + 취소/확인 버튼.
-/// shop_screen 의 buy / buyDone 오버레이와 동일한 형태(미러).
-class _CenterDialog extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String message;
-  final String cancelText;
-  final String confirmText;
-  final VoidCallback onCancel;
-  final VoidCallback onConfirm;
-
-  const _CenterDialog({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.cancelText,
-    required this.confirmText,
-    required this.onCancel,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: AppColors.surface,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 26),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 62,
-              height: 62,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: AppColors.lime,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 29, color: AppColors.ink),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 19,
-                height: 1.4,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12.5,
-                height: 1.55,
-                fontWeight: FontWeight.w500,
-                color: AppColors.gray500,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: onCancel,
-                    child: Container(
-                      height: 52,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceSoft,
-                        borderRadius: BorderRadius.circular(17),
-                      ),
-                      child: Text(
-                        cancelText,
-                        style: const TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.gray700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: onConfirm,
-                    child: Container(
-                      height: 52,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.ink,
-                        borderRadius: BorderRadius.circular(17),
-                      ),
-                      child: Text(
-                        confirmText,
-                        style: const TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

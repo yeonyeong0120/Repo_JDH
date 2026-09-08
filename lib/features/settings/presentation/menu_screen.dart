@@ -3,7 +3,6 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
-import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/mypage/domain/profile_detail.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
@@ -18,6 +17,7 @@ import 'package:repo_jdh/features/shop/presentation/shop_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/point_history_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/gallery_screen.dart';
 import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
+import 'package:repo_jdh/features/settings/presentation/withdraw_sheet.dart';
 
 /// 메뉴 화면 (Startline 목업 구조)
 /// 차콜 프로필 헤더(라임 아바타 + 포인트/수거 타일) → 포인트 샵·내역 카드 → 이용 안내 리스트.
@@ -511,10 +511,11 @@ class _MenuScreenState extends State<MenuScreen> {
   Future<void> _confirmSignOut() async {
     final ok = await AppDialog.show(
       context,
-      title: '로그아웃',
-      message: '로그아웃 하시겠습니까?',
-      cancelText: '아니오',
+      title: '로그아웃 하시겠어요?',
+      message: '기록과 포인트는 그대로 보관돼요',
+      cancelText: '취소',
       confirmText: '로그아웃',
+      hideIcon: true, // 명세 §17 — 이 팝업만 아이콘 원이 없다
     );
     if (ok != true || !mounted) return;
     await UserService.signOut();
@@ -522,24 +523,9 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   Future<void> _confirmDelete() async {
-    final ok = await AppDialog.show(
-      context,
-      title: '회원 탈퇴',
-      message: '정말 탈퇴하시겠습니까?\n\n활동 기록과 뱃지, 포인트가 모두 사라지며 되돌릴 수 없어요.',
-      cancelText: '아니오',
-      confirmText: '탈퇴',
-      danger: true,
-    );
-    if (ok != true || !mounted) return;
-    try {
-      await UserService.deleteAccount();
-    } catch (_) {
-      if (mounted) {
-        AppSnackBar.show(context, '탈퇴하지 못했어요. 다시 로그인 후 시도해주세요');
-      }
-      return;
-    }
-    if (mounted) context.go('/login');
+    // 명세 '회원 탈퇴' — 안내 시트 → 최종 확인 → 완료 화면까지 흐름 전체.
+    // 삭제 호출과 성공·실패 피드백도 그 안에서 끝난다.
+    await startWithdrawFlow(context);
   }
 }
 

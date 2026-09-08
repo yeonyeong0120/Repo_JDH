@@ -277,14 +277,12 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
 
   // (경로 이탈 자동 재추천 기능 제거 — 이탈해도 아무 이벤트 없음)
 
-  // 계획 경로(회색) + 지나온 경로(차콜) + 정화 거점(핫스팟) 핀을 그린다.
-  // 계획 라인은 연회색으로 깔고, 내가 걸은 부분(트래킹 누적 좌표)을 그 위에
-  // 차콜(ink)로 얹어 '걸은 부분'이 또렷하게 드러나도록 한다.
+  // 계획 경로 + 정화 거점(핫스팟) 핀을 그린다.
+  // 걸어온 경로는 겹쳐 그리지 않는다 — 앱이 짜준 경로만 한 겹으로 보여준다.
   Future<void> _renderRoute() async {
     final c = _mapController;
     if (c == null) return;
     final result = ref.read(routeNotifierProvider).valueOrNull;
-    final tracking = ref.read(trackingProvider);
 
     final overlays = <NAddableOverlay>{};
 
@@ -409,17 +407,28 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
     }
   }
 
-  // PLOG-06 뒤로가기: 나가면 기록 폐기. 계속하기(초록)를 오른쪽 주 버튼으로.
+  // PLOG-06 뒤로가기 — 명세 §2 활동 취소.
+  // 세로 배치이고 안전한 선택(계속 뛰기)이 위·다크다. 가로로 바꾸지 말 것.
   Future<void> _confirmCancel() async {
+    final t = ref.read(trackingProvider);
+    final weight =
+        ActivityMetrics.weightLabel(ref.read(ploggingProvider).totalCounts);
     final ok = await AppDialog.show(
       context,
-      title: '지금 나가면 기록이 사라져요',
-      message: '아직 저장되지 않은 활동이에요. 나가면 처음부터 다시 시작해야 합니다.',
-      cancelText: '나가기', // 왼쪽 흰 버튼 → 기록 폐기 후 홈
-      confirmText: '계속하기', // 오른쪽 초록 버튼 → 화면 유지
-      warn: true, // 아이콘만 경고(빨강), 계속하기 버튼은 초록 유지
+      title: '플로깅을 그만두시겠어요?',
+      message: '이번 활동은 취소되고 지금까지 걸은 ${t.distanceText}km,\n수거 $weight은 기록되지 않아요',
+      cancelText: '계속 뛰기', // 위 · 다크 (안전)
+      confirmText: '활동 취소하기', // 아래 · 연회색 면 + 빨강 글자 (파괴)
+      danger: true,
+      softDanger: true,
+      verticalButtons: true,
+      icon: TablerIcons.alertTriangle,
+      iconBg: const Color(0xFFFDEBE7),
+      iconFg: const Color(0xFFE4573D),
+      // 지도 위라 딤이 더 어둡다 — 명세 rgba(12,15,13,.62)
+      barrierColor: const Color(0x9E0C0F0D),
     );
-    if (ok == false) {
+    if (ok == true) {
       await ref.read(ploggingProvider.notifier).reset();
       ref.read(trackingProvider.notifier).reset(); // 세션 폐기(이어하기 안 묻게)
       // 홈이 아니라 목적지 설정 화면으로 이동한다.
@@ -449,7 +458,12 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
       message: '${t.distanceText}km · 수거 $weight이 기록되고\n포인트가 적립돼요',
       cancelText: '계속 뛰기',
       confirmText: '마치기',
-      icon: TablerIcons.flagFilled, // 라임 스퀘어클 + 검정 깃발
+      icon: TablerIcons.flagFilled,
+      iconBg: const Color(0xFFF7FBE4),
+      iconFg: AppColors.ink,
+      iconSize: 26,
+      // 지도 위라 딤이 더 어둡다 — 명세 rgba(12,15,13,.62)
+      barrierColor: const Color(0x9E0C0F0D),
     );
     if (ok != true || !mounted) return;
 
@@ -1184,12 +1198,12 @@ class _PloggingRulesSheet extends StatelessWidget {
         children: [
           // 손잡이
           Container(
-            width: 44,
-            height: 5,
+            width: 42,
+            height: 4,
             margin: const EdgeInsets.only(top: 10, bottom: 6),
             decoration: BoxDecoration(
-              color: AppColors.neutral300,
-              borderRadius: BorderRadius.circular(3),
+              color: const Color(0xFFE3E6E4),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
           Flexible(
@@ -1201,8 +1215,10 @@ class _PloggingRulesSheet extends StatelessWidget {
                   Text(
                     firstRun ? '첫 플로깅을 시작할게요' : '플로깅 이렇게 해요',
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
+                      height: 1.35,
                       fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -1233,7 +1249,8 @@ class _PloggingRulesSheet extends StatelessWidget {
                     icon: TablerIcons.power,
                     title: '도착하면 종료',
                     lines: const [
-                      _Span('화면 오른쪽 전원 버튼을 꾹 누르면 플로깅이 끝나고 기록·포인트가 저장돼요. 중간에 나가면 저장되지 않아요'),
+                      _Span('화면 오른쪽 전원 버튼을 꾹 누르면 플로깅이 끝나고 기록·포인트가 저장돼요'),
+                      _Span('중간에 나가면 저장되지 않아요', danger: true),
                     ],
                   ),
                 ],
@@ -1250,19 +1267,19 @@ class _PloggingRulesSheet extends StatelessWidget {
             ),
             child: SizedBox(
               width: double.infinity,
-              height: 54,
+              height: 58,
               child: FilledButton(
                 onPressed: () => Navigator.pop(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.actionPrimary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(19),
                   ),
                 ),
                 child: Text(
                   firstRun ? '시작하기' : '확인했어요',
                   style: const TextStyle(
-                    fontSize: 17,
+                    fontSize: 16.5,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
@@ -1282,32 +1299,36 @@ class _PloggingRulesSheet extends StatelessWidget {
     bool lime = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 아이콘 타일 — 라운드 스퀘어. 촬영만 라임, 나머지는 연회색.
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: lime ? AppColors.lime : AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(13),
+              color: lime ? AppColors.lime : const Color(0xFFF2F4F3),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 20, color: AppColors.ink),
+            child: Icon(
+              icon,
+              size: 19,
+              color: lime ? AppColors.limeOn : AppColors.gray700,
+            ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: lime ? AppColors.limeOn : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1317,14 +1338,14 @@ class _PloggingRulesSheet extends StatelessWidget {
                     child: Text(
                       lines[i].text,
                       style: TextStyle(
-                        fontSize: 13.5,
-                        height: 1.5,
+                        fontSize: 13,
+                        height: 1.55,
                         fontWeight: lines[i].danger
                             ? FontWeight.w600
-                            : FontWeight.w400,
+                            : FontWeight.w500,
                         color: lines[i].danger
                             ? AppColors.actionDanger
-                            : AppColors.textSecondary,
+                            : (lime ? AppColors.gray700 : AppColors.gray500),
                       ),
                     ),
                   ),

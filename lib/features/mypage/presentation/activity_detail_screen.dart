@@ -4,12 +4,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
-import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/core/widgets/route_pin.dart';
 import 'package:repo_jdh/features/plogging/data/photo_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
+import 'package:repo_jdh/core/widgets/app_card_dialog.dart';
 
-/// Ploggo - 개별 활동 상세 (ACT-05)
+/// PLOGGO - 개별 활동 상세 (ACT-05)
 /// 상단 경로 지도 + 기록/수거/인증샷/보상.
 /// 수거 개수는 호출부가 활동별 trashCounts 를 넘겨야 한다 — 기본값을 더미로 두면
 /// 누락됐을 때 모든 활동이 같은 숫자로 보이므로 빈 맵(전부 0)으로 둔다.
@@ -186,18 +186,20 @@ class ActivityDetailScreen extends StatelessWidget {
   // ── 공유 (D-3): 그룹 공유 물어보기 팝업 → 공유 시 스낵바 ──
   // 실제 그룹 게시 백엔드는 아직 없어 공유 확정 시 스낵바로만 안내한다.
   Future<void> _confirmShareToGroup(BuildContext context) async {
-    final ok = await AppDialog.show(
+    // §4 그룹 공유 여부 — C형 카드(라임 원 + users 글리프).
+    final ok = await AppCardDialog.show(
       context,
-      title: '그룹에 공유할까요?',
-      message: '이 활동 기록을 가입한 그룹 채팅에 공유해요.',
-      cancelText: '취소',
-      confirmText: '공유',
+      icon: TablerIcons.users,
+      title: '인증샷을 그룹에\n공유하시겠어요?',
+      message: '공유하지 않아도 내 활동 기록에는 저장돼요',
+      cancelText: '아니오',
+      confirmText: '예',
     );
     if (ok != true || !context.mounted) return;
     AppSnackBar.show(
       context,
       '그룹에 활동 기록을 공유했어요',
-      kind: SnackKind.success,
+      icon: TablerIcons.check,
     );
   }
 
