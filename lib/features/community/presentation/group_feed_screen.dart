@@ -835,12 +835,12 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
             children: [
               Center(
                 child: Container(
-                  width: 44,
-                  height: 5,
+                  width: 42,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 18),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(3),
+                    color: const Color(0xFFE3E6E4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
@@ -975,12 +975,12 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
               children: [
                 Center(
                   child: Container(
-                    width: 44,
-                    height: 5,
+                    width: 42,
+                    height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(3),
+                      color: const Color(0xFFE3E6E4),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
@@ -988,8 +988,9 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                   '그룹 알림',
                   style: TextStyle(
                     fontSize: 22,
+                    height: 1.35,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
+                    letterSpacing: -0.6,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -1007,13 +1008,14 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                   behavior: HitTestBehavior.opaque,
                   onTap: () => Navigator.pop(ctx),
                   child: Container(
-                    height: 58,
+                    height: 56,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.ink,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Text(
+                      // 저장 버튼이 아니라 닫기다 — 토글은 즉시 반영된다.
                       '완료',
                       style: TextStyle(
                         fontSize: 16,
@@ -1046,8 +1048,8 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -1138,12 +1140,12 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
               children: [
                 Center(
                   child: Container(
-                    width: 44,
-                    height: 5,
+                    width: 42,
+                    height: 4,
                     margin: const EdgeInsets.only(bottom: 18),
                     decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(3),
+                      color: const Color(0xFFE3E6E4),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
