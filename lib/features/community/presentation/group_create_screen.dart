@@ -195,7 +195,8 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
       );
       if (file != null && mounted) setState(() => _photo = file);
     } catch (_) {
-      if (mounted) AppSnackBar.show(context, '사진을 선택하지 못했어요');
+      if (mounted) AppSnackBar.show(context, '사진을 선택하지 못했어요',
+          bottom: AppSnackBar.aboveCta);
     }
   }
 
@@ -204,7 +205,8 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   Future<void> _create() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      AppSnackBar.show(context, '그룹 이름을 입력해주세요');
+      AppSnackBar.show(context, '그룹 이름을 입력해주세요',
+          bottom: AppSnackBar.aboveCta);
       return;
     }
     if (_creating) return;
@@ -240,7 +242,8 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _creating = false);
-      AppSnackBar.show(context, '그룹을 만들지 못했어요');
+      AppSnackBar.show(context, '그룹을 만들지 못했어요',
+          bottom: AppSnackBar.aboveCta);
     }
   }
 

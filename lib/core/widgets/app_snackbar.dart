@@ -22,6 +22,13 @@ enum SnackTone { dark, lime }
 class AppSnackBar {
   AppSnackBar._();
 
+  /// 하단에 잉크 CTA 버튼이 있는 화면에서 쓰는 bottom 값.
+  ///
+  /// 기본값(34)으로 띄우면 토스트가 버튼 위에 그대로 겹친다. 둘 다 잉크 면이라
+  /// 겹치면 경계가 사라져 무엇이 버튼인지 구분되지 않는다. CTA 높이(64) +
+  /// 아래 여백(8) + SafeArea 최소치(12) + 간격을 더한 값이다.
+  static const double aboveCta = 100;
+
   static void show(
     BuildContext context,
     String message, {
@@ -66,6 +73,10 @@ class AppSnackBar {
     _show(
       context,
       bg: bg,
+      // 잉크 면 토스트가 잉크 버튼과 맞닿아도 경계가 보이도록 얇은 테두리를 둔다.
+      borderColor: onLime
+          ? AppColors.limeOn.withValues(alpha: 0.14)
+          : AppColors.neutral0.withValues(alpha: 0.22),
       duration: duration,
       bottom: bottom,
       actionLabel: actionLabel,
@@ -138,6 +149,7 @@ class AppSnackBar {
     String? actionLabel,
     VoidCallback? onAction,
     double bottom = 34,
+    Color? borderColor,
   }) {
     ScaffoldMessenger.of(context)
       // 앞 토스트를 걷어내지 않으면 그쪽 타이머가 뒤 토스트를 지운다.
@@ -150,9 +162,13 @@ class AppSnackBar {
           // 명세: box-shadow 0 12px 30px rgba(25,30,36,.22~.28)
           elevation: 10,
           duration: duration,
-          // 알약(999)이 아니라 라운드 18. 테두리는 두지 않는다.
+          // 알약(999)이 아니라 라운드 18. 같은 색 면과 겹칠 때를 위해 얇은
+          // 테두리를 둔다(지정 없으면 테두리 없음).
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
+            side: borderColor == null
+                ? BorderSide.none
+                : BorderSide(color: borderColor, width: 1),
           ),
           // 명세: left/right 20, 화면별 bottom
           margin: EdgeInsets.fromLTRB(20, 0, 20, bottom),

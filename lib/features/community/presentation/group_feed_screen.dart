@@ -112,6 +112,10 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
   String? _myRole;
   bool get _isOwner => _myRole == 'owner';
 
+  // 승인 후 가입 그룹인지 (isPublic 의 반대). 그룹장 드로어의 '가입 요청' 항목을
+  // 대기 0건일 때도 띄우는 조건이라, 대기 건수와 별개로 들고 있어야 한다.
+  bool _isApprovalGroup = false;
+
   // 대기 중 가입 요청 (승인 후 가입 그룹). 그룹장 배너·햄버거 뱃지에 쓴다.
   List<JoinRequest> _pending = const [];
   StreamSubscription<List<JoinRequest>>? _pendingSub;
@@ -332,6 +336,8 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
         _memberCount = group?.memberCount ?? 0;
         _todayActiveCount = group?.todayActiveCount ?? 0;
         _groupImageUrl = group?.imageUrl;
+        // 그룹을 못 읽으면 false — 없는 메뉴를 띄우는 쪽보다 안전하다.
+        _isApprovalGroup = group != null && !group.isPublic;
       });
     } catch (_) {
       if (mounted) setState(() => _memberCount = 0);
@@ -696,8 +702,11 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
               ),
             ),
             const Divider(height: 1, color: AppColors.line100),
-            // 그룹장 전용 — 대기 중 요청이 있을 때만 '가입 요청'(카운트 뱃지). 활동 사진 위.
-            if (_isOwner && _pending.isNotEmpty) _drawerRequestItem(),
+            // 그룹장 전용 — 자유 가입 그룹에서도 자리는 보여주되 회색으로 잠근다.
+            // (승인제로 바꾸면 그대로 검정으로 열린다는 걸 미리 알 수 있게)
+            // 승인제에서는 대기 0건이어도 띄운다 — 감추면 '처리됨' 탭으로 들어갈
+            // 길이 막혀 지난 요청을 확인할 방법이 사라진다.
+            if (_isOwner) _drawerRequestItem(),
             // 메뉴 — 활동 사진 / 알림 설정
             _drawerItem(
               icon: TablerIcons.photo,
@@ -756,10 +765,17 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
     );
   }
 
-  // 드로어 '가입 요청' 항목 — 오른쪽에 대기 건수 뱃지(회색 면 + 800).
+  // 드로어 '가입 요청' 항목 — 오른쪽에 대기 건수 뱃지.
+  //
+  // 자유 가입 그룹에서는 받을 요청 자체가 없으므로 회색으로 잠가 둔다. 항목을
+  // 아예 감추지 않는 이유는, 승인 후 가입으로 바꾸면 여기가 열린다는 걸 그룹장이
+  // 미리 알 수 있게 하기 위해서다.
   Widget _drawerRequestItem() {
+    final enabled = _isApprovalGroup;
+    final Color fg = enabled ? AppColors.textPrimary : AppColors.gray500;
     return InkWell(
-      onTap: _openRequestScreen,
+      // 자유 가입이면 onTap 을 비워 아예 눌리지 않게 한다(회색 = 잠김).
+      onTap: enabled ? _openRequestScreen : null,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
         child: Container(
@@ -770,36 +786,38 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
           ),
           child: Row(
             children: [
-              const Icon(TablerIcons.userPlus,
-                  size: 20, color: AppColors.textPrimary),
+              Icon(TablerIcons.userPlus, size: 20, color: fg),
               const SizedBox(width: 11),
-              const Text(
+              Text(
                 '가입 요청',
                 style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: fg,
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                height: 22,
-                constraints: const BoxConstraints(minWidth: 22),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE4573D),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${_pending.length}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
+              // 대기 건수 뱃지 — 0건이면 붙이지 않는다(항목 자체는 계속 보인다).
+              if (_pending.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  height: 22,
+                  constraints: const BoxConstraints(minWidth: 22),
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE4573D),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_pending.length}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

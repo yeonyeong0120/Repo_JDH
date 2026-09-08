@@ -219,6 +219,10 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   void _centerOnGps(Map<String, dynamic>? loc) {
     final c = _mapController;
     if (c == null || loc == null) return;
+    // currentLocationProvider 는 FutureProvider 라 첫 진입 시점 좌표를 캐시하고
+    // 다시 갱신되지 않는다. 트래킹 중 실시간 좌표를 이미 받았다면 그 캐시값으로
+    // 내 위치를 덮어쓰지 않는다 — 덮으면 출발 지점으로 되돌아간다.
+    if (_lastMyLatLng != null) return;
     final lat = (loc['latitude'] as num?)?.toDouble();
     final lon = (loc['longitude'] as num?)?.toDouble();
     if (lat == null || lon == null) return;
@@ -684,14 +688,26 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
 
   // 위치 재설정 — 목적지 설정 화면과 동일한 흰 바탕 원형 버튼(기본 아이콘).
   Widget _recenterButton() {
-    // 하얀 바탕 없이 아이콘만(지도 위 잉크 글리프).
+    // 하얀 원 위에 잉크 글리프. 지도 위에 바로 얹으면 배경 색·경로선과 겹쳐
+    // 아이콘이 묻히므로 면을 깔고 띄운다(지도 위 카드와 같은 그림자).
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _recenterToGps,
-      child: const SizedBox(
+      child: Container(
         width: 46,
         height: 46,
-        child: Center(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.ink.withValues(alpha: 0.10),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: const Center(
           child: Icon(
             TablerIcons.currentLocation,
             size: 26,
@@ -703,19 +719,23 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
   }
 
   // 현재 위치로 지도 카메라 복귀 (버튼용 — 최초 1회 제한 없이 항상 이동)
-  void _recenterToGps() {
+  Future<void> _recenterToGps() async {
     final c = _mapController;
     if (c == null) return;
-    // 트래킹 중 받은 최신 좌표를 우선 사용(없으면 초기 위치 provider 폴백).
+    // 트래킹 중 받은 최신 좌표를 우선 사용한다.
     double? lat;
     double? lon;
     if (_lastMyLatLng != null) {
       lat = _lastMyLatLng!.latitude;
       lon = _lastMyLatLng!.longitude;
     } else {
-      final loc = ref.read(currentLocationProvider).valueOrNull;
-      lat = (loc?['latitude'] as num?)?.toDouble();
-      lon = (loc?['longitude'] as num?)?.toDouble();
+      // 아직 실시간 좌표를 못 받은 경우. currentLocationProvider 는 첫 진입 시점
+      // 값을 캐시해 두므로 쓰지 않고, GPS 를 새로 읽는다 — 그러지 않으면 한참
+      // 이동한 뒤에도 출발 지점(학교 등)으로 되돌아간다.
+      final fresh = await LocationRepository().getCurrentLocation();
+      if (!mounted) return;
+      lat = (fresh?['latitude'] as num?)?.toDouble();
+      lon = (fresh?['longitude'] as num?)?.toDouble();
     }
     if (lat == null || lon == null) return;
     _updateMyLocation(lat, lon);
