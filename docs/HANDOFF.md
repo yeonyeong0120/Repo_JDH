@@ -132,6 +132,66 @@ Flutter 쪽 사정은 반대다. 근거는 `flutter_tools/lib/src/android/gradle
 바뀌었는지 자동 판별이 불가능하므로, 어느 화면인지 지정해서 요청해야 한다.
 디자인 파일 스냅샷을 저장소에 두면 진짜 diff가 가능해지는데 아직 만들지 않았다.
 
+**GitHub CLI (`gh`)**
+
+PR 생성·조회를 Claude가 대신 하려면 필요하다. 설치 방법이 둘인데, 환경에 따라
+갈린다.
+
+*1) winget (먼저 시도)*
+
+```powershell
+winget install --id GitHub.cli --source winget --accept-source-agreements --accept-package-agreements --silent
+```
+
+2026-09-08 이 컴퓨터(stu_35)에서는 이 방법이 UAC 창 없이 통과했고
+`C:\Program Files\GitHub CLI\gh.exe` 에 설치됐다. 다만 환경에 따라 UAC 승인 창이
+뜨는데, 비대화형 세션에서는 그 창을 클릭할 수 없어 설치가 그대로 멈춘다.
+
+*2) 릴리스 zip (winget 이 UAC 로 막힐 때)*
+
+관리자 권한이 필요 없다.
+
+```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$dest = "$env:LOCALAPPDATA\gh-cli"
+$r = Invoke-RestMethod -Uri "https://api.github.com/repos/cli/cli/releases/latest" -Headers @{ 'User-Agent' = 'pwsh' }
+$asset = $r.assets | Where-Object { $_.name -like "*windows_amd64.zip" } | Select-Object -First 1
+$zip = "$env:TEMP\$($asset.name)"
+Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zip -UseBasicParsing
+Expand-Archive -Path $zip -DestinationPath $dest -Force
+$bin = "$dest\bin"
+$cur = [Environment]::GetEnvironmentVariable('Path','User')
+if ($cur -split ';' -notcontains $bin) {
+  [Environment]::SetEnvironmentVariable('Path', ($cur.TrimEnd(';') + ';' + $bin), 'User')
+}
+& "$bin\gh.exe" auth login
+```
+
+`auth login` 은 브라우저 인증이라 사람이 직접 해야 한다.
+GitHub.com → HTTPS → Yes → Login with a web browser 순서로 고르면
+`XXXX-XXXX` 코드가 나온다. https://github.com/login/device 에 넣고 승인하면 끝이다.
+
+**주의 — PATH 는 새로 여는 터미널부터 적용된다.** 이미 열려 있던 창에서는 `gh` 를
+계속 못 찾는다. 그 창에서는 전체 경로로 부르거나(`& "C:\Program Files\GitHub CLI\gh.exe" ...`)
+터미널을 새로 열 것. 같은 이유로 npm 전역 설치 뒤에도 `claude` 가 안 잡힐 수 있는데,
+그때는 `%APPDATA%\npm` 이 사용자 PATH 에 들어 있는지부터 확인한다
+(Node 설치가 이 경로를 PATH 에 넣지 않는 경우가 있다).
+
+**세팅 체크리스트**
+
+| 항목 | 비고 |
+|---|---|
+| Flutter · Android SDK · git | 개발 환경. **두 컴퓨터의 Flutter 버전을 맞출 것** — 다르면 빌드 도구 버전 결정이 엇갈린다 |
+| Claude Code 로그인 | 컴퓨터별 |
+| `/design-login` | 컴퓨터별. PowerShell 프롬프트가 아니라 CLI 안에서 입력 |
+| `gh` 설치 + `gh auth login` | 위 절차. 토큰이 자격 증명 저장소에 들어가 복사가 안 된다 |
+| 메모리 폴더 복사 | 선택. 안 옮기면 디자인 projectId 를 다시 알려줘야 한다 |
+
+메모리 폴더 경로는 저장소 위치에 따라 달라진다 —
+`~/.claude/projects/<경로를 -로 바꾼 이름>/memory/` 형태다.
+대화 기록은 같은 폴더의 `<세션id>.jsonl` 파일 하나에 들어 있고 동기화되지 않는다.
+같은 경로에 복사하면 `claude --resume` 으로 열릴 수 있으나 보장된 방식은 아니다.
+
 ## 5. 이 커밋에 함께 들어간 이전 작업
 
 이번 세션 이전부터 미커밋 상태였던 변경을 한 커밋으로 묶었다. 내용은 확인하지 않았다.
