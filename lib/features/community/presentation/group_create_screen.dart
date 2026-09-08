@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:go_router/go_router.dart';
+import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/features/community/domain/group.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
@@ -227,7 +228,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
       }
       // region은 비워서 넘긴다 — GroupService.createGroup이 생성자의
       // users/{uid}.region을 자동으로 채운다.
-      await GroupService.createGroup(
+      final groupId = await GroupService.createGroup(
         name: name,
         intro: _introController.text.trim(),
         imageUrl: imageUrl,
@@ -238,7 +239,14 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
       );
       if (!mounted) return;
       AppSnackBar.show(context, '\'$name\' 그룹을 만들었어요');
-      Navigator.pop(context, true); // true = 목록 새로고침 신호
+      // 만들자마자 채팅방으로 들어간다 — 가입 성공 시(group_detail_screen)와
+      // 같은 순서다. 만들기·검색 등 위에 쌓인 화면을 그룹 홈까지 모두 닫은 뒤
+      // 채팅방을 push 해야, 채팅방에서 뒤로가기 시 그룹 홈으로 나온다.
+      final router = GoRouter.of(context);
+      Navigator.of(context).popUntil((r) => r.isFirst);
+      if (groupId.isNotEmpty) {
+        router.push(AppRoutes.groupFeed, extra: {'id': groupId, 'name': name});
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _creating = false);

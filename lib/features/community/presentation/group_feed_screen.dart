@@ -777,22 +777,17 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
       // 자유 가입이면 onTap 을 비워 아예 눌리지 않게 한다(회색 = 잠김).
       onTap: enabled ? _openRequestScreen : null,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceSoft,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          // 다른 드로어 항목(_drawerItem)과 같은 규격 — 면을 깔지 않는다.
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Row(
             children: [
               Icon(TablerIcons.userPlus, size: 20, color: fg),
-              const SizedBox(width: 11),
+              const SizedBox(width: 13),
               Text(
                 '가입 요청',
                 style: TextStyle(
                   fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: fg,
                 ),
               ),
@@ -821,7 +816,6 @@ class _GroupFeedScreenState extends ConsumerState<GroupFeedScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 

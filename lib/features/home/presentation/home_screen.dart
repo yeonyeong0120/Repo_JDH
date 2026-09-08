@@ -103,15 +103,18 @@ class _HomeBody extends StatelessWidget {
                   child: _Greeting(),
                 ),
                 const Spacer(),
-                // 나의 환경 영향력 (도넛 + 온실가스/나무) — 살짝 위로
+                // 나의 환경 영향력 (도넛 + 온실가스/나무)
+                // Spacer 로 하단에 붙는 구조라, 아래 여백을 줄이면 그만큼 내려간다.
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
                       Gap.screenPad, 0, Gap.screenPad, Gap.xl),
                   child: _ImpactSection(v: v),
                 ),
-                // 지금 바로 시작 카드
+                // 지금 바로 시작 카드 — 바텀 내비 여백(bottomInset)이 이미 확보돼
+                // 있어 여기 여백은 최소만 둔다.
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(Gap.screenPad, 0, Gap.screenPad, Gap.xl),
+                  padding: const EdgeInsets.fromLTRB(
+                      Gap.screenPad, 0, Gap.screenPad, Gap.sm),
                   child: _StartCard(activeCount: v.regionActiveTodayCount),
                 ),
               ],
