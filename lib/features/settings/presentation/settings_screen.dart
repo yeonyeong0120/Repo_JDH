@@ -107,19 +107,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── 회원 탈퇴 (menu_screen 과 동일한 다이얼로그 패턴) ──
   Future<void> _confirmDelete() async {
-    // 명세 §18 — 무엇을 잃는지 보여주고 동의를 받는 B형 시트.
-    final ok = await showWithdrawSheet(context);
-    if (!mounted) return;
-    if (ok != true || !mounted) return;
-    try {
-      await UserService.deleteAccount();
-    } catch (_) {
-      if (mounted) {
-        AppSnackBar.show(context, '탈퇴하지 못했어요. 다시 로그인 후 시도해주세요');
-      }
-      return;
-    }
-    if (mounted) context.go('/login');
+    // 명세 '회원 탈퇴' — 안내 시트 → 최종 확인 → 완료 화면까지 흐름 전체.
+    // 삭제 호출과 성공·실패 피드백도 그 안에서 끝난다.
+    await startWithdrawFlow(context);
   }
 
   @override

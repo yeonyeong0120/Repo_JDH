@@ -1,31 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 import 'package:repo_jdh/core/theme/app_colors.dart';
+import 'package:repo_jdh/core/widgets/app_dialog.dart';
+import 'package:repo_jdh/core/widgets/app_snackbar.dart';
+import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/features/community/data/group_service.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
 
-/// 회원 탈퇴 확인 시트 — 디자인 명세 POPUPS.md §18 (B형 바텀 시트).
+/// 탈퇴로 잃게 되는 것들. §2 손실 목록과 §3 본문이 같은 값을 쓴다.
+class WithdrawStats {
+  final double weightKg;
+  final int points;
+  final int badges;
+  final int groups;
+
+  const WithdrawStats({
+    this.weightKg = 0,
+    this.points = 0,
+    this.badges = 0,
+    this.groups = 0,
+  });
+
+  /// 누적 수거량을 소수 첫째 자리까지 (예: 48.2)
+  String get kgText => ((weightKg * 10).round() / 10).toStringAsFixed(1);
+}
+
+/// 회원 탈퇴 흐름 — 디자인 명세 '회원 탈퇴' 문서 전체.
 ///
-/// 일반 확인 팝업(A형)과 달리 **무엇을 잃는지 먼저 보여주고 동의를 받는다.**
-/// 되돌릴 수 없는 액션이라 동의 전에는 탈퇴 버튼이 눌리지 않는다.
+/// 설정 → 「탈퇴하기」에서 이 함수 하나만 부르면 된다.
 ///
-/// 손실 목록의 수치는 실제 계정 데이터를 읽어 채운다 — 명세의 예시값
-/// (48.2kg · 3,240P …)을 그대로 박아 두면 누가 탈퇴하든 같은 숫자가 나온다.
+/// ```
+/// §2 안내 시트(무엇을 잃는지 + 동의)
+///   └ §3 최종 확인 팝업(되돌릴 수 없음)
+///        └ deleteAccount()
+///             ├ 실패 → 스낵바
+///             └ 성공 → §4 완료 화면 → /login
+/// ```
 ///
-/// 반환값: 탈퇴를 확정하면 true, 그 외에는 null.
-Future<bool?> showWithdrawSheet(BuildContext context) {
-  return showModalBottomSheet<bool>(
+/// 확인이 두 단계인 이유: §2는 **고지**(+동의 수집), §3은 **최종 확인**이다.
+/// 역할이 달라 합치지 않는다.
+Future<void> startWithdrawFlow(BuildContext context) async {
+  // §2 — 동의까지 마치면 손실 수치를 들고 나온다.
+  final stats = await showModalBottomSheet<WithdrawStats>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    // 명세 §18 — 이 시트만 딤이 한 단계 진하다 rgba(20,24,22,.55)
-    barrierColor: const Color(0x8C141816),
+    // 파괴적 흐름의 시작이라 딤이 한 단 더 어둡다(다른 시트는 .5).
+    barrierColor: _dim,
     builder: (_) => const _WithdrawSheet(),
   );
+  if (stats == null || !context.mounted) return;
+
+  // §3 최종 확인 — deleteAccount 를 부르는 유일한 지점이다.
+  final ok = await AppDialog.show(
+    context,
+    title: '정말 탈퇴하시겠어요?',
+    message: '누적 ${stats.kgText}kg과 뱃지, 포인트가\n30일 후 완전히 삭제돼요',
+    cancelText: '계속 이용하기', // 위 · 다크 (안전)
+    confirmText: '탈퇴하기', // 아래 · 연회색 면 + 빨강 글자 (파괴)
+    danger: true,
+    softDanger: true,
+    verticalButtons: true,
+    icon: TablerIcons.alertTriangle,
+    iconBg: const Color(0xFFFDEBE7),
+    iconFg: const Color(0xFFE4573D),
+    barrierColor: _dim,
+  );
+  if (ok != true || !context.mounted) return;
+
+  try {
+    await UserService.deleteAccount();
+  } catch (_) {
+    if (context.mounted) {
+      AppSnackBar.show(context, '탈퇴하지 못했어요. 다시 로그인 후 시도해주세요');
+    }
+    return;
+  }
+  if (!context.mounted) return;
+
+  // §4 완료 화면 — 성공을 조용히 넘기지 않는다.
+  await Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute<void>(
+      builder: (_) => const _WithdrawDoneScreen(),
+      fullscreenDialog: true,
+    ),
+  );
+  if (context.mounted) context.go('/login');
 }
+
+/// 탈퇴 흐름 전용 딤 — 명세 rgba(20,24,22,.55).
+const Color _dim = Color(0x8C141816);
+
+// ───────────────────────── §2 안내 시트 ─────────────────────────
 
 class _WithdrawSheet extends StatefulWidget {
   const _WithdrawSheet();
@@ -35,13 +105,10 @@ class _WithdrawSheet extends StatefulWidget {
 }
 
 class _WithdrawSheetState extends State<_WithdrawSheet> {
+  // 시트를 열 때마다 새로 만들어지므로 동의는 항상 false 에서 시작한다.
   bool _agree = false;
   bool _loading = true;
-
-  double _weightKg = 0;
-  int _points = 0;
-  int _badges = 0;
-  int _groups = 0;
+  WithdrawStats _stats = const WithdrawStats();
 
   @override
   void initState() {
@@ -81,10 +148,12 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
     }
     if (!mounted) return;
     setState(() {
-      _weightKg = kg;
-      _points = points;
-      _badges = badges;
-      _groups = groups;
+      _stats = WithdrawStats(
+        weightKg: kg,
+        points: points,
+        badges: badges,
+        groups: groups,
+      );
       _loading = false;
     });
   }
@@ -127,8 +196,11 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   ),
                 ),
               ),
+              // 이 시트는 질문이 아니라 고지다.
+              // '정말 탈퇴하시겠어요?'는 §3 최종 확인의 문장이라 여기 쓰지 않는다 —
+              // 같은 질문이 두 번 나오면 두 번째가 무게를 잃는다.
               const Text(
-                '정말 탈퇴하시겠어요?',
+                '탈퇴하기 전에 확인해주세요',
                 style: TextStyle(
                   fontSize: 23,
                   height: 1.35,
@@ -172,9 +244,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
     );
   }
 
-  // 잃게 되는 것 4가지.
+  // 잃게 되는 것 4가지. 0인 항목도 숨기지 않는다 —
+  // 목록 길이가 변하면 시트 높이가 흔들린다.
   Widget _lossBox() {
-    final kgText = ((_weightKg * 10).round() / 10).toStringAsFixed(1);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
@@ -183,13 +255,13 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
       ),
       child: Column(
         children: [
-          _lossRow(TablerIcons.trash, '누적 수거량', '${kgText}kg'),
+          _lossRow(TablerIcons.trash, '누적 수거량', '${_stats.kgText}kg'),
           const SizedBox(height: 11),
-          _lossRow(TablerIcons.coin, '보유 포인트', '${_comma(_points)}P'),
+          _lossRow(TablerIcons.coin, '보유 포인트', '${_comma(_stats.points)}P'),
           const SizedBox(height: 11),
-          _lossRow(TablerIcons.award, '획득 뱃지', '$_badges개'),
+          _lossRow(TablerIcons.award, '획득 뱃지', '${_stats.badges}개'),
           const SizedBox(height: 11),
-          _lossRow(TablerIcons.users, '가입한 그룹', '$_groups개'),
+          _lossRow(TablerIcons.users, '가입한 그룹', '${_stats.groups}개'),
         ],
       ),
     );
@@ -231,7 +303,6 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(2, 16, 2, 0),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
               _agree
@@ -258,7 +329,7 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
     );
   }
 
-  // 버튼 행 — 폭이 비대칭이다. 계속 이용하기가 넓고, 탈퇴는 120 고정.
+  // 버튼 행 — 폭이 비대칭이다. 안전한 선택이 넓고 다크, 탈퇴는 120 고정.
   Widget _buttons() {
     return Row(
       children: [
@@ -288,15 +359,15 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           // 동의 전에는 눌러도 아무 일이 없다.
-          onTap: _agree ? () => Navigator.pop(context, true) : null,
+          // 에러 토스트를 띄우지 않는다 — 체크박스가 답이다.
+          onTap: _agree ? () => Navigator.pop(context, _stats) : null,
           child: Container(
             width: 120,
             height: 56,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _agree
-                  ? const Color(0xFFE4573D)
-                  : const Color(0xFFF1F3F2),
+              color:
+                  _agree ? const Color(0xFFE4573D) : const Color(0xFFF1F3F2),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Text(
@@ -310,6 +381,101 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ───────────────────────── §4 완료 화면 ─────────────────────────
+
+/// 탈퇴 완료 — 잉크 풀스크린 + 라임 CTA.
+///
+/// 앱의 마지막 화면이고 뒤에 아무것도 없으므로 시트나 팝업이 아니라 화면이다.
+/// 뒤로가기·닫기가 없고 유일한 출구는 「확인」이다.
+/// 아이콘은 문을 나가는 글리프가 아니라 인사다 — 경고는 §2·§3에서 끝났고
+/// 여기서는 배웅만 한다.
+class _WithdrawDoneScreen extends StatelessWidget {
+  const _WithdrawDoneScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      // 뒤로가기로 빠져나갈 수 없다.
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.ink,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 66,
+                  height: 66,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.lime.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    TablerIcons.handLoveYou,
+                    size: 31,
+                    color: AppColors.lime,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  '그동안 함께 걸어줘서\n고마웠어요',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    height: 1.4,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // 30일 보관을 여기서 다시 말한다 —
+                // 되돌릴 방법을 마지막으로 알려주는 자리다.
+                const Text(
+                  '계정은 30일간 보관돼요. 그 안에 다시\n로그인하면 기록이 그대로 살아나요.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.7,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF9BA29C),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      // 다크 배경이라 이 화면만 버튼이 라임이다.
+                      color: AppColors.lime,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Text(
+                      '확인',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
