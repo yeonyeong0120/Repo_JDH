@@ -126,6 +126,8 @@ flutter_launcher_icons:
   remove_alpha_ios: true # iOS 아이콘은 투명(alpha) 불가 — 안전하게 제거
   min_sdk_android: 21
   image_path: "assets/icons/app_icon.png"
+  # 안드로이드는 런처가 모서리를 깎아주지 않으므로 둥근 모서리 이미지를 따로 사용
+  image_path_android: "assets/icons/app_icon_android.png"
 
 flutter_native_splash:
   color: "#E3F6EC"
