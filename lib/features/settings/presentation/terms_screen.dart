@@ -7,14 +7,16 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 ///       특히 개인정보 수집 항목·보유 기간·제3자 제공은 실제 구현과 일치해야 합니다.
 /// 위치 권장: lib/features/settings/presentation/terms_screen.dart
 class TermsScreen extends StatefulWidget {
-  const TermsScreen({super.key});
+  /// 0 이용약관 / 1 개인정보 처리방침 — 진입한 행에 맞춰 연다
+  final int initialTab;
+  const TermsScreen({super.key, this.initialTab = 0});
 
   @override
   State<TermsScreen> createState() => _TermsScreenState();
 }
 
 class _TermsScreenState extends State<TermsScreen> {
-  int _tab = 0; // 0 이용약관 / 1 개인정보 처리방침
+  late int _tab = widget.initialTab; // 0 이용약관 / 1 개인정보 처리방침
 
   @override
   Widget build(BuildContext context) {

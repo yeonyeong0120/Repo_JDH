@@ -249,7 +249,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: dark
-                  ? AppColors.gray300
+                  ? const Color(0xFF9BA29C) // 차콜 면 위 라벨(시안 값)
                   : AppColors.gray500,
             ),
           ),
@@ -263,7 +263,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
               fontSize: 22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
-              color: dark ? AppColors.neutral0 : AppColors.textPrimary,
+              color: dark ? AppColors.lime : AppColors.textPrimary,
             ),
           ),
         ],

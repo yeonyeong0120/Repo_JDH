@@ -75,13 +75,13 @@ class _QuestListScreenState extends State<QuestListScreen> {
     super.dispose();
   }
 
-  // 탭별 목록 — 진행 중(미달성) / 달성. 진행률 오름차순.
+  // 탭별 목록 — 진행 중(미달성) / 달성. 진행률 내림차순(시안: 곧 끝나는 것이 위).
   List<_Q> _listFor(int tab) {
     final list = _quests.where((q) {
       if (tab == 0) return q.current < q.total; // 진행 중(미착수 포함)
       return q.current >= q.total; // 달성
     }).toList();
-    list.sort((a, b) => (a.current / a.total).compareTo(b.current / b.total));
+    list.sort((a, b) => (b.current / b.total).compareTo(a.current / a.total));
     return list;
   }
 
@@ -150,7 +150,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                   const Text(
                     '챌린지',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
@@ -203,8 +203,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 4,
+            height: 4,
             decoration: BoxDecoration(
               color: on ? AppColors.ink : AppColors.gray300,
               shape: BoxShape.circle,
@@ -256,7 +256,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

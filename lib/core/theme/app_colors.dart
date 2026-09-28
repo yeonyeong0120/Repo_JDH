@@ -40,6 +40,7 @@ class AppColors {
 
   // 회색 계열 (Startline 그레이 스케일 — 살짝 초록기 도는 중립)
   static const Color gray700 = Color(0xFF5A5F5B); // 보조 텍스트·아이콘
+  static const Color gray600 = Color(0xFF6E7873); // 본문 보조 텍스트
   static const Color gray500 = Color(0xFF8A8F8B); // 메타 텍스트·라벨
   static const Color gray400 = Color(0xFFB7BEB9); // 비활성 텍스트
   static const Color gray350 = Color(0xFFA8ADA9); // 플레이스홀더
@@ -48,6 +49,8 @@ class AppColors {
   static const Color gray200 = Color(0xFFE3E6E4); // 밑줄·보더·비활성 버튼 면
   static const Color line100 = Color(0xFFEFF1F0); // 구분선·카드 보더
   static const Color surfaceSoft = Color(0xFFF4F6F5); // 보조 배경·고스트 버튼
+  static const Color surfaceCard = Color(0xFFF7F9F8); // 흰 배경 위 카드 면
+  static const Color surfaceChip = Color(0xFFF2F4F3); // 칩·검색 박스 면
 
   // 다크 화면(플로깅 중·촬영·사진 상세)
   static const Color darkBg = Color(0xFF242926);

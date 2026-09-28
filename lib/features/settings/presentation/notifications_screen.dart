@@ -58,7 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   final List<_Noti> _thisWeek = [
     _Noti(
-      icon: TablerIcons.currencyDollar,
+      icon: TablerIcons.coin,
       iconBg: AppColors.surfaceSoft,
       iconColor: AppColors.ink,
       title: '이번 주 420P가 적립되었어요',
@@ -78,10 +78,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       kind: _NotiKind.challenge,
     ),
     _Noti(
-      icon: TablerIcons.target,
+      icon: TablerIcons.targetArrow,
       iconBg: AppColors.surfaceSoft,
       iconColor: AppColors.ink,
-      title: '주간 목표 4kg를 달성했어요',
+      title: '주간 목표 4kg을 달성했어요',
       subtitle: null,
       time: '금요일',
       unread: false,
@@ -137,7 +137,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   for (final n in _today) _item(n),
                   const SizedBox(height: 24),
                   _sectionLabel('이번 주'),
-                  for (final n in _thisWeek) _item(n),
+                  for (final n in _thisWeek) _item(n, muted: true),
                 ],
               ),
             ),
@@ -171,7 +171,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               '알림',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.5,
                 color: AppColors.textPrimary,
@@ -184,9 +184,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: Text(
               '모두 읽음',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: _hasUnread ? AppColors.gray700 : AppColors.gray400,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: _hasUnread ? AppColors.gray500 : AppColors.gray400,
               ),
             ),
           ),
@@ -202,16 +202,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Text(
         text,
         style: const TextStyle(
-          fontSize: 12.5,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: AppColors.gray400,
+          letterSpacing: 1.4,
+          color: AppColors.gray500,
         ),
       ),
     );
   }
 
   // ── 알림 항목 한 행 ──
-  Widget _item(_Noti n) {
+  Widget _item(_Noti n, {bool muted = false}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _openNoti(n),
@@ -233,7 +234,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               color: n.iconBg,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(n.icon, size: 22, color: n.iconColor),
+            child: Icon(n.icon,
+                size: 22, color: muted ? AppColors.gray500 : n.iconColor),
           ),
           const SizedBox(width: 14),
           // 텍스트 영역
@@ -243,11 +245,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               children: [
                 Text(
                   n.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
-                    color: AppColors.ink,
+                    fontWeight: muted ? FontWeight.w600 : FontWeight.w700,
+                    height: 1.45,
+                    color: muted ? AppColors.gray700 : AppColors.ink,
                   ),
                 ),
                 if (n.subtitle != null) ...[
@@ -255,10 +257,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   Text(
                     n.subtitle!,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w500,
-                      height: 1.3,
-                      color: AppColors.gray500,
+                      height: 1.55,
+                      color: AppColors.gray600,
                     ),
                   ),
                 ],
@@ -268,7 +270,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.gray400,
+                    color: AppColors.gray350,
                   ),
                 ),
               ],

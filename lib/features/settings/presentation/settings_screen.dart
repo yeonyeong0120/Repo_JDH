@@ -158,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _valueRow(
                     '개인정보 처리방침',
                     null,
-                    onTap: () => _push(const TermsScreen()),
+                    onTap: () => _push(const TermsScreen(initialTab: 1)),
                   ),
                   const SizedBox(height: 26),
                   const Divider(color: AppColors.line100, height: 1),
@@ -167,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 12),
                   const Text(
                     _appVersion,
-                    style: TextStyle(fontSize: 12, color: AppColors.gray400),
+                    style: TextStyle(fontSize: 12, color: AppColors.gray300),
                   ),
                 ],
               ),
@@ -218,9 +218,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Text(
         text,
         style: const TextStyle(
-          fontSize: 12.5,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: AppColors.gray400,
+          letterSpacing: 1.4,
+          color: AppColors.gray500,
         ),
       ),
     );
@@ -282,9 +283,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.gray400,
+                    color: AppColors.gray350,
                   ),
                 ),
               ),
@@ -292,8 +293,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
             const Icon(
               TablerIcons.chevronRight,
-              size: 20,
-              color: AppColors.gray400,
+              size: 19,
+              color: AppColors.gray300,
             ),
           ],
         ),
@@ -352,17 +353,17 @@ class _Toggle extends StatelessWidget {
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        width: 52,
-        height: 30,
+        width: 46,
+        height: 28,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
           color: value ? AppColors.ink : AppColors.gray250,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(14),
         ),
         alignment: value ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
-          width: 24,
-          height: 24,
+          width: 22,
+          height: 22,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: value ? AppColors.lime : AppColors.surface,

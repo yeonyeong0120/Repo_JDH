@@ -121,7 +121,7 @@ class _FaqScreenState extends State<FaqScreen> {
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 15),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
+        color: AppColors.surfaceChip,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -203,7 +203,7 @@ class _FaqScreenState extends State<FaqScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
@@ -221,7 +221,8 @@ class _FaqScreenState extends State<FaqScreen> {
           const Text(
             '평일 10시–18시, 보통 2시간 안에 답장해요',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
               height: 1.6,
               color: AppColors.gray500,
             ),

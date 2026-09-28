@@ -681,7 +681,7 @@ class _RecordsTabState extends State<_RecordsTab> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -1446,7 +1446,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
             ),
           ),
           Text(
-            '${s.value}',
+            '${s.value}개',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
