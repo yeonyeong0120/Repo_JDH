@@ -5,7 +5,6 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
-import 'package:repo_jdh/core/widgets/badge_medal.dart';
 import 'package:repo_jdh/core/widgets/route_thumbnail.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
@@ -844,17 +843,8 @@ class _BadgeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final earned = BadgeRepo.isEarned(badge.id);
-    final color = badgeColor(badge);
-    final collect = usesTrashBagIcon(badge);
     // 상세 팝업 진행률용 (현재/목표)
     final (cur, tot) = BadgeService.progressOf(badge, stats ?? const UserStats());
-
-    // 획득: 카테고리색 아이콘 / 미획득: 자물쇠(회색)
-    final Widget centerIcon = earned
-        ? (collect
-              ? TrashBagIcon(size: 22, color: color)
-              : Icon(badge.icon, color: color, size: 22))
-        : const Icon(TablerIcons.lock, color: AppColors.gray400, size: 20);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -868,12 +858,12 @@ class _BadgeTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 메달 — 획득: 카테고리색 / 미획득: 솔리드 회색 + 자물쇠
-            BadgeMedal(
-              size: 46,
-              color: earned ? color : AppColors.gray300,
-              earned: true,
-              icon: centerIcon,
+            // 뱃지 아트 — 미획득은 같은 모양의 빈 판
+            Image.asset(
+              earned ? badge.artPath : badge.lockedArtPath,
+              width: 80,
+              height: 85,
+              fit: BoxFit.contain,
             ),
             const SizedBox(height: 9),
             Text(

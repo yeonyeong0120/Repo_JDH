@@ -3,8 +3,6 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
-import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
-import 'package:repo_jdh/core/widgets/badge_medal.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 /// ACT-08 뱃지 상세 모달
@@ -20,7 +18,6 @@ Future<void> showBadgeDetail(
 }) {
   final earned = BadgeRepo.isEarned(badge.id);
   final date = BadgeRepo.dateOf(badge.id);
-  final color = badgeColor(badge);
   final xp = badgeXp(badge);
   final tot = total <= 0 ? 1 : total;
   final progress = (current / tot).clamp(0.0, 1.0);
@@ -45,13 +42,7 @@ Future<void> showBadgeDetail(
             // 상단: 뱃지 아이콘 + 이름/조건 (X는 아래 Stack 오버레이 — 레이아웃 안 밀림)
             Row(
               children: [
-                _BadgeMedal(
-                  badge: badge,
-                  earned: earned,
-                  color: color,
-                  progress: progress,
-                  pct: pct,
-                ),
+                _BadgeMedal(badge: badge, earned: earned, pct: pct),
                 Gap.w16,
                 Expanded(
                   child: Column(
@@ -125,46 +116,34 @@ Future<void> showBadgeDetail(
 class _BadgeMedal extends StatelessWidget {
   final BadgeData badge;
   final bool earned;
-  final Color color;
-  final double progress;
   final int pct;
   const _BadgeMedal({
     required this.badge,
     required this.earned,
-    required this.color,
-    required this.progress,
     required this.pct,
   });
 
-  // 수거 봉지 뱃지만 쓰레기봉투 아이콘으로
-  Widget _icon(Color c, double size) => usesTrashBagIcon(badge)
-      ? TrashBagIcon(size: size, color: c)
-      : Icon(badge.icon, size: size, color: c);
-
   @override
   Widget build(BuildContext context) {
-    const d = 72.0;
-    // 메달 본체는 그리드 타일과 같은 도형(BadgeMedal). 획득 체크·달성률 알약만 겹친다.
+    const d = 104.0;
+    const h = 110.0;
+    // 시안 아트를 그대로 쓰고, 획득 체크·달성률 알약만 위에 겹친다.
     return SizedBox(
       width: d,
-      height: BadgeMedal.heightFor(d),
+      height: h,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          BadgeMedal(
-            size: d,
-            color: color,
-            earned: earned,
-            progress: progress,
-            icon: _icon(
-              earned ? color : AppColors.neutral400,
-              earned ? 32 : 28,
-            ),
+          Image.asset(
+            earned ? badge.artPath : badge.lockedArtPath,
+            width: d,
+            height: h,
+            fit: BoxFit.contain,
           ),
           if (earned)
             Positioned(
               right: 0,
-              top: d - 24,
+              top: h - 30,
               child: Container(
                 width: 24,
                 height: 24,
@@ -181,7 +160,7 @@ class _BadgeMedal extends StatelessWidget {
           else
             Positioned(
               right: -6,
-              top: d - 20,
+              top: h - 26,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(

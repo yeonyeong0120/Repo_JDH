@@ -20,6 +20,8 @@ class LicensesScreen extends StatelessWidget {
     _Credit('종이 아이콘', 'TODO: 제작자명', 'Flaticon'),
     _Credit('유리병 아이콘', 'TODO: 제작자명', 'Flaticon'),
     _Credit('일반쓰레기 아이콘', 'TODO: 제작자명', 'Flaticon'),
+    // 뱃지 아트의 일러스트 원본 — 표기 의무가 있는 항목이다
+    _Credit('뱃지 일러스트 (Fluent Emoji)', 'Microsoft Corporation', 'MIT License'),
   ];
 
   // ── 폰트 ──

@@ -23,6 +23,13 @@ class UserStats {
   final bool joinedGroup; // 그룹 가입 여부
   final int streakDays; // 연속 플로깅 일수
   final int activeDays; // 활동한 날짜 수 (가입 요청 프로필 카드 표시용)
+  final int canCount; // 누적 캔 개수
+  final int glassCount; // 누적 유리 개수
+  final int paperCount; // 누적 종이 개수
+  final int totalTrashCount; // 누적 수거 개수(전체 종류)
+  final int earlyCount; // 오전 6시 이전 시작한 활동 수
+  final int nightCount; // 오후 9시 이후 시작한 활동 수
+  final int weekendCount; // 주말에 한 활동 수
 
   const UserStats({
     this.ploggingCount = 0,
@@ -39,6 +46,13 @@ class UserStats {
     this.joinedGroup = false,
     this.streakDays = 0,
     this.activeDays = 0,
+    this.canCount = 0,
+    this.glassCount = 0,
+    this.paperCount = 0,
+    this.totalTrashCount = 0,
+    this.earlyCount = 0,
+    this.nightCount = 0,
+    this.weekendCount = 0,
   });
 }
 
@@ -56,6 +70,13 @@ class BadgeService {
   // ───────────────────────── 조건 판정 ─────────────────────────
 
   /// 조건을 만족하는 뱃지 id 전부 (획득 여부와 무관)
+  ///
+  /// 시안 33종 중 아래 것들은 판정에 필요한 데이터가 아직 없어 조건을 걸지 않았다.
+  /// 화면에는 미획득으로 남는다(목업).
+  ///   rain_day(날씨), course_repeat·river_master·market_clean·park_keeper·
+  ///   school_road·station_clean(장소 분류), group_leader·invite_5·rank_1(그룹 운영),
+  ///   tumbler_30(텀블러 사용), point_5000(보유 포인트), four_seasons(계절),
+  ///   recommend_10(추천)
   static Set<String> satisfied(UserStats s) {
     final ok = <String>{};
     void add(String id, bool cond) {
@@ -64,27 +85,27 @@ class BadgeService {
 
     // 씨앗
     add('first_plogging', s.ploggingCount >= 1);
+    add('group_join', s.joinedGroup);
     add('first_verify', s.verifyCount >= 1);
     add('first_30min', s.maxSessionMinutes >= 30);
-    add('weight_1kg', s.totalWeightKg >= 1);
-    // 새싹
+    // 걸음·거리
     add('steps_10k', s.totalSteps >= 10000);
-    add('steps_30k', s.totalSteps >= 30000);
     add('distance_10km', s.totalDistanceKm >= 10);
-    add('distance_30km', s.totalDistanceKm >= 30);
-    add('weight_5kg', s.totalWeightKg >= 5);
-    add('weight_20kg', s.totalWeightKg >= 20);
+    // 수거 종류·개수
     add('plastic_50', s.plasticCount >= 50);
-    add('time_3h', s.totalMinutes >= 180);
-    add('time_10h', s.totalMinutes >= 600);
-    add('kcal_500', s.totalKcal >= 500);
-    // 나무
-    add('group_join', s.joinedGroup);
-    add('group_5', s.groupActivityCount >= 5);
-    add('group_10', s.groupActivityCount >= 10);
-    add('share_10', s.shareCount >= 10);
-    // 숲
-    add('streak_3', s.streakDays >= 3);
+    add('can_100', s.canCount >= 100);
+    add('glass_30', s.glassCount >= 30);
+    add('paper_100', s.paperCount >= 100);
+    add('trash_1000', s.totalTrashCount >= 1000);
+    // 수거 무게
+    add('weight_10kg', s.totalWeightKg >= 10);
+    add('weight_50kg', s.totalWeightKg >= 50);
+    add('weight_100kg', s.totalWeightKg >= 100);
+    // 시간대·요일
+    add('early_bird', s.earlyCount >= 5);
+    add('night_owl', s.nightCount >= 5);
+    add('weekend_5', s.weekendCount >= 5);
+    // 연속 기록
     add('streak_7', s.streakDays >= 7);
     add('streak_30', s.streakDays >= 30);
 
@@ -132,6 +153,8 @@ class BadgeService {
     int totalSteps = 0;
     int totalKcal = 0;
     int totalWeightG = 0;
+    int can = 0, glass = 0, paper = 0, trashAll = 0;
+    int early = 0, night = 0, weekend = 0;
 
     for (final a in acts) {
       totalSeconds += a.durationSeconds;
@@ -146,6 +169,17 @@ class BadgeService {
         weightKg: body.weightKg,
       );
       totalWeightG += ActivityMetrics.weightGrams(a.trashCounts);
+      can += a.trashCounts['can'] ?? 0;
+      glass += a.trashCounts['glass'] ?? 0;
+      paper += a.trashCounts['paper'] ?? 0;
+      trashAll += a.totalTrash;
+      // 시작 시각·요일로 새벽·야간·주말 활동 수를 센다
+      final st = a.startedAt;
+      if (st.hour < 6) early++;
+      if (st.hour >= 21) night++;
+      if (st.weekday == DateTime.saturday || st.weekday == DateTime.sunday) {
+        weekend++;
+      }
       final d = a.endedAt ?? a.startedAt;
       days.add(DateTime(d.year, d.month, d.day));
     }
@@ -170,6 +204,13 @@ class BadgeService {
       joinedGroup: counters.joined,
       streakDays: _streakDays(days),
       activeDays: days.length,
+      canCount: can,
+      glassCount: glass,
+      paperCount: paper,
+      totalTrashCount: trashAll,
+      earlyCount: early,
+      nightCount: night,
+      weekendCount: weekend,
     );
   }
 
