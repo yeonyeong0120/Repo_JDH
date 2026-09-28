@@ -3,6 +3,7 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
+import 'package:repo_jdh/features/shop/data/point_history_service.dart';
 import 'package:repo_jdh/features/shop/presentation/coupon_list_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/product_detail_screen.dart';
 
@@ -19,7 +20,9 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   int _index = 0; // 현재 카테고리 인덱스
   int _points = 0;
-  int _couponCount = 0; // 교환 가능 쿠폰 수 (잔액 카드 서브텍스트)
+  // 잔액 카드 서브텍스트 — 지금 포인트로 바꿀 수 있는 상품 수와 이번 달 적립
+  int _exchangeable = 0;
+  int? _monthEarned;
   bool _loading = true;
 
   @override
@@ -30,23 +33,24 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _loadPoints() async {
     int p = 0;
-    int coupons = 0;
     try {
       p = await ShopService.myPoints();
-    } catch (_) {
-      // 실패 시 0
-    }
-    try {
-      coupons = (await ShopService.myCoupons()).where((c) => c.usable).length;
     } catch (_) {
       // 실패 시 0
     }
     if (!mounted) return;
     setState(() {
       _points = p;
-      _couponCount = coupons;
+      _exchangeable =
+          ShopService.catalog.where((i) => i.price <= p).length;
       _loading = false;
     });
+    try {
+      final earned = await PointHistoryService.earnedThisMonth();
+      if (mounted) setState(() => _monthEarned = earned);
+    } catch (_) {
+      // 실패 시 적립 문구를 빼고 교환 가능 개수만 보여준다
+    }
   }
 
   Future<void> _openCoupons() async {
@@ -198,7 +202,9 @@ class _ShopScreenState extends State<ShopScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '교환 가능 $_couponCount개',
+                  _monthEarned == null
+                      ? '교환 가능 $_exchangeable개'
+                      : '이번 달 +${_format(_monthEarned!)}P · 교환 가능 $_exchangeable개',
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,

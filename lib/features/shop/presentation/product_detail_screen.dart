@@ -80,9 +80,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     Text(
                       item.name,
                       style: const TextStyle(
-                        fontSize: 23,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
+                        letterSpacing: -0.8,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -268,21 +268,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: GestureDetector(
         onTap: _exchanging ? null : () => _confirmExchange(item),
         child: Container(
-          height: 58,
+          height: 64,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: AppColors.ink,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(22),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(TablerIcons.gift, size: 20, color: AppColors.lime),
+              const Icon(TablerIcons.gift, size: 21, color: AppColors.lime),
               const SizedBox(width: 9),
               Text(
                 '${_format(item.price)}P로 교환',
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                 ),

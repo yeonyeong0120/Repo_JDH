@@ -19,10 +19,13 @@ class PointHistoryService {
         final at = a.endedAt ?? a.startedAt;
         if (at.isBefore(since) || a.pointsEarned <= 0) continue;
         final km = (a.distanceMeters / 1000).toStringAsFixed(1);
+        final place = a.placeName;
         logs.add(
           PointLog(
             kind: PointLogKind.plogging,
-            title: '플로깅 활동 완료',
+            title: (place == null || place.isEmpty)
+                ? '플로깅 완료'
+                : '플로깅 완료 · $place',
             subtitle: '${km}km · ${a.totalTrash}개 수거',
             amount: a.pointsEarned,
             at: at,
@@ -54,6 +57,16 @@ class PointHistoryService {
 
     logs.sort((a, b) => b.at.compareTo(a.at));
     return logs;
+  }
+
+  /// 이번 달 적립 합계 — 메뉴·포인트 샵 카드의 '이번 달 +NNNP'
+  static Future<int> earnedThisMonth() async {
+    final now = DateTime.now();
+    final logs = await recent();
+    return logs
+        .where((l) =>
+            l.amount > 0 && l.at.year == now.year && l.at.month == now.month)
+        .fold<int>(0, (acc, l) => acc + l.amount);
   }
 
   static int _priceOf(String itemId) {
