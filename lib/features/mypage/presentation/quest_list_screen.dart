@@ -3,6 +3,7 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/mypage/data/event_challenge_repository.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 
 /// PLOGGO - 챌린지 목록 (ACT-09)
@@ -39,12 +40,34 @@ class _QuestListScreenState extends State<QuestListScreen> {
     }
     if (!mounted) return;
     setState(() {
-      _quests = kBadges.map((b) {
-        final (cur, total) = BadgeService.progressOf(b, stats);
-        // 챌린지 아이콘 = 연계 뱃지 아이콘. 수거 계열은 쓰레기봉투 아이콘.
-        final collect = usesTrashBagIcon(b);
-        return _Q(b.quest, cur, total, b.icon, _colorOf(b), b.points, collect);
-      }).toList();
+      _quests = [
+        // 기간 한정 이벤트가 먼저 (시안: 라임 강조)
+        for (final e in EventChallengeRepository.active())
+          _Q(
+            e.title,
+            e.current,
+            e.total,
+            e.icon,
+            AppColors.ink,
+            e.points,
+            false,
+            event: true,
+          ),
+        ...kBadges.map((b) {
+          final (cur, total) = BadgeService.progressOf(b, stats);
+          // 챌린지 아이콘 = 연계 뱃지 아이콘. 수거 계열은 쓰레기봉투 아이콘.
+          final collect = usesTrashBagIcon(b);
+          return _Q(
+            b.quest,
+            cur,
+            total,
+            b.icon,
+            _colorOf(b),
+            b.points,
+            collect,
+          );
+        }),
+      ];
       _loading = false;
     });
   }
@@ -247,8 +270,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
     final done = q.done;
     final progress = (q.current / q.total).clamp(0.0, 1.0);
 
-    // 아이콘: 달성은 라임 위 잉크, 진행 중은 카테고리 색
-    final Color iconFg = done ? AppColors.limeOn : q.color;
+    // 아이콘: 달성·이벤트는 라임 위 잉크, 진행 중은 카테고리 색
+    final Color iconFg = (done || q.event) ? AppColors.limeOn : q.color;
     final Widget iconWidget = q.isCollect
         ? TrashBagIcon(size: 20, color: iconFg)
         : Icon(q.icon, color: iconFg, size: 20);
@@ -266,7 +289,9 @@ class _QuestListScreenState extends State<QuestListScreen> {
             height: 42,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: done ? AppColors.lime : q.color.withValues(alpha: 0.14),
+              color: (done || q.event)
+                  ? AppColors.lime
+                  : q.color.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(15),
             ),
             child: iconWidget,
@@ -340,6 +365,7 @@ class _Q {
   final Color color;
   final int points;
   final bool isCollect; // 수거량 계열 → 쓰레기봉투 아이콘
+  final bool event; // 기간 한정 이벤트 — 라임 타일로 강조
   const _Q(
     this.title,
     this.current,
@@ -347,8 +373,9 @@ class _Q {
     this.icon,
     this.color,
     this.points,
-    this.isCollect,
-  );
+    this.isCollect, {
+    this.event = false,
+  });
 
   bool get done => current >= total;
 }

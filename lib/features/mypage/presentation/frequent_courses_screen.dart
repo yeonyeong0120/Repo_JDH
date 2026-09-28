@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import 'package:repo_jdh/core/widgets/route_thumbnail.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
@@ -169,23 +168,40 @@ class _FrequentCoursesScreenState extends State<FrequentCoursesScreen> {
       itemCount: _courses!.length,
       separatorBuilder: (_, __) =>
           const Divider(height: 1, thickness: 1, color: AppColors.line100),
-      itemBuilder: (_, i) => _courseRow(_courses![i]),
+      itemBuilder: (_, i) => _courseRow(_courses![i], top: i == 0),
     );
   }
 
-  // 목업: 경로 미니 지도 썸네일(54) + 코스명(핀) + 평균 거리·시간 + 방문·누적
-  Widget _courseRow(_Course c) {
+  /// 코스명으로 장소 유형 아이콘을 고른다.
+  /// 목업 규칙 — 활동 기록에 장소 분류 필드가 없어 이름으로 추론한다.
+  static IconData _placeIcon(String name) {
+    if (name.contains('공원') || name.contains('한강')) return TablerIcons.tree;
+    if (name.contains('시장')) return TablerIcons.buildingStore;
+    if (name.contains('카페') || name.contains('거리')) return TablerIcons.cup;
+    if (name.contains('학교') || name.contains('대학')) return TablerIcons.school;
+    if (name.contains('역')) return TablerIcons.train;
+    return TablerIcons.mapPin;
+  }
+
+  // 경로 썸네일 대신 시안처럼 장소 유형 타일(62) + 코스명(1순위엔 고정 핀)
+  Widget _courseRow(_Course c, {required bool top}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          // 코스 대표 경로 썸네일 (경로 없으면 '경로 없음' 표시)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(17),
-            child: SizedBox(
-              width: 54,
-              height: 54,
-              child: CustomPaint(painter: RoutePainter(path: c.path)),
+          // 장소 유형 타일 — 가장 많이 간 코스만 라임 면
+          Container(
+            width: 62,
+            height: 62,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: top ? AppColors.lime : AppColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              _placeIcon(c.name),
+              size: 26,
+              color: top ? AppColors.ink : AppColors.gray700,
             ),
           ),
           const SizedBox(width: 13),
@@ -202,18 +218,21 @@ class _FrequentCoursesScreenState extends State<FrequentCoursesScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      TablerIcons.mapPin,
-                      size: 14,
-                      color: AppColors.gray400,
-                    ),
+                    // 고정 핀 — 목업 규칙: 가장 많이 간 코스 한 곳만
+                    if (top) ...[
+                      const SizedBox(width: 4),
+                      const Icon(
+                        TablerIcons.pinnedFilled,
+                        size: 14,
+                        color: AppColors.ink,
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 3),

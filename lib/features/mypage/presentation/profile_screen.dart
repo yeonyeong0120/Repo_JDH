@@ -50,8 +50,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await BadgeService.loadEarned();
       if (mounted) {
-        setState(() => _badgeCount =
-            kBadges.where((b) => BadgeRepo.isEarned(b.id)).length);
+        setState(
+          () => _badgeCount = kBadges
+              .where((b) => BadgeRepo.isEarned(b.id))
+              .length,
+        );
       }
     } catch (_) {}
   }
@@ -440,7 +443,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 15.5,
                 fontWeight: FontWeight.w800,
-                color: value == null ? AppColors.gray400 : AppColors.textPrimary,
+                color: value == null
+                    ? AppColors.gray400
+                    : AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: 6),

@@ -39,57 +39,69 @@ Future<void> showBadgeDetail(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // 상단: 뱃지 아이콘 + 이름/조건 (X는 아래 Stack 오버레이 — 레이아웃 안 밀림)
-            Row(
-              children: [
-                _BadgeMedal(badge: badge, earned: earned, pct: pct),
-                Gap.w16,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(badge.name, style: AppType.title2),
-                      Gap.h4,
-                      Text(
-                        badge.condition,
-                        style: AppType.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                // 상단: 뱃지 아이콘 + 이름/조건 (X는 아래 Stack 오버레이 — 레이아웃 안 밀림)
+                Row(
+                  children: [
+                    _BadgeMedal(badge: badge, earned: earned, pct: pct),
+                    Gap.w16,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(badge.name, style: AppType.title2),
+                          Gap.h4,
+                          Text(
+                            badge.condition,
+                            style: AppType.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            Gap.h20,
-            const Divider(height: 1, color: AppColors.border),
-            Gap.h16,
-            if (earned) ...[
-              _rewardLabel('받은 보상'),
-              Gap.h12,
-              _valueRow('받은 포인트', '${badge.points} P',
-                  valueColor: AppColors.textBrandOnLight),
-              Gap.h12,
-              _valueRow('받은 경험치', '$xp XP',
-                  valueColor: AppColors.textBrandOnLight),
-              if (date != null && date.isNotEmpty) ...[
-                Gap.h12,
-                _valueRow('받은 날', _prettyDate(date)),
-              ],
-            ] else ...[
-              _valueRow(
-                '${_comma(remain)} 남았어요',
-                '${_comma(current)} / ${_comma(tot)}',
-              ),
-              Gap.h16,
-              _rewardLabel('달성하면 받아요'),
-              Gap.h12,
-              _valueRow('포인트', '${badge.points} P',
-                  valueColor: AppColors.textBrandOnLight),
-              Gap.h12,
-              _valueRow('경험치', '$xp XP',
-                  valueColor: AppColors.textBrandOnLight),
-            ],
+                Gap.h20,
+                const Divider(height: 1, color: AppColors.border),
+                Gap.h16,
+                if (earned) ...[
+                  _rewardLabel('받은 보상'),
+                  Gap.h12,
+                  _valueRow(
+                    '받은 포인트',
+                    '${badge.points} P',
+                    valueColor: AppColors.textBrandOnLight,
+                  ),
+                  Gap.h12,
+                  _valueRow(
+                    '받은 경험치',
+                    '$xp XP',
+                    valueColor: AppColors.textBrandOnLight,
+                  ),
+                  if (date != null && date.isNotEmpty) ...[
+                    Gap.h12,
+                    _valueRow('받은 날', _prettyDate(date)),
+                  ],
+                ] else ...[
+                  _valueRow(
+                    '${_comma(remain)} 남았어요',
+                    '${_comma(current)} / ${_comma(tot)}',
+                  ),
+                  Gap.h16,
+                  _rewardLabel('달성하면 받아요'),
+                  Gap.h12,
+                  _valueRow(
+                    '포인트',
+                    '${badge.points} P',
+                    valueColor: AppColors.textBrandOnLight,
+                  ),
+                  Gap.h12,
+                  _valueRow(
+                    '경험치',
+                    '$xp XP',
+                    valueColor: AppColors.textBrandOnLight,
+                  ),
+                ],
               ],
             ),
             Positioned(
@@ -100,8 +112,11 @@ Future<void> showBadgeDetail(
                 onTap: () => Navigator.pop(ctx),
                 child: const Padding(
                   padding: EdgeInsets.all(8),
-                  child: Icon(TablerIcons.x, size: 22,
-                      color: AppColors.textSecondary),
+                  child: Icon(
+                    TablerIcons.x,
+                    size: 22,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ),
@@ -153,8 +168,11 @@ class _BadgeMedal extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.surface, width: 2),
                 ),
-                child: const Icon(TablerIcons.check, size: 14,
-                    color: AppColors.textOnBrand),
+                child: const Icon(
+                  TablerIcons.check,
+                  size: 14,
+                  color: AppColors.textOnBrand,
+                ),
               ),
             )
           else
@@ -283,9 +301,7 @@ class BadgeRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant BadgeRingPainter old) =>
-      old.progress != progress ||
-      old.color != color ||
-      old.stroke != stroke;
+      old.progress != progress || old.color != color || old.stroke != stroke;
 }
 
 // 상단 중앙에서 시작해 시계방향으로 도는 둥근 네모 경로.
@@ -333,9 +349,7 @@ Future<void> showBadgeEarned(
           children: [
             Text(
               badges.length == 1 ? '뱃지 획득!' : '뱃지 ${badges.length}개 획득!',
-              style: AppType.title1.copyWith(
-                color: AppColors.textBrandOnLight,
-              ),
+              style: AppType.title1.copyWith(color: AppColors.textBrandOnLight),
               textAlign: TextAlign.center,
             ),
             Gap.h8,
@@ -397,9 +411,7 @@ Future<void> showBadgeEarned(
               Gap.h12,
               Text(
                 '+$more개 더',
-                style: AppType.caption.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                style: AppType.caption.copyWith(color: AppColors.textSecondary),
               ),
             ],
             Gap.h20,

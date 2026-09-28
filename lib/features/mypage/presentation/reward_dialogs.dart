@@ -16,7 +16,10 @@ import 'package:repo_jdh/features/mypage/domain/badge.dart';
 /// '뱃지함 보기'를 누르면 내 활동(/mypage)으로 이동한다.
 /// 화면 전환(정산→홈/피드) 이후에도 rootNavigatorKey.currentContext 로 호출 가능.
 /// 반환값: '뱃지함 보기'로 /mypage 로 이동했으면 true.
-Future<bool> showRewardFlow(BuildContext context, List<BadgeData> badges) async {
+Future<bool> showRewardFlow(
+  BuildContext context,
+  List<BadgeData> badges,
+) async {
   for (final b in badges) {
     if (!context.mounted) return false;
     await showQuestComplete(
@@ -77,16 +80,18 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
     super.initState();
     final rnd = math.Random();
     for (int i = 0; i < 46; i++) {
-      _pieces.add(_Confetto(
-        x: rnd.nextDouble(),
-        delay: rnd.nextDouble(),
-        speed: 0.7 + rnd.nextDouble() * 0.7,
-        size: 5 + rnd.nextDouble() * 6,
-        color: _confettiColors[rnd.nextInt(_confettiColors.length)],
-        rot: rnd.nextDouble() * math.pi,
-        rotSpeed: (rnd.nextDouble() - 0.5) * 8,
-        sway: rnd.nextDouble() * 2 * math.pi,
-      ));
+      _pieces.add(
+        _Confetto(
+          x: rnd.nextDouble(),
+          delay: rnd.nextDouble(),
+          speed: 0.7 + rnd.nextDouble() * 0.7,
+          size: 5 + rnd.nextDouble() * 6,
+          color: _confettiColors[rnd.nextInt(_confettiColors.length)],
+          rot: rnd.nextDouble() * math.pi,
+          rotSpeed: (rnd.nextDouble() - 0.5) * 8,
+          sway: rnd.nextDouble() * 2 * math.pi,
+        ),
+      );
     }
     _confetti = AnimationController(
       vsync: this,
@@ -268,7 +273,11 @@ class _ConfettiPainter extends CustomPainter {
       canvas.rotate(p.rot + prog * p.rotSpeed);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size * 0.6),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: p.size,
+            height: p.size * 0.6,
+          ),
           const Radius.circular(1.5),
         ),
         paint,

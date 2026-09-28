@@ -12,6 +12,7 @@ import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/frequent_courses_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/gallery_screen.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/mypage/data/event_challenge_repository.dart';
 import 'package:repo_jdh/features/mypage/presentation/badge_dialog.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
@@ -351,7 +352,21 @@ class _RecordsTabState extends State<_RecordsTab> {
       // 실패 시 빈 목록
     }
     if (!mounted) return;
-    final list = <_Quest>[];
+    final list = <_Quest>[
+      // 기간 한정 이벤트가 먼저 (시안: 라임 강조)
+      for (final e in EventChallengeRepository.active())
+        if (!e.done)
+          _Quest(
+            e.title,
+            e.current,
+            e.total,
+            e.icon,
+            AppColors.ink,
+            e.points,
+            false,
+            event: true,
+          ),
+    ];
     for (final b in kBadges) {
       final (cur, total) = BadgeService.progressOf(b, stats);
       if (cur >= total) continue; // 완료된 건 제외
@@ -589,6 +604,8 @@ class _RecordsTabState extends State<_RecordsTab> {
             imageUrls: a.imageUrls,
             activityId: a.id,
             path: a.path,
+            // 사진별 촬영 시각이 없어 활동이 끝난 시각으로 대신한다
+            shotAtLabel: '${end.month}월 ${end.day}일 ${_ampmTime(end)}',
           ),
         ),
       ),
@@ -690,12 +707,16 @@ class _RecordsTabState extends State<_RecordsTab> {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: q.color.withValues(alpha: 0.14),
+              color: q.event ? AppColors.lime : q.color.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(14),
             ),
             child: q.isCollect
                 ? TrashBagIcon(size: 20, color: q.color)
-                : Icon(q.icon, color: q.color, size: 20),
+                : Icon(
+                    q.icon,
+                    color: q.event ? AppColors.limeOn : q.color,
+                    size: 20,
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -828,9 +849,7 @@ class _BadgesTabState extends State<_BadgesTab> {
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
       childAspectRatio: 0.82,
-      children: [
-        for (final b in list) _BadgeTile(badge: b, stats: _stats),
-      ],
+      children: [for (final b in list) _BadgeTile(badge: b, stats: _stats)],
     );
   }
 }
@@ -844,7 +863,10 @@ class _BadgeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final earned = BadgeRepo.isEarned(badge.id);
     // 상세 팝업 진행률용 (현재/목표)
-    final (cur, tot) = BadgeService.progressOf(badge, stats ?? const UserStats());
+    final (cur, tot) = BadgeService.progressOf(
+      badge,
+      stats ?? const UserStats(),
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -939,10 +961,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
       weightKg: widget.weightKg,
     ).map((b) => _bucketToGData(b)).toList();
     _cumulative = _bucketToGData(
-      ActivityStats.cumulative(
-        acts,
-        weightKg: widget.weightKg,
-      ),
+      ActivityStats.cumulative(acts, weightKg: widget.weightKg),
     );
   }
 
@@ -962,7 +981,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     final cats = ActivityStats.categoryTotals(scoped)
       ..sort((a, b) => b.count.compareTo(a.count));
     return cats.map((c) {
-      final meta = _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
+      final meta =
+          _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
       return _Segment(meta.$1, c.count, meta.$2);
     }).toList();
   }
@@ -1179,7 +1199,12 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
         children: [
           _topStatItem(TablerIcons.run, AppColors.dataSteps, '걸음수', d.steps),
           _topStatItem(TablerIcons.flame, AppColors.dataCalorie, '칼로리', d.kcal),
-          _topStatItem(TablerIcons.trash, AppColors.dataCollect, '수거량', d.weight),
+          _topStatItem(
+            TablerIcons.trash,
+            AppColors.dataCollect,
+            '수거량',
+            d.weight,
+          ),
         ],
       ),
     );
@@ -1253,8 +1278,11 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               children: [
                 Text(title, style: AppType.title3),
                 const SizedBox(width: 6),
-                const Icon(TablerIcons.infoCircle, size: 15,
-                    color: AppColors.neutral400),
+                const Icon(
+                  TablerIcons.infoCircle,
+                  size: 15,
+                  color: AppColors.neutral400,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -1551,7 +1579,11 @@ class _ErrorBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(TablerIcons.cloudOff, size: 44, color: AppColors.textSecondary),
+          const Icon(
+            TablerIcons.cloudOff,
+            size: 44,
+            color: AppColors.textSecondary,
+          ),
           const SizedBox(height: 12),
           const Text(
             '기록을 불러오지 못했어요',
@@ -1648,6 +1680,7 @@ class _Quest {
   final Color color;
   final int points; // 달성 시 지급 포인트
   final bool isCollect; // 수거량 계열 → 쓰레기봉투 아이콘
+  final bool event; // 기간 한정 이벤트 — 라임 타일로 강조
   const _Quest(
     this.title,
     this.current,
@@ -1655,8 +1688,9 @@ class _Quest {
     this.icon,
     this.color,
     this.points,
-    this.isCollect,
-  );
+    this.isCollect, {
+    this.event = false,
+  });
 }
 
 // 월간 주별 활동 꺾은선 차트
