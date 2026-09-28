@@ -998,6 +998,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
       b.bars,
       b.barLabels,
       b.peakIndex,
+      weightGrams: b.weightG,
     );
   }
 
@@ -1098,25 +1099,30 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  d.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _periodTitle(period),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.4,
+                      color: AppColors.gray500,
+                    ),
                   ),
-                ),
-                Text(
-                  d.range,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                  const SizedBox(height: 3),
+                  Text(
+                    _periodNote(period, d),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             // 누적은 기간 이동 없음
             if (!isCumulative)
@@ -1164,8 +1170,11 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
         ],
-        // 누적은 그래프가 없어 요약과 도넛이 붙으니 공백 추가
-        if (isCumulative) const SizedBox(height: 12),
+        // 누적 탭 — 1인 월평균 배출량 대비 진행바 (시안)
+        if (isCumulative) ...[
+          _goalBar(d.weightGrams / 1000.0),
+          const SizedBox(height: 12),
+        ],
         _chartCard(
           '수거 종류',
           AnimatedBuilder(
@@ -1256,6 +1265,154 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+
+  String _periodTitle(int period) => switch (period) {
+    0 => '주간 수거량',
+    1 => '월간 수거량',
+    _ => '누적 수거량',
+  };
+
+  /// 시안의 '지난주보다 +38%' 자리.
+  /// 주간·월간은 바로 앞 기간과 비교하고, 누적은 '138일째 · 64회'처럼 보여준다.
+  String _periodNote(int period, _GData d) {
+    if (period == 2) {
+      final acts = widget.activities ?? const [];
+      if (acts.isEmpty) return d.range;
+      // 가입일은 이 화면에 없어 첫 활동일을 기준으로 센다
+      var first = acts.first.startedAt;
+      for (final a in acts) {
+        if (a.startedAt.isBefore(first)) first = a.startedAt;
+      }
+      final days = DateTime.now().difference(first).inDays + 1;
+      return '$days일째 · ${acts.length}회';
+    }
+    final list = period == 0 ? _weekly : _monthly;
+    final prevIndex = _offset + 1;
+    if (prevIndex >= list.length) return d.range; // 비교할 앞 기간이 없으면 기간 표기
+    final cur = d.weightGrams;
+    final prev = list[prevIndex].weightGrams;
+    final unit = period == 0 ? '지난주' : '지난달';
+    if (prev == 0) return cur == 0 ? d.range : '$unit엔 기록이 없었어요';
+    final delta = ((cur - prev) / prev * 100).round();
+    final sign = delta >= 0 ? '+' : '';
+    return '$unit보다 $sign$delta%';
+  }
+
+  // ── 누적 목표 진행바 ──
+  // 기준 단위: 1인 월평균 생활폐기물 배출량 29kg
+  // (하루 950.6g · 제6차 전국폐기물통계조사). 누적량이 한 달치를 넘을 때마다
+  // 눈금이 한 달씩 늘어난다.
+  static const double _monthlyWastePerPerson = 29;
+
+  Widget _goalBar(double currentKg) {
+    final months = (currentKg / _monthlyWastePerPerson).ceil().clamp(1, 60);
+    final maxKg = _monthlyWastePerPerson * months;
+    final ratio = (currentKg / maxKg).clamp(0.0, 1.0);
+    final remain = (maxKg - currentKg).clamp(0.0, maxKg);
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        // 칩이 막대 끝에서 잘리지 않도록 좌우로 붙여 둔다
+        final chipLeft = (w * ratio - 26).clamp(0.0, w - 62);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 30,
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: chipLeft,
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.ink,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Text(
+                        '${currentKg.toStringAsFixed(1)}kg',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.lime,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                height: 16,
+                color: const Color(0xFFEDEFEE),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: ratio == 0 ? 0.001 : ratio,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: AppColors.lime,
+                      border: Border(
+                        right: BorderSide(color: Color(0xFFA9C81E), width: 2.5),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 9),
+            SizedBox(
+              height: 20,
+              child: Stack(
+                children: [
+                  for (int i = 0; i <= months; i++)
+                    Positioned(
+                      left: i == months ? null : (w * i / months),
+                      right: i == months ? 0 : null,
+                      child: Text(
+                        i == 0
+                            ? '0'
+                            : (i == months
+                                  ? '$i개월 (${maxKg.toStringAsFixed(0)}kg)'
+                                  : '$i개월'),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: i == months
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                          color: i == months
+                              ? AppColors.ink
+                              : AppColors.gray500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              '한 사람이 $months개월간 버리는 양'
+              '(${maxKg.toStringAsFixed(0)}kg)까지 '
+              '${remain.toStringAsFixed(1)}kg 남았어요',
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                height: 1.6,
+                color: AppColors.gray500,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1418,15 +1575,25 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 size: const Size(120, 120),
                 painter: _DonutPainter(segments, t),
               ),
+              // 시안: 값과 단위를 두 줄로
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '${segments.fold<int>(0, (a, s) => a + s.value)}개',
+                    '${segments.fold<int>(0, (a, s) => a + s.value)}',
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 22,
+                      height: 1.1,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const Text(
+                    '개',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.gray500,
                     ),
                   ),
                 ],
@@ -1868,6 +2035,7 @@ class _GData {
   final List<double> bars; // 0~1 비율 (누적은 빈 리스트)
   final List<String> barLabels;
   final int peakIndex;
+  final int weightGrams; // 목표 진행바 계산용 원본값
   const _GData(
     this.title,
     this.range,
@@ -1876,6 +2044,7 @@ class _GData {
     this.weight,
     this.bars,
     this.barLabels,
-    this.peakIndex,
-  );
+    this.peakIndex, {
+    this.weightGrams = 0,
+  });
 }
