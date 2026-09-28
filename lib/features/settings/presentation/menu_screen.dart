@@ -7,6 +7,7 @@ import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/features/mypage/presentation/profile_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/settings_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/notifications_screen.dart';
+import 'package:repo_jdh/features/settings/data/notification_repository.dart';
 import 'package:repo_jdh/features/settings/presentation/notice_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/faq_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/licenses_screen.dart';
@@ -60,10 +61,11 @@ class _MenuScreenState extends State<MenuScreen> {
     try {
       final p = await UserService.loadProfileDetail();
       _cachedProfile = p;
-      if (mounted) setState(() {
-        _profile = p;
-        _profileLoaded = true;
-      });
+      if (mounted)
+        setState(() {
+          _profile = p;
+          _profileLoaded = true;
+        });
     } catch (_) {}
   }
 
@@ -98,6 +100,14 @@ class _MenuScreenState extends State<MenuScreen> {
     context,
     rootNavigator: rootNavigator,
   ).push(MaterialPageRoute(builder: (_) => screen));
+
+  Future<void> _openNotifications() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const NotificationsScreen()),
+    );
+    if (mounted) setState(() {}); // 읽음 처리 반영
+  }
 
   Future<void> _openShop() async {
     await Navigator.push(
@@ -200,8 +210,8 @@ class _MenuScreenState extends State<MenuScreen> {
                               !_profileLoaded
                                   ? ' '
                                   : (_profile.nickname.isEmpty
-                                      ? '플로거'
-                                      : _profile.nickname),
+                                        ? '플로거'
+                                        : _profile.nickname),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -244,11 +254,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _headerTile(
-                        '누적 수거',
-                        _weightText,
-                        Colors.white,
-                      ),
+                      child: _headerTile('누적 수거', _weightText, Colors.white),
                     ),
                   ],
                 ),
@@ -330,7 +336,11 @@ class _MenuScreenState extends State<MenuScreen> {
 
   Widget _avatarInitial(String nick, double size) {
     if (nick.isEmpty) {
-      return Icon(TablerIcons.userFilled, size: size * 0.5, color: AppColors.ink);
+      return Icon(
+        TablerIcons.userFilled,
+        size: size * 0.5,
+        color: AppColors.ink,
+      );
     }
     return Text(
       nick.substring(0, 1),
@@ -411,7 +421,9 @@ class _MenuScreenState extends State<MenuScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: lime ? AppColors.limeOn.withValues(alpha: 0.65) : AppColors.gray500,
+                color: lime
+                    ? AppColors.limeOn.withValues(alpha: 0.65)
+                    : AppColors.gray500,
               ),
             ),
           ],
@@ -423,29 +435,47 @@ class _MenuScreenState extends State<MenuScreen> {
   // ── 이용 안내 리스트 (아이콘 + 라벨 + 셰브론) ──
   Widget _menuList() {
     final rows = <_MenuRow>[
-      _MenuRow(TablerIcons.bell, '알림',
-          () => _push(const NotificationsScreen())),
-      _MenuRow(TablerIcons.news, '환경 뉴스',
-          () => _push(const NewsFeedScreen(), rootNavigator: true)),
-      _MenuRow(TablerIcons.mapPin, '자주 가는 코스',
-          () => _push(const FrequentCoursesScreen())),
-      _MenuRow(TablerIcons.shieldCheck, '개인정보 설정',
-          () => _push(const SettingsScreen())),
-      _MenuRow(TablerIcons.infoCircle, '도움말',
-          () => _push(const FaqScreen())),
-      _MenuRow(TablerIcons.settings, '설정',
-          () => _push(const SettingsScreen())),
+      _MenuRow(
+        TablerIcons.bell,
+        '알림',
+        _openNotifications,
+        badge: NotificationRepository.unreadCount,
+      ),
+      _MenuRow(
+        TablerIcons.news,
+        '환경 뉴스',
+        () => _push(const NewsFeedScreen(), rootNavigator: true),
+      ),
+      _MenuRow(
+        TablerIcons.mapPin,
+        '자주 가는 코스',
+        () => _push(const FrequentCoursesScreen()),
+      ),
+      _MenuRow(
+        TablerIcons.shieldCheck,
+        '개인정보 설정',
+        () => _push(const SettingsScreen()),
+      ),
+      _MenuRow(TablerIcons.infoCircle, '도움말', () => _push(const FaqScreen())),
+      _MenuRow(TablerIcons.settings, '설정', () => _push(const SettingsScreen())),
       // 시안에 진입 경로가 없지만 화면은 살아 있어 메뉴에 남겨 둔 항목
-      _MenuRow(TablerIcons.photo, '인증샷 모음집',
-          () => _push(const GalleryScreen())),
-      _MenuRow(TablerIcons.speakerphone, '공지 사항',
-          () => _push(const NoticeListScreen())),
-      _MenuRow(TablerIcons.copyright, '오픈소스 및 출처',
-          () => _push(const LicensesScreen())),
+      _MenuRow(
+        TablerIcons.photo,
+        '인증샷 모음집',
+        () => _push(const GalleryScreen()),
+      ),
+      _MenuRow(
+        TablerIcons.speakerphone,
+        '공지 사항',
+        () => _push(const NoticeListScreen()),
+      ),
+      _MenuRow(
+        TablerIcons.copyright,
+        '오픈소스 및 출처',
+        () => _push(const LicensesScreen()),
+      ),
     ];
-    return Column(
-      children: [for (final r in rows) _menuRow(r)],
-    );
+    return Column(children: [for (final r in rows) _menuRow(r)]);
   }
 
   Widget _menuRow(_MenuRow r) {
@@ -455,8 +485,9 @@ class _MenuScreenState extends State<MenuScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: const BoxDecoration(
-          border:
-              Border(bottom: BorderSide(color: AppColors.line100, width: 1)),
+          border: Border(
+            bottom: BorderSide(color: AppColors.line100, width: 1),
+          ),
         ),
         child: Row(
           children: [
@@ -472,6 +503,24 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
               ),
             ),
+            if (r.badge > 0) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.lime,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${r.badge}',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.limeOn,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             const Icon(
               TablerIcons.chevronRight,
               size: 20,
@@ -489,5 +538,6 @@ class _MenuRow {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _MenuRow(this.icon, this.label, this.onTap);
+  final int badge; // 0이면 배지를 달지 않는다
+  const _MenuRow(this.icon, this.label, this.onTap, {this.badge = 0});
 }
