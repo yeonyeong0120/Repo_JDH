@@ -271,10 +271,11 @@ class _ShopScreenState extends State<ShopScreen> {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 16,
-        // 사진(4:5) + 이름 + 가격
-        mainAxisExtent: 218,
+        // 카드끼리 붙어 보이지 않게 좌우·위아래 여백을 넉넉히
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 26,
+        // 사진 + 이름 + 가격
+        mainAxisExtent: 196,
       ),
       itemCount: items.length,
       // 목업처럼 첫 카드에만 '인기' 뱃지 (상품 데이터에 인기 필드가 없어 위치로 표시)
@@ -292,7 +293,7 @@ class _ShopScreenState extends State<ShopScreen> {
           // 라운드 상품 이미지 + 좌상단 '인기' 뱃지
           Stack(
             children: [
-              _thumb(item, 145),
+              _thumb(item, 122),
               if (popular)
                 Positioned(
                   left: 10,

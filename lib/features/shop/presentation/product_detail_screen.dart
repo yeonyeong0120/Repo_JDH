@@ -20,7 +20,7 @@ Future<void> showProductDialog(
     context: context,
     barrierColor: const Color(0x80141816),
     builder: (_) => Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 26, vertical: 40),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 54, vertical: 40),
       backgroundColor: Colors.transparent,
       elevation: 0,
       child: ProductDetailScreen(item: item, popular: popular),
@@ -84,86 +84,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _image(item),
-                  const SizedBox(height: 20),
-                  // 브랜드 (실데이터: item.brand)
-                  Text(
-                    item.brand,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.gray500,
-                    ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _image(item),
+                const SizedBox(height: 20),
+                // 브랜드 (실데이터: item.brand)
+                Text(
+                  item.brand,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray500,
                   ),
-                  const SizedBox(height: 6),
-                  // 상품명 (실데이터: item.name)
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.8,
-                      color: AppColors.textPrimary,
-                    ),
+                ),
+                const SizedBox(height: 6),
+                // 상품명 (실데이터: item.name)
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.8,
+                    color: AppColors.textPrimary,
                   ),
-                  const SizedBox(height: 14),
-                  _priceRow(item),
-                  const SizedBox(height: 22),
-                  // 안내 항목 — 상품별 안내 데이터가 모델에 없어 정적 플레이스홀더.
-                  _infoRow(TablerIcons.calendar, '교환 후 30일 이내 사용'),
-                  _infoDivider(),
-                  _infoRow(TablerIcons.mapPin, '전국 제휴 매장 사용 가능'),
-                  _infoDivider(),
-                  _infoRow(TablerIcons.cup, '모바일 쿠폰으로 발급돼요'),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                _priceRow(item),
+              ],
             ),
           ),
           _bottomCta(item),
-        ],
-      ),
-    );
-  }
-
-  // ───────────────────────── 상단 바(미사용) ─────────────────────────
-  // ignore: unused_element
-  Widget _topBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-      child: Row(
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.pop(context),
-            child: const SizedBox(
-              width: 44,
-              height: 44,
-              child: Icon(
-                TablerIcons.chevronLeft,
-                size: 24,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          const Expanded(
-            child: Text(
-              '교환하기',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          // 좌측 아이콘과 시각 균형용 여백
-          const SizedBox(width: 44),
         ],
       ),
     );
@@ -182,54 +135,62 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
       ),
     );
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: AspectRatio(
-            aspectRatio: 4 / 5,
-            child: Container(
-              width: double.infinity,
-              color: AppColors.surfaceSoft,
-              child: (url != null && url.isNotEmpty)
-                  ? Image.network(
-                      url,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => placeholder(),
-                    )
-                  // 실제 상품 사진이 없어 넣어둔 목업 사진
-                  : (item.imageAsset == null
-                        ? placeholder()
-                        : Image.asset(
-                            item.imageAsset!,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => placeholder(),
-                          )),
-            ),
-          ),
-        ),
-        if (widget.popular)
-          Positioned(
-            left: 14,
-            top: 14,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.lime,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: const Text(
-                '인기',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.limeOn,
+    return Center(
+      child: SizedBox(
+        width: 168,
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Container(
+                  width: double.infinity,
+                  color: AppColors.surfaceSoft,
+                  child: (url != null && url.isNotEmpty)
+                      ? Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => placeholder(),
+                        )
+                      // 실제 상품 사진이 없어 넣어둔 목업 사진
+                      : (item.imageAsset == null
+                            ? placeholder()
+                            : Image.asset(
+                                item.imageAsset!,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => placeholder(),
+                              )),
                 ),
               ),
             ),
-          ),
-      ],
+            if (widget.popular)
+              Positioned(
+                left: 14,
+                top: 14,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.lime,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    '인기',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.limeOn,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -271,30 +232,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ],
     );
   }
-
-  Widget _infoRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      child: Row(
-        children: [
-          Icon(icon, size: 19, color: AppColors.gray500),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoDivider() => const Divider(height: 1, color: AppColors.line100);
 
   // ─────────────── 하단 교환 CTA (차콜 버튼) ───────────────
   Widget _bottomCta(ShopItem item) {
