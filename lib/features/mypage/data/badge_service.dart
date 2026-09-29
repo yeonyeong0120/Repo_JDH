@@ -237,51 +237,66 @@ class BadgeService {
   /// 퀘스트 진행률 (현재값, 목표값) — 퀘스트 목록 화면에서 사용
   static (int current, int total) progressOf(BadgeData b, UserStats s) {
     switch (b.id) {
+      // 첫 걸음
       case 'first_plogging':
         return (s.ploggingCount.clamp(0, 1), 1);
       case 'first_verify':
         return (s.verifyCount.clamp(0, 1), 1);
       case 'first_30min':
         return (s.maxSessionMinutes.clamp(0, 30), 30);
-      case 'weight_1kg':
-        return (s.totalWeightKg.round().clamp(0, 1), 1);
-      case 'steps_10k':
-        return (s.totalSteps.clamp(0, 10000), 10000);
-      case 'steps_30k':
-        return (s.totalSteps.clamp(0, 30000), 30000);
-      case 'distance_10km':
-        return (s.totalDistanceKm.round().clamp(0, 10), 10);
-      case 'distance_30km':
-        return (s.totalDistanceKm.round().clamp(0, 30), 30);
-      case 'weight_5kg':
-        return (s.totalWeightKg.round().clamp(0, 5), 5);
-      case 'weight_20kg':
-        return (s.totalWeightKg.round().clamp(0, 20), 20);
-      case 'plastic_50':
-        return (s.plasticCount.clamp(0, 50), 50);
-      case 'time_3h':
-        return (s.totalMinutes.clamp(0, 180), 180);
-      case 'time_10h':
-        return (s.totalMinutes.clamp(0, 600), 600);
-      case 'kcal_500':
-        return (s.totalKcal.clamp(0, 500), 500);
       case 'group_join':
         return (s.joinedGroup ? 1 : 0, 1);
-      case 'group_5':
-        return (s.groupActivityCount.clamp(0, 5), 5);
-      case 'group_10':
-        return (s.groupActivityCount.clamp(0, 10), 10);
-      case 'share_10':
-        return (s.shareCount.clamp(0, 10), 10);
-      case 'streak_3':
-        return (s.streakDays.clamp(0, 3), 3);
+      // 걸음·거리
+      case 'steps_10k':
+        return (s.totalSteps.clamp(0, 10000), 10000);
+      case 'distance_10km':
+        return (s.totalDistanceKm.round().clamp(0, 10), 10);
+      // 수거 종류·개수
+      case 'plastic_50':
+        return (s.plasticCount.clamp(0, 50), 50);
+      case 'can_100':
+        return (s.canCount.clamp(0, 100), 100);
+      case 'glass_30':
+        return (s.glassCount.clamp(0, 30), 30);
+      case 'paper_100':
+        return (s.paperCount.clamp(0, 100), 100);
+      case 'trash_1000':
+        return (s.totalTrashCount.clamp(0, 1000), 1000);
+      // 수거 무게
+      case 'weight_10kg':
+        return (s.totalWeightKg.round().clamp(0, 10), 10);
+      case 'weight_50kg':
+        return (s.totalWeightKg.round().clamp(0, 50), 50);
+      case 'weight_100kg':
+        return (s.totalWeightKg.round().clamp(0, 100), 100);
+      // 시간대·요일
+      case 'early_bird':
+        return (s.earlyCount.clamp(0, 5), 5);
+      case 'night_owl':
+        return (s.nightCount.clamp(0, 5), 5);
+      case 'weekend_5':
+        return (s.weekendCount.clamp(0, 5), 5);
+      // 연속 기록
       case 'streak_7':
         return (s.streakDays.clamp(0, 7), 7);
       case 'streak_30':
         return (s.streakDays.clamp(0, 30), 30);
     }
-    return (0, 1);
+    // 판정 데이터가 아직 없는 뱃지(날씨·장소 분류·그룹 운영 등)는
+    // 조건 문구에 적힌 목표만 보여주고 진행률은 0으로 둔다.
+    return (0, _targetOf(b.id));
   }
+
+  /// 아직 판정하지 못하는 뱃지의 목표치 — 챌린지 목록에 0/N 으로 표시된다.
+  static int _targetOf(String id) => switch (id) {
+    'course_repeat' || 'market_clean' || 'park_keeper' => 5,
+    'school_road' || 'station_clean' || 'invite_5' => 5,
+    'river_master' || 'recommend_10' => 10,
+    'tumbler_30' => 30,
+    'point_5000' => 5000,
+    'four_seasons' => 4,
+    _ => 1, // rain_day, group_leader, rank_1 은 1회성
+  };
 
   // ───────────────────────── 저장 / 불러오기 ─────────────────────────
 
