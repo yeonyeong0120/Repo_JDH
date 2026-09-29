@@ -15,7 +15,6 @@ import 'package:repo_jdh/features/shop/presentation/shop_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/point_history_screen.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
 import 'package:repo_jdh/features/shop/data/point_history_service.dart';
-import 'package:repo_jdh/features/mypage/presentation/frequent_courses_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/gallery_screen.dart';
 import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
 
@@ -447,23 +446,13 @@ class _MenuScreenState extends State<MenuScreen> {
         () => _push(const NewsFeedScreen(), rootNavigator: true),
       ),
       _MenuRow(
-        TablerIcons.mapPin,
-        '자주 가는 코스',
-        () => _push(const FrequentCoursesScreen()),
-      ),
-      _MenuRow(
-        TablerIcons.shieldCheck,
-        '개인정보 설정',
-        () => _push(const SettingsScreen()),
-      ),
-      _MenuRow(TablerIcons.infoCircle, '도움말', () => _push(const FaqScreen())),
-      _MenuRow(TablerIcons.settings, '설정', () => _push(const SettingsScreen())),
-      // 시안에 진입 경로가 없지만 화면은 살아 있어 메뉴에 남겨 둔 항목
-      _MenuRow(
         TablerIcons.photo,
         '인증샷 모음집',
         () => _push(const GalleryScreen()),
       ),
+      _MenuRow(TablerIcons.infoCircle, '도움말', () => _push(const FaqScreen())),
+      _MenuRow(TablerIcons.settings, '설정', () => _push(const SettingsScreen())),
+      // 시안에 진입 경로가 없지만 화면은 살아 있어 메뉴에 남겨 둔 항목
       _MenuRow(
         TablerIcons.speakerphone,
         '공지 사항',
