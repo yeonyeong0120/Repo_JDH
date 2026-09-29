@@ -179,7 +179,8 @@ class _FrequentCoursesScreenState extends State<FrequentCoursesScreen> {
     if (name.contains('시장')) return TablerIcons.buildingStore;
     if (name.contains('카페') || name.contains('거리')) return TablerIcons.cup;
     if (name.contains('학교') || name.contains('대학')) return TablerIcons.school;
-    if (name.contains('역')) return TablerIcons.train;
+    // '역삼동'처럼 다른 낱말에 든 '역'은 거르고 '강남역'처럼 끝나는 경우만 본다
+    if (RegExp(r'역(?![가-힣])').hasMatch(name)) return TablerIcons.train;
     return TablerIcons.mapPin;
   }
 

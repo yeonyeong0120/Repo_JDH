@@ -147,7 +147,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      // 시안: 화면 배경은 흰색, 카드 면은 #F7F9F8
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -279,7 +280,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

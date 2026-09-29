@@ -9,8 +9,6 @@ import 'package:repo_jdh/core/widgets/route_thumbnail.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
-import 'package:repo_jdh/features/mypage/presentation/frequent_courses_screen.dart';
-import 'package:repo_jdh/features/mypage/presentation/gallery_screen.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 import 'package:repo_jdh/features/mypage/data/event_challenge_repository.dart';
 import 'package:repo_jdh/features/mypage/presentation/badge_dialog.dart';
@@ -83,7 +81,8 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      // 시안: 화면 배경은 흰색, 카드 면은 #F7F9F8
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -421,25 +420,6 @@ class _RecordsTabState extends State<_RecordsTab> {
         const SizedBox(height: 4),
         // ── 4가지 상태 처리: 로딩 / 에러 / 빈 기록 / 데이터 ──
         ..._buildRecordsSection(context),
-        const SizedBox(height: 20),
-        // 활동 기록에서 파생되는 모음 화면 바로가기 (코스·인증샷)
-        _shortcutRow(
-          icon: TablerIcons.route,
-          label: '자주 가는 코스',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const FrequentCoursesScreen()),
-          ),
-        ),
-        const SizedBox(height: 10),
-        _shortcutRow(
-          icon: TablerIcons.photo,
-          label: '인증샷 모음집',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const GalleryScreen()),
-          ),
-        ),
         const SizedBox(height: 26),
         _sectionHeader(
           '진행 중인 챌린지',
@@ -524,55 +504,6 @@ class _RecordsTabState extends State<_RecordsTab> {
               TablerIcons.chevronRight,
               size: 19,
               color: AppColors.gray500,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 소프트 카드 바로가기 행 — 아이콘 타일 + 라벨 + 셰브론
-  Widget _shortcutRow({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: AppColors.ink, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const Icon(
-              TablerIcons.chevronRight,
-              size: 19,
-              color: AppColors.gray400,
             ),
           ],
         ),
@@ -697,7 +628,7 @@ class _RecordsTabState extends State<_RecordsTab> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -842,14 +773,18 @@ class _BadgesTabState extends State<_BadgesTab> {
         final be = BadgeRepo.isEarned(b.id) ? 0 : 1;
         return ae.compareTo(be);
       });
-    return GridView.count(
-      crossAxisCount: 3,
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 0.82,
-      children: [for (final b in list) _BadgeTile(badge: b, stats: _stats)],
+      itemCount: list.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        // 내용 높이에 딱 맞춘 고정값 — 위아래 12 + 아트 85 + 간격 7 + 이름 2줄
+        mainAxisExtent: 148,
+      ),
+      itemBuilder: (_, i) => _BadgeTile(badge: list[i], stats: _stats),
     );
   }
 }
@@ -872,7 +807,7 @@ class _BadgeTile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => showBadgeDetail(context, badge, current: cur, total: tot),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
@@ -887,7 +822,7 @@ class _BadgeTile extends StatelessWidget {
               height: 85,
               fit: BoxFit.contain,
             ),
-            const SizedBox(height: 9),
+            const SizedBox(height: 7),
             Text(
               badge.name,
               textAlign: TextAlign.center,
@@ -1420,7 +1355,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
@@ -1702,7 +1637,7 @@ class _EmptyRecords extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
