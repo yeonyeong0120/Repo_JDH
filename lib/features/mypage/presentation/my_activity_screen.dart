@@ -1177,7 +1177,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+        padding: const EdgeInsets.fromLTRB(14, 11, 10, 11),
         decoration: BoxDecoration(
           color: accent ? AppColors.lime : AppColors.surfaceCard,
           borderRadius: BorderRadius.circular(20),
@@ -1186,8 +1186,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: AppColors.ink),
-            const SizedBox(height: 12),
+            Icon(icon, size: 18, color: AppColors.ink),
+            const SizedBox(height: 7),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
@@ -1195,14 +1195,14 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 value,
                 maxLines: 1,
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.6,
                   color: AppColors.ink,
                 ),
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 3),
             Text(
               label,
               maxLines: 1,
