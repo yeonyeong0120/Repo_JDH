@@ -314,7 +314,13 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
       ),
       child: Column(
         children: [
-          Opacity(opacity: _used ? 0.4 : 1, child: const CouponThumb(size: 96)),
+          Opacity(
+            opacity: _used ? 0.4 : 1,
+            child: CouponThumb(
+              size: 96,
+              imageAsset: ShopService.imageAssetOf(widget.coupon.itemId),
+            ),
+          ),
           const SizedBox(height: 16),
           Text(
             c.brand,

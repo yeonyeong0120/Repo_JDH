@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
 import 'package:repo_jdh/features/shop/presentation/coupon_list_screen.dart';
@@ -49,6 +48,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _points = 0;
   bool _loading = true;
   bool _exchanging = false; // 교환 요청 중복 방지
+
+  // 팝업 안 안내 문구.
+  // 스낵바는 팝업 뒤(Scaffold 위)에 떠서 가려지므로 팝업 안에서 직접 알린다.
+  String? _notice;
 
   @override
   void initState() {
@@ -113,6 +116,29 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
                 const SizedBox(height: 12),
                 _priceRow(item),
+                if (_notice != null) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(
+                        TablerIcons.alertCircleFilled,
+                        size: 16,
+                        color: AppColors.actionDanger,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _notice!,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.actionDanger,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -270,9 +296,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Future<void> _confirmExchange(ShopItem item) async {
     if (_loading) return;
     if (_points < item.price) {
-      AppSnackBar.show(context, '포인트가 조금 더 필요해요', bottom: AppSnackBar.aboveCta);
+      setState(() => _notice = '포인트가 ${_format(item.price - _points)}P 더 필요해요');
       return;
     }
+    setState(() => _notice = null);
 
     // §21 구매 확인
     final ok = await AppCardDialog.show(
@@ -291,8 +318,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       await ShopService.exchange(item);
     } catch (_) {
       if (mounted) {
-        setState(() => _exchanging = false);
-        AppSnackBar.show(context, '교환하지 못했어요', bottom: AppSnackBar.aboveCta);
+        setState(() {
+          _exchanging = false;
+          _notice = '교환하지 못했어요. 잠시 후 다시 시도해주세요';
+        });
       }
       return;
     }

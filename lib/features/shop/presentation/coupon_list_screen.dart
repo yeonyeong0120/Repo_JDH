@@ -161,19 +161,39 @@ class _CouponListScreenState extends State<CouponListScreen> {
         child: Row(
           children: [
             // 아이콘 사각형 — 사용 가능=라임 / 사용 완료=회색
-            Container(
-              width: 48,
-              height: 48,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: used ? AppColors.surfaceMuted : AppColors.lime,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                _couponIcon(c.name),
-                size: 23,
-                color: used ? AppColors.gray400 : AppColors.ink,
-              ),
+            // 상품 사진이 있으면 사진, 없으면 기존 아이콘 타일
+            Builder(
+              builder: (_) {
+                final art = ShopService.imageAssetOf(c.itemId);
+                if (art != null) {
+                  return Opacity(
+                    opacity: used ? 0.45 : 1,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        art,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                }
+                return Container(
+                  width: 48,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: used ? AppColors.surfaceMuted : AppColors.lime,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    _couponIcon(c.name),
+                    size: 23,
+                    color: used ? AppColors.gray400 : AppColors.ink,
+                  ),
+                );
+              },
             ),
             const SizedBox(width: 14),
             Expanded(

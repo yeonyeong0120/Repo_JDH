@@ -21,6 +21,14 @@ class ShopService {
       _userDoc()?.collection('coupons');
 
   // ───────────────────────── 상품 목록 ─────────────────────────
+  /// 쿠폰이 가리키는 상품의 목업 사진 (없으면 null)
+  static String? imageAssetOf(String itemId) {
+    for (final it in catalog) {
+      if (it.id == itemId) return it.imageAsset;
+    }
+    return null;
+  }
+
 
   /// TODO: Firestore products 컬렉션 또는 운영 도구로 옮기기
   ///       imageAsset 은 실제 상품 사진이 없어 넣은 목업이다.

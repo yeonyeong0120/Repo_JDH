@@ -10,10 +10,24 @@ class CouponThumb extends StatelessWidget {
   /// 정사각 한 변의 길이. 모서리 반경·글자 크기가 여기에 비례한다.
   final double size;
 
-  const CouponThumb({super.key, required this.size});
+  /// 상품 목업 사진 경로 (없으면 '상품 이미지' 자리표시)
+  final String? imageAsset;
+
+  const CouponThumb({super.key, required this.size, this.imageAsset});
 
   @override
   Widget build(BuildContext context) {
+    if (imageAsset != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.18),
+        child: Image.asset(
+          imageAsset!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
     return Container(
       width: size,
       height: size,
