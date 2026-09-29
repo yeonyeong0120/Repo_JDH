@@ -393,7 +393,7 @@ class _RecordsTabState extends State<_RecordsTab> {
     if (id.startsWith('weight') ||
         id.startsWith('plastic') ||
         id == 'first_verify') {
-      return AppColors.green600;
+      return AppColors.dataCollect;
     }
     if (id.startsWith('group') || id.startsWith('share')) {
       return AppColors.dataGroup;

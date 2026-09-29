@@ -442,7 +442,7 @@ class BadgeRepo {
 /// 뱃지 분류 색 — 타일 링·챌린지 아이콘에서 공통 사용.
 Color badgeColor(BadgeData b) => switch (b.group) {
   BadgeGroup.blue => AppColors.dataSteps,
-  BadgeGroup.green => AppColors.green600,
+  BadgeGroup.green => AppColors.dataCollect,
   BadgeGroup.amber => AppColors.dataGroup,
   BadgeGroup.coral => AppColors.dataCalorie,
 };

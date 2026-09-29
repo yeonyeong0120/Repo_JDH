@@ -85,7 +85,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
     if (id.startsWith('weight') ||
         id.startsWith('plastic') ||
         id == 'first_verify') {
-      return AppColors.green600; // 초록 (수거)
+      return AppColors.dataCollect; // 초록 (수거)
     }
     if (id.startsWith('group') || id.startsWith('share')) {
       return AppColors.dataGroup; // 주황
