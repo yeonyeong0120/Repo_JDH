@@ -201,7 +201,8 @@ class _MyImpactScreenState extends ConsumerState<MyImpactScreen> {
                           children: [
                             const TextSpan(text: '온실가스 배출이\n'),
                             TextSpan(
-                              text: '${ImpactMetrics.oneDecimal(_co2Kg)}kgCO₂eq',
+                              text:
+                                  '${ImpactMetrics.oneDecimal(_co2Kg)}kgCO₂eq',
                             ),
                           ],
                           style: const TextStyle(

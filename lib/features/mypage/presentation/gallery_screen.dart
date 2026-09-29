@@ -4,6 +4,7 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
 import 'package:repo_jdh/features/plogging/domain/activity.dart';
 import 'package:repo_jdh/features/plogging/domain/activity_metrics.dart';
+import 'package:repo_jdh/features/mypage/presentation/shot_detail_screen.dart';
 
 /// 플로고 - 인증샷 모음집 (MYPAGE-37)
 /// 진입: 메뉴 → 인증샷 모음집 (메뉴 화면은 다른 담당자 소유).
@@ -60,15 +61,13 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
       final d = a.startedAt;
       final key = d.year * 100 + d.month; // 연*100+월 → 정렬 키
-      final acc = buckets.putIfAbsent(
-        key,
-        () => _MonthAccum(d.year, d.month),
-      );
+      final acc = buckets.putIfAbsent(key, () => _MonthAccum(d.year, d.month));
       final weight = ActivityMetrics.weightGrams(a.trashCounts);
       for (int i = 0; i < a.imageUrls.length; i++) {
         photoCount += 1;
         acc.photos.add(
           _Photo(
+            activity: a,
             url: a.imageUrls[i],
             weightGrams: weight,
             // 활동의 첫 컷에만 수거량 칩을 표시(목업처럼 듬성듬성)
@@ -130,19 +129,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _onCalendar,
-                    child: const SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: Icon(
-                        TablerIcons.calendarMonth,
-                        size: 20,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
+                  // 제목을 가운데 두기 위한 여백 (뒤로 버튼과 같은 폭)
+                  const SizedBox(width: 44, height: 44),
                 ],
               ),
             ),
@@ -207,11 +195,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     return Row(
       children: [
         Expanded(
-          child: _statCard(
-            label: '모은 한 컷',
-            value: '$_photoCount장',
-            dark: true,
-          ),
+          child: _statCard(label: '모은 한 컷', value: '$_photoCount장', dark: true),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -249,7 +233,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: dark
-                  ? AppColors.gray300
+                  ? const Color(0xFF9BA29C) // 차콜 면 위 라벨(시안 값)
                   : AppColors.gray500,
             ),
           ),
@@ -263,7 +247,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
               fontSize: 22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
-              color: dark ? AppColors.neutral0 : AppColors.textPrimary,
+              color: dark ? AppColors.lime : AppColors.textPrimary,
             ),
           ),
         ],
@@ -314,70 +298,87 @@ class _GalleryScreenState extends State<GalleryScreen> {
   }
 
   Widget _photoCell(_Photo p) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.network(
-            p.url,
-            fit: BoxFit.cover,
-            // 로딩 중: 소프트 그레이 면
-            loadingBuilder: (ctx, child, progress) {
-              if (progress == null) return child;
-              return Container(color: AppColors.surfaceSoft);
-            },
-            // 실패: 사진 없음 아이콘
-            errorBuilder: (ctx, err, stack) => Container(
-              color: AppColors.surfaceSoft,
-              alignment: Alignment.center,
-              child: const Icon(
-                TablerIcons.photoOff,
-                size: 22,
-                color: AppColors.gray400,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              ShotDetailScreen(activity: p.activity, imageUrl: p.url),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              p.url,
+              fit: BoxFit.cover,
+              // 원본은 폰 카메라 사진이라 무겁다. 그리드 칸 크기로만 디코딩해
+              // 메모리와 표시 지연을 줄인다.
+              cacheWidth: 360,
+              // 로딩 중: 소프트 그레이 면 + 작은 표시(빈 칸으로 오해되지 않게)
+              loadingBuilder: (ctx, child, progress) {
+                if (progress == null) return child;
+                return Container(
+                  color: AppColors.surfaceSoft,
+                  alignment: Alignment.center,
+                  child: const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.gray300,
+                    ),
+                  ),
+                );
+              },
+              // 실패: 사진 없음 아이콘
+              errorBuilder: (ctx, err, stack) => Container(
+                color: AppColors.surfaceSoft,
+                alignment: Alignment.center,
+                child: const Icon(
+                  TablerIcons.photoOff,
+                  size: 22,
+                  color: AppColors.gray400,
+                ),
               ),
             ),
-          ),
-          if (p.showWeight)
-            Positioned(
-              left: 6,
-              bottom: 6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.ink.withValues(alpha: 0.82),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  _weightLabel(p.weightGrams),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+            if (p.showWeight)
+              Positioned(
+                left: 6,
+                bottom: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.ink.withValues(alpha: 0.82),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    _weightLabel(p.weightGrams),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-
-  // 달력 버튼 — 월별 이동은 아직 미구현이라 안내만 (데이터 지어내지 않음)
-  void _onCalendar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('월별 보기는 준비 중이에요')),
     );
   }
 
   // 인증샷 추가 — 활동 단위로만 첨부 가능(활동 상세)해서 여기선 안내만
   void _onAddPhoto() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('인증샷은 활동 상세에서 추가할 수 있어요')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('인증샷은 활동 상세에서 추가할 수 있어요')));
   }
 
   // 누적/개별 수거량 — 1000g 이상은 kg, 미만은 g
@@ -435,11 +436,7 @@ class _MonthAccum {
     // 올해면 'N월', 지난 해면 'yyyy년 N월'
     final now = DateTime.now();
     final label = year == now.year ? '$month월' : '$year년 $month월';
-    return _MonthGroup(
-      key: year * 100 + month,
-      label: label,
-      photos: photos,
-    );
+    return _MonthGroup(key: year * 100 + month, label: label, photos: photos);
   }
 }
 
@@ -458,11 +455,13 @@ class _MonthGroup {
 
 // 인증샷 한 장
 class _Photo {
+  final Activity activity; // 한 컷 상세에서 장소·시각·수거량을 읽는다
   final String url;
   final int weightGrams; // 이 사진이 속한 활동의 수거량
   final bool showWeight; // 대표 컷에만 수거량 칩 표시
 
   const _Photo({
+    required this.activity,
     required this.url,
     required this.weightGrams,
     required this.showWeight,

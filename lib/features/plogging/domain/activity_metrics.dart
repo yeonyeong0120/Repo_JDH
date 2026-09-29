@@ -79,11 +79,16 @@ class ActivityMetrics {
   }
 
   /// 소요 시간(초) → "분:초" 문자열 (예: 1830초 → "30:30")
+  /// '1시간 20분' / '38분' / '1분 31초' — 콜론 표기는 1:31 이 1시간 31분으로
+  /// 읽히는 문제가 있어 단위를 붙인다.
   static String durationLabel(int durationSeconds) {
-    if (durationSeconds <= 0) return '0:00';
-    final m = durationSeconds ~/ 60;
+    if (durationSeconds <= 0) return '0초';
+    final h = durationSeconds ~/ 3600;
+    final m = (durationSeconds % 3600) ~/ 60;
     final s = durationSeconds % 60;
-    return '$m:${s.toString().padLeft(2, '0')}';
+    if (h > 0) return m > 0 ? '$h시간 $m분' : '$h시간';
+    if (m > 0) return s > 0 ? '$m분 $s초' : '$m분';
+    return '$s초';
   }
 
   /// 무게 라벨 — g 이 1000 넘으면 kg 으로 (예: 295 → "295 g", 1300 → "1.3 kg")

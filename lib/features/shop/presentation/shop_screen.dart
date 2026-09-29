@@ -3,6 +3,7 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/features/shop/domain/shop_item.dart';
 import 'package:repo_jdh/features/shop/data/shop_service.dart';
+import 'package:repo_jdh/features/shop/data/point_history_service.dart';
 import 'package:repo_jdh/features/shop/presentation/coupon_list_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/product_detail_screen.dart';
 
@@ -19,7 +20,9 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   int _index = 0; // 현재 카테고리 인덱스
   int _points = 0;
-  int _couponCount = 0; // 교환 가능 쿠폰 수 (잔액 카드 서브텍스트)
+  // 잔액 카드 서브텍스트 — 지금 포인트로 바꿀 수 있는 상품 수와 이번 달 적립
+  int _exchangeable = 0;
+  int? _monthEarned;
   bool _loading = true;
 
   @override
@@ -30,23 +33,24 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _loadPoints() async {
     int p = 0;
-    int coupons = 0;
     try {
       p = await ShopService.myPoints();
-    } catch (_) {
-      // 실패 시 0
-    }
-    try {
-      coupons = (await ShopService.myCoupons()).where((c) => c.usable).length;
     } catch (_) {
       // 실패 시 0
     }
     if (!mounted) return;
     setState(() {
       _points = p;
-      _couponCount = coupons;
+      _exchangeable =
+          ShopService.catalog.where((i) => i.price <= p).length;
       _loading = false;
     });
+    try {
+      final earned = await PointHistoryService.earnedThisMonth();
+      if (mounted) setState(() => _monthEarned = earned);
+    } catch (_) {
+      // 실패 시 적립 문구를 빼고 교환 가능 개수만 보여준다
+    }
   }
 
   Future<void> _openCoupons() async {
@@ -198,7 +202,9 @@ class _ShopScreenState extends State<ShopScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '교환 가능 $_couponCount개',
+                  _monthEarned == null
+                      ? '교환 가능 $_exchangeable개'
+                      : '이번 달 +${_format(_monthEarned!)}P · 교환 가능 $_exchangeable개',
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -264,10 +270,12 @@ class _ShopScreenState extends State<ShopScreen> {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 18,
-        mainAxisExtent: 196,
+        crossAxisCount: 3,
+        // 카드끼리 붙어 보이지 않게 좌우·위아래 여백을 넉넉히
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 26,
+        // 사진 + 이름 + 가격 (글씨 배율 상향분 반영)
+        mainAxisExtent: 208,
       ),
       itemCount: items.length,
       // 목업처럼 첫 카드에만 '인기' 뱃지 (상품 데이터에 인기 필드가 없어 위치로 표시)
@@ -285,7 +293,7 @@ class _ShopScreenState extends State<ShopScreen> {
           // 라운드 상품 이미지 + 좌상단 '인기' 뱃지
           Stack(
             children: [
-              _thumb(item, 120),
+              _thumb(item, 122),
               if (popular)
                 Positioned(
                   left: 10,
@@ -371,28 +379,32 @@ class _ShopScreenState extends State<ShopScreen> {
         height: height,
         width: double.infinity,
         color: AppColors.surfaceSoft,
-        child: (url == null || url.isEmpty)
-            ? placeholder()
-            : Image.network(
+        child: (url != null && url.isNotEmpty)
+            ? Image.network(
                 url,
                 height: height,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => placeholder(),
-              ),
+              )
+            // 실제 상품 사진이 없어 넣어둔 목업 사진
+            : (item.imageAsset == null
+                  ? placeholder()
+                  : Image.asset(
+                      item.imageAsset!,
+                      height: height,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => placeholder(),
+                    )),
       ),
     );
   }
 
-  // ───────────────── 상품 상세로 이동 (목업 상품 카드 → 상세) ─────────────────
-  // 상세 화면에서 교환 로직(ShopService.exchange)을 그대로 수행한다.
-  // 복귀 시 포인트/쿠폰 수를 다시 불러와 잔액 카드를 갱신한다.
+  // ───────────────── 상품 상세 팝업 (상품 카드 → 가운데 팝업) ─────────────────
+  // 팝업 안에서 교환 로직(ShopService.exchange)을 그대로 수행한다.
+  // 닫히면 포인트를 다시 불러와 잔액 카드를 갱신한다.
   Future<void> _openDetail(ShopItem item, bool popular) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => ProductDetailScreen(item: item, popular: popular),
-      ),
-    );
+    await showProductDialog(context, item: item, popular: popular);
     _loadPoints();
   }
 

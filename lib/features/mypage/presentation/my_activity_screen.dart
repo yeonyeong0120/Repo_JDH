@@ -5,14 +5,12 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
-import 'package:repo_jdh/core/widgets/badge_medal.dart';
 import 'package:repo_jdh/core/widgets/route_thumbnail.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_detail_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/activity_list_screen.dart';
 import 'package:repo_jdh/features/mypage/presentation/quest_list_screen.dart';
-import 'package:repo_jdh/features/mypage/presentation/frequent_courses_screen.dart';
-import 'package:repo_jdh/features/mypage/presentation/gallery_screen.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/mypage/data/event_challenge_repository.dart';
 import 'package:repo_jdh/features/mypage/presentation/badge_dialog.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/plogging/data/activity_service.dart';
@@ -83,7 +81,8 @@ class _MyActivityScreenState extends State<MyActivityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      // 시안: 화면 배경은 흰색, 카드 면은 #F7F9F8
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -352,7 +351,22 @@ class _RecordsTabState extends State<_RecordsTab> {
       // 실패 시 빈 목록
     }
     if (!mounted) return;
-    final list = <_Quest>[];
+    final list = <_Quest>[
+      // 기간 한정 이벤트가 먼저 (시안: 라임 강조)
+      for (final e in EventChallengeRepository.active())
+        if (!e.done)
+          _Quest(
+            e.title,
+            e.current,
+            e.total,
+            e.icon,
+            // 타일은 라임, 진행바는 밝은 라임이 트랙과 안 갈려 진한 라임으로
+            AppColors.limeDeep,
+            e.points,
+            false,
+            event: true,
+          ),
+    ];
     for (final b in kBadges) {
       final (cur, total) = BadgeService.progressOf(b, stats);
       if (cur >= total) continue; // 완료된 건 제외
@@ -379,7 +393,7 @@ class _RecordsTabState extends State<_RecordsTab> {
     if (id.startsWith('weight') ||
         id.startsWith('plastic') ||
         id == 'first_verify') {
-      return AppColors.green600;
+      return AppColors.dataCollect;
     }
     if (id.startsWith('group') || id.startsWith('share')) {
       return AppColors.dataGroup;
@@ -394,7 +408,7 @@ class _RecordsTabState extends State<_RecordsTab> {
         22,
         18,
         22,
-        MediaQueryData.fromView(View.of(context)).padding.bottom + 64,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 96,
       ),
       children: [
         _sectionHeader(
@@ -407,25 +421,6 @@ class _RecordsTabState extends State<_RecordsTab> {
         const SizedBox(height: 4),
         // ── 4가지 상태 처리: 로딩 / 에러 / 빈 기록 / 데이터 ──
         ..._buildRecordsSection(context),
-        const SizedBox(height: 20),
-        // 활동 기록에서 파생되는 모음 화면 바로가기 (코스·인증샷)
-        _shortcutRow(
-          icon: TablerIcons.route,
-          label: '자주 가는 코스',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const FrequentCoursesScreen()),
-          ),
-        ),
-        const SizedBox(height: 10),
-        _shortcutRow(
-          icon: TablerIcons.photo,
-          label: '인증샷 모음집',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const GalleryScreen()),
-          ),
-        ),
         const SizedBox(height: 26),
         _sectionHeader(
           '진행 중인 챌린지',
@@ -517,55 +512,6 @@ class _RecordsTabState extends State<_RecordsTab> {
     );
   }
 
-  // 소프트 카드 바로가기 행 — 아이콘 타일 + 라벨 + 셰브론
-  Widget _shortcutRow({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: AppColors.ink, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const Icon(
-              TablerIcons.chevronRight,
-              size: 19,
-              color: AppColors.gray400,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // 목업: 경로 썸네일(58) + 장소 + 날짜·거리·시간 + 수거량 (카드 아님, 행)
   Widget _activityCard(BuildContext context, _Activity a) {
     final end = a.startedAt.add(Duration(seconds: a.durationSeconds));
@@ -590,6 +536,8 @@ class _RecordsTabState extends State<_RecordsTab> {
             imageUrls: a.imageUrls,
             activityId: a.id,
             path: a.path,
+            // 사진별 촬영 시각이 없어 활동이 끝난 시각으로 대신한다
+            shotAtLabel: '${end.month}월 ${end.day}일 ${_ampmTime(end)}',
           ),
         ),
       ),
@@ -681,7 +629,7 @@ class _RecordsTabState extends State<_RecordsTab> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -691,12 +639,16 @@ class _RecordsTabState extends State<_RecordsTab> {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: q.color.withValues(alpha: 0.14),
+              color: q.event ? AppColors.lime : q.color.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(14),
             ),
             child: q.isCollect
                 ? TrashBagIcon(size: 20, color: q.color)
-                : Icon(q.icon, color: q.color, size: 20),
+                : Icon(
+                    q.icon,
+                    color: q.event ? AppColors.limeOn : q.color,
+                    size: 20,
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -717,11 +669,18 @@ class _RecordsTabState extends State<_RecordsTab> {
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 6,
-                    backgroundColor: AppColors.line100,
-                    color: q.color,
+                  child: Container(
+                    height: 6,
+                    // 자식(채워진 부분) 너비로 줄어들면 트랙이 사라진다
+                    width: double.infinity,
+                    color: const Color(0xFFE7EAE8),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progress,
+                      child: Container(
+                        decoration: BoxDecoration(color: q.color),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -777,7 +736,7 @@ class _BadgesTabState extends State<_BadgesTab> {
         22,
         18,
         22,
-        MediaQueryData.fromView(View.of(context)).padding.bottom + 64,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 96,
       ),
       children: [
         // 목업: '전체 뱃지' 마이크로 라벨 + 획득/전체 카운트
@@ -822,16 +781,18 @@ class _BadgesTabState extends State<_BadgesTab> {
         final be = BadgeRepo.isEarned(b.id) ? 0 : 1;
         return ae.compareTo(be);
       });
-    return GridView.count(
-      crossAxisCount: 3,
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 0.82,
-      children: [
-        for (final b in list) _BadgeTile(badge: b, stats: _stats),
-      ],
+      itemCount: list.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 6,
+        // 내용 높이에 딱 맞춘 고정값 — 위아래 12 + 아트 82 + 간격 7 + 이름 2줄
+        mainAxisExtent: 158,
+      ),
+      itemBuilder: (_, i) => _BadgeTile(badge: list[i], stats: _stats),
     );
   }
 }
@@ -844,23 +805,17 @@ class _BadgeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final earned = BadgeRepo.isEarned(badge.id);
-    final color = badgeColor(badge);
-    final collect = usesTrashBagIcon(badge);
     // 상세 팝업 진행률용 (현재/목표)
-    final (cur, tot) = BadgeService.progressOf(badge, stats ?? const UserStats());
-
-    // 획득: 카테고리색 아이콘 / 미획득: 자물쇠(회색)
-    final Widget centerIcon = earned
-        ? (collect
-              ? TrashBagIcon(size: 22, color: color)
-              : Icon(badge.icon, color: color, size: 22))
-        : const Icon(TablerIcons.lock, color: AppColors.gray400, size: 20);
+    final (cur, tot) = BadgeService.progressOf(
+      badge,
+      stats ?? const UserStats(),
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => showBadgeDetail(context, badge, current: cur, total: tot),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
@@ -868,21 +823,36 @@ class _BadgeTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 메달 — 획득: 카테고리색 / 미획득: 솔리드 회색 + 자물쇠
-            BadgeMedal(
-              size: 46,
-              color: earned ? color : AppColors.gray300,
-              earned: true,
-              icon: centerIcon,
+            // 뱃지 아트 — 미획득은 같은 모양의 빈 판 + 자물쇠
+            SizedBox(
+              width: 78,
+              height: 82,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset(
+                    earned ? badge.artPath : badge.lockedArtPath,
+                    width: 78,
+                    height: 82,
+                    fit: BoxFit.contain,
+                  ),
+                  if (!earned)
+                    const Icon(
+                      TablerIcons.lock,
+                      size: 24,
+                      color: AppColors.gray350,
+                    ),
+                ],
+              ),
             ),
-            const SizedBox(height: 9),
+            const SizedBox(height: 7),
             Text(
               badge.name,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 13,
                 height: 1.35,
                 fontWeight: earned ? FontWeight.w700 : FontWeight.w600,
                 color: earned ? AppColors.textPrimary : AppColors.gray400,
@@ -949,10 +919,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
       weightKg: widget.weightKg,
     ).map((b) => _bucketToGData(b)).toList();
     _cumulative = _bucketToGData(
-      ActivityStats.cumulative(
-        acts,
-        weightKg: widget.weightKg,
-      ),
+      ActivityStats.cumulative(acts, weightKg: widget.weightKg),
     );
   }
 
@@ -972,7 +939,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     final cats = ActivityStats.categoryTotals(scoped)
       ..sort((a, b) => b.count.compareTo(a.count));
     return cats.map((c) {
-      final meta = _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
+      final meta =
+          _catMeta[c.category] ?? (c.category, AppColors.textSecondary);
       return _Segment(meta.$1, c.count, meta.$2);
     }).toList();
   }
@@ -988,6 +956,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
       b.bars,
       b.barLabels,
       b.peakIndex,
+      weightGrams: b.weightG,
     );
   }
 
@@ -1081,32 +1050,37 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
         20,
         10,
         20,
-        MediaQueryData.fromView(View.of(context)).padding.bottom + 64,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 96,
       ),
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  d.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _periodTitle(period),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.4,
+                      color: AppColors.gray500,
+                    ),
                   ),
-                ),
-                Text(
-                  d.range,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                  const SizedBox(height: 3),
+                  Text(
+                    _periodNote(period, d),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             // 누적은 기간 이동 없음
             if (!isCumulative)
@@ -1154,7 +1128,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
         ],
-        // 누적은 그래프가 없어 요약과 도넛이 붙으니 공백 추가
+        // 누적은 그래프가 없어 요약과 도넛이 붙으니 공백만 둔다
         if (isCumulative) const SizedBox(height: 12),
         _chartCard(
           '수거 종류',
@@ -1178,77 +1152,107 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
   }
 
   // 목업: 소프트 카드 안에 원형 아이콘 + 값 + 라벨 3개 (걸음수/칼로리/수거량)
+  // 상단 3분할 카드 — 걸음수·칼로리는 흰 카드, 수거량만 라임으로 강조
   Widget _topStats(_GData d) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          _topStatItem(TablerIcons.run, AppColors.dataSteps, '걸음수', d.steps),
-          _topStatItem(TablerIcons.flame, AppColors.dataCalorie, '칼로리', d.kcal),
-          _topStatItem(TablerIcons.trash, AppColors.dataCollect, '수거량', d.weight),
-        ],
+    final kg = (d.weightGrams / 1000).toStringAsFixed(1);
+    return Row(
+      children: [
+        _statCard(TablerIcons.walk, d.steps, '걸음수 · 보'),
+        const SizedBox(width: 10),
+        _statCard(TablerIcons.flame, d.kcal, '칼로리 · kcal'),
+        const SizedBox(width: 10),
+        _statCard(TablerIcons.trash, kg, '수거량 · kg', accent: true),
+      ],
+    );
+  }
+
+  Widget _statCard(
+    IconData icon,
+    String value,
+    String label, {
+    bool accent = false,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 11, 10, 11),
+        decoration: BoxDecoration(
+          color: accent ? AppColors.lime : AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: AppColors.ink),
+            const SizedBox(height: 7),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                  color: AppColors.ink,
+                ),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: accent ? AppColors.limeOn : AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _topStatItem(IconData icon, Color color, String label, String value) {
-    return Expanded(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.tint(color, 0.16),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 17, color: color),
-          ),
-          const SizedBox(width: 7),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.gray500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  String _periodTitle(int period) => switch (period) {
+    0 => '주간 수거량',
+    1 => '월간 수거량',
+    _ => '누적 수거량',
+  };
+
+  /// 시안의 '지난주보다 +38%' 자리.
+  /// 주간·월간은 바로 앞 기간과 비교하고, 누적은 '138일째 · 64회'처럼 보여준다.
+  String _periodNote(int period, _GData d) {
+    if (period == 2) {
+      final acts = widget.activities ?? const [];
+      if (acts.isEmpty) return d.range;
+      // 가입일은 이 화면에 없어 첫 활동일을 기준으로 센다
+      var first = acts.first.startedAt;
+      for (final a in acts) {
+        if (a.startedAt.isBefore(first)) first = a.startedAt;
+      }
+      final days = DateTime.now().difference(first).inDays + 1;
+      return '$days일째 · ${acts.length}회';
+    }
+    final list = period == 0 ? _weekly : _monthly;
+    final prevIndex = _offset + 1;
+    if (prevIndex >= list.length) return d.range; // 비교할 앞 기간이 없으면 기간 표기
+    final cur = d.weightGrams;
+    final prev = list[prevIndex].weightGrams;
+    final unit = period == 0 ? '지난주' : '지난달';
+    if (prev == 0) return cur == 0 ? d.range : '$unit엔 기록이 없었어요';
+    final delta = ((cur - prev) / prev * 100).round();
+    final sign = delta >= 0 ? '+' : '';
+    return '$unit보다 $sign$delta%';
   }
 
   Widget _chartCard(String title, Widget child, {String? note}) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
@@ -1263,8 +1267,11 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
               children: [
                 Text(title, style: AppType.title3),
                 const SizedBox(width: 6),
-                const Icon(TablerIcons.infoCircle, size: 15,
-                    color: AppColors.neutral400),
+                const Icon(
+                  TablerIcons.infoCircle,
+                  size: 15,
+                  color: AppColors.neutral400,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -1400,15 +1407,25 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
                 size: const Size(120, 120),
                 painter: _DonutPainter(segments, t),
               ),
+              // 시안: 값과 단위를 두 줄로
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '${segments.fold<int>(0, (a, s) => a + s.value)}개',
+                    '${segments.fold<int>(0, (a, s) => a + s.value)}',
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 22,
+                      height: 1.1,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const Text(
+                    '개',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.gray500,
                     ),
                   ),
                 ],
@@ -1446,7 +1463,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
             ),
           ),
           Text(
-            '${s.value}',
+            '${s.value}개',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -1517,7 +1534,7 @@ class _EmptyRecords extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(18),
         boxShadow: AppColors.cardShadow,
       ),
@@ -1561,7 +1578,11 @@ class _ErrorBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(TablerIcons.cloudOff, size: 44, color: AppColors.textSecondary),
+          const Icon(
+            TablerIcons.cloudOff,
+            size: 44,
+            color: AppColors.textSecondary,
+          ),
           const SizedBox(height: 12),
           const Text(
             '기록을 불러오지 못했어요',
@@ -1658,6 +1679,7 @@ class _Quest {
   final Color color;
   final int points; // 달성 시 지급 포인트
   final bool isCollect; // 수거량 계열 → 쓰레기봉투 아이콘
+  final bool event; // 기간 한정 이벤트 — 라임 타일로 강조
   const _Quest(
     this.title,
     this.current,
@@ -1665,8 +1687,9 @@ class _Quest {
     this.icon,
     this.color,
     this.points,
-    this.isCollect,
-  );
+    this.isCollect, {
+    this.event = false,
+  });
 }
 
 // 월간 주별 활동 꺾은선 차트
@@ -1844,6 +1867,7 @@ class _GData {
   final List<double> bars; // 0~1 비율 (누적은 빈 리스트)
   final List<String> barLabels;
   final int peakIndex;
+  final int weightGrams; // 목표 진행바 계산용 원본값
   const _GData(
     this.title,
     this.range,
@@ -1852,6 +1876,7 @@ class _GData {
     this.weight,
     this.bars,
     this.barLabels,
-    this.peakIndex,
-  );
+    this.peakIndex, {
+    this.weightGrams = 0,
+  });
 }

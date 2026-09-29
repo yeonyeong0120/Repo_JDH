@@ -7,6 +7,9 @@ import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/app_snackbar.dart';
 import 'package:repo_jdh/features/mypage/domain/profile_detail.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
+import 'package:repo_jdh/features/mypage/data/badge_service.dart';
+import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/community/data/group_service.dart';
 
 /// 프로필 조회 · 수정 (메뉴 → 프로필 카드 탭)
 /// 회원가입에서 받은 정보(성별·나이·키·몸무게·지역)를 여기서 수정한다.
@@ -26,10 +29,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _uploading = false;
   bool _saving = false;
 
+  // 읽기 전용 행에 쓰는 집계값. 로드 전에는 null이라 값을 지어내지 않는다.
+  int? _groupCount;
+  int? _badgeCount;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _loadCounts();
+  }
+
+  /// 가입한 그룹 수와 획득 뱃지 수 — 프로필 읽기 전용 행에 쓴다.
+  Future<void> _loadCounts() async {
+    // 한 사용자가 그룹 하나에만 속하는 구조라 0 또는 1이다.
+    try {
+      final joined = (await GroupService.myGroupId()) != null ? 1 : 0;
+      if (mounted) setState(() => _groupCount = joined);
+    } catch (_) {}
+    try {
+      await BadgeService.loadEarned();
+      if (mounted) {
+        setState(
+          () => _badgeCount = kBadges
+              .where((b) => BadgeRepo.isEarned(b.id))
+              .length,
+        );
+      }
+    } catch (_) {}
   }
 
   @override
@@ -416,7 +443,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 15.5,
                 fontWeight: FontWeight.w800,
-                color: value == null ? AppColors.gray400 : AppColors.textPrimary,
+                color: value == null
+                    ? AppColors.gray400
+                    : AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: 6),
@@ -431,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── 읽기 전용: 동네(수정 가능) / 접속 계정 / 가입일 ──
+  // ── 읽기 전용: 동네(수정 가능) / 가입일 / 가입한 그룹 / 획득 뱃지 ──
   Widget _readOnlySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,12 +471,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _p.region.isEmpty ? '미설정' : _p.region,
           onTap: _editRegion,
         ),
-        _roRow(
-          TablerIcons.userFilled,
-          '접속 계정',
-          _p.email.isEmpty ? '-' : _maskEmail(_p.email),
-        ),
         _roRow(TablerIcons.calendar, '가입일', _joinedDot),
+        _roRow(
+          TablerIcons.users,
+          '가입한 그룹',
+          _groupCount == null ? '' : '$_groupCount개',
+        ),
+        _roRow(
+          TablerIcons.award,
+          '획득 뱃지',
+          _badgeCount == null ? '' : '$_badgeCount개',
+        ),
       ],
     );
   }
@@ -510,18 +544,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final d = _p.joinedAt;
     if (d == null) return _p.joinedText;
     return '${d.year}. ${d.month}. ${d.day}.';
-  }
-
-  // kim****@gmail.com 형태로 로컬파트 일부 마스킹
-  String _maskEmail(String e) {
-    final at = e.indexOf('@');
-    if (at <= 0) return e;
-    final local = e.substring(0, at);
-    final domain = e.substring(at);
-    if (local.length <= 3) {
-      return '${local.characters.first}***$domain';
-    }
-    return '${local.substring(0, 3)}****$domain';
   }
 
   // ── 사진 변경 — 갤러리 또는 카메라 ──

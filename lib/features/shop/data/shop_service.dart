@@ -21,12 +21,22 @@ class ShopService {
       _userDoc()?.collection('coupons');
 
   // ───────────────────────── 상품 목록 ─────────────────────────
+  /// 쿠폰이 가리키는 상품의 목업 사진 (없으면 null)
+  static String? imageAssetOf(String itemId) {
+    for (final it in catalog) {
+      if (it.id == itemId) return it.imageAsset;
+    }
+    return null;
+  }
+
 
   /// TODO: Firestore products 컬렉션 또는 운영 도구로 옮기기
-  ///       imageUrl 은 상품 이미지가 준비되면 채우기
+  ///       imageAsset 은 실제 상품 사진이 없어 넣은 목업이다.
+  ///       사진이 준비되면 imageUrl 을 채우고 imageAsset 을 지운다.
   static const List<ShopItem> catalog = [
     ShopItem(
       id: 'eco_bag',
+      imageAsset: 'assets/shop/eco_bag.jpg',
       brand: '인천 에코',
       name: '지구 지킴이 에코백',
       price: 3000,
@@ -34,6 +44,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'tongs',
+      imageAsset: 'assets/shop/tongs.jpg',
       brand: '친환경 도구',
       name: '스테인리스 집게',
       price: 2500,
@@ -41,6 +52,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'bamboo_brush',
+      imageAsset: 'assets/shop/bamboo_brush.jpg',
       brand: '녹색 생활',
       name: '대나무 칫솔 4입',
       price: 1200,
@@ -48,6 +60,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'eco_bags_roll',
+      imageAsset: 'assets/shop/eco_bags_roll.jpg',
       brand: '지구를 돌아가는',
       name: '생분해 쓰레기봉투',
       price: 800,
@@ -55,6 +68,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'americano',
+      imageAsset: 'assets/shop/americano.jpg',
       brand: '카페',
       name: '아메리카노 1잔',
       price: 4500,
@@ -62,6 +76,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'cake',
+      imageAsset: 'assets/shop/cake.jpg',
       brand: '카페',
       name: '조각 케이크',
       price: 6000,
@@ -69,6 +84,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'burger_set',
+      imageAsset: 'assets/shop/burger_set.jpg',
       brand: '패스트푸드',
       name: '버거 세트',
       price: 7000,
@@ -76,6 +92,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'cvs_3000',
+      imageAsset: 'assets/shop/cvs_3000.jpg',
       brand: '편의점',
       name: '편의점 금액권 3,000원',
       price: 3000,
@@ -83,6 +100,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'mart_5000',
+      imageAsset: 'assets/shop/mart_5000.jpg',
       brand: '마트',
       name: '마트 금액권 5,000원',
       price: 5000,
@@ -90,6 +108,7 @@ class ShopService {
     ),
     ShopItem(
       id: 'culture_10000',
+      imageAsset: 'assets/shop/culture_10000.jpg',
       brand: '문화상품권',
       name: '문화상품권 10,000원',
       price: 10000,

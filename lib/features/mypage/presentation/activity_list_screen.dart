@@ -132,8 +132,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   }
 
   // 활동 소요 시간 — '38분' (분 단위)
-  String _minLabel(int durationSeconds) =>
-      '${(durationSeconds / 60).round()}분';
+  String _minLabel(int durationSeconds) => '${(durationSeconds / 60).round()}분';
 
   // 수거 개수 합계 — '15개'
   int _itemCount(Map<String, int> counts) =>
@@ -217,9 +216,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                       IconButton(
                         tooltip: wheel ? '달력으로' : '휠로 입력',
                         icon: Icon(
-                          wheel
-                              ? TablerIcons.calendar
-                              : TablerIcons.pencil,
+                          wheel ? TablerIcons.calendar : TablerIcons.pencil,
                           size: 20,
                           color: AppColors.textSecondary,
                         ),
@@ -530,6 +527,10 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
             imageUrls: a.imageUrls,
             activityId: a.id,
             path: a.path,
+            // 사진별 촬영 시각이 없어 활동이 끝난 시각으로 대신한다
+            shotAtLabel:
+                '${a.date.month}월 ${a.date.day}일 '
+                '${_ampmTime(a.date.add(Duration(seconds: a.durationSeconds)))}',
           ),
         ),
       ),

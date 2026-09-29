@@ -20,6 +20,22 @@ class LicensesScreen extends StatelessWidget {
     _Credit('종이 아이콘', 'TODO: 제작자명', 'Flaticon'),
     _Credit('유리병 아이콘', 'TODO: 제작자명', 'Flaticon'),
     _Credit('일반쓰레기 아이콘', 'TODO: 제작자명', 'Flaticon'),
+    // 뱃지 아트의 일러스트 원본 — 표기 의무가 있는 항목이다
+    _Credit('뱃지 일러스트 (Fluent Emoji)', 'Microsoft Corporation', 'MIT License'),
+  ];
+
+  // ── 상품 목업 사진 (실제 상품 사진이 준비되면 교체) ──
+  static const List<_Credit> _photos = [
+    _Credit('A cotton bag with runes - Baumwolltasc', 'Runologe', 'CC BY-SA 4.0 · Wikimedia Commons'),
+    _Credit('Grilling-tongs', 'Sac86738 at English Wikipedia', 'Public domain · Wikimedia Commons'),
+    _Credit('Humble Brush', 'Jeangagnon', 'CC BY-SA 4.0 · Wikimedia Commons'),
+    _Credit('Blue garbage bag', 'Wiki Farazi', 'Public domain · Wikimedia Commons'),
+    _Credit('A cup of Americano in Lano Coffee (Pal', 'Firzafp', 'CC BY-SA 4.0 · Wikimedia Commons'),
+    _Credit('Piece of chocolate cake on a white pla', 'Daria YakovlevaMinor edits made by Subsi', 'CC0 · Wikimedia Commons'),
+    _Credit('Homemade hamburger with french fries i', 'Horacio Cambeiro', 'CC BY-SA 3.0 · Wikimedia Commons'),
+    _Credit('Interior of Morrisons Daily convenienc', 'Mutney', 'CC BY 4.0 · Wikimedia Commons'),
+    _Credit('Shopping Cart Supermarket', 'safaritravelplus', 'CC0 · Wikimedia Commons'),
+    _Credit('Books & Books, independent bookstore i', 'Alequihdez', 'CC BY-SA 4.0 · Wikimedia Commons'),
   ];
 
   // ── 폰트 ──
@@ -85,6 +101,7 @@ class LicensesScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   _section('아이콘', _icons),
                   const SizedBox(height: 16),
+                  _section('상품 사진', _photos),
                   _section('폰트', _fonts),
                   const SizedBox(height: 16),
                   _section('지도 및 서비스', _services),

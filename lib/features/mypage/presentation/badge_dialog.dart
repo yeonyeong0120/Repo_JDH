@@ -3,8 +3,6 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/theme/app_spacing.dart';
 import 'package:repo_jdh/core/theme/app_typography.dart';
-import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
-import 'package:repo_jdh/core/widgets/badge_medal.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 /// ACT-08 뱃지 상세 모달
@@ -20,7 +18,6 @@ Future<void> showBadgeDetail(
 }) {
   final earned = BadgeRepo.isEarned(badge.id);
   final date = BadgeRepo.dateOf(badge.id);
-  final color = badgeColor(badge);
   final xp = badgeXp(badge);
   final tot = total <= 0 ? 1 : total;
   final progress = (current / tot).clamp(0.0, 1.0);
@@ -42,63 +39,69 @@ Future<void> showBadgeDetail(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // 상단: 뱃지 아이콘 + 이름/조건 (X는 아래 Stack 오버레이 — 레이아웃 안 밀림)
-            Row(
-              children: [
-                _BadgeMedal(
-                  badge: badge,
-                  earned: earned,
-                  color: color,
-                  progress: progress,
-                  pct: pct,
-                ),
-                Gap.w16,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(badge.name, style: AppType.title2),
-                      Gap.h4,
-                      Text(
-                        badge.condition,
-                        style: AppType.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                // 상단: 뱃지 아이콘 + 이름/조건 (X는 아래 Stack 오버레이 — 레이아웃 안 밀림)
+                Row(
+                  children: [
+                    _BadgeMedal(badge: badge, earned: earned, pct: pct),
+                    Gap.w16,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(badge.name, style: AppType.title2),
+                          Gap.h4,
+                          Text(
+                            badge.condition,
+                            style: AppType.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            Gap.h20,
-            const Divider(height: 1, color: AppColors.border),
-            Gap.h16,
-            if (earned) ...[
-              _rewardLabel('받은 보상'),
-              Gap.h12,
-              _valueRow('받은 포인트', '${badge.points} P',
-                  valueColor: AppColors.textBrandOnLight),
-              Gap.h12,
-              _valueRow('받은 경험치', '$xp XP',
-                  valueColor: AppColors.textBrandOnLight),
-              if (date != null && date.isNotEmpty) ...[
-                Gap.h12,
-                _valueRow('받은 날', _prettyDate(date)),
-              ],
-            ] else ...[
-              _valueRow(
-                '${_comma(remain)} 남았어요',
-                '${_comma(current)} / ${_comma(tot)}',
-              ),
-              Gap.h16,
-              _rewardLabel('달성하면 받아요'),
-              Gap.h12,
-              _valueRow('포인트', '${badge.points} P',
-                  valueColor: AppColors.textBrandOnLight),
-              Gap.h12,
-              _valueRow('경험치', '$xp XP',
-                  valueColor: AppColors.textBrandOnLight),
-            ],
+                Gap.h20,
+                const Divider(height: 1, color: AppColors.border),
+                Gap.h16,
+                if (earned) ...[
+                  _rewardLabel('받은 보상'),
+                  Gap.h12,
+                  _valueRow(
+                    '받은 포인트',
+                    '${badge.points} P',
+                    valueColor: AppColors.textBrandOnLight,
+                  ),
+                  Gap.h12,
+                  _valueRow(
+                    '받은 경험치',
+                    '$xp XP',
+                    valueColor: AppColors.textBrandOnLight,
+                  ),
+                  if (date != null && date.isNotEmpty) ...[
+                    Gap.h12,
+                    _valueRow('받은 날', _prettyDate(date)),
+                  ],
+                ] else ...[
+                  _valueRow(
+                    '${_comma(remain)} 남았어요',
+                    '${_comma(current)} / ${_comma(tot)}',
+                  ),
+                  Gap.h16,
+                  _rewardLabel('달성하면 받아요'),
+                  Gap.h12,
+                  _valueRow(
+                    '포인트',
+                    '${badge.points} P',
+                    valueColor: AppColors.textBrandOnLight,
+                  ),
+                  Gap.h12,
+                  _valueRow(
+                    '경험치',
+                    '$xp XP',
+                    valueColor: AppColors.textBrandOnLight,
+                  ),
+                ],
               ],
             ),
             Positioned(
@@ -109,8 +112,11 @@ Future<void> showBadgeDetail(
                 onTap: () => Navigator.pop(ctx),
                 child: const Padding(
                   padding: EdgeInsets.all(8),
-                  child: Icon(TablerIcons.x, size: 22,
-                      color: AppColors.textSecondary),
+                  child: Icon(
+                    TablerIcons.x,
+                    size: 22,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ),
@@ -125,46 +131,44 @@ Future<void> showBadgeDetail(
 class _BadgeMedal extends StatelessWidget {
   final BadgeData badge;
   final bool earned;
-  final Color color;
-  final double progress;
   final int pct;
   const _BadgeMedal({
     required this.badge,
     required this.earned,
-    required this.color,
-    required this.progress,
     required this.pct,
   });
 
-  // 수거 봉지 뱃지만 쓰레기봉투 아이콘으로
-  Widget _icon(Color c, double size) => usesTrashBagIcon(badge)
-      ? TrashBagIcon(size: size, color: c)
-      : Icon(badge.icon, size: size, color: c);
-
   @override
   Widget build(BuildContext context) {
-    const d = 72.0;
-    // 메달 본체는 그리드 타일과 같은 도형(BadgeMedal). 획득 체크·달성률 알약만 겹친다.
+    const d = 104.0;
+    const h = 110.0;
+    // 시안 아트를 그대로 쓰고, 획득 체크·달성률 알약만 위에 겹친다.
     return SizedBox(
       width: d,
-      height: BadgeMedal.heightFor(d),
+      height: h,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          BadgeMedal(
-            size: d,
-            color: color,
-            earned: earned,
-            progress: progress,
-            icon: _icon(
-              earned ? color : AppColors.neutral400,
-              earned ? 32 : 28,
-            ),
+          Image.asset(
+            earned ? badge.artPath : badge.lockedArtPath,
+            width: d,
+            height: h,
+            fit: BoxFit.contain,
           ),
+          if (!earned)
+            const Positioned.fill(
+              child: Center(
+                child: Icon(
+                  TablerIcons.lock,
+                  size: 31,
+                  color: AppColors.gray350,
+                ),
+              ),
+            ),
           if (earned)
             Positioned(
-              right: 0,
-              top: d - 24,
+              right: 8,
+              top: h - 40,
               child: Container(
                 width: 24,
                 height: 24,
@@ -174,14 +178,17 @@ class _BadgeMedal extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.surface, width: 2),
                 ),
-                child: const Icon(TablerIcons.check, size: 14,
-                    color: AppColors.textOnBrand),
+                child: const Icon(
+                  TablerIcons.check,
+                  size: 14,
+                  color: AppColors.textOnBrand,
+                ),
               ),
             )
           else
             Positioned(
-              right: -6,
-              top: d - 20,
+              right: 2,
+              top: h - 36,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
@@ -304,9 +311,7 @@ class BadgeRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant BadgeRingPainter old) =>
-      old.progress != progress ||
-      old.color != color ||
-      old.stroke != stroke;
+      old.progress != progress || old.color != color || old.stroke != stroke;
 }
 
 // 상단 중앙에서 시작해 시계방향으로 도는 둥근 네모 경로.
@@ -354,9 +359,7 @@ Future<void> showBadgeEarned(
           children: [
             Text(
               badges.length == 1 ? '뱃지 획득!' : '뱃지 ${badges.length}개 획득!',
-              style: AppType.title1.copyWith(
-                color: AppColors.textBrandOnLight,
-              ),
+              style: AppType.title1.copyWith(color: AppColors.textBrandOnLight),
               textAlign: TextAlign.center,
             ),
             Gap.h8,
@@ -418,9 +421,7 @@ Future<void> showBadgeEarned(
               Gap.h12,
               Text(
                 '+$more개 더',
-                style: AppType.caption.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                style: AppType.caption.copyWith(color: AppColors.textSecondary),
               ),
             ],
             Gap.h20,

@@ -3,6 +3,7 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
 import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
+import 'package:repo_jdh/features/mypage/data/event_challenge_repository.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 
 /// PLOGGO - 챌린지 목록 (ACT-09)
@@ -39,12 +40,35 @@ class _QuestListScreenState extends State<QuestListScreen> {
     }
     if (!mounted) return;
     setState(() {
-      _quests = kBadges.map((b) {
-        final (cur, total) = BadgeService.progressOf(b, stats);
-        // 챌린지 아이콘 = 연계 뱃지 아이콘. 수거 계열은 쓰레기봉투 아이콘.
-        final collect = usesTrashBagIcon(b);
-        return _Q(b.quest, cur, total, b.icon, _colorOf(b), b.points, collect);
-      }).toList();
+      _quests = [
+        // 기간 한정 이벤트가 먼저 (시안: 라임 강조)
+        for (final e in EventChallengeRepository.active())
+          _Q(
+            e.title,
+            e.current,
+            e.total,
+            e.icon,
+            // 타일은 라임, 진행바는 밝은 라임이 트랙과 안 갈려 진한 라임으로
+            AppColors.limeDeep,
+            e.points,
+            false,
+            event: true,
+          ),
+        ...kBadges.map((b) {
+          final (cur, total) = BadgeService.progressOf(b, stats);
+          // 챌린지 아이콘 = 연계 뱃지 아이콘. 수거 계열은 쓰레기봉투 아이콘.
+          final collect = usesTrashBagIcon(b);
+          return _Q(
+            b.quest,
+            cur,
+            total,
+            b.icon,
+            _colorOf(b),
+            b.points,
+            collect,
+          );
+        }),
+      ];
       _loading = false;
     });
   }
@@ -61,7 +85,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
     if (id.startsWith('weight') ||
         id.startsWith('plastic') ||
         id == 'first_verify') {
-      return AppColors.green600; // 초록 (수거)
+      return AppColors.dataCollect; // 초록 (수거)
     }
     if (id.startsWith('group') || id.startsWith('share')) {
       return AppColors.dataGroup; // 주황
@@ -75,13 +99,13 @@ class _QuestListScreenState extends State<QuestListScreen> {
     super.dispose();
   }
 
-  // 탭별 목록 — 진행 중(미달성) / 달성. 진행률 오름차순.
+  // 탭별 목록 — 진행 중(미달성) / 달성. 진행률 내림차순(시안: 곧 끝나는 것이 위).
   List<_Q> _listFor(int tab) {
     final list = _quests.where((q) {
       if (tab == 0) return q.current < q.total; // 진행 중(미착수 포함)
       return q.current >= q.total; // 달성
     }).toList();
-    list.sort((a, b) => (a.current / a.total).compareTo(b.current / b.total));
+    list.sort((a, b) => (b.current / b.total).compareTo(a.current / a.total));
     return list;
   }
 
@@ -124,7 +148,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      // 시안: 화면 배경은 흰색, 카드 면은 #F7F9F8
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -150,7 +175,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
                   const Text(
                     '챌린지',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
@@ -203,8 +228,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 4,
+            height: 4,
             decoration: BoxDecoration(
               color: on ? AppColors.ink : AppColors.gray300,
               shape: BoxShape.circle,
@@ -247,8 +272,11 @@ class _QuestListScreenState extends State<QuestListScreen> {
     final done = q.done;
     final progress = (q.current / q.total).clamp(0.0, 1.0);
 
-    // 아이콘: 달성은 라임 위 잉크, 진행 중은 카테고리 색
-    final Color iconFg = done ? AppColors.limeOn : q.color;
+    // 아이콘: 이벤트는 라임 위 잉크, 달성은 카테고리 색 위 흰색,
+    // 진행 중은 옅은 카테고리 면 위 카테고리 색
+    final Color iconFg = q.event
+        ? AppColors.limeOn
+        : (done ? Colors.white : q.color);
     final Widget iconWidget = q.isCollect
         ? TrashBagIcon(size: 20, color: iconFg)
         : Icon(q.icon, color: iconFg, size: 20);
@@ -256,7 +284,7 @@ class _QuestListScreenState extends State<QuestListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -266,7 +294,9 @@ class _QuestListScreenState extends State<QuestListScreen> {
             height: 42,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: done ? AppColors.lime : q.color.withValues(alpha: 0.14),
+              color: q.event
+                  ? AppColors.lime
+                  : (done ? q.color : q.color.withValues(alpha: 0.14)),
               borderRadius: BorderRadius.circular(15),
             ),
             child: iconWidget,
@@ -300,11 +330,18 @@ class _QuestListScreenState extends State<QuestListScreen> {
                 else
                   ClipRRect(
                     borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: AppColors.line100,
-                      color: q.color,
+                    child: Container(
+                      height: 6,
+                      // 자식(채워진 부분) 너비로 줄어들면 트랙이 사라진다
+                      width: double.infinity,
+                      color: const Color(0xFFE7EAE8),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: progress,
+                        child: Container(
+                          decoration: BoxDecoration(color: q.color),
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -340,6 +377,7 @@ class _Q {
   final Color color;
   final int points;
   final bool isCollect; // 수거량 계열 → 쓰레기봉투 아이콘
+  final bool event; // 기간 한정 이벤트 — 라임 타일로 강조
   const _Q(
     this.title,
     this.current,
@@ -347,8 +385,9 @@ class _Q {
     this.icon,
     this.color,
     this.points,
-    this.isCollect,
-  );
+    this.isCollect, {
+    this.event = false,
+  });
 
   bool get done => current >= total;
 }

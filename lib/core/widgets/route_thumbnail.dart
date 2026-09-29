@@ -37,21 +37,21 @@ class RoutePainter extends CustomPainter {
       Paint()
         ..color = AppColors.routeLine
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
+        ..strokeWidth = 2.4
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
-    canvas.drawCircle(points.first, 4.5, Paint()..color = AppColors.green700);
-    canvas.drawCircle(points.last, 5, Paint()..color = Colors.white);
-    canvas.drawCircle(points.last, 3, Paint()..color = AppColors.green600);
+    canvas.drawCircle(points.first, 3, Paint()..color = AppColors.green700);
+    canvas.drawCircle(points.last, 3.6, Paint()..color = Colors.white);
+    canvas.drawCircle(points.last, 2.2, Paint()..color = AppColors.green600);
   }
 
   void _drawGrid(Canvas canvas, Size size) {
     final w = size.width, h = size.height;
     final grid = Paint()
       ..color = const Color(0xFFF4F8F5)
-      ..strokeWidth = 7;
+      ..strokeWidth = 5;
     canvas.drawLine(Offset(0, h * 0.5), Offset(w, h * 0.5), grid);
     canvas.drawLine(Offset(w * 0.5, 0), Offset(w * 0.5, h), grid);
   }

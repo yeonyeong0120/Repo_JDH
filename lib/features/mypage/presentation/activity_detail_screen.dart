@@ -37,6 +37,10 @@ class ActivityDetailScreen extends StatelessWidget {
   /// GPS 경로 ([{lat, lng, t}, ...]). 없으면 헤더에 '경로 없음' 표시.
   final List<Map<String, dynamic>> path;
 
+  /// 인증샷 촬영 시각 라벨.
+  /// 목업: 사진별 촬영 시각이 서버에 없어 활동이 끝난 시각을 대신 쓴다.
+  final String shotAtLabel;
+
   const ActivityDetailScreen({
     super.key,
     required this.dateTime,
@@ -52,6 +56,7 @@ class ActivityDetailScreen extends StatelessWidget {
     this.rewardXp = 20,
     this.activityId = '',
     this.path = const [],
+    this.shotAtLabel = '',
   });
 
   static String _comma(int n) {
@@ -122,7 +127,8 @@ class ActivityDetailScreen extends StatelessWidget {
                   22,
                   8,
                   22,
-                  MediaQueryData.fromView(View.of(context)).padding.bottom + 100,
+                  MediaQueryData.fromView(View.of(context)).padding.bottom +
+                      100,
                 ),
                 children: [
                   // 날짜(헤드라인) + 시간·장소
@@ -173,7 +179,11 @@ class ActivityDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   // 인증샷 (없으면 촬영 추가)
-                  _PhotoSection(activityId: activityId, initialUrls: imageUrls),
+                  _PhotoSection(
+                    activityId: activityId,
+                    initialUrls: imageUrls,
+                    shotAt: shotAtLabel,
+                  ),
                 ],
               ),
             ),
@@ -196,11 +206,7 @@ class ActivityDetailScreen extends StatelessWidget {
       confirmText: '예',
     );
     if (ok != true || !context.mounted) return;
-    AppSnackBar.show(
-      context,
-      '그룹에 활동 기록을 공유했어요',
-      icon: TablerIcons.check,
-    );
+    AppSnackBar.show(context, '그룹에 활동 기록을 공유했어요', icon: TablerIcons.check);
   }
 
   // 통계 타일 — featured 는 잉크 면 + 라임 값(수거량 강조)
@@ -363,7 +369,12 @@ class _ActivityRouteMapState extends State<_ActivityRouteMap> {
 class _PhotoSection extends StatefulWidget {
   final String activityId;
   final List<String> initialUrls;
-  const _PhotoSection({required this.activityId, required this.initialUrls});
+  final String shotAt;
+  const _PhotoSection({
+    required this.activityId,
+    required this.initialUrls,
+    required this.shotAt,
+  });
 
   @override
   State<_PhotoSection> createState() => _PhotoSectionState();
@@ -449,9 +460,12 @@ class _PhotoSectionState extends State<_PhotoSection> {
                   ),
                 ),
                 const SizedBox(height: 3),
-                const Text(
-                  '활동 중 남긴 인증샷이에요',
-                  style: TextStyle(
+                Text(
+                  // 촬영 시각이 없으면 예전 문구로 되돌린다
+                  widget.shotAt.isEmpty
+                      ? '활동 중 남긴 인증샷이에요'
+                      : '활동 직후 촬영 · ${widget.shotAt}',
+                  style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
                     color: AppColors.gray500,

@@ -195,9 +195,9 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: earned
-                  ? AppColors.tint(AppColors.lime, 0.28)
+                  ? AppColors.tint(AppColors.lime, 0.62)
                   : AppColors.surfaceSoft,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
               _kindIcon(log.kind),
@@ -222,9 +222,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  log.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  '${log.at.month}월 ${log.at.day}일',
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,

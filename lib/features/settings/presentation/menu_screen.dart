@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
-import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import 'package:repo_jdh/core/widgets/app_dialog.dart';
 import 'package:repo_jdh/features/mypage/domain/profile_detail.dart';
 import 'package:repo_jdh/features/mypage/data/badge_service.dart';
 import 'package:repo_jdh/features/auth/data/user_service.dart';
 import 'package:repo_jdh/features/mypage/presentation/profile_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/settings_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/notifications_screen.dart';
+import 'package:repo_jdh/features/settings/data/notification_repository.dart';
 import 'package:repo_jdh/features/settings/presentation/notice_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/faq_screen.dart';
-import 'package:repo_jdh/features/settings/presentation/terms_screen.dart';
 import 'package:repo_jdh/features/settings/presentation/licenses_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/shop_screen.dart';
 import 'package:repo_jdh/features/shop/presentation/point_history_screen.dart';
+import 'package:repo_jdh/features/shop/data/shop_service.dart';
+import 'package:repo_jdh/features/shop/data/point_history_service.dart';
 import 'package:repo_jdh/features/mypage/presentation/gallery_screen.dart';
 import 'package:repo_jdh/features/news/presentation/news_feed_screen.dart';
-import 'package:repo_jdh/features/settings/presentation/withdraw_sheet.dart';
 
 /// 메뉴 화면 (Startline 목업 구조)
 /// 차콜 프로필 헤더(라임 아바타 + 포인트/수거 타일) → 포인트 샵·내역 카드 → 이용 안내 리스트.
@@ -41,6 +40,9 @@ class _MenuScreenState extends State<MenuScreen> {
   // 프로필 헤더 통계 (누적 수거량)
   String _weightText = '0.0kg';
 
+  // 포인트 내역 카드 부제 — 이번 달 적립 합계. 로드 전에는 null.
+  int? _monthEarned;
+
   @override
   void initState() {
     super.initState();
@@ -51,16 +53,18 @@ class _MenuScreenState extends State<MenuScreen> {
     }
     _loadProfile();
     _loadStats();
+    _loadMonthEarned();
   }
 
   Future<void> _loadProfile() async {
     try {
       final p = await UserService.loadProfileDetail();
       _cachedProfile = p;
-      if (mounted) setState(() {
-        _profile = p;
-        _profileLoaded = true;
-      });
+      if (mounted)
+        setState(() {
+          _profile = p;
+          _profileLoaded = true;
+        });
     } catch (_) {}
   }
 
@@ -71,6 +75,14 @@ class _MenuScreenState extends State<MenuScreen> {
       setState(() {
         _weightText = '${stats.totalWeightKg.toStringAsFixed(1)}kg';
       });
+    } catch (_) {}
+  }
+
+  /// 이번 달 적립 포인트 합계 — 포인트 내역에서 이번 달 양수 증감만 더한다.
+  Future<void> _loadMonthEarned() async {
+    try {
+      final sum = await PointHistoryService.earnedThisMonth();
+      if (mounted) setState(() => _monthEarned = sum);
     } catch (_) {}
   }
 
@@ -88,12 +100,21 @@ class _MenuScreenState extends State<MenuScreen> {
     rootNavigator: rootNavigator,
   ).push(MaterialPageRoute(builder: (_) => screen));
 
+  Future<void> _openNotifications() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const NotificationsScreen()),
+    );
+    if (mounted) setState(() {}); // 읽음 처리 반영
+  }
+
   Future<void> _openShop() async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const ShopScreen()),
     );
     _loadProfile();
+    _loadMonthEarned();
   }
 
   static String _comma(int v) {
@@ -126,18 +147,6 @@ class _MenuScreenState extends State<MenuScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
               child: _menuList(),
-            ),
-            const SizedBox(height: 26),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              child: _accountActions(),
-            ),
-            const SizedBox(height: 14),
-            const Center(
-              child: Text(
-                '플로고 v1.0.0',
-                style: TextStyle(fontSize: 12, color: AppColors.gray300),
-              ),
             ),
           ],
         ),
@@ -200,8 +209,8 @@ class _MenuScreenState extends State<MenuScreen> {
                               !_profileLoaded
                                   ? ' '
                                   : (_profile.nickname.isEmpty
-                                      ? '플로거'
-                                      : _profile.nickname),
+                                        ? '플로거'
+                                        : _profile.nickname),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -244,11 +253,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _headerTile(
-                        '누적 수거',
-                        _weightText,
-                        Colors.white,
-                      ),
+                      child: _headerTile('누적 수거', _weightText, Colors.white),
                     ),
                   ],
                 ),
@@ -330,7 +335,11 @@ class _MenuScreenState extends State<MenuScreen> {
 
   Widget _avatarInitial(String nick, double size) {
     if (nick.isEmpty) {
-      return Icon(TablerIcons.userFilled, size: size * 0.5, color: AppColors.ink);
+      return Icon(
+        TablerIcons.userFilled,
+        size: size * 0.5,
+        color: AppColors.ink,
+      );
     }
     return Text(
       nick.substring(0, 1),
@@ -344,13 +353,18 @@ class _MenuScreenState extends State<MenuScreen> {
 
   // ── 포인트 샵 / 포인트 내역 큰 액션 카드 ──
   Widget _actionCards() {
+    // 보유 포인트로 지금 바꿀 수 있는 상품 수
+    final exchangeable = !_profileLoaded
+        ? null
+        : ShopService.catalog.where((i) => i.price <= _profile.points).length;
     return Row(
       children: [
         Expanded(
           child: _actionCard(
             icon: TablerIcons.gift,
             title: '포인트 샵',
-            subtitle: '포인트로 교환',
+            // 로드 전에는 값을 지어내지 않고 비워 둔다
+            subtitle: exchangeable == null ? ' ' : '교환 가능 $exchangeable개',
             lime: true,
             onTap: _openShop,
           ),
@@ -360,7 +374,9 @@ class _MenuScreenState extends State<MenuScreen> {
           child: _actionCard(
             icon: TablerIcons.receipt,
             title: '포인트 내역',
-            subtitle: '적립·사용 내역',
+            subtitle: _monthEarned == null
+                ? ' '
+                : '이번 달 +${_comma(_monthEarned!)}P',
             lime: false,
             onTap: () => _push(const PointHistoryScreen()),
           ),
@@ -404,7 +420,9 @@ class _MenuScreenState extends State<MenuScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: lime ? AppColors.limeOn.withValues(alpha: 0.65) : AppColors.gray500,
+                color: lime
+                    ? AppColors.limeOn.withValues(alpha: 0.65)
+                    : AppColors.gray500,
               ),
             ),
           ],
@@ -416,26 +434,37 @@ class _MenuScreenState extends State<MenuScreen> {
   // ── 이용 안내 리스트 (아이콘 + 라벨 + 셰브론) ──
   Widget _menuList() {
     final rows = <_MenuRow>[
-      _MenuRow(TablerIcons.news, '환경 뉴스',
-          () => _push(const NewsFeedScreen(), rootNavigator: true)),
-      _MenuRow(TablerIcons.settings, '설정',
-          () => _push(const SettingsScreen())),
-      _MenuRow(TablerIcons.bell, '알림',
-          () => _push(const NotificationsScreen())),
-      _MenuRow(TablerIcons.photo, '인증샷 모음집',
-          () => _push(const GalleryScreen())),
-      _MenuRow(TablerIcons.speakerphone, '공지 사항',
-          () => _push(const NoticeListScreen())),
-      _MenuRow(TablerIcons.helpCircle, '자주 묻는 질문',
-          () => _push(const FaqScreen())),
-      _MenuRow(TablerIcons.fileDescription, '이용 약관 및 정책',
-          () => _push(const TermsScreen())),
-      _MenuRow(TablerIcons.copyright, '오픈소스 및 출처',
-          () => _push(const LicensesScreen())),
+      _MenuRow(
+        TablerIcons.bell,
+        '알림',
+        _openNotifications,
+        badge: NotificationRepository.unreadCount,
+      ),
+      _MenuRow(
+        TablerIcons.news,
+        '환경 뉴스',
+        () => _push(const NewsFeedScreen(), rootNavigator: true),
+      ),
+      _MenuRow(
+        TablerIcons.photo,
+        '인증샷 모음집',
+        () => _push(const GalleryScreen()),
+      ),
+      _MenuRow(TablerIcons.infoCircle, '도움말', () => _push(const FaqScreen())),
+      _MenuRow(TablerIcons.settings, '설정', () => _push(const SettingsScreen())),
+      // 시안에 진입 경로가 없지만 화면은 살아 있어 메뉴에 남겨 둔 항목
+      _MenuRow(
+        TablerIcons.speakerphone,
+        '공지 사항',
+        () => _push(const NoticeListScreen()),
+      ),
+      _MenuRow(
+        TablerIcons.copyright,
+        '오픈소스 및 출처',
+        () => _push(const LicensesScreen()),
+      ),
     ];
-    return Column(
-      children: [for (final r in rows) _menuRow(r)],
-    );
+    return Column(children: [for (final r in rows) _menuRow(r)]);
   }
 
   Widget _menuRow(_MenuRow r) {
@@ -445,8 +474,9 @@ class _MenuScreenState extends State<MenuScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: const BoxDecoration(
-          border:
-              Border(bottom: BorderSide(color: AppColors.line100, width: 1)),
+          border: Border(
+            bottom: BorderSide(color: AppColors.line100, width: 1),
+          ),
         ),
         child: Row(
           children: [
@@ -462,6 +492,24 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
               ),
             ),
+            if (r.badge > 0) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.lime,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${r.badge}',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.limeOn,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             const Icon(
               TablerIcons.chevronRight,
               size: 20,
@@ -472,61 +520,6 @@ class _MenuScreenState extends State<MenuScreen> {
       ),
     );
   }
-
-  // ── 로그아웃 / 회원 탈퇴 (밑줄 텍스트 링크) ──
-  Widget _accountActions() {
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: _confirmSignOut,
-          child: const Text(
-            '로그아웃',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.gray500,
-              decoration: TextDecoration.underline,
-              decorationColor: AppColors.gray500,
-            ),
-          ),
-        ),
-        const SizedBox(width: 20),
-        GestureDetector(
-          onTap: _confirmDelete,
-          child: const Text(
-            '회원 탈퇴',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.gray400,
-              decoration: TextDecoration.underline,
-              decorationColor: AppColors.gray400,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _confirmSignOut() async {
-    final ok = await AppDialog.show(
-      context,
-      title: '로그아웃 하시겠어요?',
-      message: '기록과 포인트는 그대로 보관돼요',
-      cancelText: '취소',
-      confirmText: '로그아웃',
-      hideIcon: true, // 명세 §17 — 이 팝업만 아이콘 원이 없다
-    );
-    if (ok != true || !mounted) return;
-    await UserService.signOut();
-    if (mounted) context.go('/login');
-  }
-
-  Future<void> _confirmDelete() async {
-    // 명세 '회원 탈퇴' — 안내 시트 → 최종 확인 → 완료 화면까지 흐름 전체.
-    // 삭제 호출과 성공·실패 피드백도 그 안에서 끝난다.
-    await startWithdrawFlow(context);
-  }
 }
 
 /// 이용 안내 리스트 한 행 정의
@@ -534,5 +527,6 @@ class _MenuRow {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _MenuRow(this.icon, this.label, this.onTap);
+  final int badge; // 0이면 배지를 달지 않는다
+  const _MenuRow(this.icon, this.label, this.onTap, {this.badge = 0});
 }

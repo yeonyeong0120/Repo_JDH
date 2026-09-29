@@ -9,14 +9,16 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 /// 획득 뱃지들에 대해 퀘스트 완료 → 뱃지 획득 팝업을 순서대로 띄운다.
 /// '뱃지함 보기'를 누르면 내 활동(/mypage)으로 이동한다.
 /// 화면 전환(정산→홈/피드) 이후에도 rootNavigatorKey.currentContext 로 호출 가능.
 /// 반환값: '뱃지함 보기'로 /mypage 로 이동했으면 true.
-Future<bool> showRewardFlow(BuildContext context, List<BadgeData> badges) async {
+Future<bool> showRewardFlow(
+  BuildContext context,
+  List<BadgeData> badges,
+) async {
   for (final b in badges) {
     if (!context.mounted) return false;
     await showQuestComplete(
@@ -77,16 +79,18 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
     super.initState();
     final rnd = math.Random();
     for (int i = 0; i < 46; i++) {
-      _pieces.add(_Confetto(
-        x: rnd.nextDouble(),
-        delay: rnd.nextDouble(),
-        speed: 0.7 + rnd.nextDouble() * 0.7,
-        size: 5 + rnd.nextDouble() * 6,
-        color: _confettiColors[rnd.nextInt(_confettiColors.length)],
-        rot: rnd.nextDouble() * math.pi,
-        rotSpeed: (rnd.nextDouble() - 0.5) * 8,
-        sway: rnd.nextDouble() * 2 * math.pi,
-      ));
+      _pieces.add(
+        _Confetto(
+          x: rnd.nextDouble(),
+          delay: rnd.nextDouble(),
+          speed: 0.7 + rnd.nextDouble() * 0.7,
+          size: 5 + rnd.nextDouble() * 6,
+          color: _confettiColors[rnd.nextInt(_confettiColors.length)],
+          rot: rnd.nextDouble() * math.pi,
+          rotSpeed: (rnd.nextDouble() - 0.5) * 8,
+          sway: rnd.nextDouble() * 2 * math.pi,
+        ),
+      );
     }
     _confetti = AnimationController(
       vsync: this,
@@ -148,8 +152,7 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
                           ),
                         );
                       },
-                      // 명세 §5 — 라임 원 66 + 깃발. 뱃지(§6)는 라운드 사각이라
-                      // 여기가 원이라는 점이 둘을 구분한다.
+                      // 명세 §5 — 라임 원 66 + 깃발. 뱃지 공개는 다음 팝업에서 한다.
                       child: Container(
                         width: 66,
                         height: 66,
@@ -268,7 +271,11 @@ class _ConfettiPainter extends CustomPainter {
       canvas.rotate(p.rot + prog * p.rotSpeed);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size * 0.6),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: p.size,
+            height: p.size * 0.6,
+          ),
           const Radius.circular(1.5),
         ),
         paint,
@@ -347,6 +354,8 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
                 final t = _c.value;
                 // 뱃지: 먼저 떠오름(살짝 회전)
                 final badgeV = Curves.easeOutBack.transform(_seg(t, 0.0, 0.38));
+                // 흑백으로 떠올랐다가 컬러로 물든다(0.30~0.66).
+                final colorV = Curves.easeOut.transform(_seg(t, 0.30, 0.66));
                 final labelV = _seg(t, 0.42, 0.54);
                 final nameV = _seg(t, 0.56, 0.7);
                 final btnV = _seg(t, 0.9, 1.0);
@@ -359,7 +368,7 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
                         offset: Offset(0, (1 - badgeV) * 22),
                         child: Transform.rotate(
                           angle: (1 - badgeV) * -0.12,
-                          child: _badgeTile(b),
+                          child: _badgeTile(b, colorV),
                         ),
                       ),
                     ),
@@ -415,20 +424,37 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
     );
   }
 
-  Widget _badgeTile(BadgeData b) {
-    // 목업: 라임 스퀘어클 + 검정(ink) 뱃지 글리프.
-    return Container(
-      width: 66,
-      height: 66,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.lime,
-        // 원이 아니라 라운드 사각이다 — 퀘스트(§5)가 원이라 이걸로 구분한다.
-        borderRadius: BorderRadius.circular(22),
+  /// 잠금이 풀리는 연출 — 흑백으로 떠올랐다가 컬러로 물든다.
+  Widget _badgeTile(BadgeData b, double colorV) {
+    const double w = 110;
+    const double h = 116;
+    return SizedBox(
+      width: w,
+      height: h,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 컬러 아트(아래) 위에 흑백을 덮고, 흑백을 걷어내며 색이 드러난다
+          Image.asset(b.artPath, width: w, height: h, fit: BoxFit.contain),
+          Opacity(
+            opacity: (1 - colorV).clamp(0.0, 1.0),
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.matrix(<double>[
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0, 0, 0, 1, 0,
+              ]),
+              child: Image.asset(
+                b.artPath,
+                width: w,
+                height: h,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
       ),
-      child: usesTrashBagIcon(b)
-          ? TrashBagIcon(size: 32, color: AppColors.ink) // 봉지 뱃지
-          : Icon(b.icon, size: 32, color: AppColors.ink),
     );
   }
 }

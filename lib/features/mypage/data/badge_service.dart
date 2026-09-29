@@ -23,6 +23,13 @@ class UserStats {
   final bool joinedGroup; // 그룹 가입 여부
   final int streakDays; // 연속 플로깅 일수
   final int activeDays; // 활동한 날짜 수 (가입 요청 프로필 카드 표시용)
+  final int canCount; // 누적 캔 개수
+  final int glassCount; // 누적 유리 개수
+  final int paperCount; // 누적 종이 개수
+  final int totalTrashCount; // 누적 수거 개수(전체 종류)
+  final int earlyCount; // 오전 6시 이전 시작한 활동 수
+  final int nightCount; // 오후 9시 이후 시작한 활동 수
+  final int weekendCount; // 주말에 한 활동 수
 
   const UserStats({
     this.ploggingCount = 0,
@@ -39,6 +46,13 @@ class UserStats {
     this.joinedGroup = false,
     this.streakDays = 0,
     this.activeDays = 0,
+    this.canCount = 0,
+    this.glassCount = 0,
+    this.paperCount = 0,
+    this.totalTrashCount = 0,
+    this.earlyCount = 0,
+    this.nightCount = 0,
+    this.weekendCount = 0,
   });
 }
 
@@ -56,6 +70,13 @@ class BadgeService {
   // ───────────────────────── 조건 판정 ─────────────────────────
 
   /// 조건을 만족하는 뱃지 id 전부 (획득 여부와 무관)
+  ///
+  /// 시안 33종 중 아래 것들은 판정에 필요한 데이터가 아직 없어 조건을 걸지 않았다.
+  /// 화면에는 미획득으로 남는다(목업).
+  ///   rain_day(날씨), course_repeat·river_master·market_clean·park_keeper·
+  ///   school_road·station_clean(장소 분류), group_leader·invite_5·rank_1(그룹 운영),
+  ///   tumbler_30(텀블러 사용), point_5000(보유 포인트), four_seasons(계절),
+  ///   recommend_10(추천)
   static Set<String> satisfied(UserStats s) {
     final ok = <String>{};
     void add(String id, bool cond) {
@@ -64,27 +85,27 @@ class BadgeService {
 
     // 씨앗
     add('first_plogging', s.ploggingCount >= 1);
+    add('group_join', s.joinedGroup);
     add('first_verify', s.verifyCount >= 1);
     add('first_30min', s.maxSessionMinutes >= 30);
-    add('weight_1kg', s.totalWeightKg >= 1);
-    // 새싹
+    // 걸음·거리
     add('steps_10k', s.totalSteps >= 10000);
-    add('steps_30k', s.totalSteps >= 30000);
     add('distance_10km', s.totalDistanceKm >= 10);
-    add('distance_30km', s.totalDistanceKm >= 30);
-    add('weight_5kg', s.totalWeightKg >= 5);
-    add('weight_20kg', s.totalWeightKg >= 20);
+    // 수거 종류·개수
     add('plastic_50', s.plasticCount >= 50);
-    add('time_3h', s.totalMinutes >= 180);
-    add('time_10h', s.totalMinutes >= 600);
-    add('kcal_500', s.totalKcal >= 500);
-    // 나무
-    add('group_join', s.joinedGroup);
-    add('group_5', s.groupActivityCount >= 5);
-    add('group_10', s.groupActivityCount >= 10);
-    add('share_10', s.shareCount >= 10);
-    // 숲
-    add('streak_3', s.streakDays >= 3);
+    add('can_100', s.canCount >= 100);
+    add('glass_30', s.glassCount >= 30);
+    add('paper_100', s.paperCount >= 100);
+    add('trash_1000', s.totalTrashCount >= 1000);
+    // 수거 무게
+    add('weight_10kg', s.totalWeightKg >= 10);
+    add('weight_50kg', s.totalWeightKg >= 50);
+    add('weight_100kg', s.totalWeightKg >= 100);
+    // 시간대·요일
+    add('early_bird', s.earlyCount >= 5);
+    add('night_owl', s.nightCount >= 5);
+    add('weekend_5', s.weekendCount >= 5);
+    // 연속 기록
     add('streak_7', s.streakDays >= 7);
     add('streak_30', s.streakDays >= 30);
 
@@ -132,6 +153,8 @@ class BadgeService {
     int totalSteps = 0;
     int totalKcal = 0;
     int totalWeightG = 0;
+    int can = 0, glass = 0, paper = 0, trashAll = 0;
+    int early = 0, night = 0, weekend = 0;
 
     for (final a in acts) {
       totalSeconds += a.durationSeconds;
@@ -146,6 +169,17 @@ class BadgeService {
         weightKg: body.weightKg,
       );
       totalWeightG += ActivityMetrics.weightGrams(a.trashCounts);
+      can += a.trashCounts['can'] ?? 0;
+      glass += a.trashCounts['glass'] ?? 0;
+      paper += a.trashCounts['paper'] ?? 0;
+      trashAll += a.totalTrash;
+      // 시작 시각·요일로 새벽·야간·주말 활동 수를 센다
+      final st = a.startedAt;
+      if (st.hour < 6) early++;
+      if (st.hour >= 21) night++;
+      if (st.weekday == DateTime.saturday || st.weekday == DateTime.sunday) {
+        weekend++;
+      }
       final d = a.endedAt ?? a.startedAt;
       days.add(DateTime(d.year, d.month, d.day));
     }
@@ -170,6 +204,13 @@ class BadgeService {
       joinedGroup: counters.joined,
       streakDays: _streakDays(days),
       activeDays: days.length,
+      canCount: can,
+      glassCount: glass,
+      paperCount: paper,
+      totalTrashCount: trashAll,
+      earlyCount: early,
+      nightCount: night,
+      weekendCount: weekend,
     );
   }
 
@@ -196,51 +237,66 @@ class BadgeService {
   /// 퀘스트 진행률 (현재값, 목표값) — 퀘스트 목록 화면에서 사용
   static (int current, int total) progressOf(BadgeData b, UserStats s) {
     switch (b.id) {
+      // 첫 걸음
       case 'first_plogging':
         return (s.ploggingCount.clamp(0, 1), 1);
       case 'first_verify':
         return (s.verifyCount.clamp(0, 1), 1);
       case 'first_30min':
         return (s.maxSessionMinutes.clamp(0, 30), 30);
-      case 'weight_1kg':
-        return (s.totalWeightKg.round().clamp(0, 1), 1);
-      case 'steps_10k':
-        return (s.totalSteps.clamp(0, 10000), 10000);
-      case 'steps_30k':
-        return (s.totalSteps.clamp(0, 30000), 30000);
-      case 'distance_10km':
-        return (s.totalDistanceKm.round().clamp(0, 10), 10);
-      case 'distance_30km':
-        return (s.totalDistanceKm.round().clamp(0, 30), 30);
-      case 'weight_5kg':
-        return (s.totalWeightKg.round().clamp(0, 5), 5);
-      case 'weight_20kg':
-        return (s.totalWeightKg.round().clamp(0, 20), 20);
-      case 'plastic_50':
-        return (s.plasticCount.clamp(0, 50), 50);
-      case 'time_3h':
-        return (s.totalMinutes.clamp(0, 180), 180);
-      case 'time_10h':
-        return (s.totalMinutes.clamp(0, 600), 600);
-      case 'kcal_500':
-        return (s.totalKcal.clamp(0, 500), 500);
       case 'group_join':
         return (s.joinedGroup ? 1 : 0, 1);
-      case 'group_5':
-        return (s.groupActivityCount.clamp(0, 5), 5);
-      case 'group_10':
-        return (s.groupActivityCount.clamp(0, 10), 10);
-      case 'share_10':
-        return (s.shareCount.clamp(0, 10), 10);
-      case 'streak_3':
-        return (s.streakDays.clamp(0, 3), 3);
+      // 걸음·거리
+      case 'steps_10k':
+        return (s.totalSteps.clamp(0, 10000), 10000);
+      case 'distance_10km':
+        return (s.totalDistanceKm.round().clamp(0, 10), 10);
+      // 수거 종류·개수
+      case 'plastic_50':
+        return (s.plasticCount.clamp(0, 50), 50);
+      case 'can_100':
+        return (s.canCount.clamp(0, 100), 100);
+      case 'glass_30':
+        return (s.glassCount.clamp(0, 30), 30);
+      case 'paper_100':
+        return (s.paperCount.clamp(0, 100), 100);
+      case 'trash_1000':
+        return (s.totalTrashCount.clamp(0, 1000), 1000);
+      // 수거 무게
+      case 'weight_10kg':
+        return (s.totalWeightKg.round().clamp(0, 10), 10);
+      case 'weight_50kg':
+        return (s.totalWeightKg.round().clamp(0, 50), 50);
+      case 'weight_100kg':
+        return (s.totalWeightKg.round().clamp(0, 100), 100);
+      // 시간대·요일
+      case 'early_bird':
+        return (s.earlyCount.clamp(0, 5), 5);
+      case 'night_owl':
+        return (s.nightCount.clamp(0, 5), 5);
+      case 'weekend_5':
+        return (s.weekendCount.clamp(0, 5), 5);
+      // 연속 기록
       case 'streak_7':
         return (s.streakDays.clamp(0, 7), 7);
       case 'streak_30':
         return (s.streakDays.clamp(0, 30), 30);
     }
-    return (0, 1);
+    // 판정 데이터가 아직 없는 뱃지(날씨·장소 분류·그룹 운영 등)는
+    // 조건 문구에 적힌 목표만 보여주고 진행률은 0으로 둔다.
+    return (0, _targetOf(b.id));
   }
+
+  /// 아직 판정하지 못하는 뱃지의 목표치 — 챌린지 목록에 0/N 으로 표시된다.
+  static int _targetOf(String id) => switch (id) {
+    'course_repeat' || 'market_clean' || 'park_keeper' => 5,
+    'school_road' || 'station_clean' || 'invite_5' => 5,
+    'river_master' || 'recommend_10' => 10,
+    'tumbler_30' => 30,
+    'point_5000' => 5000,
+    'four_seasons' => 4,
+    _ => 1, // rain_day, group_leader, rank_1 은 1회성
+  };
 
   // ───────────────────────── 저장 / 불러오기 ─────────────────────────
 
