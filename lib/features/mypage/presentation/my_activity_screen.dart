@@ -789,8 +789,9 @@ class _BadgesTabState extends State<_BadgesTab> {
         crossAxisCount: 3,
         mainAxisSpacing: 10,
         crossAxisSpacing: 6,
-        // 내용 높이에 딱 맞춘 고정값 — 위아래 12 + 아트 95 + 간격 7 + 이름 2줄(35)
-        mainAxisExtent: 162,
+        // 내용 높이에 딱 맞춘 고정값 — 위아래 12 + 아트 95 + 간격 7 + 이름 2줄
+        // (글씨 배율이 올라가 두 줄 높이가 늘어난 만큼 여유를 뒀다)
+        mainAxisExtent: 172,
       ),
       itemBuilder: (_, i) => _BadgeTile(badge: list[i], stats: _stats),
     );

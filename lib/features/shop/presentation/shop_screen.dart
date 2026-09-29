@@ -274,8 +274,8 @@ class _ShopScreenState extends State<ShopScreen> {
         // 카드끼리 붙어 보이지 않게 좌우·위아래 여백을 넉넉히
         crossAxisSpacing: 14,
         mainAxisSpacing: 26,
-        // 사진 + 이름 + 가격
-        mainAxisExtent: 196,
+        // 사진 + 이름 + 가격 (글씨 배율 상향분 반영)
+        mainAxisExtent: 208,
       ),
       itemCount: items.length,
       // 목업처럼 첫 카드에만 '인기' 뱃지 (상품 데이터에 인기 필드가 없어 위치로 표시)
