@@ -1128,11 +1128,8 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
         ],
-        // 누적 탭 — 1인 월평균 배출량 대비 진행바 (시안)
-        if (isCumulative) ...[
-          _goalBar(d.weightGrams / 1000.0),
-          const SizedBox(height: 12),
-        ],
+        // 누적은 그래프가 없어 요약과 도넛이 붙으니 공백만 둔다
+        if (isCumulative) const SizedBox(height: 12),
         _chartCard(
           '수거 종류',
           AnimatedBuilder(
@@ -1249,122 +1246,6 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
     final delta = ((cur - prev) / prev * 100).round();
     final sign = delta >= 0 ? '+' : '';
     return '$unit보다 $sign$delta%';
-  }
-
-  // ── 누적 목표 진행바 ──
-  // 기준 단위: 1인 월평균 생활폐기물 배출량 29kg
-  // (하루 950.6g · 제6차 전국폐기물통계조사). 누적량이 한 달치를 넘을 때마다
-  // 눈금이 한 달씩 늘어난다.
-  static const double _monthlyWastePerPerson = 29;
-
-  Widget _goalBar(double currentKg) {
-    final months = (currentKg / _monthlyWastePerPerson).ceil().clamp(1, 60);
-    final maxKg = _monthlyWastePerPerson * months;
-    final ratio = (currentKg / maxKg).clamp(0.0, 1.0);
-    final remain = (maxKg - currentKg).clamp(0.0, maxKg);
-
-    return LayoutBuilder(
-      builder: (context, c) {
-        final w = c.maxWidth;
-        // 칩이 막대 끝에서 잘리지 않도록 좌우로 붙여 둔다
-        final chipLeft = (w * ratio - 26).clamp(0.0, w - 62);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 30,
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: chipLeft,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.ink,
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Text(
-                        '${currentKg.toStringAsFixed(1)}kg',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.lime,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                height: 16,
-                color: const Color(0xFFEDEFEE),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: ratio == 0 ? 0.001 : ratio,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.lime,
-                      border: Border(
-                        right: BorderSide(color: Color(0xFFA9C81E), width: 2.5),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 9),
-            SizedBox(
-              height: 20,
-              child: Stack(
-                children: [
-                  for (int i = 0; i <= months; i++)
-                    Positioned(
-                      left: i == months ? null : (w * i / months),
-                      right: i == months ? 0 : null,
-                      child: Text(
-                        i == 0
-                            ? '0'
-                            : (i == months
-                                  ? '$i개월 (${maxKg.toStringAsFixed(0)}kg)'
-                                  : '$i개월'),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: i == months
-                              ? FontWeight.w800
-                              : FontWeight.w600,
-                          color: i == months
-                              ? AppColors.ink
-                              : AppColors.gray500,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              '한 사람이 $months개월간 버리는 양'
-              '(${maxKg.toStringAsFixed(0)}kg)까지 '
-              '${remain.toStringAsFixed(1)}kg 남았어요',
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                height: 1.6,
-                color: AppColors.gray500,
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Widget _chartCard(String title, Widget child, {String? note}) {
