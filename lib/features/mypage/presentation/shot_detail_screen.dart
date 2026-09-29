@@ -148,6 +148,20 @@ class ShotDetailScreen extends StatelessWidget {
           fit: BoxFit.cover,
           width: double.infinity,
           height: 430,
+          // 원본이 폰 카메라 사진이라 그대로 디코딩하면 실패할 수 있다.
+          // 화면 폭의 두 배 정도로만 디코딩한다.
+          cacheWidth: 1080,
+          loadingBuilder: (_, child, progress) {
+            if (progress == null) return child;
+            return const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF7E8A83),
+              ),
+            );
+          },
           errorBuilder: (_, __, ___) => const Text(
             '사진을 불러오지 못했어요',
             style: TextStyle(

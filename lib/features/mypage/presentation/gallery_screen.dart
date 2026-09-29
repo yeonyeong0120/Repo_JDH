@@ -326,10 +326,24 @@ class _GalleryScreenState extends State<GalleryScreen> {
             Image.network(
               p.url,
               fit: BoxFit.cover,
-              // 로딩 중: 소프트 그레이 면
+              // 원본은 폰 카메라 사진이라 무겁다. 그리드 칸 크기로만 디코딩해
+              // 메모리와 표시 지연을 줄인다.
+              cacheWidth: 360,
+              // 로딩 중: 소프트 그레이 면 + 작은 표시(빈 칸으로 오해되지 않게)
               loadingBuilder: (ctx, child, progress) {
                 if (progress == null) return child;
-                return Container(color: AppColors.surfaceSoft);
+                return Container(
+                  color: AppColors.surfaceSoft,
+                  alignment: Alignment.center,
+                  child: const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.gray300,
+                    ),
+                  ),
+                );
               },
               // 실패: 사진 없음 아이콘
               errorBuilder: (ctx, err, stack) => Container(
