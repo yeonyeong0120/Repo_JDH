@@ -1155,73 +1155,66 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
   }
 
   // 목업: 소프트 카드 안에 원형 아이콘 + 값 + 라벨 3개 (걸음수/칼로리/수거량)
+  // 상단 3분할 카드 — 걸음수·칼로리는 흰 카드, 수거량만 라임으로 강조
   Widget _topStats(_GData d) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          _topStatItem(TablerIcons.run, AppColors.dataSteps, '걸음수', d.steps),
-          _topStatItem(TablerIcons.flame, AppColors.dataCalorie, '칼로리', d.kcal),
-          _topStatItem(
-            TablerIcons.trash,
-            AppColors.dataCollect,
-            '수거량',
-            d.weight,
-          ),
-        ],
-      ),
+    final kg = (d.weightGrams / 1000).toStringAsFixed(1);
+    return Row(
+      children: [
+        _statCard(TablerIcons.walk, d.steps, '걸음수 · 보'),
+        const SizedBox(width: 10),
+        _statCard(TablerIcons.flame, d.kcal, '칼로리 · kcal'),
+        const SizedBox(width: 10),
+        _statCard(TablerIcons.trash, kg, '수거량 · kg', accent: true),
+      ],
     );
   }
 
-  Widget _topStatItem(IconData icon, Color color, String label, String value) {
+  Widget _statCard(
+    IconData icon,
+    String value,
+    String label, {
+    bool accent = false,
+  }) {
     return Expanded(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.tint(color, 0.16),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 17, color: color),
-          ),
-          const SizedBox(width: 7),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                    color: AppColors.textPrimary,
-                  ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+        decoration: BoxDecoration(
+          color: accent ? AppColors.lime : AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: AppColors.ink),
+            const SizedBox(height: 12),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                  color: AppColors.ink,
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.gray500,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 5),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: accent ? AppColors.limeOn : AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
