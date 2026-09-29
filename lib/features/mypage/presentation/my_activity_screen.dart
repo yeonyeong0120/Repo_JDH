@@ -789,9 +789,8 @@ class _BadgesTabState extends State<_BadgesTab> {
         crossAxisCount: 3,
         mainAxisSpacing: 10,
         crossAxisSpacing: 6,
-        // 내용 높이에 딱 맞춘 고정값 — 위아래 12 + 아트 95 + 간격 7 + 이름 2줄
-        // (글씨 배율이 올라가 두 줄 높이가 늘어난 만큼 여유를 뒀다)
-        mainAxisExtent: 172,
+        // 내용 높이에 딱 맞춘 고정값 — 위아래 12 + 아트 82 + 간격 7 + 이름 2줄
+        mainAxisExtent: 158,
       ),
       itemBuilder: (_, i) => _BadgeTile(badge: list[i], stats: _stats),
     );
@@ -826,21 +825,21 @@ class _BadgeTile extends StatelessWidget {
           children: [
             // 뱃지 아트 — 미획득은 같은 모양의 빈 판 + 자물쇠
             SizedBox(
-              width: 90,
-              height: 95,
+              width: 78,
+              height: 82,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Image.asset(
                     earned ? badge.artPath : badge.lockedArtPath,
-                    width: 90,
-                    height: 95,
+                    width: 78,
+                    height: 82,
                     fit: BoxFit.contain,
                   ),
                   if (!earned)
                     const Icon(
                       TablerIcons.lock,
-                      size: 27,
+                      size: 24,
                       color: AppColors.gray350,
                     ),
                 ],

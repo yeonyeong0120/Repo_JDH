@@ -272,8 +272,11 @@ class _QuestListScreenState extends State<QuestListScreen> {
     final done = q.done;
     final progress = (q.current / q.total).clamp(0.0, 1.0);
 
-    // 아이콘: 달성·이벤트는 라임 위 잉크, 진행 중은 카테고리 색
-    final Color iconFg = (done || q.event) ? AppColors.limeOn : q.color;
+    // 아이콘: 이벤트는 라임 위 잉크, 달성은 카테고리 색 위 흰색,
+    // 진행 중은 옅은 카테고리 면 위 카테고리 색
+    final Color iconFg = q.event
+        ? AppColors.limeOn
+        : (done ? Colors.white : q.color);
     final Widget iconWidget = q.isCollect
         ? TrashBagIcon(size: 20, color: iconFg)
         : Icon(q.icon, color: iconFg, size: 20);
@@ -291,9 +294,9 @@ class _QuestListScreenState extends State<QuestListScreen> {
             height: 42,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: (done || q.event)
+              color: q.event
                   ? AppColors.lime
-                  : q.color.withValues(alpha: 0.14),
+                  : (done ? q.color : q.color.withValues(alpha: 0.14)),
               borderRadius: BorderRadius.circular(15),
             ),
             child: iconWidget,

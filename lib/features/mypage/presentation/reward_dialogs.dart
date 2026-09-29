@@ -152,8 +152,7 @@ class _QuestCompleteDialogState extends State<_QuestCompleteDialog>
                           ),
                         );
                       },
-                      // 명세 §5 — 라임 원 66 + 깃발. 뱃지(§6)는 라운드 사각이라
-                      // 여기가 원이라는 점이 둘을 구분한다.
+                      // 명세 §5 — 라임 원 66 + 깃발. 뱃지 공개는 다음 팝업에서 한다.
                       child: Container(
                         width: 66,
                         height: 66,
@@ -355,6 +354,8 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
                 final t = _c.value;
                 // 뱃지: 먼저 떠오름(살짝 회전)
                 final badgeV = Curves.easeOutBack.transform(_seg(t, 0.0, 0.38));
+                // 흑백으로 떠올랐다가 컬러로 물든다(0.30~0.66).
+                final colorV = Curves.easeOut.transform(_seg(t, 0.30, 0.66));
                 final labelV = _seg(t, 0.42, 0.54);
                 final nameV = _seg(t, 0.56, 0.7);
                 final btnV = _seg(t, 0.9, 1.0);
@@ -367,7 +368,7 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
                         offset: Offset(0, (1 - badgeV) * 22),
                         child: Transform.rotate(
                           angle: (1 - badgeV) * -0.12,
-                          child: _badgeTile(b),
+                          child: _badgeTile(b, colorV),
                         ),
                       ),
                     ),
@@ -423,13 +424,37 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
     );
   }
 
-  Widget _badgeTile(BadgeData b) {
-    // 뱃지 탭·상세와 같은 아트를 쓴다(획득 팝업이라 항상 획득 상태).
-    return Image.asset(
-      b.artPath,
-      width: 110,
-      height: 116,
-      fit: BoxFit.contain,
+  /// 잠금이 풀리는 연출 — 흑백으로 떠올랐다가 컬러로 물든다.
+  Widget _badgeTile(BadgeData b, double colorV) {
+    const double w = 110;
+    const double h = 116;
+    return SizedBox(
+      width: w,
+      height: h,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 컬러 아트(아래) 위에 흑백을 덮고, 흑백을 걷어내며 색이 드러난다
+          Image.asset(b.artPath, width: w, height: h, fit: BoxFit.contain),
+          Opacity(
+            opacity: (1 - colorV).clamp(0.0, 1.0),
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.matrix(<double>[
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0, 0, 0, 1, 0,
+              ]),
+              child: Image.asset(
+                b.artPath,
+                width: w,
+                height: h,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
