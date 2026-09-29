@@ -195,7 +195,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: earned
-                  ? AppColors.tint(AppColors.lime, 0.28)
+                  ? AppColors.tint(AppColors.lime, 0.62)
                   : AppColors.surfaceSoft,
               borderRadius: BorderRadius.circular(14),
             ),
