@@ -129,19 +129,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _onCalendar,
-                    child: const SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: Icon(
-                        TablerIcons.calendarMonth,
-                        size: 20,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
+                  // 제목을 가운데 두기 위한 여백 (뒤로 버튼과 같은 폭)
+                  const SizedBox(width: 44, height: 44),
                 ],
               ),
             ),
@@ -383,13 +372,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
         ),
       ),
     );
-  }
-
-  // 달력 버튼 — 월별 이동은 아직 미구현이라 안내만 (데이터 지어내지 않음)
-  void _onCalendar() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('월별 보기는 준비 중이에요')));
   }
 
   // 인증샷 추가 — 활동 단위로만 첨부 가능(활동 상세)해서 여기선 안내만
