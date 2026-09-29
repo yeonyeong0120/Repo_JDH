@@ -7,10 +7,27 @@ import 'package:repo_jdh/features/shop/data/shop_service.dart';
 import 'package:repo_jdh/features/shop/presentation/coupon_list_screen.dart';
 import 'package:repo_jdh/core/widgets/app_card_dialog.dart';
 
-/// SHOP-27 상품 상세 (Startline 목업 구조)
-/// 상품 이미지 + 브랜드/이름/포인트가 + 안내 항목 + 하단 '교환하기' CTA.
-/// 진입: 포인트 샵(shop_screen) 상품 카드 탭 → 이 화면 push.
+/// SHOP-27 상품 상세 — 화면 가운데 팝업으로 뜬다.
+/// 상품 이미지 + 브랜드/이름/포인트가 + 안내 항목 + '교환하기' CTA.
+/// 진입: 포인트 샵(shop_screen) 상품 카드 탭.
 /// 교환 로직은 shop_screen과 동일하게 ShopService.exchange 를 재사용한다.
+Future<void> showProductDialog(
+  BuildContext context, {
+  required ShopItem item,
+  bool popular = false,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierColor: const Color(0x80141816),
+    builder: (_) => Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 26, vertical: 40),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: ProductDetailScreen(item: item, popular: popular),
+    ),
+  );
+}
+
 class ProductDetailScreen extends StatefulWidget {
   /// 실제 모델(ShopItem)을 그대로 받는다.
   final ShopItem item;
@@ -18,7 +35,11 @@ class ProductDetailScreen extends StatefulWidget {
   /// 목업의 '인기' 뱃지 — 상품 데이터에 인기 필드가 없어 그리드에서 위치로 전달.
   final bool popular;
 
-  const ProductDetailScreen({super.key, required this.item, this.popular = false});
+  const ProductDetailScreen({
+    super.key,
+    required this.item,
+    this.popular = false,
+  });
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -52,61 +73,66 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _topBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _image(item),
-                    const SizedBox(height: 20),
-                    // 브랜드 (실데이터: item.brand)
-                    Text(
-                      item.brand,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.gray500,
-                      ),
+    final maxHeight = MediaQuery.of(context).size.height * 0.8;
+    return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(26),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _image(item),
+                  const SizedBox(height: 20),
+                  // 브랜드 (실데이터: item.brand)
+                  Text(
+                    item.brand,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.gray500,
                     ),
-                    const SizedBox(height: 6),
-                    // 상품명 (실데이터: item.name)
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.8,
-                        color: AppColors.textPrimary,
-                      ),
+                  ),
+                  const SizedBox(height: 6),
+                  // 상품명 (실데이터: item.name)
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.8,
+                      color: AppColors.textPrimary,
                     ),
-                    const SizedBox(height: 14),
-                    _priceRow(item),
-                    const SizedBox(height: 22),
-                    // 안내 항목 — 상품별 안내 데이터가 모델에 없어 정적 플레이스홀더.
-                    _infoRow(TablerIcons.calendar, '교환 후 30일 이내 사용'),
-                    _infoDivider(),
-                    _infoRow(TablerIcons.mapPin, '전국 제휴 매장 사용 가능'),
-                    _infoDivider(),
-                    _infoRow(TablerIcons.cup, '모바일 쿠폰으로 발급돼요'),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 14),
+                  _priceRow(item),
+                  const SizedBox(height: 22),
+                  // 안내 항목 — 상품별 안내 데이터가 모델에 없어 정적 플레이스홀더.
+                  _infoRow(TablerIcons.calendar, '교환 후 30일 이내 사용'),
+                  _infoDivider(),
+                  _infoRow(TablerIcons.mapPin, '전국 제휴 매장 사용 가능'),
+                  _infoDivider(),
+                  _infoRow(TablerIcons.cup, '모바일 쿠폰으로 발급돼요'),
+                ],
               ),
             ),
-            _bottomCta(item),
-          ],
-        ),
+          ),
+          _bottomCta(item),
+        ],
       ),
     );
   }
 
-  // ───────────────────────── 상단 바 ─────────────────────────
+  // ───────────────────────── 상단 바(미사용) ─────────────────────────
+  // ignore: unused_element
   Widget _topBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
@@ -160,27 +186,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(22),
-          child: Container(
-            height: 260,
-            width: double.infinity,
-            color: AppColors.surfaceSoft,
-            child: (url != null && url.isNotEmpty)
-                ? Image.network(
-                    url,
-                    height: 260,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => placeholder(),
-                  )
-                // 실제 상품 사진이 없어 넣어둔 목업 사진
-                : (item.imageAsset == null
-                      ? placeholder()
-                      : Image.asset(
-                          item.imageAsset!,
-                          height: 260,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => placeholder(),
-                        )),
+          child: AspectRatio(
+            aspectRatio: 4 / 5,
+            child: Container(
+              width: double.infinity,
+              color: AppColors.surfaceSoft,
+              child: (url != null && url.isNotEmpty)
+                  ? Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => placeholder(),
+                    )
+                  // 실제 상품 사진이 없어 넣어둔 목업 사진
+                  : (item.imageAsset == null
+                        ? placeholder()
+                        : Image.asset(
+                            item.imageAsset!,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => placeholder(),
+                          )),
+            ),
           ),
         ),
         if (widget.popular)
@@ -273,11 +299,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   // ─────────────── 하단 교환 CTA (차콜 버튼) ───────────────
   Widget _bottomCta(ShopItem item) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       child: GestureDetector(
         onTap: _exchanging ? null : () => _confirmExchange(item),
         child: Container(
-          height: 64,
+          height: 58,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: AppColors.ink,
@@ -307,8 +333,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Future<void> _confirmExchange(ShopItem item) async {
     if (_loading) return;
     if (_points < item.price) {
-      AppSnackBar.show(context, '포인트가 조금 더 필요해요',
-          bottom: AppSnackBar.aboveCta);
+      AppSnackBar.show(context, '포인트가 조금 더 필요해요', bottom: AppSnackBar.aboveCta);
       return;
     }
 
@@ -330,8 +355,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     } catch (_) {
       if (mounted) {
         setState(() => _exchanging = false);
-        AppSnackBar.show(context, '교환하지 못했어요',
-            bottom: AppSnackBar.aboveCta);
+        AppSnackBar.show(context, '교환하지 못했어요', bottom: AppSnackBar.aboveCta);
       }
       return;
     }

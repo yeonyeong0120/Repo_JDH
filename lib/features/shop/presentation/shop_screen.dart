@@ -270,10 +270,11 @@ class _ShopScreenState extends State<ShopScreen> {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 18,
-        mainAxisExtent: 196,
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 16,
+        // 사진(4:5) + 이름 + 가격
+        mainAxisExtent: 218,
       ),
       itemCount: items.length,
       // 목업처럼 첫 카드에만 '인기' 뱃지 (상품 데이터에 인기 필드가 없어 위치로 표시)
@@ -291,7 +292,7 @@ class _ShopScreenState extends State<ShopScreen> {
           // 라운드 상품 이미지 + 좌상단 '인기' 뱃지
           Stack(
             children: [
-              _thumb(item, 120),
+              _thumb(item, 145),
               if (popular)
                 Positioned(
                   left: 10,
@@ -398,16 +399,11 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  // ───────────────── 상품 상세로 이동 (목업 상품 카드 → 상세) ─────────────────
-  // 상세 화면에서 교환 로직(ShopService.exchange)을 그대로 수행한다.
-  // 복귀 시 포인트/쿠폰 수를 다시 불러와 잔액 카드를 갱신한다.
+  // ───────────────── 상품 상세 팝업 (상품 카드 → 가운데 팝업) ─────────────────
+  // 팝업 안에서 교환 로직(ShopService.exchange)을 그대로 수행한다.
+  // 닫히면 포인트를 다시 불러와 잔액 카드를 갱신한다.
   Future<void> _openDetail(ShopItem item, bool popular) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => ProductDetailScreen(item: item, popular: popular),
-      ),
-    );
+    await showProductDialog(context, item: item, popular: popular);
     _loadPoints();
   }
 
