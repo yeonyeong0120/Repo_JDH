@@ -9,7 +9,6 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repo_jdh/core/router/app_router.dart';
 import 'package:repo_jdh/core/theme/app_colors.dart';
-import 'package:repo_jdh/core/widgets/trash_bag_icon.dart';
 import 'package:repo_jdh/features/mypage/domain/badge.dart';
 
 /// 획득 뱃지들에 대해 퀘스트 완료 → 뱃지 획득 팝업을 순서대로 띄운다.
@@ -425,19 +424,12 @@ class _BadgeEarnedDialogState extends State<_BadgeEarnedDialog>
   }
 
   Widget _badgeTile(BadgeData b) {
-    // 목업: 라임 스퀘어클 + 검정(ink) 뱃지 글리프.
-    return Container(
-      width: 66,
-      height: 66,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.lime,
-        // 원이 아니라 라운드 사각이다 — 퀘스트(§5)가 원이라 이걸로 구분한다.
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: usesTrashBagIcon(b)
-          ? TrashBagIcon(size: 32, color: AppColors.ink) // 봉지 뱃지
-          : Icon(b.icon, size: 32, color: AppColors.ink),
+    // 뱃지 탭·상세와 같은 아트를 쓴다(획득 팝업이라 항상 획득 상태).
+    return Image.asset(
+      b.artPath,
+      width: 110,
+      height: 116,
+      fit: BoxFit.contain,
     );
   }
 }
