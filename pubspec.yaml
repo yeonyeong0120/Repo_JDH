@@ -94,6 +94,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/badges/
+    - assets/shop/
     - assets/icons/
     - assets/images/
     - .env

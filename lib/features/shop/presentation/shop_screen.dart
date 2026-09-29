@@ -377,14 +377,23 @@ class _ShopScreenState extends State<ShopScreen> {
         height: height,
         width: double.infinity,
         color: AppColors.surfaceSoft,
-        child: (url == null || url.isEmpty)
-            ? placeholder()
-            : Image.network(
+        child: (url != null && url.isNotEmpty)
+            ? Image.network(
                 url,
                 height: height,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => placeholder(),
-              ),
+              )
+            // 실제 상품 사진이 없어 넣어둔 목업 사진
+            : (item.imageAsset == null
+                  ? placeholder()
+                  : Image.asset(
+                      item.imageAsset!,
+                      height: height,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => placeholder(),
+                    )),
       ),
     );
   }

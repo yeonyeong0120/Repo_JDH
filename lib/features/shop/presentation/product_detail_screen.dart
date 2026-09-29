@@ -164,14 +164,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             height: 260,
             width: double.infinity,
             color: AppColors.surfaceSoft,
-            child: (url == null || url.isEmpty)
-                ? placeholder()
-                : Image.network(
+            child: (url != null && url.isNotEmpty)
+                ? Image.network(
                     url,
                     height: 260,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => placeholder(),
-                  ),
+                  )
+                // 실제 상품 사진이 없어 넣어둔 목업 사진
+                : (item.imageAsset == null
+                      ? placeholder()
+                      : Image.asset(
+                          item.imageAsset!,
+                          height: 260,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => placeholder(),
+                        )),
           ),
         ),
         if (widget.popular)

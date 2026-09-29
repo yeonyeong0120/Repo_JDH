@@ -32,6 +32,9 @@ class ShopItem {
   final ShopCategory category;
   final String? imageUrl;
 
+  /// 목업 상품 이미지(assets). 실제 상품 사진이 준비되면 imageUrl 로 대체한다.
+  final String? imageAsset;
+
   const ShopItem({
     required this.id,
     required this.brand,
@@ -39,6 +42,7 @@ class ShopItem {
     required this.price,
     required this.category,
     this.imageUrl,
+    this.imageAsset,
   });
 }
 

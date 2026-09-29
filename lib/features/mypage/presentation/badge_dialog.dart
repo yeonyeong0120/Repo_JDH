@@ -155,10 +155,20 @@ class _BadgeMedal extends StatelessWidget {
             height: h,
             fit: BoxFit.contain,
           ),
+          if (!earned)
+            const Positioned.fill(
+              child: Center(
+                child: Icon(
+                  TablerIcons.lock,
+                  size: 31,
+                  color: AppColors.gray350,
+                ),
+              ),
+            ),
           if (earned)
             Positioned(
-              right: 0,
-              top: h - 30,
+              right: 8,
+              top: h - 40,
               child: Container(
                 width: 24,
                 height: 24,
@@ -177,8 +187,8 @@ class _BadgeMedal extends StatelessWidget {
             )
           else
             Positioned(
-              right: -6,
-              top: h - 26,
+              right: 2,
+              top: h - 36,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(

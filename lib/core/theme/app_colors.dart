@@ -49,6 +49,7 @@ class AppColors {
   static const Color gray200 = Color(0xFFE3E6E4); // 밑줄·보더·비활성 버튼 면
   static const Color line100 = Color(0xFFEFF1F0); // 구분선·카드 보더
   static const Color surfaceSoft = Color(0xFFF4F6F5); // 보조 배경·고스트 버튼
+  static const Color limeDeep = Color(0xFFA9C81E); // 라임이 흐려 보일 때 쓰는 진한 라임
   static const Color surfaceCard = Color(0xFFF7F9F8); // 흰 배경 위 카드 면
   static const Color surfaceChip = Color(0xFFF2F4F3); // 칩·검색 박스 면
 

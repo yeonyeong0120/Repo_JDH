@@ -360,7 +360,8 @@ class _RecordsTabState extends State<_RecordsTab> {
             e.current,
             e.total,
             e.icon,
-            AppColors.ink,
+            // 타일은 라임, 진행바는 밝은 라임이 트랙과 안 갈려 진한 라임으로
+            AppColors.limeDeep,
             e.points,
             false,
             event: true,
@@ -407,7 +408,7 @@ class _RecordsTabState extends State<_RecordsTab> {
         22,
         18,
         22,
-        MediaQueryData.fromView(View.of(context)).padding.bottom + 64,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 96,
       ),
       children: [
         _sectionHeader(
@@ -668,11 +669,18 @@ class _RecordsTabState extends State<_RecordsTab> {
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 6,
-                    backgroundColor: AppColors.line100,
-                    color: q.color,
+                  child: Container(
+                    height: 6,
+                    // 자식(채워진 부분) 너비로 줄어들면 트랙이 사라진다
+                    width: double.infinity,
+                    color: const Color(0xFFE7EAE8),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progress,
+                      child: Container(
+                        decoration: BoxDecoration(color: q.color),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -728,7 +736,7 @@ class _BadgesTabState extends State<_BadgesTab> {
         22,
         18,
         22,
-        MediaQueryData.fromView(View.of(context)).padding.bottom + 64,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 96,
       ),
       children: [
         // 목업: '전체 뱃지' 마이크로 라벨 + 획득/전체 카운트
@@ -780,9 +788,9 @@ class _BadgesTabState extends State<_BadgesTab> {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        // 내용 높이에 딱 맞춘 고정값 — 위아래 12 + 아트 85 + 간격 7 + 이름 2줄
-        mainAxisExtent: 148,
+        crossAxisSpacing: 6,
+        // 내용 높이에 딱 맞춘 고정값 — 위아래 12 + 아트 95 + 간격 7 + 이름 2줄(35)
+        mainAxisExtent: 162,
       ),
       itemBuilder: (_, i) => _BadgeTile(badge: list[i], stats: _stats),
     );
@@ -807,7 +815,7 @@ class _BadgeTile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => showBadgeDetail(context, badge, current: cur, total: tot),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
@@ -815,12 +823,27 @@ class _BadgeTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 뱃지 아트 — 미획득은 같은 모양의 빈 판
-            Image.asset(
-              earned ? badge.artPath : badge.lockedArtPath,
-              width: 80,
-              height: 85,
-              fit: BoxFit.contain,
+            // 뱃지 아트 — 미획득은 같은 모양의 빈 판 + 자물쇠
+            SizedBox(
+              width: 90,
+              height: 95,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset(
+                    earned ? badge.artPath : badge.lockedArtPath,
+                    width: 90,
+                    height: 95,
+                    fit: BoxFit.contain,
+                  ),
+                  if (!earned)
+                    const Icon(
+                      TablerIcons.lock,
+                      size: 27,
+                      color: AppColors.gray350,
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 7),
             Text(
@@ -829,7 +852,7 @@ class _BadgeTile extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 13,
                 height: 1.35,
                 fontWeight: earned ? FontWeight.w700 : FontWeight.w600,
                 color: earned ? AppColors.textPrimary : AppColors.gray400,
@@ -1027,7 +1050,7 @@ class _GraphTabState extends State<_GraphTab> with TickerProviderStateMixin {
         20,
         10,
         20,
-        MediaQueryData.fromView(View.of(context)).padding.bottom + 64,
+        MediaQueryData.fromView(View.of(context)).padding.bottom + 96,
       ),
       children: [
         Row(

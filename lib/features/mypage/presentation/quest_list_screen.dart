@@ -48,7 +48,8 @@ class _QuestListScreenState extends State<QuestListScreen> {
             e.current,
             e.total,
             e.icon,
-            AppColors.ink,
+            // 타일은 라임, 진행바는 밝은 라임이 트랙과 안 갈려 진한 라임으로
+            AppColors.limeDeep,
             e.points,
             false,
             event: true,
@@ -326,11 +327,18 @@ class _QuestListScreenState extends State<QuestListScreen> {
                 else
                   ClipRRect(
                     borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: AppColors.line100,
-                      color: q.color,
+                    child: Container(
+                      height: 6,
+                      // 자식(채워진 부분) 너비로 줄어들면 트랙이 사라진다
+                      width: double.infinity,
+                      color: const Color(0xFFE7EAE8),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: progress,
+                        child: Container(
+                          decoration: BoxDecoration(color: q.color),
+                        ),
+                      ),
                     ),
                   ),
               ],
