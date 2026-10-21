@@ -2,7 +2,7 @@
 // 1) 현재 GPS 위치를 출발지로 지도 중심에 둔다.
 // 2) 지도를 탭하면 그 지점을 도착지로 마커 표시한다(다시 탭하면 갱신).
 // 3) "경로 받기"를 누르면 출발=현재GPS, 도착=탭지점으로 경로를 추천받는다.
-// 4) 추천 결과의 polyline은 NPathOverlay, k3 핫스팟은 NMarker로 그린다. hard case면 안내.
+// 4) 추천 결과의 polyline은 NPathOverlay, 경유 핫스팟은 NMarker로 그린다. hard case면 안내.
 // 5) "플로깅 시작"을 누르면 트래킹 화면(PloggingTrackingScreen)으로 이동한다.
 //    또한 강제 종료된 세션이 있으면(PLOG-10) 진입 시 이어할지 묻는다.
 //
@@ -498,8 +498,8 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen>
       // 정화 거점: 흰 핀 + 초록 재활용 아이콘
       final hotspotIcon = await _buildHotspotIcon();
       if (!mounted) return;
-      for (int i = 0; i < result.k3Hotspots.length; i++) {
-        final h = result.k3Hotspots[i];
+      for (int i = 0; i < result.waypointHotspots.length; i++) {
+        final h = result.waypointHotspots[i];
         overlays.add(
           NMarker(
             id: 'hotspot_$i',
@@ -743,7 +743,7 @@ class _RouteSetupScreenState extends ConsumerState<RouteSetupScreen>
       // 공장지대(회피구역) 수는 서버 응답의 crossed_uqa_codes 길이를 그대로 쓴다.
       return Row(
         children: [
-          _metaItem(TablerIcons.recycle, '정화지역 ${result.k3Hotspots.length}곳'),
+          _metaItem(TablerIcons.recycle, '정화지역 ${result.waypointHotspots.length}곳'),
           _metaDot(),
           _metaItem(
             TablerIcons.buildingFactory2,

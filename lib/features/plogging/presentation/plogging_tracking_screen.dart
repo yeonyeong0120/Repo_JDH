@@ -327,7 +327,7 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
     }
 
     // 3) 정화 거점: 흰 핀 + 재활용 아이콘 (도착지 설정 화면과 동일). 아이콘은 1회만 굽는다.
-    if (result != null && result.k3Hotspots.isNotEmpty) {
+    if (result != null && result.waypointHotspots.isNotEmpty) {
       final icon = _hotspotIcon ??= await NOverlayImage.fromWidget(
         context: context,
         size: const Size(34, 42),
@@ -336,8 +336,8 @@ class _PloggingTrackingScreenState extends ConsumerState<PloggingTrackingScreen>
           child: _HotspotPin(),
         ),
       );
-      for (int i = 0; i < result.k3Hotspots.length; i++) {
-        final h = result.k3Hotspots[i];
+      for (int i = 0; i < result.waypointHotspots.length; i++) {
+        final h = result.waypointHotspots[i];
         overlays.add(
           NMarker(
             id: 'hotspot_$i',

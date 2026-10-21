@@ -41,7 +41,7 @@ class RouteResult {
   final int durationMs;
   final int nSwaps;
   final int? bestFromAttempt;
-  final List<RouteHotspot> k3Hotspots; // 방문 순서 = 배열 순서
+  final List<RouteHotspot> waypointHotspots; // 방문 순서 = 배열 순서
 
   const RouteResult({
     required this.success,
@@ -54,7 +54,7 @@ class RouteResult {
     required this.durationMs,
     required this.nSwaps,
     required this.bestFromAttempt,
-    required this.k3Hotspots,
+    required this.waypointHotspots,
   });
 
   factory RouteResult.fromJson(Map<String, dynamic> json) {
@@ -73,7 +73,8 @@ class RouteResult {
       durationMs: (json['duration_ms'] as num?)?.toInt() ?? 0,
       nSwaps: (json['n_swaps'] as num?)?.toInt() ?? 0,
       bestFromAttempt: (json['best_from_attempt'] as num?)?.toInt(),
-      k3Hotspots: (json['k3_hotspots'] as List<dynamic>? ?? const [])
+      // 서버의 k3_hotspots 제거 후에는 옛 필드 읽기를 지울 것.
+      waypointHotspots: ((json['waypoint_hotspots'] ?? json['k3_hotspots']) as List<dynamic>? ?? const [])
           .map((e) => RouteHotspot.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
