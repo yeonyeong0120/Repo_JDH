@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PLOGGO (플로고) — AI 기반 스마트 플로깅 플랫폼</title>
+  <meta name="description" content="CCTV 핫스팟·회피 구역 기반 AI 맞춤 경로 추천과 YOLOv8 실시간 쓰레기 5종 분류 인식을 결합한 차세대 플로깅 앱, 플로고(PLOGGO) 공식 소개 페이지입니다." />
+  <link rel="icon" type="image/png" href="./assets/icons/app_icon_android.png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <!-- ====================================================================
+       HEADER NAVIGATION
+       ==================================================================== -->
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-inner">
+      <a href="#top" class="brand-logo">
+        <img src="./assets/icons/app_icon_android.png" alt="PLOGGO 앱 아이콘" />
+        <span>PLOGGO</span>
+        <span class="brand-tag">STARTLINE</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#hero" class="active">서비스 소개</a></li>
+        <li><a href="#feature-route">AI 맞춤 경로</a></li>
+        <li><a href="#feature-vision">YOLOv8 비전 인식</a></li>
+        <li><a href="#walkthrough">앱 화면 투어</a></li>
+        <li><a href="#ecosystem">리워드 & 생태계</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="#feature-route" class="btn-nav">
+          <i class="ti ti-sparkles"></i>
+          <span>핵심 기술 체험</span>
+        </a>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="메뉴 열기">
+          <i class="ti ti-menu-2"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====================================================================
+       HERO SECTION
+       ==================================================================== -->
+  <section class="hero-section" id="hero">
+    <div class="container hero-grid">
+      <!-- Left Copy -->
+      <div class="hero-copy">
+        <div class="hero-eyebrow">
+          <span class="hero-eyebrow-pill">AI PLOGGING</span>
+          <span class="hero-eyebrow-text">2026 한이음 드림업 프로젝트 · 플로고(PLOGGO)</span>
+        </div>
+
+        <h1 class="hero-title">
+          달리며 줍는 가장<br />
+          스마트한 발걸음,<br />
+          <span class="lime-box">PLOGGO</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          어디로 걸어야 할지 막막했던 플로깅은 이제 끝났습니다.<br />
+          <strong>1,535개 CCTV 핫스팟 기반 AI 경로 추천</strong>으로 가장 안전하고 보람찬 코스를 안내받고,
+          <strong>YOLOv8 실시간 카메라 인식</strong>으로 비추기만 하면 5종 분리수거와 에코포인트 적립까지 한 번에 완성됩니다.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="#feature-route" class="btn btn-primary">
+            <i class="ti ti-route"></i>
+            <span>AI 경로 추천 살펴보기</span>
+          </a>
+          <a href="#feature-vision" class="btn btn-secondary">
+            <i class="ti ti-camera"></i>
+            <span>AI 쓰레기 인식 체험하기</span>
+          </a>
+        </div>
+
+        <div class="hero-metrics tabular">
+          <div class="metric-item">
+            <div class="metric-value">1,535<span class="unit">곳</span></div>
+            <div class="metric-label">CCTV 쓰레기 핫스팟 거점</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value">147<span class="unit">개</span></div>
+            <div class="metric-label">위험·공장지대 회피 폴리곤</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value">5<span class="unit">종</span></div>
+            <div class="metric-label">YOLOv8n 실시간 쓰레기 분류</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value">+20<span class="unit">P/개</span></div>
+            <div class="metric-label">수거 즉시 에코포인트 환산</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Visual: Authentic Startline Home Screen Phone Mockup + Floating Callouts -->
+      <div class="hero-visual">
+        <div class="hero-Stage-backdrop"></div>
+
+        <!-- Floating Card 1: AI Route Engine -->
+        <div class="hero-float-card hero-float-route">
+          <div class="float-icon-box green">
+            <i class="ti ti-recycle"></i>
+          </div>
+          <div>
+            <div class="float-meta-title">K=3 정화 코스 추천 완료</div>
+            <div class="float-meta-sub">정화지역 3곳 경유 · 공장지대 0곳 우회</div>
+          </div>
+        </div>
+
+        <!-- Main Smartphone Mockup (HomeScreen) -->
+        <div class="phone-mockup" aria-label="PLOGGO 홈 화면 미리보기">
+          <div class="phone-statusbar">
+            <span>9:41</span>
+            <div class="phone-statusbar-icons">
+              <i class="ti ti-antenna-bars-5"></i>
+              <i class="ti ti-wifi"></i>
+              <i class="ti ti-battery-4"></i>
+            </div>
+          </div>
+
+          <div class="app-home-screen">
+            <!-- Location & Weather Chips -->
+            <div class="app-home-top">
+              <div class="app-loc-chip">
+                <i class="ti ti-map-pin"></i>
+                <span>부평동</span>
+                <i class="ti ti-refresh" style="font-size:13px;color:#A8ADA9"></i>
+              </div>
+              <div class="app-wx-group">
+                <span class="app-wx-pill"><i class="ti ti-sun-high"></i> 22°</span>
+                <span class="app-pm-pill">미세 좋음</span>
+              </div>
+            </div>
+
+            <!-- AI News Rolling Ticker -->
+            <div class="app-news-ticker">
+              <span class="app-news-badge">뉴스</span>
+              <div class="app-news-window">
+                <div class="app-news-track">
+                  <span>인천 도심 플로깅 참여자 3개월 새 42% 증가</span>
+                  <span>투명 페트병 고품질 재활용률 80% 돌파 전망</span>
+                  <span>도보 30분 플로깅, 일반 산책보다 칼로리 소모 1.4배</span>
+                </div>
+              </div>
+              <i class="ti ti-chevron-right" style="color:#B7BEB9"></i>
+            </div>
+
+            <!-- Greeting Headline -->
+            <div class="app-greeting">
+              <div class="app-greeting-ready">READY · 맑은 오후</div>
+              <div class="app-greeting-text">
+                가벼운 발걸음으로<br />
+                동네 한 바퀴 <span class="hl">어때요?</span>
+              </div>
+            </div>
+
+            <!-- PLOGGO Mascot -->
+            <img src="./assets/images/ploggo_1.png" alt="플로고 마스코트" class="app-mascot-float" />
+
+            <!-- Environmental Impact Card (Teal Mist) -->
+            <div class="app-impact-card">
+              <div class="app-impact-title">나의 환경 영향력</div>
+              <div class="app-impact-body">
+                <div class="app-gauge-wrap">
+                  <svg viewBox="0 0 130 72" width="106" height="58">
+                    <path d="M11 66 A54 54 0 0 1 119 66" fill="none" stroke="#DCE8E7" stroke-width="13" stroke-linecap="round"></path>
+                    <path d="M11 66 A54 54 0 0 1 119 66" fill="none" stroke="#E9FF6A" stroke-width="13" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="98"></path>
+                  </svg>
+                  <div class="app-gauge-label tabular">
+                    <div class="app-gauge-num">42<span style="font-size:12px">%</span></div>
+                    <div class="app-gauge-sub">연간 목표</div>
+                  </div>
+                </div>
+                <div class="app-impact-stats tabular">
+                  <div>
+                    <div class="app-co2-label">온실가스 감축</div>
+                    <div class="app-co2-val">4.8 <small>kgCO₂eq</small></div>
+                  </div>
+                  <div class="app-tree-badge">
+                    <i class="ti ti-tree"></i>
+                    <span>나무 2.9그루 효과</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Start CTA Card -->
+            <a href="#feature-route" class="app-start-cta">
+              <div class="app-start-cta-left">
+                <div class="app-start-cta-title">지금 바로 시작!</div>
+                <div class="app-start-cta-sub">오늘 우리 동네 18명이 함께 뛰고 있어요</div>
+              </div>
+              <div class="app-start-cta-btn">
+                <i class="ti ti-run"></i>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Floating Card 2: YOLOv8 Vision -->
+        <div class="hero-float-card hero-float-vision">
+          <div class="float-icon-box lime">
+            <i class="ti ti-scan"></i>
+          </div>
+          <div>
+            <div class="float-meta-title">YOLOv8n 실시간 객체 인식</div>
+            <div class="float-meta-sub">3종 · 7개 자동 분류 (+140P)</div>
+            <div class="mini-waste-dots">
+              <span style="background:var(--data-plastic)">플라스틱 4</span>
+              <span style="background:var(--data-can)">캔 2</span>
+              <span style="background:var(--data-paper)">종이 1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       COLOR & DESIGN IDENTITY STRIP
+       ==================================================================== -->
+  <div class="palette-strip">
+    <div class="container palette-strip-inner">
+      <div class="palette-strip-label">
+        <strong>Startline v6 × Eco Palette</strong>
+        <span>차콜 잉크와 라임 액센트 위에 에코 그린 및 5대 분류 데이터 컬러를 조화시킨 디자인 시스템</span>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch-pill"><span class="swatch-dot" style="background:#2A2F2C"></span>Ink #2A2F2C</div>
+        <div class="swatch-pill"><span class="swatch-dot" style="background:#EEFF77"></span>Lime #EEFF77</div>
+        <div class="swatch-pill"><span class="swatch-dot" style="background:#17855A"></span>Eco Green #17855A</div>
+        <div class="swatch-pill"><span class="swatch-dot" style="background:#3A75AE"></span>플라스틱 #3A75AE</div>
+        <div class="swatch-pill"><span class="swatch-dot" style="background:#C97A17"></span>캔 #C97A17</div>
+        <div class="swatch-pill"><span class="swatch-dot" style="background:#12784F"></span>종이 #12784F</div>
+        <div class="swatch-pill"><span class="swatch-dot" style="background:#7A63BC"></span>유리 #7A63BC</div>
+        <div class="swatch-pill"><span class="swatch-dot" style="background:#7D8783"></span>일반 #7D8783</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       CORE FEATURE 01: AI ROUTE RECOMMENDATION
+       ==================================================================== -->
+  <section class="feature-route-section" id="feature-route">
+    <div class="container">
+      <div class="section-header-split">
+        <div>
+          <div class="section-overline">
+            <span class="dot"></span>
+            <span>CORE FEATURE 01 · AI ROUTE ENGINE</span>
+          </div>
+          <h2 class="section-title">
+            지도만 탭하면 완성되는<br />
+            <span class="hl-green">AI 맞춤 플로깅 경로 추천</span>
+          </h2>
+          <p class="section-desc">
+            단순 최단거리가 아닙니다. 출발지와 도착지 사이의 <strong>CCTV 쓰레기 발생 핫스팟(K=3)</strong>을 경유하면서,
+            공장지대·위험 구역 폴리곤은 똑똑하게 우회하는 플로깅 전용 보행 코스를 설계합니다.
+          </p>
+        </div>
+      </div>
+
+      <div class="route-showcase-grid">
+        <!-- Left: Interactive RouteSetupScreen Simulator -->
+        <div class="route-simulator-card">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <span style="font-size:13px;font-weight:800;color:var(--gray-700);">
+                <i class="ti ti-hand-click" style="color:var(--eco-green);margin-right:4px;"></i>
+                도착지 프리셋을 선택하거나 ‘코스 변경’을 눌러보세요
+              </span>
+              <span style="font-size:12px;font-weight:700;color:var(--gray-500);">Naver Maps + Tmap API</span>
+            </div>
+
+            <div class="route-preset-tabs" id="routePresetTabs">
+              <button class="route-preset-tab active" data-route="bupyeong">
+                <i class="ti ti-flag-filled"></i>
+                <span>부평공원 분수광장</span>
+              </button>
+              <button class="route-preset-tab" data-route="gulpo">
+                <i class="ti ti-flag-filled"></i>
+                <span>굴포천 생태하천 산책로</span>
+              </button>
+              <button class="route-preset-tab" data-route="mangwon">
+                <i class="ti ti-flag-filled"></i>
+                <span>망원한강공원 초록길</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Simulated Map Screen -->
+          <div class="route-map-viewport" id="routeMapViewport">
+            <!-- Park decorative zones -->
+            <div class="map-park-zone" style="width:180px;height:140px;bottom:90px;left:20px;"></div>
+            <div class="map-park-zone" style="width:210px;height:150px;top:30px;right:15px;"></div>
+
+            <!-- Industrial / Hazard Avoid Polygon -->
+            <div class="map-avoid-polygon" title="회피 구역 폴리곤 (공장·위험지대)"></div>
+            <div class="avoid-zone-tag">
+              <i class="ti ti-building-factory-2"></i>
+              <span>회피 구역 우회됨</span>
+            </div>
+
+            <!-- Top Search Field (Authentic RouteSetupScreen Header) -->
+            <div class="map-top-search">
+              <div class="map-search-box">
+                <i class="ti ti-search"></i>
+                <span id="mapSearchText">인천 부평구 부평공원 분수광장</span>
+              </div>
+            </div>
+
+            <!-- SVG Route Polyline -->
+            <svg class="map-svg-layer" viewBox="0 0 500 440" preserveAspectRatio="none">
+              <!-- Dashed direct line showing why direct crosses avoid zone -->
+              <path id="directAvoidLine" d="M 85 300 L 405 115" fill="none" stroke="rgba(228,87,61,0.32)" stroke-width="2.5" stroke-dasharray="6 6" />
+              <!-- Recommended K=3 Plogging Route (Ink Solid Line) -->
+              <path id="routePathSvg" class="route-path-line" d="M 85 300 Q 145 310 175 255 T 285 225 T 355 170 L 405 115" />
+            </svg>
+
+            <!-- Origin Puck -->
+            <div class="map-pin origin-puck" id="pinOrigin" style="left:17%;top:68%;" title="현재 내 위치(출발지)"></div>
+
+            <!-- K=3 Hotspot Pins (White Pin + Green Recycle Icon) -->
+            <div class="map-pin hotspot-pin" id="pinHotspot1" style="left:35%;top:58%;">
+              <span class="hotspot-badge">거점 1</span>
+              <i class="ti ti-recycle"></i>
+            </div>
+            <div class="map-pin hotspot-pin" id="pinHotspot2" style="left:57%;top:51%;">
+              <span class="hotspot-badge">거점 2</span>
+              <i class="ti ti-recycle"></i>
+            </div>
+            <div class="map-pin hotspot-pin" id="pinHotspot3" style="left:71%;top:39%;">
+              <span class="hotspot-badge">거점 3</span>
+              <i class="ti ti-recycle"></i>
+            </div>
+
+            <!-- Destination Flag + ETA Bubble -->
+            <div class="map-pin dest-flag-group" id="pinDest" style="left:81%;top:26%;">
+              <div class="dest-eta-bubble tabular" id="mapEtaBubble">2.4km · 38분</div>
+              <div class="dest-flag-pin">
+                <i class="ti ti-flag-filled"></i>
+              </div>
+            </div>
+
+            <!-- Bottom Route Card (Authentic RouteSetupScreen Bottom Sheet) -->
+            <div class="map-bottom-sheet">
+              <div class="map-sheet-meta-row">
+                <div class="map-sheet-meta-items">
+                  <span><i class="ti ti-recycle"></i> <span id="metaHotspotCount">정화지역 3곳</span></span>
+                  <span class="meta-divider-dot"></span>
+                  <span><i class="ti ti-building-factory-2" style="color:var(--gray-500)"></i> <span id="metaFactoryCount">공장지대 0곳</span></span>
+                </div>
+                <button class="btn-course-change" id="btnCourseChange" type="button">
+                  <i class="ti ti-refresh"></i>
+                  <span>코스 변경</span>
+                </button>
+              </div>
+              <div class="map-sheet-dest-title" id="sheetDestName">부평공원 분수광장</div>
+              <a href="#walkthrough" class="map-sheet-start-btn">
+                <i class="ti ti-run"></i>
+                <span>출발</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: 3-Step Route Algorithm Explanation Cards -->
+        <div class="route-algo-list">
+          <div class="algo-card">
+            <div class="algo-card-head">
+              <span class="algo-step-badge">STEP 01 · 공간 탐색</span>
+              <span class="algo-tech-tag">Elliptical Buffer + BallTree</span>
+            </div>
+            <h3>출발지·목적지 타원 버퍼 &amp; 1,535개 CCTV 핫스팟 스코어링</h3>
+            <p>
+              출발지와 도착지를 두 초점으로 하는 타원형 반경(1.5km~2.5km) 내 후보 거점을 필터링합니다.
+              무단투기 단속 CCTV 데이터와 주변 밀도를 기반으로 정화 우선순위 점수(S<sub>i</sub>)가 가장 높은 <strong>K=3 핵심 정화 거점</strong>을 선별합니다.
+            </p>
+            <div class="algo-metrics-inline tabular">
+              <span><i class="ti ti-map-pin-check"></i>정화 거점 K=3 자동 경유</span>
+              <span><i class="ti ti-chart-dots-3"></i>밀도 가중치 사전 계산</span>
+            </div>
+          </div>
+
+          <div class="algo-card">
+            <div class="algo-card-head">
+              <span class="algo-step-badge">STEP 02 · 안전 보행 보장</span>
+              <span class="algo-tech-tag">147 Avoid Polygons + Safe Swap</span>
+            </div>
+            <h3>147개 회피 구역 폴리곤 교차 검사 &amp; Safe Swap</h3>
+            <p>
+              공장지대·대형 차도 등 보행에 부적합한 147개 회피 폴리곤(GeoJSON)과의 교차 길이를 실시간 검증합니다.
+              경로가 위험 구역을 통과할 경우, 회피 페널티가 낮은 차선 거점으로 즉시 교체(Safe Swap)하여 안전한 산책로를 찾아냅니다.
+            </p>
+            <div class="algo-metrics-inline tabular">
+              <span><i class="ti ti-shield-check"></i>위험·기피 구역 자동 우회</span>
+              <span><i class="ti ti-arrows-exchange"></i>최적 후보 Safe Swap</span>
+            </div>
+          </div>
+
+          <div class="algo-card">
+            <div class="algo-card-head">
+              <span class="algo-step-badge">STEP 03 · 도보 경로 생성</span>
+              <span class="algo-tech-tag">Tmap Pedestrian + Naver Maps</span>
+            </div>
+            <h3>보행자 전용 길안내 렌더링 &amp; 원탭 ‘코스 변경’</h3>
+            <p>
+              선정된 K=3 정화 거점을 연결하는 Tmap 보행자 도로망 폴리라인을 생성하고, 총 거리와 예상 소요시간 말풍선을 도착지 핀 위에 직관적으로 표시합니다.
+              마음에 들지 않으면 <strong>‘코스 변경’</strong> 버튼 한 번으로 새로운 경유 코스를 즉시 추천받습니다.
+            </p>
+            <div class="algo-metrics-inline tabular">
+              <span><i class="ti ti-walk"></i>보행자 전용 안전 동선</span>
+              <span><i class="ti ti-refresh"></i>즉각적인 대안 코스 탐색</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       CORE FEATURE 02: YOLOv8n AI TRASH DETECTION
+       ==================================================================== -->
+  <section class="feature-vision-section" id="feature-vision">
+    <div class="container">
+      <div class="section-header-split" style="margin-bottom:16px;">
+        <div>
+          <div class="section-overline dark-badge">
+            <i class="ti ti-scan" style="color:var(--lime)"></i>
+            <span>CORE FEATURE 02 · YOLOv8n VISION AI</span>
+          </div>
+          <h2 class="section-title">
+            카메라로 비추면 끝,<br />
+            <span class="hl-lime">AI 5종 자동 분류 &amp; 포인트 적립</span>
+          </h2>
+          <p class="section-desc">
+            플로깅 중 주운 쓰레기를 일일이 손으로 입력할 필요가 없습니다.
+            <strong>YOLOv8n (ONNX 640×640)</strong> 실시간 스트림 인식이 쓰레기 종류와 개수를 즉시 판별하고,
+            촬영 후 확인 시트에서 손쉽게 검증·담기까지 마칠 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <div class="vision-showcase-grid">
+        <!-- Left: Interactive Dark Camera Mockup (CameraDetectionScreen) -->
+        <div class="vision-phone-stage">
+          <div class="vision-mode-switch" role="tablist">
+            <button class="vision-mode-btn active" id="btnModeLive" type="button">
+              <i class="ti ti-viewfinder"></i> 실시간 AI 뷰파인더
+            </button>
+            <button class="vision-mode-btn" id="btnModeSheet" type="button">
+              <i class="ti ti-Checks"></i> ‘이렇게 담을까요?’ 확인 시트
+            </button>
+          </div>
+
+          <div class="phone-mockup dark-phone" aria-label="PLOGGO AI 카메라 인식 화면">
+            <div class="phone-statusbar">
+              <span>9:48</span>
+              <div class="phone-statusbar-icons">
+                <i class="ti ti-antenna-bars-5"></i>
+                <i class="ti ti-wifi"></i>
+                <i class="ti ti-battery-4"></i>
+              </div>
+            </div>
+
+            <div class="camera-screen-mock">
+              <!-- Top X and Info Icons -->
+              <div class="camera-top-bar">
+                <i class="ti ti-x"></i>
+                <span style="font-size:12px;font-weight:700;color:var(--lime);">● LIVE AI STREAM (700ms)</span>
+                <i class="ti ti-info-circle"></i>
+              </div>
+
+              <!-- Guide Banner -->
+              <div class="camera-guide-banner">
+                <i class="ti ti-bulb-filled"></i>
+                <div>
+                  <strong>한 번에 하나씩</strong> 비춰주세요. 바닥에 내려놓고 찍으면 더 잘 인식돼요.
+                </div>
+              </div>
+
+              <!-- Viewfinder with Lime Corner Brackets & Bounding Boxes -->
+              <div class="camera-viewfinder" id="cameraViewfinder">
+                <div class="vf-bracket tl"></div>
+                <div class="vf-bracket tr"></div>
+                <div class="vf-bracket bl"></div>
+                <div class="vf-bracket br"></div>
+
+                <!-- Bounding Box 1: Plastic -->
+                <div class="yolo-bbox highlighted" data-cat="plastic" style="--bbox-color:var(--data-plastic);width:102px;height:132px;left:20px;top:36px;">
+                  <span class="yolo-bbox-tag">플라스틱 96%</span>
+                  <i class="ti ti-bottle"></i>
+                </div>
+
+                <!-- Bounding Box 2: Can -->
+                <div class="yolo-bbox" data-cat="can" style="--bbox-color:var(--data-can);width:86px;height:102px;right:22px;top:34px;">
+                  <span class="yolo-bbox-tag">캔 93%</span>
+                  <i class="ti ti-cup"></i>
+                </div>
+
+                <!-- Bounding Box 3: Paper -->
+                <div class="yolo-bbox" data-cat="paper" style="--bbox-color:var(--data-paper);width:94px;height:78px;left:22px;bottom:22px;">
+                  <span class="yolo-bbox-tag">종이 91%</span>
+                  <i class="ti ti-file-description"></i>
+                </div>
+
+                <!-- Bounding Box 4: Glass -->
+                <div class="yolo-bbox" data-cat="glass" style="--bbox-color:var(--data-glass);width:78px;height:88px;left:126px;bottom:26px;">
+                  <span class="yolo-bbox-tag">유리 89%</span>
+                  <i class="ti ti-glass-full"></i>
+                </div>
+
+                <!-- Bounding Box 5: General Trash -->
+                <div class="yolo-bbox" data-cat="trash" style="--bbox-color:var(--data-general);width:78px;height:84px;right:18px;bottom:22px;">
+                  <span class="yolo-bbox-tag">일반 94%</span>
+                  <i class="ti ti-trash"></i>
+                </div>
+              </div>
+
+              <!-- Bottom Recognized Chips + Lime Shutter Button -->
+              <div class="camera-bottom-area">
+                <div class="camera-recog-header">
+                  <span style="letter-spacing:0.1em;">인식됨</span>
+                  <span class="tabular" id="cameraTotalText">5종 · 7개</span>
+                </div>
+
+                <div class="camera-chips-wrap" id="cameraChipsWrap">
+                  <div class="camera-found-chip" style="background:var(--data-plastic)">
+                    <i class="ti ti-bottle"></i> <span>플라스틱 3</span>
+                  </div>
+                  <div class="camera-found-chip" style="background:var(--data-can)">
+                    <i class="ti ti-cup"></i> <span>캔 1</span>
+                  </div>
+                  <div class="camera-found-chip" style="background:var(--data-paper)">
+                    <i class="ti ti-file-description"></i> <span>종이 1</span>
+                  </div>
+                  <div class="camera-found-chip" style="background:var(--data-glass)">
+                    <i class="ti ti-glass-full"></i> <span>유리 1</span>
+                  </div>
+                  <div class="camera-found-chip" style="background:var(--data-general)">
+                    <i class="ti ti-trash"></i> <span>일반 1</span>
+                  </div>
+                </div>
+
+                <div class="camera-shutter-row">
+                  <button class="camera-shutter-btn" id="btnCameraShutter" type="button" title="촬영하여 확인 시트 열기">
+                    <i class="ti ti-camera-filled"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Confirm Bottom Sheet ('이렇게 담을까요?') -->
+              <div class="camera-confirm-sheet" id="cameraConfirmSheet">
+                <div class="sheet-handle"></div>
+                <div class="confirm-sheet-title">이렇게 담을까요?</div>
+                <div class="confirm-sheet-sub">다르면 개수를 고쳐주세요.</div>
+
+                <div class="confirm-item-row">
+                  <div class="confirm-item-left">
+                    <div class="confirm-item-icon" style="background:var(--data-plastic)"><i class="ti ti-bottle"></i></div>
+                    <div>
+                      <div class="confirm-item-name">플라스틱</div>
+                      <div class="confirm-item-status">인식된 그대로예요</div>
+                    </div>
+                  </div>
+                  <div class="confirm-stepper tabular">
+                    <button class="stepper-btn" type="button">−</button>
+                    <strong style="font-size:15px;">3</strong>
+                    <button class="stepper-btn" type="button">+</button>
+                  </div>
+                </div>
+
+                <div class="confirm-item-row">
+                  <div class="confirm-item-left">
+                    <div class="confirm-item-icon" style="background:var(--data-can)"><i class="ti ti-cup"></i></div>
+                    <div>
+                      <div class="confirm-item-name">캔</div>
+                      <div class="confirm-item-status">인식된 그대로예요</div>
+                    </div>
+                  </div>
+                  <div class="confirm-stepper tabular">
+                    <button class="stepper-btn" type="button">−</button>
+                    <strong style="font-size:15px;">1</strong>
+                    <button class="stepper-btn" type="button">+</button>
+                  </div>
+                </div>
+
+                <div class="confirm-item-row">
+                  <div class="confirm-item-left">
+                    <div class="confirm-item-icon" style="background:var(--data-paper)"><i class="ti ti-file-description"></i></div>
+                    <div>
+                      <div class="confirm-item-name">종이</div>
+                      <div class="confirm-item-status">직접 고쳤어요</div>
+                    </div>
+                  </div>
+                  <div class="confirm-stepper tabular">
+                    <button class="stepper-btn" type="button">−</button>
+                    <strong style="font-size:15px;">2</strong>
+                    <button class="stepper-btn" type="button">+</button>
+                  </div>
+                </div>
+
+                <div class="confirm-sheet-actions">
+                  <button class="confirm-btn-retry" id="btnSheetClose" type="button">다시 찍기</button>
+                  <button class="confirm-btn-save" id="btnSheetConfirm" type="button">6개 담기 (+120P)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: 5 Waste Categories & Eco Point Formula -->
+        <div class="vision-details-col">
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--lime);letter-spacing:0.08em;margin-bottom:8px;">
+              5 WASTE CLASSIFICATION SYSTEM
+            </div>
+            <h3 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#fff;">
+              앱 전역 고정 매핑 5대 쓰레기 분류 컬러
+            </h3>
+            <p style="font-size:15px;color:var(--gray-400);margin-top:6px;">
+              카드를 클릭하면 좌측 뷰파인더에서 해당 분류의 바운딩 박스가 강조됩니다. 카메라 인식 칩, 트래킹 수거 내역, 정산 도장 리포트까지 동일한 시맨틱 컬러로 일관되게 표현됩니다.
+            </p>
+
+            <div class="waste-5-grid" id="waste5Grid" style="margin-top:20px;">
+              <div class="waste-cat-card active" data-target="plastic" style="--cat-color:var(--data-plastic)">
+                <div class="waste-cat-icon"><i class="ti ti-bottle"></i></div>
+                <div class="waste-cat-ko">플라스틱</div>
+                <div class="waste-cat-en">plastic</div>
+                <div class="waste-cat-hex">#3A75AE</div>
+              </div>
+
+              <div class="waste-cat-card" data-target="can" style="--cat-color:var(--data-can)">
+                <div class="waste-cat-icon"><i class="ti ti-cup"></i></div>
+                <div class="waste-cat-ko">캔</div>
+                <div class="waste-cat-en">can</div>
+                <div class="waste-cat-hex">#C97A17</div>
+              </div>
+
+              <div class="waste-cat-card" data-target="paper" style="--cat-color:var(--data-paper)">
+                <div class="waste-cat-icon"><i class="ti ti-file-description"></i></div>
+                <div class="waste-cat-ko">종이</div>
+                <div class="waste-cat-en">paper</div>
+                <div class="waste-cat-hex">#12784F</div>
+              </div>
+
+              <div class="waste-cat-card" data-target="glass" style="--cat-color:var(--data-glass)">
+                <div class="waste-cat-icon"><i class="ti ti-glass-full"></i></div>
+                <div class="waste-cat-ko">유리</div>
+                <div class="waste-cat-en">glass</div>
+                <div class="waste-cat-hex">#7A63BC</div>
+              </div>
+
+              <div class="waste-cat-card" data-target="trash" style="--cat-color:var(--data-general)">
+                <div class="waste-cat-icon"><i class="ti ti-trash"></i></div>
+                <div class="waste-cat-ko">일반쓰레기</div>
+                <div class="waste-cat-en">trash</div>
+                <div class="waste-cat-hex">#7D8783</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Point Calculation Formula Box (From ActivityPoints class) -->
+          <div class="point-formula-card">
+            <div class="point-formula-header">
+              <h3><i class="ti ti-coin-filled"></i> 투명하고 직관적인 에코포인트 정산 정책</h3>
+              <span style="font-size:12px;font-weight:700;color:var(--lime);background:rgba(238,255,119,0.12);padding:4px 10px;border-radius:999px;">
+                ActivityPoints 공식 적용
+              </span>
+            </div>
+
+            <div class="point-formula-pills tabular">
+              <div class="formula-box">
+                <div class="formula-box-label">활동 기본 지급</div>
+                <div class="formula-box-val">+100 P</div>
+                <div class="formula-box-desc">플로깅 1회 완료 시 기본 보상</div>
+              </div>
+
+              <div class="formula-box">
+                <div class="formula-box-label">쓰레기 수거 보상</div>
+                <div class="formula-box-val">+20 P <small style="font-size:13px;color:#fff;">/ 개</small></div>
+                <div class="formula-box-desc">AI 인식·담기 완료된 수거물 1개당</div>
+              </div>
+
+              <div class="formula-box">
+                <div class="formula-box-label">목적지 완주 보너스</div>
+                <div class="formula-box-val">+30 P <small style="font-size:13px;color:#fff;">(+30%)</small></div>
+                <div class="formula-box-desc">목적지 반경 50m 이내 도착 시 추가</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hybrid Verification Highlight -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:20px 24px;display:flex;align-items:center;gap:16px;">
+            <div style="width:46px;height:46px;border-radius:14px;background:var(--eco-green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">
+              <i class="ti ti-adjustments-horizontal"></i>
+            </div>
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#fff;">AI 자동 인식 + 사용자 직접 보정 하이브리드 UX</div>
+              <div style="font-size:13.5px;color:var(--gray-400);margin-top:2px;">
+                700ms 주기로 실시간 프리뷰를 추론하되, 촬영 직후 열리는 <strong>‘이렇게 담을까요?’</strong> 시트에서 개수를 가감하거나 다른 종류를 추가할 수 있어 오인식 스트레스를 없앴습니다.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       SECTION 03: 4-STEP APP SCREEN WALKTHROUGH
+       ==================================================================== -->
+  <section class="walkthrough-section" id="walkthrough">
+    <div class="container">
+      <div>
+        <div class="section-overline">
+          <span class="dot"></span>
+          <span>APP UI FLOW · STARTLINE DESIGN</span>
+        </div>
+        <h2 class="section-title">
+          시작부터 정산까지,<br />
+          물 흐르듯 이어지는 <span class="hl-lime">4단계 플로깅 여정</span>
+        </h2>
+        <p class="section-desc">
+          복잡한 메뉴 없이 누구나 직관적으로 사용할 수 있도록 설계된 PLOGGO의 핵심 화면 구성을 단계별로 확인해보세요.
+        </p>
+      </div>
+
+      <!-- 4 Step Tabs -->
+      <div class="walkthrough-tabs" id="walkthroughTabs">
+        <button class="wt-tab-btn active" data-step="0" type="button">
+          <span class="wt-step-num">STEP 01 · HOME</span>
+          <span class="wt-tab-title">홈 &amp; AI 환경 뉴스</span>
+          <span class="wt-tab-desc">동네 날씨·미세먼지 확인과 Gemini AI 환경 뉴스 요약, 연간 탄소 감축 리포트</span>
+        </button>
+
+        <button class="wt-tab-btn" data-step="1" type="button">
+          <span class="wt-step-num">STEP 02 · ROUTE</span>
+          <span class="wt-tab-title">맞춤 경로 설정</span>
+          <span class="wt-tab-desc">지도 탭으로 목적지 지정, K=3 정화 거점 핀과 회피 구역 우회 경로 확인</span>
+        </button>
+
+        <button class="wt-tab-btn" data-step="2" type="button">
+          <span class="wt-step-num">STEP 03 · TRACKING</span>
+          <span class="wt-tab-title">실시간 플로깅 트래킹</span>
+          <span class="wt-tab-desc">다크 컨트롤 패널, 백그라운드 GPS·걸음·칼로리 추적 및 1.2초 롱프레스 종료</span>
+        </button>
+
+        <button class="wt-tab-btn" data-step="3" type="button">
+          <span class="wt-step-num">STEP 04 · SETTLEMENT</span>
+          <span class="wt-tab-title">라임 도장 정산 &amp; 공유</span>
+          <span class="wt-tab-desc">도장 임팩트 연출, 5종 수거 통계 요약, 포인트 적립 및 그룹 피드 자동 공유</span>
+        </button>
+      </div>
+
+      <!-- Stage Card -->
+      <div class="wt-stage-card">
+        <!-- Left Text Panels -->
+        <div class="wt-panels-wrap">
+          <!-- Panel 0 -->
+          <div class="wt-panel active" data-panel="0">
+            <span class="wt-panel-badge"><i class="ti ti-home"></i> HomeScreen · Startline 구조</span>
+            <h3>오늘 플로깅하기 좋은 날씨인지,<br />내가 지구를 얼마나 지켰는지 한눈에</h3>
+            <p>
+              앱을 켜면 현재 동네의 기온과 미세먼지 등급을 라임 포인트 칩으로 알려주고,
+              <strong>Gemini 2.5 Flash</strong>가 요약한 최신 환경 뉴스가 티커로 흐릅니다.
+              하단 ‘나의 환경 영향력’ 카드에서 온실가스 감축량(kgCO₂eq)과 나무 식재 효과를 직관적인 반원 게이지로 확인하세요.
+            </p>
+            <ul class="wt-feature-points">
+              <li><i class="ti ti-news"></i> <span>네이버 환경 뉴스 수집 + Gemini 2.5 Flash 핵심 3줄 요약 제공</span></li>
+              <li><i class="ti ti-chart-donut-3"></i> <span>수거량 기반 온실가스(kgCO₂eq) 절감량 &amp; 소나무 환산 지표 시각화</span></li>
+              <li><i class="ti ti-Run"></i> <span>오늘 우리 지역에서 함께 활동 중인 플로거 수를 보여주는 ‘지금 바로 시작!’ 카드</span></li>
+            </ul>
+          </div>
+
+          <!-- Panel 1 -->
+          <div class="wt-panel" data-panel="1">
+            <span class="wt-panel-badge"><i class="ti ti-map-2"></i> RouteSetupScreen · 경로 설계</span>
+            <h3>검색하거나 지도를 톡 누르면,<br />정화 거점 3곳을 잇는 코스가 그려집니다</h3>
+            <p>
+              복잡한 설정 없이 지도를 탭해 도착지를 찍거나 장소를 검색하세요.
+              도착지 깃발 핀 위에 예상 거리와 시간(예: <code>2.4km · 38분</code>)이 말풍선으로 뜨고,
+              경유할 정화지역 3곳이 초록 재활용 핀으로 표시됩니다.
+            </p>
+            <ul class="wt-feature-points">
+              <li><i class="ti ti-pin"></i> <span>역지오코딩을 통해 탭한 지점의 실제 도로명·동 주소를 즉시 표시</span></li>
+              <li><i class="ti ti-refresh"></i> <span>‘코스 변경’ 탭 시 카드 흔들림 없이 아이콘만 회전하며 대안 경로 재탐색</span></li>
+              <li><i class="ti ti-device-floppy"></i> <span>예기치 못하게 앱이 종료되어도 이전 기록을 복구하는 중단 세션 이어하기 지원</span></li>
+            </ul>
+          </div>
+
+          <!-- Panel 2 -->
+          <div class="wt-panel" data-panel="2">
+            <span class="wt-panel-badge"><i class="ti ti-activity"></i> PloggingTrackingScreen · 실시간 추적</span>
+            <h3>야외 시인성을 극대화한 다크 패널과<br />오작동을 막는 1.2초 물결 롱프레스 종료</h3>
+            <p>
+              트래킹이 시작되면 상단에는 추천 경로가 그려진 라이브 네이버 지도가, 하단에는 눈부심이 적은 차콜 다크 패널(<code>#242926</code>)이 배치됩니다.
+              화면이 꺼져도 Foreground Service로 GPS 경로가 끊김 없이 기록됩니다.
+            </p>
+            <ul class="wt-feature-points">
+              <li><i class="ti ti-compass"></i> <span>자기센서(나침반) 연동으로 스마트폰이 바라보는 방향을 가리키는 내 위치 포인터</span></li>
+              <li><i class="ti ti-heart-rate-monitor"></i> <span>Health Connect 연동 걸음수·칼로리·이동 거리·5종 수거 현황 실시간 집계</span></li>
+              <li><i class="ti ti-hand-finger"></i> <span>실수로 눌려 종료되는 것을 방지하는 1.2초 출렁이는 라임 물결 롱프레스 종료 버튼</span></li>
+            </ul>
+          </div>
+
+          <!-- Panel 3 -->
+          <div class="wt-panel" data-panel="3">
+            <span class="wt-panel-badge"><i class="ti ti-award"></i> SettlementScreen · 활동 정산</span>
+            <h3>‘한 바퀴 완주!’ 쾅 찍히는 라임 도장과<br />그룹 피드 인증샷 자동 공유</h3>
+            <p>
+              플로깅을 마치면 컨페티가 흩날리며 <strong>오늘 수거 개수와 무게가 적힌 대형 라임 도장</strong>이 화면을 흔들며 찍힙니다.
+              획득한 에코포인트와 경험치(+20 XP), 신규 달성 뱃지를 확인하고 인증샷 한 장으로 소속 그룹 피드에 활동을 공유할 수 있습니다.
+            </p>
+            <ul class="wt-feature-points">
+              <li><i class="ti ti-confetti"></i> <span>5대 분류 컬러 컨페티 &amp; 스쿼시 탄성 애니메이션이 적용된 완주 스탬프</span></li>
+              <li><i class="ti ti-coins"></i> <span>기본 100P + 수거 보너스 + 완주 보너스 내역을 투명하게 분리 표기</span></li>
+              <li><i class="ti ti-users"></i> <span>수거 봉투 인증샷 촬영 시 내 지역 그룹 커뮤니티 피드에 활동 카드 자동 게시</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Right Visual Preview Card for Selected Step -->
+        <div class="wt-preview-box" id="wtPreviewBox">
+          <!-- Dynamic preview rendered by JS or static cards -->
+          <div id="wtVisual0" class="wt-visual-item">
+            <div style="background:#fff;border-radius:22px;padding:20px;box-shadow:var(--shadow-card);">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                <span style="background:var(--lime);color:var(--lime-on);font-weight:800;font-size:11px;padding:4px 8px;border-radius:6px;">AI 요약</span>
+                <span style="font-size:12.5px;font-weight:700;color:var(--deep-teal);">Gemini 2.5 Flash 환경 브리핑</span>
+              </div>
+              <div style="font-size:16px;font-weight:800;color:var(--ink);line-height:1.35;">
+                “수도권 도심 공원 플로깅 캠페인, 일회용 컵 수거율 68% 달성”
+              </div>
+              <ul style="margin-top:12px;padding-left:18px;font-size:13px;color:var(--gray-700);display:flex;flex-direction:column;gap:6px;">
+                <li>지자체-시민 자율 플로깅 그룹 연계로 공원 내 방치 쓰레기 대폭 감소</li>
+                <li>수거된 투명 페트병·캔류는 지역 리워드 포인트로 즉시 환원</li>
+              </ul>
+              <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-100);display:flex;align-items:center;justify-content:space-between;">
+                <img src="./assets/images/ploggo_2.png" alt="플로고 캐릭터" style="width:58px;height:58px;object-fit:contain;" />
+                <div style="text-align:right;">
+                  <div style="font-size:11.5px;font-weight:700;color:var(--gray-500);">오늘의 환경 영향력</div>
+                  <div style="font-size:20px;font-weight:800;color:var(--eco-green);" class="tabular">4.8 kgCO₂eq 감축</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="wtVisual1" class="wt-visual-item" style="display:none;">
+            <div style="background:#fff;border-radius:22px;padding:20px;box-shadow:var(--shadow-card);">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <span style="font-size:12px;font-weight:800;color:var(--eco-green);"><i class="ti ti-recycle"></i> 정화지역 3곳 · 공장지대 0곳</span>
+                <span style="font-size:12px;font-weight:800;color:var(--gray-700);"><i class="ti ti-refresh"></i> 코스 변경</span>
+              </div>
+              <div style="font-size:21px;font-weight:800;color:var(--ink);">인천 부평공원 분수광장</div>
+              <div style="margin-top:14px;background:var(--surface-soft);border-radius:14px;padding:12px;display:flex;justify-content:space-around;" class="tabular">
+                <div style="text-align:center;">
+                  <div style="font-size:11px;color:var(--gray-500);font-weight:700;">총 거리</div>
+                  <div style="font-size:18px;font-weight:800;color:var(--ink);">2.4 km</div>
+                </div>
+                <div style="width:1px;background:var(--gray-200);"></div>
+                <div style="text-align:center;">
+                  <div style="font-size:11px;color:var(--gray-500);font-weight:700;">예상 시간</div>
+                  <div style="font-size:18px;font-weight:800;color:var(--ink);">38 분</div>
+                </div>
+                <div style="width:1px;background:var(--gray-200);"></div>
+                <div style="text-align:center;">
+                  <div style="font-size:11px;color:var(--gray-500);font-weight:700;">우회 검증</div>
+                  <div style="font-size:18px;font-weight:800;color:var(--eco-green);">Safe</div>
+                </div>
+              </div>
+              <div style="margin-top:14px;height:46px;border-radius:14px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;">
+                <i class="ti ti-run" style="color:var(--lime)"></i> 출발
+              </div>
+            </div>
+          </div>
+
+          <div id="wtVisual2" class="wt-visual-item" style="display:none;">
+            <div style="background:var(--dark-bg);color:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow-card);">
+              <div style="width:44px;height:4px;background:var(--dark-chip);border-radius:2px;margin:0 auto 14px;"></div>
+              <div style="text-align:center;">
+                <div style="font-size:11.5px;color:var(--gray-400);font-weight:700;letter-spacing:0.1em;">경과 시간</div>
+                <div style="font-size:38px;font-weight:800;color:var(--lime);letter-spacing:-0.03em;" class="tabular">00:34:18</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;text-align:center;" class="tabular">
+                <div style="background:var(--dark-surface);padding:10px;border-radius:12px;">
+                  <div style="font-size:11px;color:var(--gray-400);">거리</div>
+                  <div style="font-size:16px;font-weight:800;">2.1 km</div>
+                </div>
+                <div style="background:var(--dark-surface);padding:10px;border-radius:12px;">
+                  <div style="font-size:11px;color:var(--gray-400);">걸음수</div>
+                  <div style="font-size:16px;font-weight:800;">3,140</div>
+                </div>
+                <div style="background:var(--dark-surface);padding:10px;border-radius:12px;">
+                  <div style="font-size:11px;color:var(--gray-400);">수거량</div>
+                  <div style="font-size:16px;font-weight:800;color:var(--lime);">8 개</div>
+                </div>
+              </div>
+              <div style="margin-top:16px;height:48px;border-radius:14px;background:var(--dark-surface);border:1px solid rgba(238,255,119,0.3);display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:800;color:var(--lime);">
+                <i class="ti ti-player-stop-filled"></i> 길게 눌러 플로깅 마치기 (1.2s)
+              </div>
+            </div>
+          </div>
+
+          <div id="wtVisual3" class="wt-visual-item" style="display:none;">
+            <div style="background:#fff;border-radius:24px;padding:22px;text-align:center;box-shadow:var(--shadow-card);">
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.15em;color:var(--gray-500);">FINISH · 한 바퀴 완주!</div>
+              <div style="width:144px;height:144px;border-radius:50%;background:var(--lime);margin:14px auto;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-6deg);box-shadow:0 12px 28px rgba(238,255,119,0.45);" class="tabular">
+                <span style="font-size:11px;font-weight:700;color:var(--lime-on);opacity:0.75;">오늘 수거</span>
+                <strong style="font-size:42px;font-weight:800;line-height:1;color:var(--ink);">12<small style="font-size:16px;">개</small></strong>
+                <span style="font-size:12px;font-weight:800;color:var(--lime-on);margin-top:4px;">약 340g 수거</span>
+              </div>
+              <div style="background:var(--surface-soft);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:12px;" class="tabular">
+                <span style="font-size:13px;font-weight:700;color:var(--gray-700);">획득 에코포인트</span>
+                <strong style="font-size:18px;font-weight:800;color:var(--eco-green);">+370 P</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       SECTION 04: REWARDS, 33 BADGES & ECO SHOP ECOSYSTEM
+       ==================================================================== -->
+  <section class="ecosystem-section" id="ecosystem">
+    <div class="container">
+      <div>
+        <div class="section-overline">
+          <span class="dot"></span>
+          <span>REWARD &amp; COMMUNITY ECOSYSTEM</span>
+        </div>
+        <h2 class="section-title">
+          지구를 지킨 만큼 돌아오는<br />
+          <span class="hl-green">뱃지 컬렉션 · 포인트 상점 · 지역 그룹</span>
+        </h2>
+        <p class="section-desc">
+          혼자 뛰어도, 함께 뛰어도 즐겁습니다. 33종의 도전 과제 뱃지를 모으고, 적립한 에코포인트로 실제 기프티콘과 친환경 플로깅 용품을 교환하세요.
+        </p>
+      </div>
+
+      <div class="eco-bento-grid">
+        <!-- Bento 1: 33 Badges Collection -->
+        <div class="bento-card bento-col-7">
+          <div>
+            <span class="bento-overline">ACHIEVEMENT · 33종 뱃지 시스템</span>
+            <h3 class="bento-title">성취감을 자극하는 33개의 활동 메달과 퀘스트</h3>
+            <p class="bento-desc">
+              첫 걸음부터 누적 거리, 분류별 수거 달성, 우천·새벽 플로깅, 그룹 피드 공유까지. 활동을 마칠 때마다 조건이 자동 판정되어 화려한 획득 팝업과 함께 뱃지함에 기록됩니다.
+            </p>
+          </div>
+
+          <div class="badge-showcase-grid">
+            <div class="badge-item-tile">
+              <img src="./assets/badges/01_running_shoe.png" alt="첫 발걸음 뱃지" />
+              <span>첫 발걸음</span>
+            </div>
+            <div class="badge-item-tile">
+              <img src="./assets/badges/03_camera_with_flash.png" alt="AI 포착 뱃지" />
+              <span>AI 포착왕</span>
+            </div>
+            <div class="badge-item-tile">
+              <img src="./assets/badges/06_recycling_symbol.png" alt="분리수거 달인 뱃지" />
+              <span>분리수거 달인</span>
+            </div>
+            <div class="badge-item-tile">
+              <img src="./assets/badges/25_deciduous_tree.png" alt="숲 지킴이 뱃지" />
+              <span>숲 지킴이</span>
+            </div>
+            <div class="badge-item-tile">
+              <img src="./assets/badges/22_trophy.png" alt="챌린지 챔피언 뱃지" />
+              <span>챔피언</span>
+            </div>
+            <div class="badge-item-tile">
+              <img src="./assets/badges/29_coin.png" alt="포인트 부자 뱃지" />
+              <span>에코 리치</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento 2: Eco Point Shop -->
+        <div class="bento-card bento-col-5">
+          <div>
+            <span class="bento-overline">POINT SHOP · 에코 상점</span>
+            <h3 class="bento-title">수거한 포인트로 교환하는 친환경 굿즈 &amp; 기프티콘</h3>
+            <p class="bento-desc">
+              기본 100P와 쓰레기 1개당 20P로 차곡차곡 모은 포인트를 카페 음료, 편의점 상품권, 플로깅 집게·에코백으로 즉시 교환하고 내 쿠폰함에서 바코드로 사용하세요.
+            </p>
+          </div>
+
+          <div class="shop-items-row tabular">
+            <div class="shop-item-card">
+              <img src="./assets/shop/americano.jpg" alt="아메리카노 쿠폰" />
+              <div class="shop-item-info">
+                <div class="shop-item-name">아이스 아메리카노</div>
+                <div class="shop-item-price">1,500 P</div>
+              </div>
+            </div>
+            <div class="shop-item-card">
+              <img src="./assets/shop/tongs.jpg" alt="플로깅 집게" />
+              <div class="shop-item-info">
+                <div class="shop-item-name">스텐 플로깅 집게</div>
+                <div class="shop-item-price">2,200 P</div>
+              </div>
+            </div>
+            <div class="shop-item-card">
+              <img src="./assets/shop/eco_bag.jpg" alt="에코백" />
+              <div class="shop-item-info">
+                <div class="shop-item-name">리사이클 에코백</div>
+                <div class="shop-item-price">3,000 P</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento 3: Local Group Community -->
+        <div class="bento-card bento-col-6">
+          <div>
+            <span class="bento-overline">COMMUNITY · 지역 그룹 &amp; 피드</span>
+            <h3 class="bento-title">우리 동네 크루와 함께 뛰고 인증샷을 나누는 그룹 피드</h3>
+            <p class="bento-desc">
+              자유 가입 또는 승인제 그룹을 만들고, 실시간 채팅과 사진 앨범으로 소통하세요. 플로깅 정산 시 촬영한 봉투 인증샷은 이동 거리·수거 개수 카드와 함께 그룹 피드에 자동 공유됩니다.
+            </p>
+          </div>
+          <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
+            <span style="background:var(--surface);border:1px solid var(--gray-200);padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;color:var(--ink);">
+              <i class="ti ti-users" style="color:var(--eco-green)"></i> 자유 가입 &amp; 방장 승인제 지원
+            </span>
+            <span style="background:var(--surface);border:1px solid var(--gray-200);padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;color:var(--ink);">
+              <i class="ti ti-photo" style="color:var(--eco-green)"></i> 정산 인증샷 원클릭 피드 공유
+            </span>
+          </div>
+        </div>
+
+        <!-- Bento 4: Senior-Friendly & Accessible Typography -->
+        <div class="bento-card bento-col-6" style="background:var(--teal-mist);border-color:#DCE8E7;">
+          <div>
+            <span class="bento-overline" style="color:var(--deep-teal);">ACCESSIBILITY · 전 세대 친화 UI</span>
+            <h3 class="bento-title" style="color:#212C2C;">누구나 읽기 편하고 누르기 쉬운 세심한 배려</h3>
+            <p class="bento-desc" style="color:#3D4F4E;">
+              청소년부터 중장년층까지 모든 시민이 편안하게 플로깅에 참여할 수 있도록 본문 최소 크기 15sp 이상, 행간 1.6, 모든 터치 타깃 최소 <strong>48×48dp</strong>, 흔들림 없는 고정폭 숫자(Tabular Figures) 조판을 엄격히 적용했습니다.
+            </p>
+          </div>
+          <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
+            <span style="background:#fff;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:800;color:var(--deep-teal);">
+              <i class="ti ti-typography"></i> Pretendard 고정폭 수치 조판
+            </span>
+            <span style="background:#fff;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:800;color:var(--deep-teal);">
+              <i class="ti ti-hand-finger"></i> 48×48dp 이상 넉넉한 터치 영역
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       BOTTOM CTA BANNER
+       ==================================================================== -->
+  <section class="cta-banner-section">
+    <div class="container">
+      <div class="cta-banner-box">
+        <div>
+          <span class="section-overline dark-badge" style="margin-bottom:14px;">
+            <span>READY TO PLOG?</span>
+          </span>
+          <h2 style="font-size:clamp(28px, 3.8vw, 42px);font-weight:800;line-height:1.2;letter-spacing:-0.03em;">
+            오늘, 플로고(PLOGGO)와 함께<br />
+            가장 가벼운 환경 보호를 시작해보세요
+          </h2>
+          <p style="color:var(--gray-400);font-size:16.5px;margin-top:14px;max-width:540px;">
+            AI가 찾아주는 최적의 정화 코스와 카메라 비전 인식으로 더 스마트해진 플로깅 경험을 만나보세요.
+          </p>
+          <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;">
+            <a href="#hero" class="btn btn-lime">
+              <i class="ti ti-arrow-up-right"></i>
+              <span>맨 위로 이동</span>
+            </a>
+            <a href="#feature-route" class="btn btn-secondary" style="background:var(--dark-surface);color:#fff;border-color:rgba(255,255,255,0.12);">
+              <i class="ti ti-map-pin"></i>
+              <span>AI 경로 시뮬레이터 다시 보기</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="cta-mascots">
+          <img src="./assets/images/ploggo_1.png" alt="플로고 캐릭터 1" />
+          <img src="./assets/images/ploggo_2.png" alt="플로고 캐릭터 2" />
+          <img src="./assets/images/ploggo_3.png" alt="플로고 캐릭터 3" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       FOOTER
+       ==================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div>
+          <div class="brand-logo">
+            <img src="./assets/icons/app_icon_android.png" alt="PLOGGO 아이콘" />
+            <span>PLOGGO</span>
+            <span class="brand-tag">v6 STARTLINE</span>
+          </div>
+          <p style="margin-top:10px;max-width:440px;color:var(--gray-600);font-size:13.5px;">
+            AI 플로깅 플랫폼 (PLOGGO) | 2026 한이음 드림업 프로젝트<br />
+            CCTV 쓰레기 핫스팟·회피 구역 기반 경로 추천 및 YOLOv8n 비전 인식 모바일 애플리케이션
+          </p>
+        </div>
+
+        <div>
+          <div style="font-size:12.5px;font-weight:800;color:var(--ink);letter-spacing:0.06em;text-transform:uppercase;">
+             Core Tech Stack
+          </div>
+          <div class="tech-stack-pills">
+            <span class="tech-pill">Flutter &amp; Riverpod</span>
+            <span class="tech-pill">Python FastAPI</span>
+            <span class="tech-pill">YOLOv8n (ONNX)</span>
+            <span class="tech-pill">Gemini 2.5 Flash</span>
+            <span class="tech-pill">Naver Maps SDK</span>
+            <span class="tech-pill">Tmap Pedestrian API</span>
+            <span class="tech-pill">Firebase Auth · Firestore · Storage</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 PLOGGO Team. All rights reserved.</span>
+        <span>Designed with Startline Color System (#2A2F2C · #EEFF77 · #17855A)</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
